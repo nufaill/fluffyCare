@@ -1,53 +1,43 @@
-import { Response } from "express";
-import { config } from "../config/env"; 
+// backend/src/utils/cookie-helper.ts
+import { Response } from 'express';
+import { config } from '../config/env';
 
-// Set both access and refresh tokens in cookies
+const isProduction = config.server.NODE_ENV === 'production';
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: 'strict' as const,
+  path: '/',
+};
+
 export const setAuthCookies = (
   res: Response,
   accessToken: string,
-  refreshToken: string,
-  accessTokenName: string,
-  refreshTokenName: string
-) => {
-  const isProduction = config.server.NODE_ENV === "production";
-
-  res.cookie(accessTokenName, accessToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: "strict",
+  refreshToken: string
+): void => {
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
 
-  res.cookie(refreshTokenName, refreshToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: "strict",
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };
 
-// Update only access token (useful during token refresh)
-export const updateCookieWithAccessToken = (
+export const updateAccessTokenCookie = (
   res: Response,
-  accessToken: string,
-  accessTokenName: string
-) => {
-  const isProduction = config.server.NODE_ENV === "production";
-
-  res.cookie(accessTokenName, accessToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: "strict",
+  accessToken: string
+): void => {
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
 };
 
-// Clear both cookies (e.g., on logout)
-export const clearAuthCookies = (
-  res: Response,
-  accessTokenName: string,
-  refreshTokenName: string
-) => {
-  res.clearCookie(accessTokenName);
-  res.clearCookie(refreshTokenName);
+export const clearAuthCookies = (res: Response): void => {
+  res.clearCookie('accessToken', { path: '/' });
+  res.clearCookie('refreshToken', { path: '/' });
 };

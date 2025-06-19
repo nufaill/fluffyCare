@@ -1,41 +1,78 @@
+// backend/src/middlewares/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { JwtService } from '../services/jwt/jwtService';
+import { UserPayload } from '../types/auth.types';
+import { JwtPayload } from 'jsonwebtoken';
 
-interface JwtPayload {
-  id: string;
-  email: string;
-  role: string;
+export interface AuthRequest extends Request {
+  user?: UserPayload;
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload;
+export class AuthMiddleware {
+  constructor(private jwtService: JwtService) { }
+
+  authenticate = (req: AuthRequest, res: Response, next: NextFunction): void => {
+    try {
+      // Try to get token from cookies first, then from Authorization header
+      let token = req.cookies?.accessToken;
+
+      if (!token) {
+        const authHeader = req.headers.authorization;
+        if (authHeader?.startsWith('Bearer ')) {
+          token = authHeader.split(' ')[1];
+        }
+      }
+
+      if (!token) {
+        res.status(401).json({
+          success: false,
+          message: 'Access token required',
+        });
+        return;
+      }
+
+      const payload = this.jwtService.verifyAccessToken(token);
+
+      if (!payload || typeof payload === 'string') {
+        res.status(401).json({
+          success: false,
+          message: 'Access token required',
+        });
+
+      }
+
+      req.user = payload as UserPayload;
+      next();
+    } catch (error) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication failed',
+      });
     }
-  }
+  };
+
+  optionalAuth = (req: AuthRequest, res: Response, next: NextFunction): void => {
+    try {
+      let token = req.cookies?.accessToken;
+
+      if (!token) {
+        const authHeader = req.headers.authorization;
+        if (authHeader?.startsWith('Bearer ')) {
+          token = authHeader.split(' ')[1];
+        }
+      }
+
+      if (token) {
+        const payload = this.jwtService.verifyAccessToken(token);
+        if (payload) {
+          req.user = payload as UserPayload;
+        }
+      }
+
+      next();
+    } catch (error) {
+      // Continue without authentication for optional auth
+      next();
+    }
+  };
 }
-
-export const authMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const header = req.headers.authorization; 
-  if (!header?.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'No token' });
-  }
-
-  const token = header.split(' ')[1];
-
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string
-    ) as JwtPayload;
-
-    req.user = decoded;
-    next();
-  } catch {
-    res.status(401).json({ success: false, message: 'Token invalid' });
-  }
-};

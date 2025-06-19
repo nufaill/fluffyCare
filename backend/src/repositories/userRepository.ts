@@ -1,26 +1,44 @@
-import { User } from "@models/userModel";
+// backend/src/repositories/userRepository.ts
+import { User } from '../models/userModel';
+import { CreateUserData, UserDocument } from '../types/user';
 
 export class UserRepository {
-  static findByEmail: any;
-  static createUser: any;
-  async findByEmail(email: string) {
-    return await User.findOne({ email });
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return await User.findOne({ email, isActive: true });
   }
 
-  async createUser(userData: {
-    profileImage: string;
-    fullName: string;
-    email: string;
-    phone: string;
-    password: string;
-    isActive: boolean;
-    location: object;
-  }) {
-    const user = new User(userData);
+  async findById(id: string): Promise<UserDocument | null> {
+    return await User.findById(id);
+  }
+
+  async findByGoogleId(googleId: string): Promise<UserDocument | null> {
+    return await User.findOne({ googleId, isActive: true });
+  }
+
+  async createUser(userData: CreateUserData): Promise<UserDocument> {
+    const user = new User({
+      ...userData,
+      isActive: userData.isActive ?? true,
+      location: userData.location ?? {},
+    });
     return await user.save();
   }
 
-  async findById(id: string) {
-    return await User.findById(id);
+  async updateUser(id: string, updateData: Partial<CreateUserData>): Promise<UserDocument | null> {
+    return await User.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+  }
+
+  async existsByEmail(email: string): Promise<boolean> {
+    const user = await User.findOne({ email });
+    return !!user;
+  }
+
+  async existsByGoogleId(googleId: string): Promise<boolean> {
+    const user = await User.findOne({ googleId });
+    return !!user;
   }
 }

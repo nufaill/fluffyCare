@@ -2,12 +2,14 @@ import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 interface UserData {
   _id: string;
-  name: string;
+  fullName: string;
   email: string;
   role: string;
+  profileImage: string;
 }
 
 interface UserState {
+  [x: string]: any;
   isAuthenticated: boolean;
   isLoading: boolean;
   userDatas: UserData | null;
