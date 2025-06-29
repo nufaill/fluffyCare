@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import logo from "@/assets/user/logo.png"
-import { resetPassword } from '@/services/user/authService';
+import { userResetPassword } from '@/services/user/authService';
+import { shopResetPassword } from '@/services/shop/authService';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface ResetPasswordFormProps {
@@ -26,8 +27,8 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     const [errors, setErrors] = useState<string[]>([]);
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-   const tokenFromUrl = searchParams.get('token');
-   const finalToken = token || tokenFromUrl;
+    const tokenFromUrl = searchParams.get('token');
+    const finalToken = token || tokenFromUrl;
 
     // Password validation
     const validatePassword = (pwd: string): string[] => {
@@ -66,12 +67,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
         setErrors([]);
 
         try {
-            await resetPassword({
+            await (role === 'user' ? userResetPassword : shopResetPassword)({
                 token,
                 password,
-                confirmPassword,
-                role
+                confirmPassword
             });
+
             setIsSuccess(true);
             console.log('Password reset successful:', { token, role });
         } catch (error) {
@@ -321,7 +322,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
                     {onBack && (
                         <div className="mt-6 text-center">
                             <button
-                                onClick={() => navigate('/login')}
+                                onClick={() => navigate('/shop/login')}
                                 className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
                             >
                                 Continue to Login

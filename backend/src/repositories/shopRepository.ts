@@ -42,7 +42,7 @@ export class ShopRepository {
         console.log("🔧 [ShopRepository] Finding user by reset token");
         return await Shop.findOne({
           resetPasswordToken: token,
-          resetPasswordExpires: { $gt: new Date() }     });
+          resetPasswordExpires: { $gt: new Date() } });
       }
     
       async updatePasswordAndClearToken(userId: Types.ObjectId, hashedPassword: string): Promise<ShopDocument | null> {

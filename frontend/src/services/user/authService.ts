@@ -29,7 +29,7 @@ export const registerUser = async (data: FormData | any) => {
     });
 
     toast.dismiss(loadingToast);
-    toast.success('Account created successfully! Welcome aboard! 🎉', {
+    toast.success('Account created successfully! Welcome aboard! 脂', {
       position: 'top-right',
       duration: 5000,
       style: {
@@ -43,7 +43,7 @@ export const registerUser = async (data: FormData | any) => {
   } catch (error) {
     toast.dismiss(loadingToast);
     const errorMessage = getErrorMessage(error);
-    
+
     toast.error(errorMessage, {
       position: 'top-right',
       duration: 5000,
@@ -88,13 +88,13 @@ export const logoutUser = async () => {
 
   try {
     const response = await userAxios.post('/logout');
-    
+
     // Clear local storage
     localStorage.removeItem('userToken');
     localStorage.removeItem('user');
 
     toast.dismiss(loadingToast);
-    toast.success('Logged out successfully! See you soon! 👋', {
+    toast.success('Logged out successfully! See you soon! 窓', {
       position: 'top-right',
       duration: 3000,
       style: {
@@ -107,28 +107,28 @@ export const logoutUser = async () => {
     return response.data;
   } catch (error) {
     toast.dismiss(loadingToast);
-    
+
     // Clear local storage even if API call fails
     localStorage.removeItem('userToken');
     localStorage.removeItem('user');
-    
+
 
     console.error('User logout error:', error);
     throw error;
   }
 };
-export const sendResetLink = async (email: string, role: 'user' | 'shop') => {
+export const userSendResetLink = async (email: string) => { // Removed role parameter
   const loadingToast = toast.loading('Sending reset link...', {
     position: 'top-right',
   });
 
   try {
-    const response = await userAxios.post('/forgot-password', { email }, { 
-      withCredentials: true 
+    const response = await userAxios.post('/forgot-password', { email }, {
+      withCredentials: true
     });
 
     toast.dismiss(loadingToast);
-    toast.success('Reset link sent to your email! 📧', {
+    toast.success('Reset link sent to your email! 透', {
       position: 'top-right',
       duration: 5000,
       style: {
@@ -142,7 +142,7 @@ export const sendResetLink = async (email: string, role: 'user' | 'shop') => {
   } catch (error) {
     toast.dismiss(loadingToast);
     const errorMessage = getErrorMessage(error);
-    
+
     toast.error(errorMessage, {
       position: 'top-right',
       duration: 5000,
@@ -159,11 +159,10 @@ export const sendResetLink = async (email: string, role: 'user' | 'shop') => {
 };
 
 // Fix resetPassword function
-export const resetPassword = async (data: {
+export const userResetPassword = async (data: { // Removed role from interface
   token: string;
   password: string;
   confirmPassword: string;
-  role: 'user' | 'shop';
 }) => {
   const loadingToast = toast.loading('Resetting password...', {
     position: 'top-right',
@@ -174,12 +173,12 @@ export const resetPassword = async (data: {
       token: data.token,
       password: data.password,
       confirmPassword: data.confirmPassword
-    }, { 
-      withCredentials: true 
+    }, {
+      withCredentials: true
     });
 
     toast.dismiss(loadingToast);
-    toast.success('Password reset successfully! 🎉', {
+    toast.success('Password reset successfully! 脂', {
       position: 'top-right',
       duration: 5000,
       style: {
@@ -193,7 +192,7 @@ export const resetPassword = async (data: {
   } catch (error) {
     toast.dismiss(loadingToast);
     const errorMessage = getErrorMessage(error);
-    
+
     toast.error(errorMessage, {
       position: 'top-right',
       duration: 5000,
@@ -213,7 +212,7 @@ export const resetPassword = async (data: {
 // Additional utility functions for better UX
 export const showValidationErrors = (errors: Record<string, string>) => {
   const errorMessages = Object.values(errors);
-  const message = errorMessages.length > 1 
+  const message = errorMessages.length > 1
     ? `Please fix ${errorMessages.length} form errors`
     : errorMessages[0];
 
@@ -225,7 +224,7 @@ export const showValidationErrors = (errors: Record<string, string>) => {
       color: '#DC2626',
       border: '1px solid #FECACA',
     },
-    icon: '⚠️',
+    icon: '笞ｸ',
   });
 };
 
@@ -238,6 +237,6 @@ export const showNetworkError = () => {
       color: '#DC2626',
       border: '1px solid #FECACA',
     },
-    icon: '🌐',
+    icon: '倹',
   });
 };

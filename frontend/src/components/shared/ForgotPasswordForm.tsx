@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Mail, ArrowLeft, Send } from 'lucide-react';
 import logo from "@/assets/user/logo.png"
 import { useNavigate } from 'react-router-dom';
-import { sendResetLink } from '@/services/user/authService';
+import { userSendResetLink } from '@/services/user/authService';
+import { shopSendResetLink } from '@/services/shop/authService';
 
 interface ForgotPasswordFormProps {
     role: 'user' | 'shop';
@@ -19,7 +20,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ role, onBack })
     setIsLoading(true);
 
     try {
-        await sendResetLink(email, role);
+       await (role === 'user' ? userSendResetLink : shopSendResetLink)(email);
         setIsSubmitted(true);
         console.log('Reset link sent for:', { email, role });
     } catch (error) {
@@ -60,7 +61,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ role, onBack })
 
                         <div className="space-y-4">
                             <button
-                                onClick={() => navigate('/login')}
+                                onClick={() => navigate('/shop/login')}
                                 className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
                             >
                                 Back to Login

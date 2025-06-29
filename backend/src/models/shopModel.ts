@@ -18,6 +18,8 @@ const shopSchema = new Schema<ShopDocument>(
       lat: { type: Number },
       lng: { type: Number },
     },
+    resetPasswordToken: { type: String },
+   resetPasswordExpires: { type: Date },
   },
   {
     timestamps: true,

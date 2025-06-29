@@ -3,10 +3,11 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import "reflect-metadata";
-import { initializeDatabase } from "@config/connectDB"; 
+import { initializeDatabase } from "@config/connectDB";
 import authRoutes from './routes/auth.route';
+import shopRoutes from './routes/shop.route';
 
-dotenv.config(); 
+dotenv.config();
 
 const app = express();
 
@@ -15,7 +16,7 @@ async function startApp(): Promise<void> {
 
   // Middleware for cross-origin resource sharing
   app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173", 
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true, // allow cookies and headers
   }));
 
@@ -25,6 +26,7 @@ async function startApp(): Promise<void> {
 
   // Routes
   app.use("/user", authRoutes);
+  app.use("/shop", shopRoutes);
 
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {

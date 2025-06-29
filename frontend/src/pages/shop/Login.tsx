@@ -1,29 +1,26 @@
-// src/pages/shop/Login.tsx
 import AuthLogin from "@/components/shared/AuthLogin";
 import loginImage from '@/assets/shop/imageLogin.png';
-import shopLogo from '@/assets/user/logo.png'; 
+import shopLogo from '@/assets/user/logo.png';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { addShop } from "@/redux/slices/shop.slice";
+import { loginShop } from "@/services/shop/authService";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (formData: { email: string; password: string }) => {
     try {
-      console.log('Shop Login Form Submitted:', formData);
-      
-      // Example API call:
-      // const response = await shopLoginAPI(formData);
-      // if (response.success) {
-      //   navigate('/shop/dashboard');
-      // }
-      
-     
-      setTimeout(() => {
+      const response = await loginShop(formData);
+      if (response.success) {
+        dispatch(addShop(response.shop));
+        // Optional: localStorage.setItem('shopToken', response.token);
         navigate('/shop/dashboard');
-      }, 2000);
+      }
     } catch (error) {
       console.error('Shop login failed:', error);
-      throw error; 
+      throw error;
     }
   };
 

@@ -167,7 +167,7 @@ const AuthLogin: React.FC<AuthLoginProps> = ({
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
@@ -225,9 +225,16 @@ const AuthLogin: React.FC<AuthLoginProps> = ({
                 <input type="checkbox" className="mr-2 rounded border-gray-300 focus:ring-black" />
                 Remember me
               </label>
+              {role !== "shop" && (
               <Link to="/forgot-password" className="text-sm text-black hover:underline">
                 Forgot password?
               </Link>
+              )}
+              {role !== "user" && (
+              <Link to="/shop/forgot-password" className="text-sm text-black hover:underline">
+                Forgot password?
+              </Link>
+              )}
             </div>
 
             <button

@@ -1,58 +1,99 @@
+// src/pages/shop/Signup.tsx
+import React from 'react';
 import AuthSignup from "@/components/shared/AuthSignup";
 import signupImage from '@/assets/authImages/signup-image.png';
-import shopLogo from '@/assets/user/logo.png'; 
+import shopLogo from '@/assets/user/logo.png';
 import { useNavigate } from 'react-router-dom';
+import { registerShop } from "@/services/shop/authService";
+import { StorageUtils } from '@/types/shop.type';
 import type { SignupForm } from "@/types/auth.type";
 
-const Signup: React.FC = () => {
+interface CloudinaryUploadResponse {
+  secure_url: string;
+  error?: {
+    message: string;
+  };
+}
+
+interface CloudinaryErrorResponse {
+  error?: {
+    message: string;
+  };
+}
+
+const ShopSignup: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleSubmit = async (formData: SignupForm) => {
+  const uploadToCloudinary = async (file: File, type: 'logo' | 'certificate'): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      const errorData: CloudinaryErrorResponse = await response.json();
+      throw new Error(errorData.error?.message || `${type} upload failed`);
+    }
+
+    const data: CloudinaryUploadResponse = await response.json();
+    return data.secure_url;
+  };
+
+  const handleSubmit = async (formData: SignupForm): Promise<void> => {
     try {
-      // Type guard to ensure we have shop form data
       if (formData.mode !== 'shop') {
         throw new Error('Invalid form mode for shop signup');
       }
 
-      // Your shop signup API call here
-      console.log('Shop Signup Form Submitted:', formData);
-      
-      // Create FormData for file uploads
-      const submitData = new FormData();
-      
-      // Add basic fields
-      submitData.append('name', formData.name);
-      submitData.append('email', formData.email);
-      submitData.append('phone', formData.phone);
-      submitData.append('password', formData.password);
-      submitData.append('city', formData.city);
-      submitData.append('streetAddress', formData.streetAddress);
-      submitData.append('buildingNumber', formData.buildingNumber);
-      submitData.append('description', formData.description);
-      
-    
+      let logoUrl = "";
+      let certificateUrl = "";
+
+      // Upload shop logo to Cloudinary
       if (formData.logo instanceof File) {
-        submitData.append('logo', formData.logo);
+        logoUrl = await uploadToCloudinary(formData.logo, 'logo');
       }
+
+      // Upload shop certificate to Cloudinary
       if (formData.certificateUrl instanceof File) {
-        submitData.append('certificateUrl', formData.certificateUrl);
+        certificateUrl = await uploadToCloudinary(formData.certificateUrl, 'certificate');
       }
+
+      // Construct shop data with proper typing
+      const shopData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        city: formData.city,
+        streetAddress: formData.streetAddress,
+        buildingNumber: formData.buildingNumber,
+        description: formData.description,
+        logo: logoUrl,
+        certificateUrl,
+        location: formData.location || { lat: undefined, lng: undefined },
+      };
+
+      // Call shop service to register
+      await registerShop(shopData);
       
-      // Add location if present
-      if (formData.location) {
-        submitData.append('location', JSON.stringify(formData.location));
-      }
+      // Store email for verification using type-safe utility
+      StorageUtils.setPendingVerificationEmail(formData.email);
       
-      // Example API call:
-      // const response = await shopSignupAPI(submitData);
-      // if (response.success) {
-      //   navigate('/shop/login');
-      // }
-      navigate('/shop/signup');
-    
+      navigate('/shop/verify-otp', {
+        state: { email: formData.email },
+        replace: true
+      });
+
     } catch (error) {
-      console.error('Shop signup failed:', error);
-      throw error; // Re-throw to handle in AuthSignup component
+      console.error("Shop signup failed:", error);
+      // Error handling is done in the registerShop service
     }
   };
 
@@ -69,4 +110,4 @@ const Signup: React.FC = () => {
   );
 };
 
-export default Signup;
+export default ShopSignup;

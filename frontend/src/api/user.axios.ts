@@ -1,6 +1,6 @@
-import { store } from '@/redux/store';
+// import { store } from '@/redux/store';
 import axios from 'axios';
-import toast from 'react-hot-toast';
+// import toast from 'react-hot-toast';
 
 const userAxios = axios.create({
   baseURL: import.meta.env.VITE_SERVER_URL + '/user',

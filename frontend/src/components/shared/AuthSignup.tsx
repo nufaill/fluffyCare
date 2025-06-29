@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 
 import AuthImageSection from "@/components/shared/AuthImageSection"
@@ -143,15 +141,6 @@ export default function AuthSignup({
       } else if (shopForm.buildingNumber.length > 10) {
         newErrors.buildingNumber = "Building number must be less than 10 characters"
       }
-
-      if (!shopForm.description) {
-        newErrors.description = "Description is required"
-      } else if (shopForm.description.length < 10) {
-        newErrors.description = "Description must be at least 10 characters"
-      } else if (shopForm.description.length > 300) {
-        newErrors.description = "Description must be less than 300 characters"
-      }
-
       if (!shopForm.logo) {
         newErrors.logo = "Shop logo is required"
       }
