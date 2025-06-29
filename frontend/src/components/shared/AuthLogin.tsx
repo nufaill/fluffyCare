@@ -225,12 +225,12 @@ const AuthLogin: React.FC<AuthLoginProps> = ({
                 <input type="checkbox" className="mr-2 rounded border-gray-300 focus:ring-black" />
                 Remember me
               </label>
-              {role !== "shop" && (
+              {role == "user" && (
               <Link to="/forgot-password" className="text-sm text-black hover:underline">
                 Forgot password?
               </Link>
               )}
-              {role !== "user" && (
+              {role == "shop" && (
               <Link to="/shop/forgot-password" className="text-sm text-black hover:underline">
                 Forgot password?
               </Link>
@@ -262,7 +262,7 @@ const AuthLogin: React.FC<AuthLoginProps> = ({
             </Link>
           </div>
 
-          {role !== "shop" && (
+          {role == "user" && (
             <div className="mt-6 text-center">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">

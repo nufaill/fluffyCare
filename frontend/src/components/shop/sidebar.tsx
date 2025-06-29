@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { ChevronRight, Sparkles } from 'lucide-react';
-import { Badge } from '../ui/badge';
+import { Badge } from '../ui/Badge';
 import { Progress } from '../ui/Progress';
 
 export interface SidebarItem {

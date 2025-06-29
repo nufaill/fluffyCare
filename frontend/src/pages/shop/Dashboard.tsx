@@ -8,8 +8,8 @@ import { RecentActivity } from "@/components/ui/recent-activity"
 import { WeatherWidget } from "@/components/ui/weather-widget"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/Progress"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
+import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/button"
 import {
   LayoutDashboard,

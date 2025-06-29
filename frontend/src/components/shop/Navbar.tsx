@@ -2,10 +2,10 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Search, Bell, ChevronDown, Moon, Sun, Menu } from 'lucide-react'
+import { Search, Bell, ChevronDown, Menu } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,8 +13,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/Badge"
 
 interface NavbarProps {
   className?: string
