@@ -1,5 +1,5 @@
 // services/shop/authService.ts
-import shopAxios from "@/api/shop.axios";
+import ShopAxios from '@/api/shop.axios';
 import toast from 'react-hot-toast';
 import {
   type ShopRegisterData,
@@ -34,7 +34,7 @@ export const registerShop = async (data: ShopRegisterData): Promise<ShopAuthResp
   });
 
   try {
-    const response: AxiosResponse<ShopAuthResponse> = await shopAxios.post('/signup', data, {
+    const response: AxiosResponse<ShopAuthResponse> = await ShopAxios.post('/signup', data, {
       headers: {
         "Content-Type": "application/json"
       }
@@ -76,7 +76,7 @@ export const loginShop = async (data: ShopLoginData): Promise<ShopAuthResponse> 
   console.log('[loginShop] Sending login data:', data);
 
   try {
-    const response: AxiosResponse<ShopAuthResponse> = await shopAxios.post('/login', data);
+    const response: AxiosResponse<ShopAuthResponse> = await ShopAxios.post('/login', data);
 
     console.log('[loginShop] Login successful, response:', response.data);
 
@@ -149,7 +149,7 @@ export const logoutShop = async (): Promise<{ success: boolean }> => {
 
 export const verifyOtp = async (data: OtpVerificationData): Promise<OtpResponse> => {
   try {
-    const response: AxiosResponse<OtpResponse> = await shopAxios.post('/shop/verify-otp', data);
+    const response: AxiosResponse<OtpResponse> = await ShopAxios.post('/shop/verify-otp', data);
     return response.data;
   } catch (error) {
     const errorMessage = ErrorHandler.extractMessage(error);
@@ -160,7 +160,7 @@ export const verifyOtp = async (data: OtpVerificationData): Promise<OtpResponse>
 
 export const resendOtp = async (data: ResendOtpData): Promise<OtpResponse> => {
   try {
-    const response: AxiosResponse<OtpResponse> = await shopAxios.post('/shop/resend-otp', data);
+    const response: AxiosResponse<OtpResponse> = await ShopAxios.post('/shop/resend-otp', data);
     return response.data;
   } catch (error) {
     const errorMessage = ErrorHandler.extractMessage(error);
@@ -174,7 +174,7 @@ export const shopSendResetLink = async (email: string) => {
   });
 
   try {
-    const response = await shopAxios.post('/shop/forgot-password', { email }, {
+    const response = await ShopAxios.post('/shop/forgot-password', { email }, {
       withCredentials: true
     });
 
@@ -220,7 +220,7 @@ export const shopResetPassword = async (data: {
   });
 
   try {
-    const response = await shopAxios.post('/shop/reset-password', {
+    const response = await ShopAxios.post('/shop/reset-password', {
       token: data.token,
       password: data.password,
       confirmPassword: data.confirmPassword

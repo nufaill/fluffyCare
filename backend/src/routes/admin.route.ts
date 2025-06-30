@@ -2,6 +2,7 @@
 import express from "express";
 import { AdminAuthController } from "../controllers/admin/admin.controller";
 import { UserController } from '../controllers/user/user.controller';
+import { ShopController } from '../controllers/shop/shop.controller';
 import { validateRequest } from "../middlewares/validateRequest";
 import { loginSchema } from "../validations/login.validation";
 
@@ -10,6 +11,7 @@ import { AdminRepository } from "../repositories/adminRepository";
 import { JwtService } from "../services/jwt/jwtService";
 import { AuthService } from "../services/admin/adminService";
 import { UserRepository } from "../repositories/userRepository";
+import { ShopRepository } from "../repositories/shopRepository";
 
 const router = express.Router();
 
@@ -20,11 +22,13 @@ const authService = new AuthService(adminRepository, jwtService);
 const adminAuthController = new AdminAuthController(authService);
 const userRepository = new UserRepository();
 const adminUserController = new UserController(userRepository);
-
+const shopRepository = new ShopRepository();
+const adminShopCotroller = new ShopController(shopRepository)
 // Public routes
 router.post("/login", validateRequest(loginSchema), adminAuthController.login);
-router.get('/users', adminUserController.getAllUsers);
-router.patch('/users/:userId/status', adminUserController.updateUserStatus);
+router.get('/customer-pets-detail', adminUserController.getAllUsers);
+router.patch('/customer-pets-detail/:userId/status', adminUserController.updateUserStatus);
+router.get('/shops', adminShopCotroller.getAllShops);
 router.post("/logout", adminAuthController.logout);
 
 export default router;

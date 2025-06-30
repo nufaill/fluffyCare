@@ -1,11 +1,11 @@
 // src/services/admin/adminService.ts
-import adminAxios from "@/api/admin.axios";
+import AdminAxios from "@/api/admin.axios";
 import axios from "axios";
 import toast from 'react-hot-toast';
 
 export const loginAdmin = async (data: { email: string; password: string }) => {
   try {
-    const response = await adminAxios.post('/login', data);
+    const response = await AdminAxios.post('/login', data);
     if (response.data.success) {
       // Store admin data and token
       localStorage.setItem('adminToken', response.data.token);
@@ -32,7 +32,7 @@ export const logoutAdmin = async () => {
     position: 'top-right'
   });
   try {
-    await adminAxios.post('/logout');
+    await AdminAxios.post('/logout');
     // Clear local storage
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminDatas');
@@ -62,7 +62,7 @@ export const logoutAdmin = async () => {
 
 export const getAllUsers = async () => {
   try {
-      const response = await adminAxios.get(`/customer-pets-detail`);
+      const response = await AdminAxios.get(`/customer-pets-detail`);
       
       if (response.status !== 200) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -82,7 +82,7 @@ export const getAllUsers = async () => {
 }
 export const updateUserStatus = async (userId: string, isActive: boolean) => {
  try {
-      const response = await adminAxios.patch(`/customer-pets-detail/${userId}/status`, {
+      const response = await AdminAxios.patch(`/customer-pets-detail/${userId}/status`, {
         isActive
       });
       
@@ -105,7 +105,7 @@ export const updateUserStatus = async (userId: string, isActive: boolean) => {
 
 export const getAllShops = async () => {
   try {
-      const response = await adminAxios.get(`/shops`);
+      const response = await AdminAxios.get(`/shops`);
       
       if (response.status !== 200) {
         throw new Error(`HTTP error! status: ${response.status}`);

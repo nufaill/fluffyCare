@@ -1,5 +1,5 @@
 // src/services/userService/authService.ts
-import userAxios from "@/api/user.axios";
+import Useraxios from "@/api/user.axios";
 import toast from 'react-hot-toast';
 
 // Helper function to extract error message
@@ -22,7 +22,7 @@ export const registerUser = async (data: FormData | any) => {
   });
 
   try {
-    const response = await userAxios.post('/signup', data, {
+    const response = await Useraxios.post('/signup', data, {
       headers: {
         "Content-Type": "application/json"
       }
@@ -62,7 +62,7 @@ export const registerUser = async (data: FormData | any) => {
 export const loginUser = async (data: { email: string; password: string; role?: string }) => {
 
   try {
-    const response = await userAxios.post('/login', data);
+    const response = await Useraxios.post('/login', data);
 
 
     // Store user data if needed
@@ -87,7 +87,7 @@ export const logoutUser = async () => {
   });
 
   try {
-    const response = await userAxios.post('/logout');
+    const response = await Useraxios.post('/logout');
 
     // Clear local storage
     localStorage.removeItem('userToken');
@@ -123,7 +123,7 @@ export const userSendResetLink = async (email: string) => { // Removed role para
   });
 
   try {
-    const response = await userAxios.post('/forgot-password', { email }, {
+    const response = await Useraxios.post('/forgot-password', { email }, {
       withCredentials: true
     });
 
@@ -169,7 +169,7 @@ export const userResetPassword = async (data: { // Removed role from interface
   });
 
   try {
-    const response = await userAxios.post('/reset-password', {
+    const response = await Useraxios.post('/reset-password', {
       token: data.token,
       password: data.password,
       confirmPassword: data.confirmPassword

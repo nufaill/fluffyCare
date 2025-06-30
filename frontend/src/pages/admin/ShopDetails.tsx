@@ -49,6 +49,10 @@ interface Shop {
   phone: string
   rating: number
   totalServices: number
+  city: string;
+  streetAddress: string;
+  buildingNumber: string;
+  certificateUrl: string;
   joinDate: string
   lastActive: string
   totalRevenue: number
@@ -72,16 +76,8 @@ const ShopDetails: React.FC = () => {
       setLoading(true)
       try {
         const response = await getAllShops()
-        setShops(response.data || []) // Assuming response.data contains the shops array
-        toast.success('Shops loaded successfully!', {
-          position: 'top-right',
-          duration: 3000,
-        })
+        setShops(response.data || []) 
       } catch (error) {
-        toast.error('Failed to load shops', {
-          position: 'top-right',
-          duration: 4000,
-        })
         console.error('Error fetching shops:', error)
       } finally {
         setLoading(false)
@@ -242,7 +238,7 @@ const ShopDetails: React.FC = () => {
             <p className="font-medium text-gray-900 dark:text-gray-100">{record.name}</p>
             <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
               <MapPin className="h-3 w-3" />
-              <span>{record.address}</span>
+              <span>{record.city},{record.streetAddress}</span>
             </div>
             <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
               <Star className="h-3 w-3 text-yellow-400 fill-current" />
@@ -301,7 +297,7 @@ const ShopDetails: React.FC = () => {
       align: "right",
       render: (_value: number, record: Shop) => (
         <div className="text-right space-y-1">
-          <div className="font-medium text-gray-900 dark:text-gray-100">${record.totalRevenue.toLocaleString()}</div>
+          <div className="font-medium text-gray-900 dark:text-gray-100">₹{record.totalRevenue ||0}</div>
           <div className="flex items-center justify-end gap-1 text-sm text-gray-500 dark:text-gray-400">
             <Users className="h-3 w-3" />
             <span>{record.totalServices} services</span>
@@ -315,10 +311,10 @@ const ShopDetails: React.FC = () => {
     {
       key: "joinDate",
       title: "Join Date",
-      dataIndex: "joinDate",
+      dataIndex: "createdAt",
       sortable: true,
       render: (value: string) => (
-        <span className="text-gray-900 dark:text-gray-100">{new Date(value).toLocaleDateString()}</span>
+        <span className="text-gray-900 dark:text-gray-100">{typeof value === 'string' ? new Date(value).toLocaleDateString() : 'N/A'}</span>
       ),
     },
     {
@@ -337,40 +333,6 @@ const ShopDetails: React.FC = () => {
             <Eye className="h-3 w-3 mr-1" />
             Details
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <DropdownMenuItem
-                onClick={() => handleEditShop(record)}
-                className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Shop
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleViewDetails(record)}
-                className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDeleteShop(record)}
-                className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Shop
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       ),
     },
@@ -468,7 +430,7 @@ const ShopDetails: React.FC = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      ${totalRevenue.toLocaleString()}
+                      ₹{totalRevenue||0}
                     </p>
                   </div>
                   <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
