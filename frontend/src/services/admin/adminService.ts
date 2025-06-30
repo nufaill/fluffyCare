@@ -27,6 +27,7 @@ export const loginAdmin = async (data: { email: string; password: string }) => {
     throw error;
   }
 };
+
 export const logoutAdmin = async () => {
   const loadingToast = toast.loading('Signing you out...', {
     position: 'top-right'
@@ -80,6 +81,7 @@ export const getAllUsers = async () => {
         }
     }
 }
+
 export const updateUserStatus = async (userId: string, isActive: boolean) => {
  try {
       const response = await AdminAxios.patch(`/customer-pets-detail/${userId}/status`, {
@@ -116,6 +118,29 @@ export const getAllShops = async () => {
       console.error('Failed to fetch Shop:', error);
       if (axios.isAxiosError(error)) {
             const message = error.response?.data?.message || "Failed to fetch shops.";
+            console.error(message)
+            throw new Error(message);
+        } else {
+            throw new Error("An unexpected error occurred.");
+        }
+    }
+}
+
+export const updateShopStatus = async (shopId: string, isActive: boolean) => {
+ try {
+      const response = await AdminAxios.patch(`/shops/${shopId}/status`, {
+        isActive
+      });
+      
+      if (response.status !== 200) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.data;
+    } catch (error) {
+      console.error('Failed to update shop status:', error);
+      if (axios.isAxiosError(error)) {
+            const message = error.response?.data?.message || "Failed to update status shops";
             console.error(message)
             throw new Error(message);
         } else {

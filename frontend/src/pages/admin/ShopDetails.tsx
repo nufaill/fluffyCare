@@ -30,13 +30,13 @@ import {
   Phone,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { getAllShops } from "@/services/admin/adminService"
+import { getAllShops, updateShopStatus } from "@/services/admin/adminService"
 import toast from 'react-hot-toast'
 
 type VerificationStatus = "approved" | "rejected" | "pending"
 
 interface Shop {
-  id: string
+  _id: string
   name: string
   logo?: string
   email: string
@@ -75,7 +75,7 @@ const ShopDetails: React.FC = () => {
       setLoading(true)
       try {
         const response = await getAllShops()
-        setShops(response.data || []) 
+        setShops(response.data || [])
       } catch (error) {
         console.error('Error fetching shops:', error)
       } finally {
@@ -140,24 +140,55 @@ const ShopDetails: React.FC = () => {
   }
 
   const handleToggleActive = async (shopId: string, isActive: boolean): Promise<void> => {
+    console.log('Toggle active called with:', { shopId, isActive });
     setLoading(true)
     try {
-      console.log(`Shop ${shopId} set to ${isActive ? "active" : "inactive"}`)
-      toast.success(`Shop status updated successfully!`, {
-        position: 'top-right',
-        duration: 3000,
-      })
-    } catch (error) {
-      toast.error('Failed to update shop status', {
+      const response = await updateShopStatus(shopId, isActive)
+
+      if (response.success) {
+        setShops(prevShops =>
+          prevShops.map(shop =>
+            shop._id === shopId
+              ? { ...shop, isActive: isActive }
+              : shop
+          )
+        )
+
+        toast.success(
+          `Shop ${isActive ? 'activated' : 'deactivated'} successfully!`,
+          {
+            position: 'top-right',
+            duration: 3000,
+            style: {
+              background: isActive ? '#DBEAFE' : '#FEE2E2',
+              color: isActive ? '#1D4ED8' : '#DC2626',
+              border: isActive ? '1px solid #93C5FD' : '1px solid #F87171'
+            }
+          }
+        )
+      } else {
+        throw new Error(response.message || 'Failed to update shop status')
+      }
+    } catch (error: any) {
+      console.error('Error updating shop status:', error)
+
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        'Failed to update shop status. Please try again.'
+
+      toast.error(errorMessage, {
         position: 'top-right',
         duration: 4000,
+        style: {
+          background: '#FEE2E2',
+          color: '#DC2626',
+          border: '1px solid #F87171'
+        }
       })
-      console.error('Error updating shop status:', error)
     } finally {
       setLoading(false)
     }
   }
-
   const handleViewDetails = (shop: Shop): void => {
     setSelectedShop(shop)
     setIsModalOpen(true)
@@ -277,7 +308,7 @@ const ShopDetails: React.FC = () => {
       render: (_value: boolean, record: Shop) => (
         <Switch
           checked={record.isActive}
-          onCheckedChange={(checked: boolean) => handleToggleActive(record.id, checked)}
+          onCheckedChange={(checked: boolean) => handleToggleActive(record._id, checked)}
           disabled={loading}
           className="data-[state=checked]:bg-gray-900 dark:data-[state=checked]:bg-gray-100"
         />
@@ -291,7 +322,7 @@ const ShopDetails: React.FC = () => {
       align: "right",
       render: (_value: number, record: Shop) => (
         <div className="text-right space-y-1">
-          <div className="font-medium text-gray-900 dark:text-gray-100">₹{record.totalRevenue ||0}</div>
+          <div className="font-medium text-gray-900 dark:text-gray-100">₹{record.totalRevenue || 0}</div>
           <div className="flex items-center justify-end gap-1 text-sm text-gray-500 dark:text-gray-400">
             <Users className="h-3 w-3" />
             <span>{record.totalServices} services</span>
@@ -420,7 +451,7 @@ const ShopDetails: React.FC = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      ₹{totalRevenue||0}
+                      ₹{totalRevenue || 0}
                     </p>
                   </div>
                   <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">

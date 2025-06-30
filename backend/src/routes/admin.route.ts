@@ -29,6 +29,7 @@ router.post("/login", validateRequest(loginSchema), adminAuthController.login);
 router.get('/customer-pets-detail', adminUserController.getAllUsers);
 router.patch('/customer-pets-detail/:userId/status', adminUserController.updateUserStatus);
 router.get('/shops', adminShopCotroller.getAllShops);
+router.patch('/shops/:shopId/status', adminShopCotroller.updateShopStatus);
 router.post("/logout", adminAuthController.logout);
 
 export default router;
