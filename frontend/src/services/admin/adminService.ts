@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 export const loginAdmin = async (data: { email: string; password: string }) => {
   try {
-    const response = await adminAxios.post('/admin/login', data);
+    const response = await adminAxios.post('/login', data);
     if (response.data.success) {
       // Store admin data and token
       localStorage.setItem('adminToken', response.data.token);
@@ -32,7 +32,7 @@ export const logoutAdmin = async () => {
     position: 'top-right'
   });
   try {
-    await adminAxios.post('/admin/logout');
+    await adminAxios.post('/logout');
     // Clear local storage
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminDatas');
@@ -62,7 +62,7 @@ export const logoutAdmin = async () => {
 
 export const getAllUsers = async () => {
   try {
-      const response = await adminAxios.get(`/admin/customer-pets-detail`);
+      const response = await adminAxios.get(`/customer-pets-detail`);
       
       if (response.status !== 200) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -82,7 +82,7 @@ export const getAllUsers = async () => {
 }
 export const updateUserStatus = async (userId: string, isActive: boolean) => {
  try {
-      const response = await adminAxios.patch(`/admin/customer-pets-detail/${userId}/status`, {
+      const response = await adminAxios.patch(`/customer-pets-detail/${userId}/status`, {
         isActive
       });
       
@@ -105,7 +105,7 @@ export const updateUserStatus = async (userId: string, isActive: boolean) => {
 
 export const getAllShops = async () => {
   try {
-      const response = await adminAxios.get(`/admin/shops`);
+      const response = await adminAxios.get(`/shops`);
       
       if (response.status !== 200) {
         throw new Error(`HTTP error! status: ${response.status}`);

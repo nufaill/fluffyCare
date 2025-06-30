@@ -25,14 +25,14 @@ const shopAuthController = new ShopAuthController(authService);
 const authMiddleware = new AuthMiddleware(jwtService);
 
 // Public routes
-router.post("/shop/signup", shopAuthController.register);
-router.post("/shop/login", validateRequest(loginSchema), shopAuthController.login);
-router.post("/shop/verify-otp", shopAuthController.verifyOtp);
-router.post("/shop/resend-otp", shopAuthController.resendOtp);
-router.post('/shop/forgot-password', shopAuthController.sendResetLink);
-router.post('/shop/reset-password' , shopAuthController.resetPassword);
-router.post("/shop/refresh", shopAuthController.refreshToken);
-router.post("/shop/logout", shopAuthController.logout);
+router.post("/signup", shopAuthController.register);
+router.post("/login", validateRequest(loginSchema), shopAuthController.login);
+router.post("/verify-otp", shopAuthController.verifyOtp);
+router.post("/resend-otp", shopAuthController.resendOtp);
+router.post('/forgot-password', shopAuthController.sendResetLink);
+router.post('/reset-password' , shopAuthController.resetPassword);
+router.post("/refresh", shopAuthController.refreshToken);
+router.post("/logout", shopAuthController.logout);
 
 // Protected route
 router.get("/me", authMiddleware.authenticate, shopAuthController.me);

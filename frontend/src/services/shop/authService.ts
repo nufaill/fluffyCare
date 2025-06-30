@@ -34,7 +34,7 @@ export const registerShop = async (data: ShopRegisterData): Promise<ShopAuthResp
   });
 
   try {
-    const response: AxiosResponse<ShopAuthResponse> = await shopAxios.post('/shop/signup', data, {
+    const response: AxiosResponse<ShopAuthResponse> = await shopAxios.post('/signup', data, {
       headers: {
         "Content-Type": "application/json"
       }
@@ -76,7 +76,7 @@ export const loginShop = async (data: ShopLoginData): Promise<ShopAuthResponse> 
   console.log('[loginShop] Sending login data:', data);
 
   try {
-    const response: AxiosResponse<ShopAuthResponse> = await shopAxios.post('/shop/login', data);
+    const response: AxiosResponse<ShopAuthResponse> = await shopAxios.post('/login', data);
 
     console.log('[loginShop] Login successful, response:', response.data);
 

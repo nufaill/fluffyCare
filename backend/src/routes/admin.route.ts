@@ -22,9 +22,9 @@ const userRepository = new UserRepository();
 const adminUserController = new UserController(userRepository);
 
 // Public routes
-router.post("/admin/login", validateRequest(loginSchema), adminAuthController.login);
+router.post("/login", validateRequest(loginSchema), adminAuthController.login);
 router.get('/users', adminUserController.getAllUsers);
 router.patch('/users/:userId/status', adminUserController.updateUserStatus);
-router.post("/admin/logout", adminAuthController.logout);
+router.post("/logout", adminAuthController.logout);
 
 export default router;
