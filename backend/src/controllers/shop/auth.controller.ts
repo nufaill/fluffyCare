@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import { AuthService } from "../../services/shop/authService";
 import { HTTP_STATUS, SUCCESS_MESSAGES } from "../../shared/constant";
 import { CustomError } from "../../util/CustomerError";
+import { setAuthCookies } from "util/cookie-helper";
 
 export interface ShopAuthRequest extends Request {
   shop?: {
@@ -146,15 +147,13 @@ export class ShopAuthController {
 
       const result = await this.authService.login({ email, password });
 
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken)
+
       // Return tokens in response body instead of cookies
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: "Login successful",
         shop: result.shop,
-        tokens: {
-          accessToken: result.tokens.accessToken,
-          refreshToken: result.tokens.refreshToken
-        }
       });
     } catch (error) {
       console.error("❌ [ShopAuthController] Login failed:", error);

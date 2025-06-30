@@ -15,10 +15,9 @@ const app = express();
 async function startApp(): Promise<void> {
   await initializeDatabase();
 
-  // Middleware for cross-origin resource sharing
   app.use(cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true, // allow cookies and headers
+    credentials: true, 
   }));
 
   // Middleware to parse JSON and cookies
