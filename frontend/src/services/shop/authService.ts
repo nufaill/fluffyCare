@@ -123,7 +123,7 @@ export const logoutShop = async (): Promise<{ success: boolean }> => {
     console.log('[logoutShop] Cleared shop localStorage');
 
     toast.dismiss(loadingToast);
-    toast.success('Logged out successfully! See you soon! 窓', {
+    toast.success('Logged out successfully! See you soon!', {
       position: 'top-right',
       duration: 3000,
       style: {

@@ -13,7 +13,24 @@ export interface Admin {
   createdAt: Date;
   updatedAt: Date;
 }
+export interface AuthResponse {
+  admin: {
+    _id: string;
+    fullName: string;
+    email: string;
+  };
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
 
+export interface JwtPayload {
+  userId: string;
+  email: string;
+  iat?: number;
+  exp?: number;
+}
 export interface AdminDocument extends Admin, Document {
   _id: Types.ObjectId;
 }

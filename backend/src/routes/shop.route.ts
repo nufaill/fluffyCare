@@ -29,6 +29,8 @@ router.post("/shop/signup", shopAuthController.register);
 router.post("/shop/login", validateRequest(loginSchema), shopAuthController.login);
 router.post("/shop/verify-otp", shopAuthController.verifyOtp);
 router.post("/shop/resend-otp", shopAuthController.resendOtp);
+router.post('/shop/forgot-password', shopAuthController.sendResetLink);
+router.post('/shop/reset-password' , shopAuthController.resetPassword);
 router.post("/shop/refresh", shopAuthController.refreshToken);
 router.post("/shop/logout", shopAuthController.logout);
 

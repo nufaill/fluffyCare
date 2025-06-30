@@ -2,6 +2,8 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { useDispatch } from "react-redux"
 import { Search, Bell, ChevronDown, Menu } from 'lucide-react'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -14,13 +16,16 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/Badge"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/redux/store"
+import { removeShop } from "@/redux/slices/shop.slice"
+import { logoutShop } from "@/services/shop/authService"
 
 interface NavbarProps {
   className?: string
   logoText?: string
   logoIcon?: React.ReactNode
   searchPlaceholder?: string
-  name?: string
   userAvatar?: string
   userRole?: string
   notificationCount?: number
@@ -35,7 +40,6 @@ export function Navbar({
   logoText = "fluffyCare",
   logoIcon = "🐾",
   searchPlaceholder = "Search anything...",
-  name = "pet hug",
   userAvatar,
   userRole = "Pet Care Specialist",
   notificationCount = 3,
@@ -45,6 +49,40 @@ export function Navbar({
   onMenuToggle,
 }: NavbarProps) {
   const [searchFocused, setSearchFocused] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  
+  // Get shop data from Redux store
+  const { shopData: shop } = useSelector((state: RootState) => state.shop)
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+
+  // Use shop name from Redux store or fallback to prop
+  const displayName = shop?.name || "Shop Owner"
+  const displayRole = shop ? "Shop Owner" : userRole
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return // Prevent multiple logout attempts
+    
+    setIsLoggingOut(true)
+    try {
+      // Call logout API
+      await logoutShop()
+      
+      // Clear shop data from Redux store
+      dispatch(removeShop())
+      
+      // Navigate to login page
+      navigate('/shop/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+      
+      // Even if API call fails, clear local state and navigate
+      dispatch(removeShop())
+      navigate('/shop/login')
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
 
   return (
     <header
@@ -117,16 +155,16 @@ export function Navbar({
             >
               <div className="relative">
                 <Avatar className="h-9 w-9 ring-2 ring-blue-100 dark:ring-blue-900">
-                  <AvatarImage src={userAvatar || "/placeholder.svg?height=36&width=36"} />
+                  <AvatarImage src={shop?.logo || userAvatar || "/placeholder.svg?height=36&width=36"} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold">
-                    {name.slice(0, 2).toUpperCase()}
+                    {displayName.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-400 rounded-full border-2 border-white dark:border-gray-900"></div>
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{userRole}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{displayName}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{displayRole}</p>
               </div>
               <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
             </Button>
@@ -134,14 +172,17 @@ export function Navbar({
           <DropdownMenuContent align="end" className="w-56 p-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3 p-2 mb-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={userAvatar || "/placeholder.svg?height=40&width=40"} />
+                <AvatarImage src={shop?.logo || userAvatar || "/placeholder.svg?height=40&width=40"} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                  {name.slice(0, 2).toUpperCase()}
+                  {displayName.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{userRole}</p>
+                <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{displayName}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{displayRole}</p>
+                {shop?.email && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{shop.email}</p>
+                )}
               </div>
             </div>
             <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
@@ -155,8 +196,11 @@ export function Navbar({
               💳 Billing & Plans
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
-            <DropdownMenuItem className="cursor-pointer text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20">
-              🚪 Sign Out
+            <DropdownMenuItem 
+              onClick={handleLogout}
+              className="cursor-pointer text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoggingOut ? "🔄 Signing Out..." : "🚪 Sign Out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

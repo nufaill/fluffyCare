@@ -6,6 +6,7 @@ import "reflect-metadata";
 import { initializeDatabase } from "@config/connectDB";
 import authRoutes from './routes/auth.route';
 import shopRoutes from './routes/shop.route';
+import adminRoutes from './routes/admin.route';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ async function startApp(): Promise<void> {
   // Routes
   app.use("/user", authRoutes);
   app.use("/shop", shopRoutes);
+  app.use("/admin", adminRoutes);
 
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
