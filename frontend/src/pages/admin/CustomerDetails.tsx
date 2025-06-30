@@ -2,6 +2,9 @@
 
 import type React from "react"
 import { useState, useMemo } from "react"
+import Navbar from "@/components/admin/Navbar"
+import Sidebar from "@/components/admin/sidebar"
+import Footer from "@/components/user/Footer"
 import { Table, type TableColumn } from "@/components/ui/Table"
 import { Pagination } from "@/components/ui/Pagination"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,29 +13,8 @@ import { Badge } from "@/components/ui/Badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
 import { Switch } from "@/components/ui/switch"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-  Search,
-  Filter,
-  Download,
-  Plus,
-  Phone,
-  Mail,
-  User,
-  Heart,
-  Eye,
-  Edit,
-  Trash2,
-  MoreVertical,
-  DollarSign,
-} from "lucide-react";
-import type { RootState } from "@/redux/store"
-import { useSelector, useDispatch } from "react-redux"
-import DefaultAvatar from "@/assets/user/default-avatar.jpeg"
-import { removeUser } from "@/redux/slices/user.slice"
-import { logoutUser } from "@/services/user/authService"
-
-
-
+import { Search, Filter, Download, Plus, Phone, Mail, User, Heart, Eye, Edit, Trash2, MoreVertical, DollarSign } from 'lucide-react'
+import { useNavigate } from "react-router-dom"
 
 interface Customer {
   id: string
@@ -101,6 +83,7 @@ const generateSampleData = (): Customer[] => {
 }
 
 const CustomerDetails: React.FC = () => {
+  const navigate = useNavigate()
   const [customers] = useState<Customer[]>(generateSampleData())
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -108,7 +91,7 @@ const CustomerDetails: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>("")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [loading, setLoading] = useState(false)
-  const { userDatas: user } = useSelector((state: RootState) => state.user)
+  const [activeMenuItem, setActiveMenuItem] = useState("CustomerPetsDetail")
 
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
@@ -145,9 +128,27 @@ const CustomerDetails: React.FC = () => {
     return filteredAndSortedData.slice(startIndex, startIndex + pageSize)
   }, [filteredAndSortedData, currentPage, pageSize])
 
+  const handleMenuItemClick = (item: string) => {
+    setActiveMenuItem(item)
+  }
+
+  const handleLogout = async () => {
+    try {
+      localStorage.removeItem("adminToken")
+      sessionStorage.clear()
+      navigate("/admin/login")
+    } catch (error) {
+      console.error("Logout failed:", error)
+      navigate("/admin/login")
+    }
+  }
+
+  const handleSearch = (query: string) => {
+    setSearchTerm(query)
+  }
+
   const handleToggleActive = async (customerId: string, isActive: boolean): Promise<void> => {
     setLoading(true)
-    // Simulate API call
     setTimeout(() => {
       console.log(`Customer ${customerId} set to ${isActive ? "active" : "inactive"}`)
       setLoading(false)
@@ -156,17 +157,14 @@ const CustomerDetails: React.FC = () => {
 
   const handleViewPetDetails = (customer: Customer): void => {
     console.log(`Viewing pet details for ${customer.name}`)
-    // Navigate to pet details page or open modal
   }
 
   const handleEditCustomer = (customer: Customer): void => {
     console.log(`Editing customer ${customer.name}`)
-    // Navigate to edit page or open modal
   }
 
   const handleDeleteCustomer = (customer: Customer): void => {
     console.log(`Deleting customer ${customer.name}`)
-    // Show confirmation dialog and delete
   }
 
   const handleSort = (key: string, order: "asc" | "desc"): void => {
@@ -346,146 +344,162 @@ const CustomerDetails: React.FC = () => {
   ]
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-            Customer Details
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage customer information and pet details</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Customer
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar activeItem={activeMenuItem} onItemClick={handleMenuItemClick} onLogout={handleLogout} />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Customers</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{customers.length}</p>
-              </div>
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <User className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Navbar */}
+      <Navbar userName="NUFAIL" onSearch={handleSearch} />
 
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Customers</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {customers.filter((c) => c.isActive).length}
-                </p>
-              </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                <User className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
+      {/* Main Content */}
+      <main className="ml-64 pt-16 p-6">
+        <div className="space-y-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 min-h-screen">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                Customer Details
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Manage customer information and pet details</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Pets</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {customers.reduce((sum, c) => sum + c.totalPets, 0)}
-                </p>
-              </div>
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                <Heart className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Customer
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  ${customers.reduce((sum, c) => sum + c.totalSpent, 0).toLocaleString()}
-                </p>
-              </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters and Search */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search customers by name, email, or phone..."
-                value={searchTerm}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:border-transparent"
-              />
-            </div>
-            <Button
-              variant="outline"
-              className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Table */}
-      <Table
-        columns={columns}
-        data={paginatedData}
-        loading={loading}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        onSort={handleSort}
-        className="shadow-sm"
-      />
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Customers</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{customers.length}</p>
+                  </div>
+                  <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <User className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* Pagination */}
-      <Pagination
-        current={currentPage}
-        total={filteredAndSortedData.length}
-        pageSize={pageSize}
-        onChange={handlePageChange}
-        showSizeChanger
-        showQuickJumper
-        showTotal={(total: number, range: [number, number]) => (
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            Showing {range[0]} to {range[1]} of {total} customers
-          </span>
-        )}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
-      />
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Customers</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      {customers.filter((c) => c.isActive).length}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                    <User className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Pets</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      {customers.reduce((sum, c) => sum + c.totalPets, 0)}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                    <Heart className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      ${customers.reduce((sum, c) => sum + c.totalSpent, 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                    <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters and Search */}
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search customers by name, email, or phone..."
+                    value={searchTerm}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:border-transparent"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Table */}
+          <Table
+            columns={columns}
+            data={paginatedData}
+            loading={loading}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            className="shadow-sm"
+          />
+
+          {/* Pagination */}
+          <Pagination
+            current={currentPage}
+            total={filteredAndSortedData.length}
+            pageSize={pageSize}
+            onChange={handlePageChange}
+            showSizeChanger
+            showQuickJumper
+            showTotal={(total: number, range: [number, number]) => (
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                Showing {range[0]} to {range[1]} of {total} customers
+              </span>
+            )}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+          />
+        </div>
+      </main>
+
+      {/* Footer */}
+      <div className="ml-64">
+        <Footer />
+      </div>
     </div>
   )
 }

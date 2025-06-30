@@ -1,8 +1,11 @@
 // AdminRoutes.tsx - Updated with route protection
 import { Routes, Route } from "react-router-dom";
+import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 import AdminLogin from "@/pages/admin/AdminLogin";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
-import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
+import CustomerDetails from "@/pages/admin/CustomerDetails";
+import ShopDetails from "@/pages/admin/ShopDetails";
+import ShopVerification from "@/pages/admin/ShopVerification";
 
 const AdminRoutes = () => {
   return (
@@ -27,12 +30,12 @@ const AdminRoutes = () => {
       />
       <Route path="/admin/logout" element={<AdminLogin />} />
       
-      {/* Example:
+      Example:
       <Route 
-        path="/admin/users" 
+        path="/admin/customer-pets-detail" 
         element={
           <PrivateRoute userType="admin">
-            <AdminUsers />
+            <CustomerDetails/>
           </PrivateRoute>
         } 
       />
@@ -40,27 +43,18 @@ const AdminRoutes = () => {
         path="/admin/shops" 
         element={
           <PrivateRoute userType="admin">
-            <AdminShops />
+            <ShopDetails />
           </PrivateRoute>
         } 
       />
       <Route 
-        path="/admin/analytics" 
+        path="/admin/verification" 
         element={
           <PrivateRoute userType="admin">
-            <AdminAnalytics />
+            <ShopVerification />
           </PrivateRoute>
         } 
       />
-      <Route 
-        path="/admin/settings" 
-        element={
-          <PrivateRoute userType="admin">
-            <AdminSettings />
-          </PrivateRoute>
-        } 
-      />
-      */}
     </Routes>
   );
 };

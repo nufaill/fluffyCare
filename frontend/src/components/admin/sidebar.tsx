@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { LayoutDashboard, Calendar, Settings, Store, Star, Shield, Users, LogOut } from "lucide-react"
+import { useNavigate, useLocation } from "react-router-dom"
 
 interface SidebarProps {
   activeItem?: string
@@ -9,20 +10,30 @@ interface SidebarProps {
   onLogout?: () => void
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeItem = "Dashboard", onItemClick, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick, onLogout }) => {
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const menuItems = [
-    { id: "Dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "BookingList", label: "Booking List", icon: Calendar },
-    { id: "ServicesDetail", label: "Services Detail", icon: Settings },
-    { id: "Shops", label: "Shops", icon: Store },
-    { id: "Reviews", label: "Reviews", icon: Star },
-    { id: "Verification", label: "Verification", icon: Shield },
-    { id: "CustomerPetsDetail", label: "Customer&Pets Detail", icon: Users },
+    { id: "Dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/admin/" },
+    { id: "BookingList", label: "Booking List", icon: Calendar, path: "/admin/booking-list" },
+    { id: "ServicesDetail", label: "Services Detail", icon: Settings, path: "/admin/services-detail" },
+    { id: "Shops", label: "Shops", icon: Store, path: "/admin/shops" },
+    { id: "Reviews", label: "Reviews", icon: Star, path: "/admin/reviews" },
+    { id: "Verification", label: "Verification", icon: Shield, path: "/admin/verification" },
+    { id: "CustomerPetsDetail", label: "Customer&Pets Detail", icon: Users, path: "/admin/customer-pets-detail" },
   ]
 
-  const handleItemClick = (itemId: string) => {
+  const handleItemClick = (itemId: string, path: string) => {
     if (onItemClick) {
       onItemClick(itemId)
+    }
+    navigate(path)
+  }
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout()
     }
   }
 
@@ -43,12 +54,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem = "Dashboard", onItemClick
         <ul className="space-y-1 px-3">
           {menuItems.map((item) => {
             const Icon = item.icon
-            const isActive = activeItem === item.id
+            const isActive = activeItem === item.id || location.pathname === item.path
 
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => handleItemClick(item.id)}
+                  onClick={() => handleItemClick(item.id, item.path)}
                   className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ${
                     isActive
                       ? "bg-gray-100 text-black border-r-2 border-black"
@@ -66,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem = "Dashboard", onItemClick
         {/* Logout Button */}
         <div className="absolute bottom-6 left-3 right-3">
           <button
-            onClick={onLogout}
+            onClick={handleLogout}
             className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors duration-200"
           >
             <LogOut className="w-5 h-5 mr-3" />

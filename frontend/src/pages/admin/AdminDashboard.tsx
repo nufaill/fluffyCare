@@ -1,22 +1,21 @@
+"use client"
+
 import type React from "react"
 import { useState } from "react"
 import Navbar from "@/components/admin/Navbar"
 import Sidebar from "@/components/admin/sidebar"
 import { TrendingUp, Calendar, XCircle, DollarSign, BarChart3, PieChart, Star } from "lucide-react"
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { type RootState } from '@/redux/store';
-import { logoutAdmin as logoutAdminAction } from '@/redux/slices/admin.slice';
-import { logoutAdmin } from '@/services/admin/adminService';
+import { useSelector, useDispatch } from "react-redux"
+import { useNavigate } from "react-router-dom"
+import type { RootState } from "@/redux/store"
+import { logoutAdmin as logoutAdminAction } from "@/redux/slices/admin.slice"
+import { logoutAdmin } from "@/services/admin/adminService"
 import Footer from "@/components/user/Footer"
-import CustomerDetails from "./CustomerDetails"
-import ShopDetails from "./ShopDetails"
-import ShopVerification from "./ShopVerification"
 
 const AdminDashboard: React.FC = () => {
-   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const adminData = useSelector((state: RootState) => state.admin.adminDatas);
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const adminData = useSelector((state: RootState) => state.admin.adminDatas)
   const [activeMenuItem, setActiveMenuItem] = useState("Dashboard")
   const [, setSearchQuery] = useState("")
 
@@ -62,14 +61,14 @@ const AdminDashboard: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await logoutAdmin();
-      dispatch(logoutAdminAction());
-      navigate('/admin/login');
+      await logoutAdmin()
+      dispatch(logoutAdminAction())
+      navigate("/admin/login")
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error)
       // Even if API fails, clear Redux state and redirect
-      dispatch(logoutAdminAction());
-      navigate('/admin/login');
+      dispatch(logoutAdminAction())
+      navigate("/admin/login")
     }
   }
 
@@ -267,7 +266,8 @@ const AdminDashboard: React.FC = () => {
       case "Shops":
         return (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-           <ShopDetails/>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Shops</h2>
+            <p className="text-gray-600">Shops content will be displayed here.</p>
           </div>
         )
       case "Reviews":
@@ -280,13 +280,15 @@ const AdminDashboard: React.FC = () => {
       case "Verification":
         return (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <ShopVerification/>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Verification</h2>
+            <p className="text-gray-600">Verification content will be displayed here.</p>
           </div>
         )
       case "CustomerPetsDetail":
         return (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <CustomerDetails/>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Customer & Pets Detail</h2>
+            <p className="text-gray-600">Customer and pets detail content will be displayed here.</p>
           </div>
         )
       default:
@@ -306,9 +308,11 @@ const AdminDashboard: React.FC = () => {
       <main className="ml-64 pt-16 p-6">
         <div className="max-w-7xl mx-auto">{renderContent()}</div>
       </main>
-       <main className="ml-64 pt-16 p-6">
-      <Footer/>
-      </main>
+
+      {/* Footer */}
+      <div className="ml-64 pt-16 p-6">
+        <Footer />
+      </div>
     </div>
   )
 }

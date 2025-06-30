@@ -3,10 +3,10 @@
 import type React from "react"
 import { useState } from "react"
 import { Search, Bell, MessageSquare, ShoppingCart, ChevronDown } from "lucide-react"
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { logoutAdmin as logoutAdminAction } from '@/redux/slices/admin.slice';
-import { logoutAdmin } from '@/services/admin/adminService';
+import { useDispatch } from "react-redux"
+import { useNavigate } from "react-router-dom"
+import { logoutAdmin as logoutAdminAction } from "@/redux/slices/admin.slice"
+import { logoutAdmin } from "@/services/admin/adminService"
 
 interface NavbarProps {
   userName?: string
@@ -17,8 +17,8 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ userName = "Samantha", userAvatar, onSearch }) => {
   const [searchQuery, setSearchQuery] = useState("")
   const [showUserMenu, setShowUserMenu] = useState(false)
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,18 +26,20 @@ const Navbar: React.FC<NavbarProps> = ({ userName = "Samantha", userAvatar, onSe
       onSearch(searchQuery)
     }
   }
- const handleLogout = async () => {
+
+  const handleLogout = async () => {
     try {
-      await logoutAdmin();
-      dispatch(logoutAdminAction());
-      navigate('/admin/login');
+      await logoutAdmin()
+      dispatch(logoutAdminAction())
+      navigate("/admin/login")
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error)
       // Even if API fails, clear Redux state and redirect
-      dispatch(logoutAdminAction());
-      navigate('/admin/login');
+      dispatch(logoutAdminAction())
+      navigate("/admin/login")
     }
   }
+
   return (
     <header className="fixed top-0 left-64 right-0 h-16 bg-white border-b border-gray-200 shadow-sm z-30">
       <div className="flex items-center justify-between h-full px-6">
@@ -108,16 +110,24 @@ const Navbar: React.FC<NavbarProps> = ({ userName = "Samantha", userAvatar, onSe
             {/* User Dropdown Menu */}
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                <button
+                  onClick={() => navigate("/admin/profile")}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
                   Profile
-                </a>
-                <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                </button>
+                <button
+                  onClick={() => navigate("/admin/settings")}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
                   Settings
-                </a>
+                </button>
                 <hr className="my-1" />
                 <button
-                        onClick={handleLogout} className="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-               Sign out
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
+                  Sign out
                 </button>
               </div>
             )}

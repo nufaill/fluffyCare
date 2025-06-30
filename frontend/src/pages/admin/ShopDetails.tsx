@@ -2,6 +2,9 @@
 
 import type React from "react"
 import { useState, useMemo } from "react"
+import Navbar from "@/components/admin/Navbar"
+import Sidebar from "@/components/admin/sidebar"
+import Footer from "@/components/user/Footer"
 import { Table, type TableColumn } from "@/components/ui/Table"
 import { Pagination } from "@/components/ui/Pagination"
 import { Card, CardContent } from "@/components/ui/card"
@@ -29,6 +32,7 @@ import {
   Users,
   Settings,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 type VerificationStatus = "approved" | "rejected" | "pending"
 
@@ -99,7 +103,7 @@ const generateSampleShops = (): Shop[] => {
       isActive: Math.random() > 0.2,
       address: addresses[Math.floor(Math.random() * addresses.length)],
       phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      rating: Math.round((Math.random() * 2 + 3) * 10) / 10, // 3.0 to 5.0
+      rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
       totalServices: Math.floor(Math.random() * 50) + 5,
       joinDate: new Date(
         2020 + Math.floor(Math.random() * 4),
@@ -118,6 +122,7 @@ const generateSampleShops = (): Shop[] => {
 }
 
 const ShopDetails: React.FC = () => {
+  const navigate = useNavigate()
   const [shops] = useState<Shop[]>(generateSampleShops())
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -125,6 +130,7 @@ const ShopDetails: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>("")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [loading, setLoading] = useState(false)
+  const [activeMenuItem, setActiveMenuItem] = useState("Shops")
 
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
@@ -161,9 +167,27 @@ const ShopDetails: React.FC = () => {
     return filteredAndSortedData.slice(startIndex, startIndex + pageSize)
   }, [filteredAndSortedData, currentPage, pageSize])
 
+  const handleMenuItemClick = (item: string) => {
+    setActiveMenuItem(item)
+  }
+
+  const handleLogout = async () => {
+    try {
+      localStorage.removeItem("adminToken")
+      sessionStorage.clear()
+      navigate("/admin/login")
+    } catch (error) {
+      console.error("Logout failed:", error)
+      navigate("/admin/login")
+    }
+  }
+
+  const handleSearch = (query: string) => {
+    setSearchTerm(query)
+  }
+
   const handleToggleActive = async (shopId: string, isActive: boolean): Promise<void> => {
     setLoading(true)
-    // Simulate API call
     setTimeout(() => {
       console.log(`Shop ${shopId} set to ${isActive ? "active" : "inactive"}`)
       setLoading(false)
@@ -172,22 +196,18 @@ const ShopDetails: React.FC = () => {
 
   const handleViewDetails = (shop: Shop): void => {
     console.log(`Viewing details for ${shop.name}`)
-    // Navigate to shop details page or open modal
   }
 
   const handleEditShop = (shop: Shop): void => {
     console.log(`Editing shop ${shop.name}`)
-    // Navigate to edit page or open modal
   }
 
   const handleDeleteShop = (shop: Shop): void => {
     console.log(`Deleting shop ${shop.name}`)
-    // Show confirmation dialog and delete
   }
 
   const handleGoToVerification = (): void => {
-    console.log("Navigate to shop verification page")
-    // Navigate to ShopVerification page
+    navigate("/admin/shop-verification")
   }
 
   const handleSort = (key: string, order: "asc" | "desc"): void => {
@@ -236,7 +256,7 @@ const ShopDetails: React.FC = () => {
       title: "Shop",
       dataIndex: "name",
       sortable: true,
-      render: (value: string, record: Shop) => (
+      render: (_value: string, record: Shop) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 ring-2 ring-gray-200 dark:ring-gray-600">
             <AvatarImage src={record.logo || "/placeholder.svg?height=48&width=48"} />
@@ -268,7 +288,7 @@ const ShopDetails: React.FC = () => {
       key: "contact",
       title: "Contact Info",
       dataIndex: "email",
-      render: (value: string, record: Shop) => (
+      render: (_value: string, record: Shop) => (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm">
             <Mail className="h-4 w-4 text-gray-400" />
@@ -286,7 +306,7 @@ const ShopDetails: React.FC = () => {
       dataIndex: "isVerified",
       sortable: true,
       align: "center",
-      render: (value: VerificationStatus, record: Shop) => (
+      render: (_value: VerificationStatus, record: Shop) => (
         <div className="space-y-2">{getVerificationBadge(record.isVerified)}</div>
       ),
     },
@@ -295,7 +315,7 @@ const ShopDetails: React.FC = () => {
       title: "Active",
       dataIndex: "isActive",
       align: "center",
-      render: (value: boolean, record: Shop) => (
+      render: (_value: boolean, record: Shop) => (
         <Switch
           checked={record.isActive}
           onCheckedChange={(checked: boolean) => handleToggleActive(record.id, checked)}
@@ -310,7 +330,7 @@ const ShopDetails: React.FC = () => {
       dataIndex: "totalRevenue",
       sortable: true,
       align: "right",
-      render: (value: number, record: Shop) => (
+      render: (_value: number, record: Shop) => (
         <div className="text-right space-y-1">
           <div className="font-medium text-gray-900 dark:text-gray-100">${record.totalRevenue.toLocaleString()}</div>
           <div className="flex items-center justify-end gap-1 text-sm text-gray-500 dark:text-gray-400">
@@ -337,7 +357,7 @@ const ShopDetails: React.FC = () => {
       title: "Actions",
       dataIndex: "actions",
       align: "center",
-      render: (value: undefined, record: Shop) => (
+      render: (_value: undefined, record: Shop) => (
         <div className="flex items-center gap-2">
           <Button
             size="sm"
@@ -389,148 +409,165 @@ const ShopDetails: React.FC = () => {
 
   const approvedShops = shops.filter((shop) => shop.isVerified === "approved")
   const pendingShops = shops.filter((shop) => shop.isVerified === "pending")
-  const activeShops = shops.filter((shop) => shop.isActive)
   const totalRevenue = shops.reduce((sum, shop) => sum + shop.totalRevenue, 0)
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-            Shop Details
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage shop information and status</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button onClick={handleGoToVerification} className="bg-yellow-600 hover:bg-yellow-700 text-white">
-            <Settings className="h-4 w-4 mr-2" />
-            Manage Verification ({pendingShops.length})
-          </Button>
-          <Button
-            variant="outline"
-            className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Button className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Shop
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar activeItem={activeMenuItem} onItemClick={handleMenuItemClick} onLogout={handleLogout} />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Shops</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{shops.length}</p>
-              </div>
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <Store className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Navbar */}
+      <Navbar userName="NUFAIL" onSearch={handleSearch} />
 
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Verified Shops</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{approvedShops.length}</p>
-              </div>
-              <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
+      {/* Main Content */}
+      <main className="ml-64 pt-16 p-6">
+        <div className="space-y-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 min-h-screen">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                Shop Details
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Manage shop information and status</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Verification</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{pendingShops.length}</p>
-              </div>
-              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
+            <div className="flex items-center gap-3">
+              <Button onClick={handleGoToVerification} className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                <Settings className="h-4 w-4 mr-2" />
+                Manage Verification ({pendingShops.length})
+              </Button>
+              <Button
+                variant="outline"
+                className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Shop
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">${totalRevenue.toLocaleString()}</p>
-              </div>
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                <Store className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters and Search */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search shops by name, email, or address..."
-                value={searchTerm}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:border-transparent"
-              />
-            </div>
-            <Button
-              variant="outline"
-              className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Table */}
-      <Table
-        columns={columns}
-        data={paginatedData}
-        loading={loading}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-        onSort={handleSort}
-        className="shadow-sm"
-      />
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Shops</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{shops.length}</p>
+                  </div>
+                  <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <Store className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* Pagination */}
-      <Pagination
-        current={currentPage}
-        total={filteredAndSortedData.length}
-        pageSize={pageSize}
-        onChange={handlePageChange}
-        showSizeChanger
-        showQuickJumper
-        showTotal={(total: number, range: [number, number]) => (
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            Showing {range[0]} to {range[1]} of {total} shops
-          </span>
-        )}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
-      />
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Verified Shops</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{approvedShops.length}</p>
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Verification</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{pendingShops.length}</p>
+                  </div>
+                  <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
+                    <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                      ${totalRevenue.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                    <Store className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters and Search */}
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search shops by name, email, or address..."
+                    value={searchTerm}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:border-transparent"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Table */}
+          <Table
+            columns={columns}
+            data={paginatedData}
+            loading={loading}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            className="shadow-sm"
+          />
+
+          {/* Pagination */}
+          <Pagination
+            current={currentPage}
+            total={filteredAndSortedData.length}
+            pageSize={pageSize}
+            onChange={handlePageChange}
+            showSizeChanger
+            showQuickJumper
+            showTotal={(total: number, range: [number, number]) => (
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                Showing {range[0]} to {range[1]} of {total} shops
+              </span>
+            )}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
+          />
+        </div>
+      </main>
+
+      {/* Footer */}
+      <div className="ml-64">
+        <Footer />
+      </div>
     </div>
   )
 }
