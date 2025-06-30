@@ -12,18 +12,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/Badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
 import { Switch } from "@/components/ui/switch"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import {
   Search,
   Filter,
   Download,
-  Plus,
   Mail,
   Store,
   Eye,
-  Edit,
-  Trash2,
-  MoreVertical,
   CheckCircle,
   XCircle,
   Clock,
@@ -31,6 +27,7 @@ import {
   Star,
   Users,
   Settings,
+  Phone,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { getAllShops } from "@/services/admin/adminService"
@@ -49,10 +46,10 @@ interface Shop {
   phone: string
   rating: number
   totalServices: number
-  city: string;
-  streetAddress: string;
-  buildingNumber: string;
-  certificateUrl: string;
+  city: string
+  streetAddress: string
+  buildingNumber: string
+  certificateUrl: string
   joinDate: string
   lastActive: string
   totalRevenue: number
@@ -69,6 +66,8 @@ const ShopDetails: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [loading, setLoading] = useState(false)
   const [activeMenuItem, setActiveMenuItem] = useState("Shops")
+  const [selectedShop, setSelectedShop] = useState<Shop | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Fetch shops from API
   useEffect(() => {
@@ -160,16 +159,10 @@ const ShopDetails: React.FC = () => {
   }
 
   const handleViewDetails = (shop: Shop): void => {
-    console.log(`Viewing details for ${shop.name}`)
+    setSelectedShop(shop)
+    setIsModalOpen(true)
   }
 
-  const handleEditShop = (shop: Shop): void => {
-    console.log(`Editing shop ${shop.name}`)
-  }
-
-  const handleDeleteShop = (shop: Shop): void => {
-    console.log(`Deleting shop ${shop.name}`)
-  }
 
   const handleGoToVerification = (): void => {
     navigate("/admin/shop-verification")
@@ -260,6 +253,7 @@ const ShopDetails: React.FC = () => {
             <span className="text-gray-900 dark:text-gray-100">{record.email}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
+            <Phone className="h-4 w-4 text-gray-400" />
             <span className="text-gray-900 dark:text-gray-100">{record.phone}</span>
           </div>
         </div>
@@ -372,10 +366,6 @@ const ShopDetails: React.FC = () => {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export
-              </Button>
-              <Button className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Shop
               </Button>
             </div>
           </div>
@@ -492,6 +482,86 @@ const ShopDetails: React.FC = () => {
             )}
             className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
           />
+
+          {/* Shop Details Modal */}
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogContent className="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-black dark:text-white">
+                  {selectedShop?.name} Details
+                </DialogTitle>
+                <DialogClose className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" />
+              </DialogHeader>
+              {selectedShop && (
+                <div className="space-y-6 p-6 text-black dark:text-white">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16 ring-2 ring-gray-300 dark:ring-gray-700">
+                      <AvatarImage src={selectedShop.logo || "/placeholder.svg?height=64&width=64"} />
+                      <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        {selectedShop.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg font-semibold">{selectedShop.name}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{selectedShop.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
+                      <p className="text-base">{selectedShop.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</p>
+                      <p className="text-base">{selectedShop.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</p>
+                      <p className="text-base">
+                        {selectedShop.buildingNumber}, {selectedShop.streetAddress}, {selectedShop.city}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Verification Status</p>
+                      <div className="mt-1">{getVerificationBadge(selectedShop.isVerified)}</div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rating</p>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span>{selectedShop.rating} ({selectedShop.totalServices} services)</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Join Date</p>
+                      <p className="text-base">{new Date(selectedShop.joinDate).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Active</p>
+                      <p className="text-base">{new Date(selectedShop.lastActive).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Certificate</p>
+                      <a
+                        href={selectedShop.certificateUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        View Certificate
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
 
