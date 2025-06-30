@@ -25,7 +25,6 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const shopAuth = useSelector((state: RootState) => ({
     isAuthenticated: state.shop.isAuthenticated,
     shopData: state.shop.shopData,
-    token: state.shop.token
   }));
   
   const adminAuth = useSelector((state: RootState) => ({
@@ -37,7 +36,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
       case 'user':
         return userAuth.isAuthenticated && userAuth.userData;
       case 'shop':
-        return shopAuth.isAuthenticated && shopAuth.shopData && shopAuth.token;
+        return shopAuth.isAuthenticated && shopAuth.shopData ;
       case 'admin':
         return adminAuth.adminData !== null;
       default:
@@ -90,8 +89,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
   
   const shopAuth = useSelector((state: RootState) => ({
     isAuthenticated: state.shop.isAuthenticated,
-    shopData: state.shop.shopData,
-    token: state.shop.token
+    shopData: state.shop.shopData
   }));
   
   const adminAuth = useSelector((state: RootState) => ({
@@ -103,7 +101,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
       case 'user':
         return userAuth.isAuthenticated && userAuth.userData;
       case 'shop':
-        return shopAuth.isAuthenticated && shopAuth.shopData && shopAuth.token;
+        return shopAuth.isAuthenticated && shopAuth.shopData ;
       case 'admin':
         return adminAuth.adminData !== null;
       default:

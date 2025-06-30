@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Navbar from "@/components/admin/Navbar"
 import Sidebar from "@/components/admin/sidebar"
 import Footer from "@/components/user/Footer"
@@ -12,107 +12,116 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/Badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
 import { Switch } from "@/components/ui/switch"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Search, Filter, Download, Plus, Phone, Mail, User, Heart, Eye, Edit, Trash2, MoreVertical, DollarSign } from 'lucide-react'
+import { Search, Filter, Download, Phone, Mail, User } from 'lucide-react'
 import { useNavigate } from "react-router-dom"
+import { getAllUsers, updateUserStatus } from "@/services/admin/adminService"
 
-interface Customer {
-  id: string
-  name: string
+// Define the User interface based on your API response
+interface User {
+  _id: string
+  fullName: string
   email: string
-  phone: string
-  profilePhoto?: string
+  phone?: string
+  profileImage?: string
   isActive: boolean
-  joinDate: string
-  totalPets: number
-  lastVisit: string
-  totalSpent: number
-  status: "active" | "inactive" | "suspended"
+  isGoogleUser: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-// Sample data
-const generateSampleData = (): Customer[] => {
-  const names: string[] = [
-    "Alice Johnson",
-    "Bob Smith",
-    "Carol Davis",
-    "David Wilson",
-    "Emma Brown",
-    "Frank Miller",
-    "Grace Lee",
-    "Henry Taylor",
-    "Ivy Chen",
-    "Jack Anderson",
-    "Kate Thompson",
-    "Liam Garcia",
-    "Mia Rodriguez",
-    "Noah Martinez",
-    "Olivia Lopez",
-    "Paul Hernandez",
-    "Quinn Walker",
-    "Ruby Hall",
-    "Sam Allen",
-    "Tina Young",
-  ]
-
-  const emails: string[] = names.map((name) => name.toLowerCase().replace(" ", ".") + "@example.com")
-
-  return names.map(
-    (name, index): Customer => ({
-      id: `customer-${index + 1}`,
-      name,
-      email: emails[index],
-      phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      profilePhoto: Math.random() > 0.5 ? `/placeholder.svg?height=40&width=40` : undefined,
-      isActive: Math.random() > 0.3,
-      joinDate: new Date(
-        2020 + Math.floor(Math.random() * 4),
-        Math.floor(Math.random() * 12),
-        Math.floor(Math.random() * 28) + 1,
-      )
-        .toISOString()
-        .split("T")[0],
-      totalPets: Math.floor(Math.random() * 5) + 1,
-      lastVisit: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      totalSpent: Math.floor(Math.random() * 2000) + 100,
-      status: Math.random() > 0.8 ? "suspended" : Math.random() > 0.3 ? "active" : "inactive",
-    }),
-  )
+// Define statistics interface
+interface UserStats {
+  totalUsers: number
+  activeUsers: number
+  blockedUsers: number
+  googleUsers: number
 }
 
 const CustomerDetails: React.FC = () => {
   const navigate = useNavigate()
-  const [customers] = useState<Customer[]>(generateSampleData())
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState<string>("")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
-  const [loading, setLoading] = useState(false)
   const [activeMenuItem, setActiveMenuItem] = useState("CustomerPetsDetail")
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [updateLoading, setUpdateLoading] = useState<string | null>(null)
 
-  // Filter and sort data
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async (): Promise<void> => {
+    setLoading(true)
+    try {
+      const response = await getAllUsers()
+      if (response.success && response.data) {
+        setUsers(response.data)
+      } else {
+        console.error('Failed to fetch users:', response.message)
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleToggleUserStatus = async (userId: string, currentStatus: boolean): Promise<void> => {
+    setUpdateLoading(userId)
+    try {
+      const newStatus = !currentStatus
+      const response = await updateUserStatus(userId, newStatus)
+
+      if (response.success) {
+        // Update local state
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
+            user._id === userId
+              ? { ...user, isActive: newStatus }
+              : user
+          )
+        )
+
+        console.log(`User ${newStatus ? 'activated' : 'blocked'} successfully`)
+      } else {
+        console.error('Failed to update user status:', response.message)
+      }
+    } catch (error) {
+      console.error('Error updating user status:', error)
+    } finally {
+      setUpdateLoading(null)
+    }
+  }
+
+  // Filter and sort users data
   const filteredAndSortedData = useMemo(() => {
-    const filtered = customers.filter(
-      (customer) =>
-        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phone.includes(searchTerm),
+    const filtered = users.filter(
+      (user) =>
+        user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.phone && user.phone.includes(searchTerm))
     )
 
     if (sortBy) {
       filtered.sort((a, b) => {
-        const aValue = (a as any)[sortBy]
-        const bValue = (b as any)[sortBy]
+        const aValue = (a as unknown as Record<string, unknown>)[sortBy]
+        const bValue = (b as unknown as Record<string, unknown>)[sortBy]
 
-        if (typeof aValue === "string") {
+        if (typeof aValue === "string" && typeof bValue === "string") {
           return sortOrder === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
         }
 
-        if (typeof aValue === "number") {
+        if (typeof aValue === "number" && typeof bValue === "number") {
           return sortOrder === "asc" ? aValue - bValue : bValue - aValue
+        }
+
+        if (typeof aValue === "boolean" && typeof bValue === "boolean") {
+          return sortOrder === "asc" 
+            ? (aValue === bValue ? 0 : aValue ? 1 : -1)
+            : (aValue === bValue ? 0 : aValue ? -1 : 1)
         }
 
         return 0
@@ -120,7 +129,7 @@ const CustomerDetails: React.FC = () => {
     }
 
     return filtered
-  }, [customers, searchTerm, sortBy, sortOrder])
+  }, [users, searchTerm, sortBy, sortOrder])
 
   // Paginate data
   const paginatedData = useMemo(() => {
@@ -128,11 +137,11 @@ const CustomerDetails: React.FC = () => {
     return filteredAndSortedData.slice(startIndex, startIndex + pageSize)
   }, [filteredAndSortedData, currentPage, pageSize])
 
-  const handleMenuItemClick = (item: string) => {
+  const handleMenuItemClick = (item: string): void => {
     setActiveMenuItem(item)
   }
 
-  const handleLogout = async () => {
+  const handleLogout = async (): Promise<void> => {
     try {
       localStorage.removeItem("adminToken")
       sessionStorage.clear()
@@ -143,28 +152,9 @@ const CustomerDetails: React.FC = () => {
     }
   }
 
-  const handleSearch = (query: string) => {
+  const handleSearch = (query: string): void => {
     setSearchTerm(query)
-  }
-
-  const handleToggleActive = async (customerId: string, isActive: boolean): Promise<void> => {
-    setLoading(true)
-    setTimeout(() => {
-      console.log(`Customer ${customerId} set to ${isActive ? "active" : "inactive"}`)
-      setLoading(false)
-    }, 500)
-  }
-
-  const handleViewPetDetails = (customer: Customer): void => {
-    console.log(`Viewing pet details for ${customer.name}`)
-  }
-
-  const handleEditCustomer = (customer: Customer): void => {
-    console.log(`Editing customer ${customer.name}`)
-  }
-
-  const handleDeleteCustomer = (customer: Customer): void => {
-    console.log(`Deleting customer ${customer.name}`)
+    setCurrentPage(1) // Reset to first page when searching
   }
 
   const handleSort = (key: string, order: "asc" | "desc"): void => {
@@ -176,21 +166,35 @@ const CustomerDetails: React.FC = () => {
     setCurrentPage(page)
     if (newPageSize) {
       setPageSize(newPageSize)
+      setCurrentPage(1) // Reset to first page when changing page size
     }
   }
 
-  const columns: TableColumn<Customer>[] = [
+  const handleExport = (): void => {
+    // Implementation for exporting user data
+    console.log('Exporting user data...')
+    // You can implement CSV/Excel export functionality here
+  }
+
+  const handleFilter = (): void => {
+    // Implementation for additional filters
+    console.log('Opening filter options...')
+    // You can implement advanced filtering here
+  }
+
+  // Define table columns with proper typing
+  const columns: TableColumn<User>[] = [
     {
       key: "customer",
       title: "Customer",
-      dataIndex: "name",
+      dataIndex: "fullName",
       sortable: true,
-      render: (_: any, record: Customer) => (
+      render: (value: unknown, record: User) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 ring-2 ring-gray-200 dark:ring-gray-600">
-            <AvatarImage src={record.profilePhoto || "/placeholder.svg?height=40&width=40"} />
+            <AvatarImage src={record.profileImage || "/placeholder.svg?height=40&width=40"} />
             <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300">
-              {record.name
+              {record.fullName
                 .split(" ")
                 .map((n) => n[0])
                 .join("")
@@ -198,8 +202,10 @@ const CustomerDetails: React.FC = () => {
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium text-gray-900 dark:text-gray-100">{record.name}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">ID: {record.id}</p>
+            <p className="font-medium text-gray-900 dark:text-gray-100">{record.fullName}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {record.isGoogleUser ? 'Google User' : 'Regular User'}
+            </p>
           </div>
         </div>
       ),
@@ -208,140 +214,72 @@ const CustomerDetails: React.FC = () => {
       key: "contact",
       title: "Contact Info",
       dataIndex: "email",
-      render: (_: any, record: Customer) => (
+      render: (value: unknown, record: User) => (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm">
             <Mail className="h-4 w-4 text-gray-400" />
             <span className="text-gray-900 dark:text-gray-100">{record.email}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Phone className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-900 dark:text-gray-100">{record.phone}</span>
-          </div>
+          {record.phone && (
+            <div className="flex items-center gap-2 text-sm">
+              <Phone className="h-4 w-4 text-gray-400" />
+              <span className="text-gray-900 dark:text-gray-100">{record.phone}</span>
+            </div>
+          )}
         </div>
       ),
     },
     {
       key: "status",
       title: "Status",
-      dataIndex: "status",
+      dataIndex: "isActive",
       sortable: true,
-      render: (_: any, record: Customer) => (
-        <div className="space-y-2">
-          <Badge
-            className={
-              record.status === "active"
-                ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800"
-                : record.status === "suspended"
-                  ? "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600"
-            }
-          >
-            {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-          </Badge>
-        </div>
+      render: (value: unknown, record: User) => (
+        <Badge
+          className={
+            record.isActive
+              ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800"
+              : "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800"
+          }
+        >
+          {record.isActive ? 'Active' : 'Blocked'}
+        </Badge>
       ),
     },
     {
       key: "isActive",
-      title: "Active",
+      title: "Block/Unblock",
       dataIndex: "isActive",
       align: "center",
-      render: (_: any, record: Customer) => (
+      render: (value: unknown, record: User) => (
         <Switch
           checked={record.isActive}
-          onCheckedChange={(checked: boolean) => handleToggleActive(record.id, checked)}
-          disabled={loading}
-          className="data-[state=checked]:bg-gray-900 dark:data-[state=checked]:bg-gray-100"
+          onCheckedChange={() => handleToggleUserStatus(record._id, record.isActive)}
+          disabled={updateLoading === record._id}
+          className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-red-600"
         />
-      ),
-    },
-    {
-      key: "pets",
-      title: "Pets",
-      dataIndex: "totalPets",
-      sortable: true,
-      align: "center",
-      render: (_: any, record: Customer) => (
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Heart className="h-4 w-4 text-gray-400" />
-            <span className="font-medium text-gray-900 dark:text-gray-100">{record.totalPets}</span>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleViewPetDetails(record)}
-            className="text-xs border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            View Details
-          </Button>
-        </div>
       ),
     },
     {
       key: "joinDate",
       title: "Join Date",
-      dataIndex: "joinDate",
+      dataIndex: "createdAt",
       sortable: true,
-      render: (value: string) => (
-        <span className="text-gray-900 dark:text-gray-100">{new Date(value).toLocaleDateString()}</span>
-      ),
-    },
-    {
-      key: "totalSpent",
-      title: "Total Spent",
-      dataIndex: "totalSpent",
-      sortable: true,
-      align: "right",
-      render: (value: number) => (
-        <span className="font-medium text-gray-900 dark:text-gray-100">${value.toLocaleString()}</span>
-      ),
-    },
-    {
-      key: "actions",
-      title: "Actions",
-      dataIndex: "actions",
-      align: "center",
-      render: (_: any, record: Customer) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-            <DropdownMenuItem
-              onClick={() => handleEditCustomer(record)}
-              className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Customer
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleViewPetDetails(record)}
-              className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Heart className="h-4 w-4 mr-2" />
-              Pet Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleDeleteCustomer(record)}
-              className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Customer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      render: (value: unknown) => (
+        <span className="text-gray-900 dark:text-gray-100">
+          {typeof value === 'string' ? new Date(value).toLocaleDateString() : 'N/A'}
+        </span>
       ),
     },
   ]
+
+  // Calculate statistics
+  const stats: UserStats = useMemo(() => ({
+    totalUsers: users.length,
+    activeUsers: users.filter(u => u.isActive).length,
+    blockedUsers: users.filter(u => !u.isActive).length,
+    googleUsers: users.filter(u => u.isGoogleUser).length,
+  }), [users])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -360,19 +298,16 @@ const CustomerDetails: React.FC = () => {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                 Customer Details
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">Manage customer information and pet details</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Manage customer information and user accounts</p>
             </div>
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
+                onClick={handleExport}
                 className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export
-              </Button>
-              <Button className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Customer
               </Button>
             </div>
           </div>
@@ -383,8 +318,8 @@ const CustomerDetails: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Customers</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{customers.length}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalUsers}</p>
                   </div>
                   <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
                     <User className="h-6 w-6 text-gray-600 dark:text-gray-300" />
@@ -397,10 +332,8 @@ const CustomerDetails: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Customers</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {customers.filter((c) => c.isActive).length}
-                    </p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Users</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.activeUsers}</p>
                   </div>
                   <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
                     <User className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -413,13 +346,11 @@ const CustomerDetails: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Pets</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {customers.reduce((sum, c) => sum + c.totalPets, 0)}
-                    </p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Blocked Users</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.blockedUsers}</p>
                   </div>
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                    <Heart className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                    <User className="h-6 w-6 text-red-600 dark:text-red-400" />
                   </div>
                 </div>
               </CardContent>
@@ -429,13 +360,11 @@ const CustomerDetails: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      ${customers.reduce((sum, c) => sum + c.totalSpent, 0).toLocaleString()}
-                    </p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Google Users</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.googleUsers}</p>
                   </div>
                   <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                    <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
               </CardContent>
@@ -458,6 +387,7 @@ const CustomerDetails: React.FC = () => {
                 </div>
                 <Button
                   variant="outline"
+                  onClick={handleFilter}
                   className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
                 >
                   <Filter className="h-4 w-4 mr-2" />

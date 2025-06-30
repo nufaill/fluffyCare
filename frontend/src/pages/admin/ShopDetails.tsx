@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Navbar from "@/components/admin/Navbar"
 import Sidebar from "@/components/admin/sidebar"
 import Footer from "@/components/user/Footer"
@@ -33,6 +33,8 @@ import {
   Settings,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { getAllShops } from "@/services/admin/adminService"
+import toast from 'react-hot-toast'
 
 type VerificationStatus = "approved" | "rejected" | "pending"
 
@@ -53,77 +55,9 @@ interface Shop {
   description: string
 }
 
-// Sample data generator
-const generateSampleShops = (): Shop[] => {
-  const shopNames: string[] = [
-    "Paws & Claws Grooming",
-    "Happy Tails Pet Spa",
-    "Furry Friends Care",
-    "Pet Paradise Salon",
-    "Whiskers & Wags",
-    "The Pet Boutique",
-    "Canine Couture",
-    "Feline Fine Grooming",
-    "Pet Palace",
-    "Tail Waggers Spa",
-    "Precious Paws",
-    "Pet Perfection",
-    "Furry Angels Care",
-    "Pet Luxury Lounge",
-    "Paw-some Grooming",
-    "Pet Bliss Spa",
-    "Cuddle & Care",
-    "Pet Elegance",
-    "Furry Makeover",
-    "Pet Wellness Center",
-  ]
-
-  const addresses: string[] = [
-    "123 Main St, Downtown",
-    "456 Oak Ave, Midtown",
-    "789 Pine Rd, Uptown",
-    "321 Elm St, Westside",
-    "654 Maple Dr, Eastside",
-    "987 Cedar Ln, Northside",
-    "147 Birch St, Southside",
-    "258 Willow Ave, Central",
-    "369 Spruce Rd, Heights",
-    "741 Ash Dr, Valley",
-  ]
-
-  const verificationStatuses: VerificationStatus[] = ["approved", "rejected", "pending"]
-
-  return shopNames.map(
-    (name, index): Shop => ({
-      id: `shop-${index + 1}`,
-      name,
-      logo: Math.random() > 0.4 ? `/placeholder.svg?height=40&width=40` : undefined,
-      email: name.toLowerCase().replace(/[^a-z0-9]/g, "") + "@petcare.com",
-      isVerified: verificationStatuses[Math.floor(Math.random() * verificationStatuses.length)],
-      isActive: Math.random() > 0.2,
-      address: addresses[Math.floor(Math.random() * addresses.length)],
-      phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
-      totalServices: Math.floor(Math.random() * 50) + 5,
-      joinDate: new Date(
-        2020 + Math.floor(Math.random() * 4),
-        Math.floor(Math.random() * 12),
-        Math.floor(Math.random() * 28) + 1,
-      )
-        .toISOString()
-        .split("T")[0],
-      lastActive: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      totalRevenue: Math.floor(Math.random() * 50000) + 5000,
-      description: `Professional pet care services with experienced staff and modern facilities.`,
-    }),
-  )
-}
-
 const ShopDetails: React.FC = () => {
   const navigate = useNavigate()
-  const [shops] = useState<Shop[]>(generateSampleShops())
+  const [shops, setShops] = useState<Shop[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
@@ -131,6 +65,30 @@ const ShopDetails: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [loading, setLoading] = useState(false)
   const [activeMenuItem, setActiveMenuItem] = useState("Shops")
+
+  // Fetch shops from API
+  useEffect(() => {
+    const fetchShops = async () => {
+      setLoading(true)
+      try {
+        const response = await getAllShops()
+        setShops(response.data || []) // Assuming response.data contains the shops array
+        toast.success('Shops loaded successfully!', {
+          position: 'top-right',
+          duration: 3000,
+        })
+      } catch (error) {
+        toast.error('Failed to load shops', {
+          position: 'top-right',
+          duration: 4000,
+        })
+        console.error('Error fetching shops:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchShops()
+  }, [])
 
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
@@ -188,10 +146,21 @@ const ShopDetails: React.FC = () => {
 
   const handleToggleActive = async (shopId: string, isActive: boolean): Promise<void> => {
     setLoading(true)
-    setTimeout(() => {
+    try {
       console.log(`Shop ${shopId} set to ${isActive ? "active" : "inactive"}`)
+      toast.success(`Shop status updated successfully!`, {
+        position: 'top-right',
+        duration: 3000,
+      })
+    } catch (error) {
+      toast.error('Failed to update shop status', {
+        position: 'top-right',
+        duration: 4000,
+      })
+      console.error('Error updating shop status:', error)
+    } finally {
       setLoading(false)
-    }, 500)
+    }
   }
 
   const handleViewDetails = (shop: Shop): void => {

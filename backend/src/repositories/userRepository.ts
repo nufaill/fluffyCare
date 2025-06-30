@@ -74,5 +74,18 @@ export class UserRepository {
       { new: true }
     );
   }
+  async getAllUsers(): Promise<UserDocument[]> {
+    return await User.find({})
+      .select('-password -resetPasswordToken -resetPasswordExpires')
+      .sort({ createdAt: -1 });
+  }
+
+  async updateUserStatus(userId: string, isActive: boolean): Promise<UserDocument | null> {
+    return await User.findByIdAndUpdate(
+      userId,
+      { isActive },
+      { new: true, runValidators: true }
+    ).select('-password -resetPasswordToken -resetPasswordExpires');
+  }
 }
 

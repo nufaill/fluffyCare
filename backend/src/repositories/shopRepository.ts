@@ -57,4 +57,9 @@ export class ShopRepository {
           { new: true }
         );
       }
+      async getAllShops(): Promise<ShopDocument[]> {
+          return await Shop.find({})
+            .select('-password -resetPasswordToken -resetPasswordExpires')
+            .sort({ createdAt: -1 });
+        }
 }
