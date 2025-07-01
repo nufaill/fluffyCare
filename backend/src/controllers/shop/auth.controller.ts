@@ -15,7 +15,7 @@ export interface ShopAuthRequest extends Request {
 export class ShopAuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // Register shop (initiate registration with OTP)
+  // Register shop 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
       console.log("📥 [ShopAuthController] Registration request received");
@@ -63,7 +63,6 @@ export class ShopAuthController {
 
       const result = await this.authService.verifyOtpAndCompleteRegistration(email, otp);
 
-      // Return tokens in response body instead of cookies
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
         message: 'Email verified successfully! Your shop account has been created.',
@@ -149,7 +148,6 @@ export class ShopAuthController {
 
       setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken)
 
-      // Return tokens in response body instead of cookies
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: "Login successful",

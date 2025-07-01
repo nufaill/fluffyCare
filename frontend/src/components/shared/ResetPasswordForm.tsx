@@ -113,12 +113,22 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
                         </p>
 
                         <div className="space-y-4">
+                            {role =="user" &&(
                             <button
-                                onClick={onSuccess || onBack}
+                                onClick={() => navigate('/login')}
                                 className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
                             >
-                                Continue to Login
+                                 Continue to Login
                             </button>
+                        )}
+                        {role =="shop" &&(
+                            <button
+                                onClick={() => navigate('/shop/login')}
+                                className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                            >
+                                 Continue to Login
+                            </button>
+                        )}
                         </div>
                     </div>
                 </div>

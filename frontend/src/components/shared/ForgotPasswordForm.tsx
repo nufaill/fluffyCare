@@ -60,12 +60,24 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ role, onBack })
                         </p>
 
                         <div className="space-y-4">
+
+                        {role =="user" &&(
+                            <button
+                                onClick={() => navigate('/login')}
+                                className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                            >
+                                Back to Login
+                            </button>
+                        )}
+                        {role =="shop" &&(
                             <button
                                 onClick={() => navigate('/shop/login')}
                                 className="w-full bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
                             >
                                 Back to Login
                             </button>
+                        )}
+
 
                             <p className="text-sm text-gray-500">
                                 Didn't receive the email? Check your spam folder or{' '}

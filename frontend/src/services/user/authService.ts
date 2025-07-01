@@ -29,7 +29,7 @@ export const registerUser = async (data: FormData | any) => {
     });
 
     toast.dismiss(loadingToast);
-    toast.success('Account created successfully! Welcome aboard! 脂', {
+    toast.success('Account created successfully! Welcome aboard! ', {
       position: 'top-right',
       duration: 5000,
       style: {
@@ -108,7 +108,7 @@ export const logoutUser = async () => {
   } catch (error) {
     toast.dismiss(loadingToast);
 
-    // Clear local storage even if API call fails
+    // Clear local storage 
     localStorage.removeItem('userToken');
     localStorage.removeItem('user');
 
@@ -117,7 +117,7 @@ export const logoutUser = async () => {
     throw error;
   }
 };
-export const userSendResetLink = async (email: string) => { // Removed role parameter
+export const userSendResetLink = async (email: string) => { 
   const loadingToast = toast.loading('Sending reset link...', {
     position: 'top-right',
   });
@@ -128,7 +128,7 @@ export const userSendResetLink = async (email: string) => { // Removed role para
     });
 
     toast.dismiss(loadingToast);
-    toast.success('Reset link sent to your email! 透', {
+    toast.success('Reset link sent to your email! ', {
       position: 'top-right',
       duration: 5000,
       style: {
@@ -159,7 +159,7 @@ export const userSendResetLink = async (email: string) => { // Removed role para
 };
 
 // Fix resetPassword function
-export const userResetPassword = async (data: { // Removed role from interface
+export const userResetPassword = async (data: { 
   token: string;
   password: string;
   confirmPassword: string;
@@ -178,7 +178,7 @@ export const userResetPassword = async (data: { // Removed role from interface
     });
 
     toast.dismiss(loadingToast);
-    toast.success('Password reset successfully! 脂', {
+    toast.success('Password reset successfully! ', {
       position: 'top-right',
       duration: 5000,
       style: {

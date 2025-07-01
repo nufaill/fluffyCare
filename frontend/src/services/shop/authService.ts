@@ -42,7 +42,7 @@ export const registerShop = async (data: ShopRegisterData): Promise<ShopAuthResp
 
     console.log('[registerShop] Registration successful:', response.data);
     toast.dismiss(loadingToast);
-    toast.success('Account created successfully! Welcome aboard! 脂', {
+    toast.success('Account created successfully! Welcome aboard! ', {
       position: 'top-right',
       duration: 5000,
       style: {
@@ -149,7 +149,7 @@ export const logoutShop = async (): Promise<{ success: boolean }> => {
 
 export const verifyOtp = async (data: OtpVerificationData): Promise<OtpResponse> => {
   try {
-    const response: AxiosResponse<OtpResponse> = await ShopAxios.post('/shop/verify-otp', data);
+    const response: AxiosResponse<OtpResponse> = await ShopAxios.post('/verify-otp', data);
     return response.data;
   } catch (error) {
     const errorMessage = ErrorHandler.extractMessage(error);
@@ -160,7 +160,7 @@ export const verifyOtp = async (data: OtpVerificationData): Promise<OtpResponse>
 
 export const resendOtp = async (data: ResendOtpData): Promise<OtpResponse> => {
   try {
-    const response: AxiosResponse<OtpResponse> = await ShopAxios.post('/shop/resend-otp', data);
+    const response: AxiosResponse<OtpResponse> = await ShopAxios.post('/resend-otp', data);
     return response.data;
   } catch (error) {
     const errorMessage = ErrorHandler.extractMessage(error);
@@ -174,12 +174,12 @@ export const shopSendResetLink = async (email: string) => {
   });
 
   try {
-    const response = await ShopAxios.post('/shop/forgot-password', { email }, {
+    const response = await ShopAxios.post('/forgot-password', { email }, {
       withCredentials: true
     });
 
     toast.dismiss(loadingToast);
-    toast.success('Reset link sent to your email! 透', {
+    toast.success('Reset link sent to your email! ', {
       position: 'top-right',
       duration: 5000,
       style: {
@@ -220,7 +220,7 @@ export const shopResetPassword = async (data: {
   });
 
   try {
-    const response = await ShopAxios.post('/shop/reset-password', {
+    const response = await ShopAxios.post('/reset-password', {
       token: data.token,
       password: data.password,
       confirmPassword: data.confirmPassword
@@ -229,7 +229,7 @@ export const shopResetPassword = async (data: {
     });
 
     toast.dismiss(loadingToast);
-    toast.success('Password reset successfully! 脂', {
+    toast.success('Password reset successfully! ', {
       position: 'top-right',
       duration: 5000,
       style: {

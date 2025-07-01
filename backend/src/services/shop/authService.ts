@@ -145,7 +145,6 @@ export class AuthService {
   async resendOtp(email: string): Promise<void> {
     console.log(`🔄 [ShopAuthService] Resending OTP for email: ${email}`);
 
-    // Check if there's a pending OTP request
     const existingOtp = await this.otpRepository.findByEmail(email);
     if (!existingOtp) {
       console.log(`❌ [ShopAuthService] No pending verification found for ${email}`);
@@ -161,7 +160,7 @@ export class AuthService {
     await this.otpRepository.createOtp(email, otp, existingOtp.userData);
 
     // Send new OTP email
-    const shopName = (existingOtp.userData as CreateShopData)?.name || 'Shop';
+    const shopName = (existingOtp.userData as unknown as CreateShopData)?.name || 'Shop';
     await sendOtpEmail(email, otp, shopName);
 
     console.log(`📧 [ShopAuthService] New OTP sent to ${email}`);
@@ -269,17 +268,13 @@ export class AuthService {
         throw new CustomError('Shop not found with this email address', HTTP_STATUS.NOT_FOUND);
       }
 
-      // Generate secure token
       const token = crypto.randomBytes(32).toString('hex');
       const expires = new Date(Date.now() + 3600000); // 1 hour from now
 
-      // Save token to database
       await this.shopRepository.setResetToken(email, token, expires);
 
-      // Create reset link
       const resetLink = `${process.env.CLIENT_URL}/shop/reset-password?token=${token}`;
 
-      // Send email
       const emailContent = PASSWORD_RESET_MAIL_CONTENT(resetLink);
       await this.emailService.sendOtpEmail(email, 'Reset Your Shop Password', emailContent);
 
@@ -295,17 +290,14 @@ export class AuthService {
     try {
       console.log("🔧 [ShopAuthService] Processing password reset with token");
 
-      // Validate passwords match
       if (newPassword !== confirmPassword) {
         throw new CustomError('Passwords do not match', HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Validate password strength
       if (newPassword.length < 8) {
         throw new CustomError('Password must be at least 8 characters long', HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Find shop by valid token
       console.log("🔍 [ShopAuthService] Checking reset token:", token);
       const shop = await this.shopRepository.findByResetToken(token);
 
@@ -313,10 +305,8 @@ export class AuthService {
         throw new CustomError('Invalid or expired reset token', HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Hash new password
       const hashedPassword = await bcrypt.hash(newPassword, this.saltRounds);
 
-      // Update password and clear reset token
       await this.shopRepository.updatePasswordAndClearToken(shop._id, hashedPassword);
 
       console.log("✅ [ShopAuthService] Password reset successfully");
@@ -326,7 +316,6 @@ export class AuthService {
     }
   }
 
-  // GET SHOP BY ID (for profile/me endpoint)
   async getShopById(id: string): Promise<Omit<ShopDocument, 'password'> | null> {
     try {
       console.log("🔧 [ShopAuthService] Fetching shop by ID:", id);
@@ -336,7 +325,6 @@ export class AuthService {
         return null;
       }
 
-      // Remove password from the response
       const { password, ...shopWithoutPassword } = shop.toObject();
       return shopWithoutPassword as Omit<ShopDocument, 'password'>;
     } catch (error) {

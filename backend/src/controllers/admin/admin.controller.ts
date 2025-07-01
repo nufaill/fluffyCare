@@ -39,7 +39,6 @@ export class AdminAuthController {
   // Admin Logout
   logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Clear auth cookies
       clearAuthCookies(res);
 
       res.status(HTTP_STATUS.OK).json({

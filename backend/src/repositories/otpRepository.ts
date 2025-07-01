@@ -20,7 +20,7 @@ export class OtpRepository {
       otpHash,
       userData,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
-      attempts: 0, // Reset attempts for new OTP
+      attempts: 0, 
     });
 
     const savedOtp = await otpDoc.save();
@@ -34,7 +34,7 @@ export class OtpRepository {
     
     const otpDoc = await OtpModel.findOne({ 
       email: email.toLowerCase().trim(),
-      expiresAt: { $gt: new Date() } // Only return non-expired OTPs
+      expiresAt: { $gt: new Date() }
     });
 
     if (otpDoc) {
@@ -65,34 +65,29 @@ export class OtpRepository {
 
     console.log(`📋 [OtpRepository] Found OTP document - Attempts: ${otpDoc.attempts}, Expires: ${otpDoc.expiresAt}`);
 
-    // Check if expired
     if (otpDoc.expiresAt < new Date()) {
       console.log(`⏰ [OtpRepository] OTP expired for ${normalizedEmail}`);
       await OtpModel.deleteOne({ email: normalizedEmail });
       return { isValid: false, isExpired: true };
     }
 
-    // Check attempts limit BEFORE incrementing
     if (otpDoc.attempts >= 3) {
       console.log(`🚫 [OtpRepository] Max attempts (${otpDoc.attempts}) reached for ${normalizedEmail}`);
       await OtpModel.deleteOne({ email: normalizedEmail });
       return { isValid: false, maxAttemptsReached: true };
     }
 
-    // Verify OTP first, then increment attempts
     console.log(`🔐 [OtpRepository] Comparing OTP with hash...`);
     const isValid = await bcrypt.compare(otp.toString(), otpDoc.otpHash);
     console.log(`🔍 [OtpRepository] OTP comparison result: ${isValid}`);
 
     if (isValid) {
-      // OTP is valid, return user data and cleanup
       const userData = otpDoc.userData;
       console.log(`✅ [OtpRepository] OTP verified successfully for ${normalizedEmail}`);
       await OtpModel.deleteOne({ email: normalizedEmail });
       console.log(`🗑️ [OtpRepository] OTP document deleted after successful verification`);
       return { isValid: true, userData };
     } else {
-      // Increment attempts only after failed verification
       otpDoc.attempts += 1;
       await otpDoc.save();
       console.log(`❌ [OtpRepository] Invalid OTP for ${normalizedEmail}, attempts now: ${otpDoc.attempts}`);
@@ -108,7 +103,7 @@ export class OtpRepository {
     console.log(`✅ [OtpRepository] Deleted ${deleteResult.deletedCount} OTP records for ${normalizedEmail}`);
   }
 
-  // Cleanup expired OTPs (optional, as MongoDB TTL will handle this)
+  
   async cleanupExpired(): Promise<void> {
     console.log(`🧹 [OtpRepository] Cleaning up expired OTPs...`);
     
@@ -119,7 +114,7 @@ export class OtpRepository {
     console.log(`✅ [OtpRepository] Cleaned up ${deleteResult.deletedCount} expired OTP records`);
   }
 
-  // Get OTP attempts for debugging
+  
   async getOtpInfo(email: string): Promise<{ attempts: number; expiresAt: Date; exists: boolean } | null> {
     const normalizedEmail = email.toLowerCase().trim();
     const otpDoc = await OtpModel.findOne({ email: normalizedEmail });

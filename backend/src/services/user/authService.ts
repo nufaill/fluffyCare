@@ -66,7 +66,6 @@ export class AuthService {
 
     console.log(`✅ User doesn't exist, proceeding with OTP generation`);
 
-    // Hash password before storing in temporary data
     const hashedPassword = await bcrypt.hash(password, 12);
     const tempUserData = {
       ...otherData,
@@ -74,13 +73,11 @@ export class AuthService {
       password: hashedPassword,
     };
 
-    // Generate and send OTP
     const otp = generateOtp();
     console.log(`🔢 Generated OTP: ${otp} for ${email}`);
 
     await this.otpRepository.createOtp(email, otp, tempUserData);
 
-    // Send OTP email
     const userName = userData.fullName || userData.name || undefined;
     await sendOtpEmail(email, otp, userName);
 
@@ -112,7 +109,6 @@ export class AuthService {
 
     console.log(`✅ OTP verified successfully for ${email}`);
 
-    // Create user with the stored data
     const userData = verificationResult.userData;
     console.log(`👤 Creating user with data:`, {
       email: userData.email,
@@ -125,7 +121,6 @@ export class AuthService {
       email: user.email
     });
 
-    // Generate tokens using the fixed method
     const tokens = this.generateTokens(
       user._id?.toString() || user.id?.toString(),
       user.email
@@ -226,24 +221,24 @@ export class AuthService {
     try {
       console.log("🔧 [AuthService] Starting Google authentication...");
 
-      // Verify the Google ID token
+
       const googleUser = await this.googleService.verifyIdToken(credential);
       console.log("✅ [AuthService] Google token verified");
 
       const normalizedEmail = googleUser.email.trim().toLowerCase();
 
-      // Check if user already exists
+
       let user = await this.userRepository.findByEmail(normalizedEmail);
 
       if (!user) {
         console.log("📝 [AuthService] Creating new user from Google data...");
 
-        // Create new user from Google data
+
         const userData: CreateUserData = {
           fullName: googleUser.name,
           email: normalizedEmail,
-          phone: '', // Google doesn't provide phone by default
-          password: '', // No password for Google users
+          phone: '',
+          password: '',
           profileImage: googleUser.picture || undefined,
           isGoogleUser: true,
           googleId: googleUser.id,
@@ -345,18 +340,16 @@ export class AuthService {
 
       const normalizedEmail = googleUser.email.trim().toLowerCase();
 
-      // Check if user already exists
       let user = await userRepository.findByEmail(normalizedEmail);
 
       if (!user) {
         console.log("📝 [AuthService Static] Creating new user from Google data...");
 
-        // Create new user from Google data
         const userData: CreateUserData = {
           fullName: googleUser.name,
           email: normalizedEmail,
-          phone: '', // Google doesn't provide phone by default
-          password: '', // No password for Google users
+          phone: '',
+          password: '',
           profileImage: googleUser.picture || undefined,
           isGoogleUser: true,
           googleId: googleUser.id,
@@ -373,7 +366,7 @@ export class AuthService {
         throw new CustomError('Account is inactive', HTTP_STATUS.FORBIDDEN || 403);
       }
 
-      // Generate JWT tokens
+
       console.log("🎟️ [AuthService Static] Generating JWT tokens...");
       const tokens = jwtService.generateTokens({
         id: user._id.toString(),
@@ -411,13 +404,10 @@ export class AuthService {
       const token = crypto.randomBytes(32).toString('hex');
       const expires = new Date(Date.now() + 3600000); // 1 hour from now
 
-      // Save token to database
       await this.userRepository.setResetToken(email, token, expires);
 
-      // Create reset link
       const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
 
-      // Send email
       const emailContent = PASSWORD_RESET_MAIL_CONTENT(resetLink);
       await this.emailService.sendOtpEmail(email, 'Reset Your Password', emailContent);
 
@@ -432,7 +422,6 @@ export class AuthService {
     try {
       console.log("🔧 [AuthService] Processing password reset with token");
 
-      // Validate passwords match
       if (newPassword !== confirmPassword) {
         throw new CustomError('Passwords do not match', HTTP_STATUS.BAD_REQUEST || 400);
       }
@@ -441,8 +430,8 @@ export class AuthService {
       if (newPassword.length < 8) {
         throw new CustomError('Password must be at least 8 characters long', HTTP_STATUS.BAD_REQUEST || 400);
       }
-console.log("🧪 Matching token:", token);
-console.log("🧪 Current time:", new Date());
+      console.log("🧪 Matching token:", token);
+      console.log("🧪 Current time:", new Date());
 
       // Find user by valid token 
       console.log("🔍 Checking reset token:", token);

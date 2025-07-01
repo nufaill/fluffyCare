@@ -89,7 +89,7 @@ const VerifyOtpPage: React.FC = () => {
     try {
       setLoading(true);
       
-      const response = await shopAxios.post('/shop/verify-otp', {
+      const response = await shopAxios.post('/verify-otp', {
         email: email,
         otp: data.otp,
       });

@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useMemo } from "react"
 import Navbar from "@/components/admin/Navbar"
-import Sidebar from "@/components/admin/sidebar"
+import Sidebar from "@/components/admin/Sidebar"
 import Footer from "@/components/user/Footer"
 import { Table, type TableColumn } from "@/components/ui/Table"
 import { Pagination } from "@/components/ui/Pagination"

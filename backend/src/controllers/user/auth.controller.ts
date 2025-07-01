@@ -274,7 +274,7 @@ export class AuthController {
     }
   }
 
-  //  resetPassword method
+ 
   resetPassword = async(req: Request, res: Response, next: NextFunction) =>{
     try {
       console.log("🔧 [AuthController] Reset password request received");
