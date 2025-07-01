@@ -95,14 +95,25 @@ export default function AuthSignup({
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
-    const file = e.target.files?.[0] || null
-    setForm((prevForm) => ({ ...prevForm, [fieldName]: file }))
+    const file = e.target.files?.[0] || null;
 
-    // Clear error when user selects a file
-    if (errors[fieldName]) {
-      setErrors((prevErrors) => ({ ...prevErrors, [fieldName]: "" }))
+    if (file) {
+      const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+      if (!allowedImageTypes.includes(file.type)) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          [fieldName]: "Only JPG, PNG, or WEBP images are allowed",
+        }));
+        setForm((prevForm) => ({ ...prevForm, [fieldName]: null }));
+        return;
+      }
     }
-  }
+
+    setErrors((prevErrors) => ({ ...prevErrors, [fieldName]: "" }));
+    setForm((prevForm) => ({ ...prevForm, [fieldName]: file }));
+  };
+
+
 
   const validateStep1 = () => {
     const newErrors: { [key: string]: string } = {}
@@ -351,10 +362,17 @@ export default function AuthSignup({
           <input
             type="file"
             name="profileImage"
-            accept="image/*"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
             onChange={(e) => handleFileChange(e, "profileImage")}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 hover:border-gray-400"
           />
+          {errors.profileImage && (
+            <p className="mt-1 text-sm text-red-600 flex items-center">
+              <AlertCircle className="w-4 h-4 mr-1" />
+              {errors.profileImage}
+            </p>
+          )}
+
         </div>
       </div>
     </>
@@ -396,7 +414,7 @@ export default function AuthSignup({
           <input
             type="file"
             name="logo"
-            accept="image/*"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
             onChange={(e) => handleFileChange(e, "logo")}
             className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.logo ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
               }`}
@@ -505,7 +523,7 @@ export default function AuthSignup({
           <input
             type="file"
             name="certificateUrl"
-            accept=".pdf,.jpg,.jpeg,.png"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
             onChange={(e) => handleFileChange(e, "certificateUrl")}
             className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.certificateUrl ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
               }`}
@@ -891,8 +909,8 @@ export default function AuthSignup({
               </div>
               <div className="mt-4 flex space-x-3">
                 <div className="flex-1 flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <GoogleLoginButton />
-              </div>
+                  <GoogleLoginButton />
+                </div>
               </div>
             </div>
           )}
