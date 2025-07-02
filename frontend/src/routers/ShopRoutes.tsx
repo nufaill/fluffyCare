@@ -47,6 +47,14 @@ const ShopRoutes = () => {
           </PublicRoute>
         }
       />
+      <Route
+        path="/shop/shop-verify"
+        element={
+          <PublicRoute userType="shop">
+            <VerifyShop />
+          </PublicRoute>
+        }
+      />
 
       <Route path="/shop/verify-otp" element={<VerifyOtpPage />} />
 

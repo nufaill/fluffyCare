@@ -7,7 +7,8 @@ import Signup from "@/pages/user/Signup";
 import VerifyOtpPage from "@/pages/user/VerifyOtp";
 import ForgotPassword from '@/pages/user/ForgotPasswordForm';
 import ResetPassword from '@/pages/user/ResetPasswordForm';
-import { PublicRoute } from '@/protected/PrivateRoute';
+import UserDetails from '@/pages/user/userDetails';
+import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 
 const UserRoutes = () => {
   return (
@@ -16,7 +17,7 @@ const UserRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
       
-      {/* Public routes - only for non-authenticated users */}
+      {/* Public routes  */}
       <Route 
         path="/login" 
         element={
@@ -49,9 +50,18 @@ const UserRoutes = () => {
           </PublicRoute>
         } 
       />
+      {/* <Route 
+        path="/profile" 
+        element={
+          <PrivateRoute userType="user">
+            <UserDetails />
+          </PrivateRoute>
+        } 
+      /> */}
       
       
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
+      <Route path="/profile" element={<UserDetails/>} />
       
       <Route path="/logout" element={<HomePage />} />
       
