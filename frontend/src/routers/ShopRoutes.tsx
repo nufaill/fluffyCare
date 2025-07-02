@@ -7,60 +7,61 @@ import Dashboard from "@/pages/shop/Dashboard";
 import VerifyOtpPage from "@/pages/shop/VerifyOtp";
 import ForgotPassword from "@/pages/shop/ForgotPasswordForm";
 import ResetPassword from "@/pages/shop/ResetPasswordForm";
+import VerifyShop from "@/pages/shop/thank-you-page";
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 
 const ShopRoutes = () => {
   return (
     <Routes>
       <Route path="/join-us" element={<VendorLandingPage />} />
-      
-      <Route 
-        path="/shop/login" 
+
+      <Route
+        path="/shop/login"
         element={
           <PublicRoute userType="shop">
             <ShopLogin />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/shop/signup" 
+      <Route
+        path="/shop/signup"
         element={
           <PublicRoute userType="shop">
             <ShopSignup />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/shop/forgot-password" 
+      <Route
+        path="/shop/forgot-password"
         element={
           <PublicRoute userType="shop">
             <ForgotPassword />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/shop/reset-password" 
+      <Route
+        path="/shop/reset-password"
         element={
           <PublicRoute userType="shop">
             <ResetPassword />
           </PublicRoute>
-        } 
+        }
       />
-      
+
       <Route path="/shop/verify-otp" element={<VerifyOtpPage />} />
-      
-      
-      <Route 
-        path="/shop/dashboard" 
+
+
+      <Route
+        path="/shop/dashboard"
         element={
           <PrivateRoute userType="shop">
             <Dashboard />
           </PrivateRoute>
-        } 
+        }
       />
-      
+
       <Route path="/shop/logout" element={<VendorLandingPage />} />
-      
+
     </Routes>
   );
 };

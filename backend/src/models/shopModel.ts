@@ -13,7 +13,7 @@ const shopSchema = new Schema<ShopDocument>(
     description: { type: String },
     certificateUrl: { type: String, required: true },
     isActive: { type: Boolean, default: true },
-    isVerified: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
     location: {
       type: {
         type: String,

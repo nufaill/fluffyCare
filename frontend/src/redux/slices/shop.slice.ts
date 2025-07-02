@@ -2,7 +2,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-// Define the ShopData interface
+export interface GeoLocation {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+}
+
+// the ShopData interface
 interface ShopData {
   _id: string;
   name: string;
@@ -13,10 +18,7 @@ interface ShopData {
   streetAddress?: string;
   description?: string;
   certificateUrl?: string;
-  location?: {
-    lat?: number;
-    lng?: number;
-  };
+  location?: GeoLocation;
   isActive?: boolean;
   isVerified?: boolean;
   createdAt?: string;
