@@ -48,7 +48,6 @@ interface Shop {
   totalServices: number
   city: string
   streetAddress: string
-  buildingNumber: string
   certificateUrl: string
   joinDate: string
   lastActive: string
@@ -551,12 +550,6 @@ const ShopDetails: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</p>
                       <p className="text-base">{selectedShop.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Address</p>
-                      <p className="text-base">
-                        {selectedShop.buildingNumber}, {selectedShop.streetAddress}, {selectedShop.city}
-                      </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Verification Status</p>

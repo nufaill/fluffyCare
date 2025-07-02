@@ -1,18 +1,22 @@
-export interface RegisterShopDTO {
-  logo: string;
+// types/Shop.types.ts
+import { Document } from 'mongoose';
+
+export interface ShopDocument extends Document {
+  logo?: string;
   name: string;
   email: string;
   phone: string;
   password: string;
   city: string;
   streetAddress: string;
-  buildingNumber?: string;
   description?: string;
   certificateUrl: string;
-  location?: object;
-}
-
-export interface LoginShopDTO {
-  email: string;
-  password: string;
+  isActive?: boolean;
+  isVerified?: boolean; 
+  location: {
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
+  };
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }

@@ -22,6 +22,15 @@ export class UserRepository {
   }
 
   async createUser(data: CreateUserData): Promise<UserDocument> {
+    if (data.location && (!data.location.type || data.location.type !== 'Point')) {
+      throw new Error('Location must be a valid GeoJSON Point');
+    }
+    if (!data.location) {
+      data.location = {
+        type: 'Point',
+        coordinates: [0, 0]
+      };
+    }
     const user = new User(data);
     return await user.save();
   }
@@ -43,10 +52,10 @@ export class UserRepository {
     const user = await User.findOne({ googleId });
     return !!user;
   }
- async setResetToken(email: string, token: string, expires: Date): Promise<UserDocument | null> {
+  async setResetToken(email: string, token: string, expires: Date): Promise<UserDocument | null> {
     console.log("🔧 [UserRepository] Setting reset token for email:", email);
     return await User.findOneAndUpdate(
-      { email }, 
+      { email },
       {
         resetPasswordToken: token,
         resetPasswordExpires: expires
@@ -59,13 +68,14 @@ export class UserRepository {
     console.log("🔧 [UserRepository] Finding user by reset token");
     return await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() }     });
+      resetPasswordExpires: { $gt: new Date() }
+    });
   }
 
   async updatePasswordAndClearToken(userId: Types.ObjectId, hashedPassword: string): Promise<UserDocument | null> {
     console.log("🔧 [UserRepository] Updating password and clearing reset token");
     return await User.findByIdAndUpdate(
-      userId, 
+      userId,
       {
         password: hashedPassword,
         resetPasswordToken: undefined,
@@ -87,5 +97,34 @@ export class UserRepository {
       { new: true, runValidators: true }
     ).select('-password -resetPasswordToken -resetPasswordExpires');
   }
+
+  async findNearbyUsers(longitude: number, latitude: number, maxDistance: number = 5000): Promise<UserDocument[]> {
+    return await User.find({
+      isActive: true,
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude]
+          },
+          $maxDistance: maxDistance // in meters
+        }
+      }
+    }).select('-password -resetPasswordToken -resetPasswordExpires');
+  }
+
+  async findUsersWithinRadius(longitude: number, latitude: number, radiusInKm: number): Promise<UserDocument[]> {
+    const radiusInMeters = radiusInKm * 1000;
+
+    return await User.find({
+      isActive: true,
+      location: {
+        $geoWithin: {
+          $centerSphere: [[longitude, latitude], radiusInMeters / 6378100] // Earth radius in meters
+        }
+      }
+    }).select('-password -resetPasswordToken -resetPasswordExpires');
+  }
+
 }
 

@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import {  ShopDocument } from '../types/Shop.types';
+import { ShopDocument } from '../types/Shop.types';
 
 const shopSchema = new Schema<ShopDocument>(
   {
@@ -10,20 +10,31 @@ const shopSchema = new Schema<ShopDocument>(
     password: { type: String, required: true },
     city: { type: String, required: true },
     streetAddress: { type: String, required: true },
-    buildingNumber: { type: String },
     description: { type: String },
     certificateUrl: { type: String, required: true },
     isActive: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: true },
     location: {
-      lat: { type: Number },
-      lng: { type: Number },
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+        required: true,
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true,
+      },
     },
+
     resetPasswordToken: { type: String },
-   resetPasswordExpires: { type: Date },
+    resetPasswordExpires: { type: Date },
   },
   {
     timestamps: true,
   }
 );
+
+shopSchema.index({ location: '2dsphere' });
 
 export const Shop = model<ShopDocument>('Shop', shopSchema);

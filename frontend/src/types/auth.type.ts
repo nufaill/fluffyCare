@@ -1,5 +1,11 @@
 export type SignupMode = 'user' | 'shop';
 
+//  GeoJSON location type
+export interface GeoLocation {
+  type: 'Point';
+  coordinates: [number, number]; 
+}
+
 export interface UserForm {
   mode: 'user';
   profileImage: File | string | null;
@@ -8,12 +14,12 @@ export interface UserForm {
   phone: string;
   password: string;
   confirmPassword: string;
-  location: { lat: number; lng: number } | null;
+  location: GeoLocation | null;
 }
 
 export interface ShopForm {
-   mode: 'shop';
-  logo: File | string | null; 
+  mode: 'shop';
+  logo: File | string | null;
   name: string;
   email: string;
   phone: string;
@@ -21,10 +27,9 @@ export interface ShopForm {
   confirmPassword: string;
   city: string;
   streetAddress: string;
-  buildingNumber: string;
   description: string;
   certificateUrl: File | string | null;
-  location: { lat: number; lng: number } | null;
+  location: GeoLocation | null;
 }
 
 export type SignupForm = UserForm | ShopForm;

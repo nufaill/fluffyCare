@@ -65,7 +65,7 @@ const ShopSignup: React.FC = () => {
         certificateUrl = await uploadToCloudinary(formData.certificateUrl, 'certificate');
       }
 
-      // Construct shop data with proper typing
+      
       const shopData = {
         name: formData.name,
         email: formData.email,
@@ -73,17 +73,16 @@ const ShopSignup: React.FC = () => {
         password: formData.password,
         city: formData.city,
         streetAddress: formData.streetAddress,
-        buildingNumber: formData.buildingNumber,
         description: formData.description,
         logo: logoUrl,
         certificateUrl,
-        location: formData.location || { lat: undefined, lng: undefined },
+        location: formData.location || { type: "Point", coordinates: [0, 0] },
       };
 
-      // Call shop service to register
+   
       await registerShop(shopData);
       
-      // Store email for verification using type-safe utility
+
       StorageUtils.setPendingVerificationEmail(formData.email);
       
       navigate('/shop/verify-otp', {
@@ -93,7 +92,6 @@ const ShopSignup: React.FC = () => {
 
     } catch (error) {
       console.error("Shop signup failed:", error);
-      // Error handling is done in the registerShop service
     }
   };
 

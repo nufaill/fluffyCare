@@ -1,20 +1,20 @@
-// backend/src/middlewares/user.middleware.ts
+// backend/src/middlewares/shop.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../services/jwt/jwtService';
 import { HTTP_STATUS } from '../shared/constant';
 
-export interface AuthenticatedUserRequest extends Request {
-  user?: {
+export interface AuthenticatedShopRequest extends Request {
+  shop?: {
     id: string;
     email: string;
   };
 }
 
-export class UserMiddleware {
+export class ShopMiddleware {
   constructor(private readonly jwtService: JwtService) {}
 
   public authenticate = async (
-    req: AuthenticatedUserRequest,
+    req: AuthenticatedShopRequest,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
@@ -41,14 +41,14 @@ export class UserMiddleware {
         return;
       }
 
-      req.user = {
+      req.shop = {
         id: payload.userId,
         email: payload.email,
       };
 
       next();
     } catch (error) {
-      console.error('❌ [UserMiddleware] Authentication error:', error);
+      console.error('❌ [ShopMiddleware] Authentication error:', error);
       
       res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,

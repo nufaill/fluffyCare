@@ -11,7 +11,6 @@ interface ShopData {
   logo?: string;
   city?: string;
   streetAddress?: string;
-  buildingNumber?: string;
   description?: string;
   certificateUrl?: string;
   location?: {
@@ -19,6 +18,7 @@ interface ShopData {
     lng?: number;
   };
   isActive?: boolean;
+  isVerified?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

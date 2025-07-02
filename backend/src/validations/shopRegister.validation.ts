@@ -22,8 +22,6 @@ export const shopRegisterSchema = z.object({
 
     streetAddress: z.string().min(2, "Street address is required"),
 
-    buildingNumber: z.string().optional(),
-
     description: z.string().optional(),
 
     certificateUrl: z.string().url("Certificate URL must be valid"),

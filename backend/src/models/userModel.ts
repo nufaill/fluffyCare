@@ -1,4 +1,4 @@
-import { Schema, model, Document, ObjectId } from 'mongoose';
+import { Schema, model } from 'mongoose';
 import { UserDocument } from '../types/User.types';
 
 const userSchema = new Schema<UserDocument>(
@@ -8,15 +8,28 @@ const userSchema = new Schema<UserDocument>(
     password: { type: String },
     profileImage: { type: String, default: '' },
     phone: { type: String },
-    location: { type: Object, default: {} },
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+        required: true,
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true,
+      },
+    },
+
     isActive: { type: Boolean, default: true },
     googleId: { type: String },
-   resetPasswordToken: { type: String },
-   resetPasswordExpires: { type: Date },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );
 
+//2dsphere index
+userSchema.index({ location: '2dsphere' });
+
 export const User = model<UserDocument>('User', userSchema);
-
-

@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 
 import AuthImageSection from "@/components/shared/AuthImageSection"
@@ -16,6 +18,9 @@ import {
   FileText,
   Upload,
   Phone,
+  Navigation,
+  CheckCircle,
+  Loader2,
 } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
@@ -43,36 +48,88 @@ export default function AuthSignup({
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [form, setForm] = useState<SignupForm>(() =>
     mode === "user"
       ? {
-        mode: "user",
-        profileImage: null,
-        fullName: "",
-        email: "",
-        phone: "",
-        password: "",
-        confirmPassword: "",
-        location: null,
-      }
+          mode: "user",
+          profileImage: null,
+          fullName: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+          location: null,
+        }
       : {
-        mode: "shop",
-        logo: null,
-        name: "",
-        email: "",
-        phone: "",
-        password: "",
-        confirmPassword: "",
-        city: "",
-        streetAddress: "",
-        buildingNumber: "",
-        description: "",
-        certificateUrl: null,
-        location: null,
-      },
+          mode: "shop",
+          logo: null,
+          name: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+          city: "",
+          streetAddress: "",
+          description: "",
+          certificateUrl: null,
+          location: null,
+        },
   )
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isLoading, setIsLoading] = useState(false)
+
+  const getLiveLocation = () => {
+    if (!navigator.geolocation) {
+      setErrors((prev) => ({ ...prev, location: "Geolocation not supported in your browser" }))
+      return
+    }
+
+    setLocationLoading(true)
+    setLocationStatus("loading")
+    setErrors((prev) => ({ ...prev, location: "" }))
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setForm((prevForm) => ({
+          ...prevForm,
+          location: {
+            type: "Point",
+            coordinates: [longitude, latitude],
+          },
+        }))
+        setLocationLoading(false)
+        setLocationStatus("success")
+      },
+      (error) => {
+        console.error("Location error:", error)
+        let errorMessage = "Unable to fetch location. Please allow location access."
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location permissions."
+            break
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable."
+            break
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out."
+            break
+        }
+
+        setErrors((prev) => ({ ...prev, location: errorMessage }))
+        setLocationLoading(false)
+        setLocationStatus("error")
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      },
+    )
+  }
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -80,7 +137,7 @@ export default function AuthSignup({
   }
 
   const validatePhone = (phone: string) => {
-    const phoneRegex = /^[+]?[\d\s\-$$$$]{10,}$/
+    const phoneRegex = /^[+]?[\d\s\-()]{10,}$/
     return phoneRegex.test(phone)
   }
 
@@ -95,25 +152,23 @@ export default function AuthSignup({
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
-    const file = e.target.files?.[0] || null;
+    const file = e.target.files?.[0] || null
 
     if (file) {
-      const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+      const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"]
       if (!allowedImageTypes.includes(file.type)) {
         setErrors((prevErrors) => ({
           ...prevErrors,
           [fieldName]: "Only JPG, PNG, or WEBP images are allowed",
-        }));
-        setForm((prevForm) => ({ ...prevForm, [fieldName]: null }));
-        return;
+        }))
+        setForm((prevForm) => ({ ...prevForm, [fieldName]: null }))
+        return
       }
     }
 
-    setErrors((prevErrors) => ({ ...prevErrors, [fieldName]: "" }));
-    setForm((prevForm) => ({ ...prevForm, [fieldName]: file }));
-  };
-
-
+    setErrors((prevErrors) => ({ ...prevErrors, [fieldName]: "" }))
+    setForm((prevForm) => ({ ...prevForm, [fieldName]: file }))
+  }
 
   const validateStep1 = () => {
     const newErrors: { [key: string]: string } = {}
@@ -145,13 +200,6 @@ export default function AuthSignup({
         newErrors.streetAddress = "Street address must be less than 100 characters"
       }
 
-      if (!shopForm.buildingNumber) {
-        newErrors.buildingNumber = "Building number is required"
-      } else if (shopForm.buildingNumber.length < 1) {
-        newErrors.buildingNumber = "Building number must be at least 1 character"
-      } else if (shopForm.buildingNumber.length > 10) {
-        newErrors.buildingNumber = "Building number must be less than 10 characters"
-      }
       if (!shopForm.logo) {
         newErrors.logo = "Shop logo is required"
       }
@@ -159,11 +207,15 @@ export default function AuthSignup({
       if (!shopForm.certificateUrl) {
         newErrors.certificateUrl = "Certificate is required"
       }
+
+      // Location validation for shop
+      if (!shopForm.location) {
+        newErrors.location = "Location is required for shop registration"
+      }
     }
 
     return newErrors
   }
-
 
   const validateStep2 = () => {
     const newErrors: { [key: string]: string } = {}
@@ -205,7 +257,6 @@ export default function AuthSignup({
     return newErrors
   }
 
-
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
 
@@ -245,7 +296,6 @@ export default function AuthSignup({
         newErrors.phone = "Phone number must be exactly 10 digits"
       }
 
-
       // Password
       if (!form.password) {
         newErrors.password = "Password is required"
@@ -262,6 +312,10 @@ export default function AuthSignup({
         newErrors.confirmPassword = "Passwords do not match"
       }
 
+      // Location validation for user
+      if (!form.location) {
+        newErrors.location = "Location is required for user registration"
+      }
     } else {
       // -------------------
       // 🏬 Shop Mode: Validate Step 1 + 2
@@ -273,7 +327,6 @@ export default function AuthSignup({
 
     return newErrors
   }
-
 
   const handleNextStep = () => {
     if (mode === "shop" && currentStep === 1) {
@@ -326,6 +379,61 @@ export default function AuthSignup({
     }
   }
 
+  const renderLocationSection = () => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Location {mode === "shop" ? "(Required for shop visibility)" : "(Required for nearby services)"}
+      </label>
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={getLiveLocation}
+          disabled={locationLoading}
+          className={`w-full flex items-center justify-center px-4 py-3 border rounded-lg transition-all duration-200 ${
+            form.location
+              ? "border-green-500 bg-green-50 text-green-700"
+              : locationLoading
+                ? "border-blue-500 bg-blue-50 text-blue-700"
+                : "border-gray-300 hover:border-gray-400 text-gray-700"
+          }`}
+        >
+          {locationLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Getting Location...
+            </>
+          ) : form.location ? (
+            <>
+              <CheckCircle className="w-5 h-5 mr-2" />
+              Location Captured
+            </>
+          ) : (
+            <>
+              <Navigation className="w-5 h-5 mr-2" />
+              Get Current Location
+            </>
+          )}
+        </button>
+
+        {form.location && (
+          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+            <div className="flex items-center">
+              <MapPin className="w-4 h-4 mr-1" />
+              Coordinates: {form.location.coordinates[1].toFixed(6)}, {form.location.coordinates[0].toFixed(6)}
+            </div>
+          </div>
+        )}
+
+        {errors.location && (
+          <p className="text-sm text-red-600 flex items-center">
+            <AlertCircle className="w-4 h-4 mr-1" />
+            {errors.location}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+
   const renderUserFields = () => (
     <>
       <div>
@@ -337,8 +445,9 @@ export default function AuthSignup({
             name="fullName"
             value={(form as Extract<SignupForm, { mode: "user" }>).fullName}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.fullName ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.fullName ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Enter your full name"
           />
           {errors.fullName && (
@@ -372,9 +481,10 @@ export default function AuthSignup({
               {errors.profileImage}
             </p>
           )}
-
         </div>
       </div>
+
+      {renderLocationSection()}
     </>
   )
 
@@ -389,8 +499,9 @@ export default function AuthSignup({
             name="name"
             value={(form as Extract<SignupForm, { mode: "shop" }>).name}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.name ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.name ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Enter your shop name"
           />
           {errors.name && (
@@ -416,8 +527,9 @@ export default function AuthSignup({
             name="logo"
             accept="image/png,image/jpeg,image/jpg,image/webp"
             onChange={(e) => handleFileChange(e, "logo")}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.logo ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.logo ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
           />
           {errors.logo && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -441,32 +553,15 @@ export default function AuthSignup({
             name="city"
             value={(form as Extract<SignupForm, { mode: "shop" }>).city}
             onChange={handleInputChange}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.city ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.city ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="State & City"
           />
           {errors.city && (
             <p className="mt-1 text-sm text-red-600 flex items-center">
               <AlertCircle className="w-4 h-4 mr-1" />
               {errors.city}
-            </p>
-          )}
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Building Number</label>
-          <input
-            type="text"
-            name="buildingNumber"
-            value={(form as Extract<SignupForm, { mode: "shop" }>).buildingNumber}
-            onChange={handleInputChange}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.buildingNumber ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
-            placeholder="Building No."
-          />
-          {errors.buildingNumber && (
-            <p className="mt-1 text-sm text-red-600 flex items-center">
-              <AlertCircle className="w-4 h-4 mr-1" />
-              {errors.buildingNumber}
             </p>
           )}
         </div>
@@ -481,8 +576,9 @@ export default function AuthSignup({
             name="streetAddress"
             value={(form as Extract<SignupForm, { mode: "shop" }>).streetAddress}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.streetAddress ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.streetAddress ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Enter street address"
           />
         </div>
@@ -494,6 +590,8 @@ export default function AuthSignup({
         )}
       </div>
 
+      {renderLocationSection()}
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
         <div className="relative">
@@ -503,8 +601,9 @@ export default function AuthSignup({
             value={(form as Extract<SignupForm, { mode: "shop" }>).description}
             onChange={handleInputChange}
             rows={3}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 resize-none ${errors.description ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 resize-none ${
+              errors.description ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Describe your shop and services..."
           />
         </div>
@@ -525,8 +624,9 @@ export default function AuthSignup({
             name="certificateUrl"
             accept="image/png,image/jpeg,image/jpg,image/webp"
             onChange={(e) => handleFileChange(e, "certificateUrl")}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.certificateUrl ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.certificateUrl ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
           />
           {errors.certificateUrl && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -555,8 +655,9 @@ export default function AuthSignup({
             name="email"
             value={form.email}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.email ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Enter your email"
           />
           {errors.email && (
@@ -582,8 +683,9 @@ export default function AuthSignup({
             name="phone"
             value={form.phone}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.phone ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.phone ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Enter your phone number"
           />
           {errors.phone && (
@@ -609,8 +711,9 @@ export default function AuthSignup({
             name="password"
             value={form.password}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.password ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.password ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Create a password"
           />
           <button
@@ -638,8 +741,9 @@ export default function AuthSignup({
             name="confirmPassword"
             value={form.confirmPassword}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Confirm your password"
           />
           <button
@@ -685,8 +789,9 @@ export default function AuthSignup({
             name="email"
             value={form.email}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.email ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.email ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Enter your email"
           />
           {errors.email && (
@@ -712,8 +817,9 @@ export default function AuthSignup({
             name="phone"
             value={form.phone}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.phone ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.phone ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Enter your phone number"
           />
           {errors.phone && (
@@ -739,8 +845,9 @@ export default function AuthSignup({
             name="password"
             value={form.password}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.password ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.password ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Create a password"
           />
           <button
@@ -768,8 +875,9 @@ export default function AuthSignup({
             name="confirmPassword"
             value={form.confirmPassword}
             onChange={handleInputChange}
-            className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${errors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
-              }`}
+            className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 ${
+              errors.confirmPassword ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-gray-400"
+            }`}
             placeholder="Confirm your password"
           />
           <button
@@ -798,7 +906,7 @@ export default function AuthSignup({
 
   const getStepSubtitle = () => {
     if (mode === "user") return subtitle
-    if (currentStep === 1) return "Tell us about your shop"
+    if (currentStep === 1) return "Tell us about your shop and location"
     return "Create your account credentials"
   }
 
@@ -897,7 +1005,7 @@ export default function AuthSignup({
           </div>
 
           {/* Social login only on final step */}
-          {(mode === "user") && (
+          {mode === "user" && (
             <div className="mt-6 text-center">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">

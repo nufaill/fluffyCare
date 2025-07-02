@@ -12,6 +12,19 @@ export interface ShopAuthRequest extends Request {
   };
 }
 
+// GeoJSON validation helper
+const validateGeoJSONPoint = (location: any): boolean => {
+  if (!location || typeof location !== 'object') return false;
+  if (location.type !== 'Point') return false;
+  if (!Array.isArray(location.coordinates) || location.coordinates.length !== 2) return false;
+  
+  const [lng, lat] = location.coordinates;
+  if (typeof lng !== 'number' || typeof lat !== 'number') return false;
+  if (lng < -180 || lng > 180 || lat < -90 || lat > 90) return false;
+  
+  return true;
+};
+
 export class ShopAuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -19,6 +32,26 @@ export class ShopAuthController {
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
       console.log("📥 [ShopAuthController] Registration request received");
+
+      // Validate required fields
+      const { location, email, password, name, phone, city, streetAddress, certificateUrl } = req.body;
+
+      if (!email || !password || !name || !phone || !city || !streetAddress || !certificateUrl) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'All required fields must be provided'
+        });
+        return;
+      }
+
+      // Validate GeoJSON location
+      if (!validateGeoJSONPoint(location)) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Invalid location format. Expected GeoJSON Point with coordinates [longitude, latitude]'
+        });
+        return;
+      }
 
       const result = await this.authService.register(req.body);
 
@@ -340,11 +373,11 @@ export class ShopAuthController {
           logo: shop.logo,
           city: shop.city,
           streetAddress: shop.streetAddress,
-          buildingNumber: shop.buildingNumber,
           description: shop.description,
           certificateUrl: shop.certificateUrl,
           location: shop.location,
           isActive: shop.isActive,
+          isVerified: shop.isVerified,
           createdAt: shop.createdAt,
           updatedAt: shop.updatedAt,
         },

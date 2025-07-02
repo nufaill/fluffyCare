@@ -8,7 +8,6 @@ export class ShopController {
    constructor(private shopRepository: ShopRepository) {}
     getAllShops = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [AdminShopController] Fetching all shops");
       const shops = await this.shopRepository.getAllShops();
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -34,7 +33,6 @@ export class ShopController {
   };
    updateShopStatus = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [AdminShopController] Updating shop status");
 
       const { shopId } = req.params;
       const { isActive } = req.body;

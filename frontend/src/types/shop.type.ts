@@ -1,4 +1,10 @@
 // types/shop.types.ts
+
+export interface GeoLocation {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+}
+
 export interface Shop {
   _id: string;
   name: string;
@@ -6,14 +12,10 @@ export interface Shop {
   phone: string;
   city: string;
   streetAddress: string;
-  buildingNumber: string;
   description: string;
   logo: string;
   certificateUrl: string;
-  location: {
-    lat?: number;
-    lng?: number;
-  };
+  location: GeoLocation;
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
@@ -31,14 +33,10 @@ export interface ShopRegisterData {
   password: string;
   city: string;
   streetAddress: string;
-  buildingNumber: string;
   description: string;
   logo: string;
   certificateUrl: string;
-  location: {
-    lat?: number;
-    lng?: number;
-  };
+  location: GeoLocation;
 }
 
 export interface ShopAuthResponse {

@@ -11,7 +11,8 @@ import { JwtService } from "../services/jwt/jwtService";
 import { AuthService } from "../services/shop/authService";
 import { EmailService } from "../services/emailService/emailService";
 import { OtpRepository } from "../repositories/otpRepository";
-import { AuthMiddleware } from "../middlewares/user.middleware";
+import { AuthMiddleware } from "../middlewares/auth.middleware";
+import { ShopMiddleware } from '../middlewares/shop.middleware';
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ const otpRepository = new OtpRepository();
 const authService = new AuthService(shopRepository, jwtService, emailService, otpRepository);
 const shopAuthController = new ShopAuthController(authService);
 const authMiddleware = new AuthMiddleware(jwtService);
+const shopMiddleware = new ShopMiddleware(jwtService);
 
 // Public routes
 router.post("/signup", shopAuthController.register);
@@ -33,6 +35,8 @@ router.post('/forgot-password', shopAuthController.sendResetLink);
 router.post('/reset-password' , shopAuthController.resetPassword);
 router.post("/refresh", shopAuthController.refreshToken);
 router.post("/logout", shopAuthController.logout);
+// router.get('/dashboard', shopMiddleware.authenticate, shopAuthController.getDashboard);
+
 
 // Protected route
 router.get("/me", authMiddleware.authenticate, shopAuthController.me);

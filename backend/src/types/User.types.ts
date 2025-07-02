@@ -1,4 +1,9 @@
-import { Types,Document, ObjectId } from 'mongoose';
+import { Types, Document } from 'mongoose';
+
+export interface GeoLocation {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+}
 
 export interface CreateUserData {
   fullName: string;
@@ -6,8 +11,8 @@ export interface CreateUserData {
   phone?: string;
   password: string;
   profileImage?: string;
-  location?: Record<string, any>;   
-  isActive?: boolean;               
+  location: GeoLocation;
+  isActive?: boolean;
   isGoogleUser?: boolean;
   googleId?: string;
 }
@@ -18,7 +23,7 @@ export interface User {
   phone?: string;
   password: string;
   profileImage?: string;
-  location?: Record<string, any>;
+  location: GeoLocation;
   isActive: boolean;
   isGoogleUser?: boolean;
   googleId?: string;

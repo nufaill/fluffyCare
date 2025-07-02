@@ -11,7 +11,6 @@ export class UserController {
    constructor(private userRepository: UserRepository) {}
     getAllUsers = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [AdminUserController] Fetching all users");
 
       const users = await this.userRepository.getAllUsers();
 
@@ -39,8 +38,6 @@ export class UserController {
   };
    updateUserStatus = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [AdminUserController] Updating user status");
-
       const { userId } = req.params;
       const { isActive } = req.body;
 

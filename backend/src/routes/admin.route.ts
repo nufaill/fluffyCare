@@ -12,6 +12,7 @@ import { JwtService } from "../services/jwt/jwtService";
 import { AuthService } from "../services/admin/adminService";
 import { UserRepository } from "../repositories/userRepository";
 import { ShopRepository } from "../repositories/shopRepository";
+import { AdminMiddleware } from "../middlewares/admin.middleware";
 
 const router = express.Router();
 
@@ -23,13 +24,17 @@ const adminAuthController = new AdminAuthController(authService);
 const userRepository = new UserRepository();
 const adminUserController = new UserController(userRepository);
 const shopRepository = new ShopRepository();
-const adminShopCotroller = new ShopController(shopRepository)
-// Public routes
+const adminShopController = new ShopController(shopRepository);
+const adminMiddleware = new AdminMiddleware(jwtService);
+
+// Public routes 
 router.post("/login", validateRequest(loginSchema), adminAuthController.login);
-router.get('/customer-pets-detail', adminUserController.getAllUsers);
-router.patch('/customer-pets-detail/:userId/status', adminUserController.updateUserStatus);
-router.get('/shops', adminShopCotroller.getAllShops);
-router.patch('/shops/:shopId/status', adminShopCotroller.updateShopStatus);
 router.post("/logout", adminAuthController.logout);
+
+// Protected routes 
+router.get('/customer-pets-detail',  adminUserController.getAllUsers);
+router.patch('/customer-pets-detail/:userId/status',  adminUserController.updateUserStatus);
+router.get('/shops',  adminShopController.getAllShops);
+router.patch('/shops/:shopId/status',  adminShopController.updateShopStatus);
 
 export default router;

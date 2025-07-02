@@ -1,11 +1,12 @@
-// backend/src/types/Shop.types.ts
 import { Document, Types } from 'mongoose';
 
-export interface ShopLocation {
-  lat?: number;
-  lng?: number;
+// GeoJSON location type
+export interface GeoLocation {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
 }
 
+//  Shop Create Data
 export interface CreateShopData {
   logo: string;
   name: string;
@@ -14,15 +15,16 @@ export interface CreateShopData {
   password: string;
   city: string;
   streetAddress: string;
-  buildingNumber?: string;
   description?: string;
   certificateUrl: string;
-  location?: ShopLocation;
+  location: GeoLocation;
   isActive: boolean;
+  isVerified: boolean;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
 }
 
+//  Mongoose Shop Document
 export interface ShopDocument extends Document {
   _id: Types.ObjectId;
   logo: string;
@@ -32,17 +34,18 @@ export interface ShopDocument extends Document {
   password: string;
   city: string;
   streetAddress: string;
-  buildingNumber?: string;
   description?: string;
   certificateUrl: string;
-  location?: ShopLocation;
+  location: GeoLocation;
   isActive: boolean;
+  isVerified: boolean;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Response Shape
 export interface ShopProfile {
   id: string;
   name: string;
@@ -51,15 +54,16 @@ export interface ShopProfile {
   logo: string;
   city: string;
   streetAddress: string;
-  buildingNumber?: string;
   description?: string;
   certificateUrl: string;
-  location?: ShopLocation;
+  location: GeoLocation;
   isActive: boolean;
+  isVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Auth Types
 export interface ShopLoginData {
   email: string;
   password: string;
@@ -73,10 +77,9 @@ export interface ShopRegisterData {
   password: string;
   city: string;
   streetAddress: string;
-  buildingNumber?: string;
   description?: string;
   certificateUrl: string;
-  location?: ShopLocation;
+  location: GeoLocation;
 }
 
 export interface TokenPair {

@@ -1,3 +1,8 @@
+export interface GeoLocation {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+}
+
 export interface GoogleUserInfo {
   id: string;
   email: string;
@@ -16,6 +21,7 @@ export interface AuthUser {
   email: string;
   fullName: string;
   profileImage?: string;
+  location: GeoLocation; 
 }
 
 export interface AuthResponse {
@@ -23,6 +29,7 @@ export interface AuthResponse {
   user: AuthUser;
   tokens: AuthTokens;
 }
+
 
 export interface JwtPayload {
   id: string;

@@ -1,7 +1,7 @@
 // backend/src/routes/auth.route.ts
 import express from 'express';
 import { AuthController } from '../controllers/user/auth.controller';
-import { AuthMiddleware } from '../middlewares/user.middleware';
+import { AuthMiddleware } from '../middlewares/auth.middleware';
 import { validateRequest } from '../middlewares/validateRequest';
 import { registerSchema } from '../validations/register.validation';
 import { loginSchema } from '../validations/login.validation';

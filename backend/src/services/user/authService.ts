@@ -14,22 +14,50 @@ import crypto from 'crypto';
 import { config } from '../../config/env';
 import { EmailService } from '../emailService/emailService';
 import PASSWORD_RESET_MAIL_CONTENT from 'shared/mailTemplate';
+import { RegisterUserDTO } from '../../dtos/user.dto';
 
 export interface LoginData {
   email: string;
   password: string;
 }
 
-export interface RegisterData {
-  fullName: string;
-  email: string;
-  phone?: string;
-  password: string;
-  profileImage?: string;
-  location?: Record<string, unknown>;
+
+export interface RegisterData extends Omit<RegisterUserDTO, 'location'> {
+  location?: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
 }
 
+
 export class AuthService {
+  private validateGeoLocation(location: any): boolean {
+    if (!location || typeof location !== 'object') {
+      return false;
+    }
+
+    // Check if it's proper GeoJSON Point format
+    if (location.type !== 'Point') {
+      return false;
+    }
+
+    if (!Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
+      return false;
+    }
+
+    const [lng, lat] = location.coordinates;
+
+    // Validate longitude (-180 to 180) and latitude (-90 to 90)
+    if (typeof lng !== 'number' || typeof lat !== 'number') {
+      return false;
+    }
+
+    if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+      return false;
+    }
+
+    return true;
+  }
   private readonly saltRounds = 12;
   otpRepository: OtpRepository;
 
@@ -43,7 +71,7 @@ export class AuthService {
     this.otpRepository = otpRepository;
   }
 
-  // GENERATE TOKENS - Fixed implementation
+
   generateTokens(id: string, email: string) {
     return this.jwtService.generateTokens({
       id,
@@ -52,8 +80,8 @@ export class AuthService {
   }
 
   // REGISTER
-  async register(userData: any): Promise<{ email: string }> {
-    const { email, password, ...otherData } = userData;
+  register = async (userData: RegisterUserDTO): Promise<{ email: string }> => {
+    const { email, password, location, ...otherData } = userData;
 
     console.log(`🔍 Checking if user exists: ${email}`);
 
@@ -66,11 +94,21 @@ export class AuthService {
 
     console.log(`✅ User doesn't exist, proceeding with OTP generation`);
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const tempUserData = {
+    // Validate GeoJSON location if provided
+    if (userData.location && !this.validateGeoLocation(userData.location)) {
+      throw new CustomError(
+        'Invalid location format. Location must be a valid GeoJSON Point with coordinates [longitude, latitude]',
+        HTTP_STATUS.BAD_REQUEST || 400
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, this.saltRounds); // Use this.saltRounds
+
+    const tempUserData: CreateUserData = { // Ensure CreateUserData can accept GeoJSON location
       ...otherData,
       email,
       password: hashedPassword,
+      location: location as any, // Cast to any or update CreateUserData to include GeoJSON type
     };
 
     const otp = generateOtp();
@@ -78,7 +116,7 @@ export class AuthService {
 
     await this.otpRepository.createOtp(email, otp, tempUserData);
 
-    const userName = userData.fullName || userData.name || undefined;
+    const userName = userData.fullName || undefined; // Simplified userName
     await sendOtpEmail(email, otp, userName);
 
     console.log(`📧 OTP sent to ${email}`);
@@ -204,6 +242,7 @@ export class AuthService {
           email: user.email,
           fullName: user.fullName,
           profileImage: user.profileImage,
+          location: user.location,
         },
         tokens,
       };
@@ -243,6 +282,9 @@ export class AuthService {
           isGoogleUser: true,
           googleId: googleUser.id,
           isActive: true,
+          location: {
+            type: "Point", coordinates: [0, 0]
+          }
         };
 
         user = await this.userRepository.createUser(userData);
@@ -274,6 +316,7 @@ export class AuthService {
           email: user.email,
           fullName: user.fullName,
           profileImage: user.profileImage,
+          location: user.location,
         },
         tokens,
       };
@@ -321,76 +364,79 @@ export class AuthService {
   }
 
   // Static method for Google login (alternative approach)
-  static async googleLogin(credential: string): Promise<AuthResponse> {
-    try {
-      console.log("🔧 [AuthService Static] Starting Google authentication...");
+  // static async googleLogin(credential: string): Promise<AuthResponse> {
+  //   try {
+  //     console.log("🔧 [AuthService Static] Starting Google authentication...");
 
-      // Import services dynamically
-      const { GoogleAuthService } = await import('../googleAuth/googleService');
-      const { UserRepository } = await import('../../repositories/userRepository');
-      const { JwtService } = await import('../jwt/jwtService');
+  //     // Import services dynamically
+  //     const { GoogleAuthService } = await import('../googleAuth/googleService');
+  //     const { UserRepository } = await import('../../repositories/userRepository');
+  //     const { JwtService } = await import('../jwt/jwtService');
 
-      const googleService = new GoogleAuthService();
-      const userRepository = new UserRepository();
-      const jwtService = new JwtService();
+  //     const googleService = new GoogleAuthService();
+  //     const userRepository = new UserRepository();
+  //     const jwtService = new JwtService();
 
-      // Verify the Google ID token
-      const googleUser = await googleService.verifyIdToken(credential);
-      console.log("✅ [AuthService Static] Google token verified");
+  //     // Verify the Google ID token
+  //     const googleUser = await googleService.verifyIdToken(credential);
+  //     console.log("✅ [AuthService Static] Google token verified");
 
-      const normalizedEmail = googleUser.email.trim().toLowerCase();
+  //     const normalizedEmail = googleUser.email.trim().toLowerCase();
 
-      let user = await userRepository.findByEmail(normalizedEmail);
+  //     let user = await userRepository.findByEmail(normalizedEmail);
 
-      if (!user) {
-        console.log("📝 [AuthService Static] Creating new user from Google data...");
+  //     if (!user) {
+  //       console.log("📝 [AuthService Static] Creating new user from Google data...");
 
-        const userData: CreateUserData = {
-          fullName: googleUser.name,
-          email: normalizedEmail,
-          phone: '',
-          password: '',
-          profileImage: googleUser.picture || undefined,
-          isGoogleUser: true,
-          googleId: googleUser.id,
-          isActive: true,
-        };
+  //       const userData: CreateUserData = {
+  //         fullName: googleUser.name,
+  //         email: normalizedEmail,
+  //         phone: '',
+  //         password: '',
+  //         profileImage: googleUser.picture || undefined,
+  //         isGoogleUser: true,
+  //         googleId: googleUser.id,
+  //         isActive: true,
+  //       };
 
-        user = await userRepository.createUser(userData);
-        console.log("✅ [AuthService Static] New Google user created");
-      } else {
-        console.log("✅ [AuthService Static] Existing user found");
-      }
+  //       user = await userRepository.createUser(userData);
+  //       console.log("✅ [AuthService Static] New Google user created");
+  //     } else {
+  //       console.log("✅ [AuthService Static] Existing user found");
+  //     }
 
-      if (!user.isActive) {
-        throw new CustomError('Account is inactive', HTTP_STATUS.FORBIDDEN || 403);
-      }
+  //     if (!user.isActive) {
+  //       throw new CustomError('Account is inactive', HTTP_STATUS.FORBIDDEN || 403);
+  //     }
 
 
-      console.log("🎟️ [AuthService Static] Generating JWT tokens...");
-      const tokens = jwtService.generateTokens({
-        id: user._id.toString(),
-        email: user.email
-      });
+  //     console.log("🎟️ [AuthService Static] Generating JWT tokens...");
+  //     const tokens = jwtService.generateTokens({
+  //       id: user._id.toString(),
+  //       email: user.email
+  //     });
 
-      return {
-        success: true,
-        user: {
-          id: user._id.toString(),
-          email: user.email,
-          fullName: user.fullName,
-          profileImage: user.profileImage,
-        },
-        tokens,
-      };
-    } catch (error) {
-      console.error("❌ [AuthService Static] Google login error:", error);
-      if (error instanceof CustomError) {
-        throw error;
-      }
-      throw new CustomError('Google authentication failed', HTTP_STATUS.BAD_REQUEST || 400);
-    }
-  }
+  //     return {
+  //       success: true,
+  //       user: {
+  //         id: user._id.toString(),
+  //         email: user.email,
+  //         fullName: user.fullName,
+  //         profileImage: user.profileImage,
+  //         location: user.location,
+  //       },
+  //       tokens,
+  //     };
+  //   } catch (error) {
+  //     console.error("❌ [AuthService Static] Google login error:", error);
+  //     if (error instanceof CustomError) {
+  //       throw error;
+  //     }
+  //     throw new CustomError('Google authentication failed', HTTP_STATUS.BAD_REQUEST || 400);
+  //   }
+  // }
+
+  
   async sendResetLink(email: string) {
     try {
       console.log("🔧 [AuthService] Sending reset link for email:", email);

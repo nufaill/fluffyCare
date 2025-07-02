@@ -12,7 +12,8 @@ import {
   ShopRegisterData, 
   ShopAuthResponse,
   TokenPair,
-  ShopProfile
+  ShopProfile,
+  GeoLocation
 } from '../../types/Shop.types';
 import { JwtPayload } from '../../types/auth.types';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
@@ -30,6 +31,36 @@ export class AuthService {
     private readonly otpRepository: OtpRepository
   ) {}
 
+  // VALIDATE GEOJSON POINT
+  private validateGeoLocation(location: any): location is GeoLocation {
+    if (!location || typeof location !== 'object') {
+      throw new CustomError('Location is required', HTTP_STATUS.BAD_REQUEST);
+    }
+    
+    if (location.type !== 'Point') {
+      throw new CustomError('Location must be a GeoJSON Point', HTTP_STATUS.BAD_REQUEST);
+    }
+    
+    if (!Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
+      throw new CustomError('Location coordinates must be an array of [longitude, latitude]', HTTP_STATUS.BAD_REQUEST);
+    }
+    
+    const [lng, lat] = location.coordinates;
+    if (typeof lng !== 'number' || typeof lat !== 'number') {
+      throw new CustomError('Location coordinates must be numbers', HTTP_STATUS.BAD_REQUEST);
+    }
+    
+    if (lng < -180 || lng > 180) {
+      throw new CustomError('Longitude must be between -180 and 180', HTTP_STATUS.BAD_REQUEST);
+    }
+    
+    if (lat < -90 || lat > 90) {
+      throw new CustomError('Latitude must be between -90 and 90', HTTP_STATUS.BAD_REQUEST);
+    }
+    
+    return true;
+  }
+
   // GENERATE TOKENS
   private generateTokens(id: string, email: string): TokenPair {
     return this.jwtService.generateTokens({
@@ -40,9 +71,13 @@ export class AuthService {
 
   // REGISTER SHOP WITH OTP
   async register(shopData: ShopRegisterData): Promise<{ email: string }> {
-    const { email, password, ...otherData } = shopData;
+    const { email, password, location, ...otherData } = shopData;
 
     console.log(`🔍 [ShopAuthService] Checking if shop exists: ${email}`);
+
+    // Validate GeoJSON location
+    this.validateGeoLocation(location);
+    console.log(`✅ [ShopAuthService] Location validation passed:`, location);
 
     // Check if shop already exists
     const existingShop = await this.shopRepository.findByEmail(email);
@@ -59,7 +94,12 @@ export class AuthService {
       ...otherData,
       email,
       password: hashedPassword,
+      location: {
+        type: 'Point',
+        coordinates: [location.coordinates[0], location.coordinates[1]]
+      },
       isActive: true,
+      isVerified: true,
     };
 
     // Generate and send OTP
@@ -100,9 +140,16 @@ export class AuthService {
 
     // Create shop with the stored data
     const shopData = verificationResult.userData as CreateShopData;
+    
+    // Ensure location is in correct GeoJSON format
+    if (shopData.location) {
+      this.validateGeoLocation(shopData.location);
+    }
+    
     console.log(`🏪 [ShopAuthService] Creating shop with data:`, {
       email: shopData.email,
-      name: shopData.name
+      name: shopData.name,
+      location: shopData.location
     });
 
     const shop = await this.shopRepository.createShop(shopData);
@@ -129,11 +176,11 @@ export class AuthService {
         logo: shop.logo,
         city: shop.city,
         streetAddress: shop.streetAddress,
-        buildingNumber: shop.buildingNumber,
         description: shop.description,
         certificateUrl: shop.certificateUrl,
         location: shop.location,
         isActive: shop.isActive,
+        isVerified: shop.isVerified,
         createdAt: shop.createdAt,
         updatedAt: shop.updatedAt,
       },
@@ -153,6 +200,12 @@ export class AuthService {
 
     console.log(`✅ [ShopAuthService] Found existing OTP record for ${email}`);
 
+    // Validate existing location data
+    const userData = existingOtp.userData as CreateShopData;
+    if (userData.location) {
+      this.validateGeoLocation(userData.location);
+    }
+
     // Generate new OTP
     const otp = generateOtp();
     console.log(`🔢 [ShopAuthService] Generated new OTP for ${email}`);
@@ -160,7 +213,7 @@ export class AuthService {
     await this.otpRepository.createOtp(email, otp, existingOtp.userData);
 
     // Send new OTP email
-    const shopName = (existingOtp.userData as unknown as CreateShopData)?.name || 'Shop';
+    const shopName = userData?.name || 'Shop';
     await sendOtpEmail(email, otp, shopName);
 
     console.log(`📧 [ShopAuthService] New OTP sent to ${email}`);
@@ -205,11 +258,11 @@ export class AuthService {
           logo: shop.logo,
           city: shop.city,
           streetAddress: shop.streetAddress,
-          buildingNumber: shop.buildingNumber,
           description: shop.description,
           certificateUrl: shop.certificateUrl,
           location: shop.location,
           isActive: shop.isActive,
+          isVerified: shop.isVerified,
           createdAt: shop.createdAt,
           updatedAt: shop.updatedAt,
         },
