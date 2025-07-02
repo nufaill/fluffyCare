@@ -1,0 +1,312 @@
+"use client"
+
+import * as React from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/Badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
+import Header from "@/components/user/Header"
+import Footer from "@/components/user/Footer"
+import { ModernSidebar } from "@/components/user/app-sidebar"
+import { Edit, Mail, Phone, MapPin, Calendar, Activity, Globe, Clock, Shield, Camera } from 'lucide-react'
+
+interface UserDocument {
+  _id: string
+  fullName: string
+  email: string
+  profileImage?: string
+  phone?: string
+  location: {
+    type: "Point"
+    coordinates: [number, number]
+  }
+  isActive: boolean
+  googleId?: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+const mockUser: UserDocument = {
+  _id: "1",
+  fullName: "Sarah Johnson",
+  email: "sarah.johnson@example.com",
+  profileImage: "/placeholder.svg?height=120&width=120",
+  phone: "+1 (555) 123-4567",
+  location: {
+    type: "Point",
+    coordinates: [-74.006, 40.7128],
+  },
+  isActive: true,
+  googleId: "google_123456789",
+  createdAt: new Date("2023-01-15"),
+  updatedAt: new Date("2024-01-02"),
+}
+
+export default function ProfilePage() {
+  const [sidebarCollapsed] = React.useState(false)
+
+  return (
+    <><div className="flex flex-col h-screen bg-white dark:bg-black">
+      {/* Header spans full width at top */}
+      <Header />
+
+      {/* Sidebar and main content below header */}
+      <div className="flex flex-1 overflow-hidden">
+        <ModernSidebar isCollapsed={sidebarCollapsed} />
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="container mx-auto p-6 space-y-6">
+            {/* Profile Header */}
+            <Card className="overflow-hidden bg-white dark:bg-black border-0 shadow-xl">
+              <CardContent className="p-0">
+                <div className="relative h-32 bg-gradient-to-r from-gray-800 to-black dark:from-gray-200 dark:to-white">
+                  <div className="absolute inset-0 bg-black/20 dark:bg-white/20" />
+                  <div className="absolute bottom-4 left-6 right-6">
+                    <div className="flex items-end justify-between">
+                      <div className="flex items-end gap-4">
+                        <div className="relative">
+                          <Avatar className="h-24 w-24 border-4 border-white dark:border-black shadow-xl">
+                            <AvatarImage src={mockUser.profileImage || "/placeholder.svg"} alt={mockUser.fullName} />
+                            <AvatarFallback className="bg-white dark:bg-black text-gray-900 dark:text-white text-2xl font-bold">
+                              {mockUser.fullName
+                                .split(" ")
+                                .map((name) => name[0])
+                                .join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Button
+                            size="icon"
+                            className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-white dark:bg-black text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900 shadow-lg"
+                          >
+                            <Camera className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="pb-2">
+                          <h1 className="text-2xl font-bold text-white dark:text-black mb-1">{mockUser.fullName}</h1>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-white/20 dark:bg-black/20 text-white dark:text-black border-white/30 dark:border-black/30">Premium Member</Badge>
+                            <Badge
+                              variant={mockUser.isActive ? "default" : "secondary"}
+                              className={mockUser.isActive ? "bg-gray-600 hover:bg-gray-700 text-white" : "bg-gray-400 text-white"}
+                            >
+                              {mockUser.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <Button className="bg-white dark:bg-black text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900 font-semibold">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Profile
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 pt-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {Math.floor((new Date().getTime() - mockUser.createdAt.getTime()) / (1000 * 60 * 60 * 24))}
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Days Active</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">3</div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Pets Registered</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">12</div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Bookings Made</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {/* Contact Information */}
+              <Card className="shadow-lg border-0 bg-white dark:bg-black">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                    <div className="p-2 bg-gray-100 dark:bg-gray-900 rounded-lg">
+                      <Mail className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    Contact Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
+                        <Mail className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          Email Address
+                        </p>
+                        <p className="text-gray-900 dark:text-white font-medium break-all">{mockUser.email}</p>
+                      </div>
+                    </div>
+
+                    {mockUser.phone && (
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
+                          <Phone className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            Phone Number
+                          </p>
+                          <p className="text-gray-900 dark:text-white font-medium">{mockUser.phone}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
+                        <MapPin className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          Location
+                        </p>
+                        <p className="text-gray-900 dark:text-white font-medium">New York, NY</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {mockUser.location.coordinates[1].toFixed(4)}, {mockUser.location.coordinates[0].toFixed(4)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Account Status */}
+              <Card className="shadow-lg border-0 bg-white dark:bg-black">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                    <div className="p-2 bg-gray-100 dark:bg-gray-900 rounded-lg">
+                      <Shield className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    Account Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
+                        <Activity className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          Status
+                        </p>
+                        <Badge
+                          className={mockUser.isActive
+                            ? "bg-gray-800 text-white dark:bg-gray-200 dark:text-black"
+                            : "bg-gray-400 text-white dark:bg-gray-600 dark:text-white"}
+                        >
+                          {mockUser.isActive ? "Active Account" : "Inactive Account"}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
+                        <Calendar className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          Member Since
+                        </p>
+                        <p className="text-gray-900 dark:text-white font-medium">
+                          {mockUser.createdAt.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
+                        <Clock className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          Last Updated
+                        </p>
+                        <p className="text-gray-900 dark:text-white font-medium">
+                          {mockUser.updatedAt.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Authentication */}
+              <Card className="shadow-lg border-0 bg-white dark:bg-black lg:col-span-2 xl:col-span-1">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
+                    <div className="p-2 bg-gray-100 dark:bg-gray-900 rounded-lg">
+                      <Globe className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    Authentication
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
+                        <Shield className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          Account ID
+                        </p>
+                        <p className="text-gray-900 dark:text-white font-mono text-sm">{mockUser._id}</p>
+                      </div>
+                    </div>
+
+                    {mockUser.googleId && (
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
+                          <Globe className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            Google Account
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-gray-800 text-white dark:bg-gray-200 dark:text-black">
+                              Connected
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">{mockUser.googleId}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
+                    <Button
+                      variant="outline"
+                      className="w-full border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 bg-transparent"
+                    >
+                      <Shield className="h-4 w-4 mr-2" />
+                      Security Settings
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div><Footer /></>
+  )
+}

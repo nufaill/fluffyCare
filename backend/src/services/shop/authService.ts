@@ -99,7 +99,7 @@ export class AuthService {
         coordinates: [location.coordinates[0], location.coordinates[1]]
       },
       isActive: true,
-      isVerified: true,
+      isVerified: false,
     };
 
     // Generate and send OTP

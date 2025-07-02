@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import React, { useState, useRef, useEffect, forwardRef } from 'react';
 
 interface DropdownMenuProps {
   children: React.ReactNode;
@@ -13,6 +14,11 @@ interface DropdownMenuContentProps {
   align?: 'start' | 'center' | 'end';
   className?: string;
   children: React.ReactNode;
+}
+interface DropdownMenuLabelProps {
+  className?: string
+  children: React.ReactNode
+  asChild?: boolean
 }
 
 interface DropdownMenuItemProps {
@@ -102,7 +108,24 @@ export function DropdownMenuContent({ align = 'end', className = '', children }:
     </div>
   );
 }
+export const DropdownMenuLabel = forwardRef<HTMLDivElement, DropdownMenuLabelProps>(
+  ({ className, children, asChild, ...props }, ref) => {
+    if (asChild && React.isValidElement(children)) {
+      return React.cloneElement(children, {
+        ref,
+        className: cn("px-2 py-1.5 text-sm font-semibold", className),
+        ...props,
+      } as any)
+    }
 
+    return (
+      <div ref={ref} className={cn("px-2 py-1.5 text-sm font-semibold", className)} {...props}>
+        {children}
+      </div>
+    )
+  },
+)
+DropdownMenuLabel.displayName = "DropdownMenuLabel"
 export function DropdownMenuItem({ className = '', onClick, children }: DropdownMenuItemProps) {
   const { setIsOpen } = React.useContext(DropdownMenuContext);
 

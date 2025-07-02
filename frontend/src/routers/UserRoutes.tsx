@@ -7,7 +7,9 @@ import Signup from "@/pages/user/Signup";
 import VerifyOtpPage from "@/pages/user/VerifyOtp";
 import ForgotPassword from '@/pages/user/ForgotPasswordForm';
 import ResetPassword from '@/pages/user/ResetPasswordForm';
-import UserDetails from '@/pages/user/userDetails';
+import UserDetails from '@/pages/user/user-profile';
+import PetDetails from '@/pages/user/pet-details';
+import Addpets from '@/pages/user/add-pet';
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 
 const UserRoutes = () => {
@@ -57,11 +59,16 @@ const UserRoutes = () => {
             <UserDetails />
           </PrivateRoute>
         } 
-      /> */}
-      
+      />
+       */}
       
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
+
       <Route path="/profile" element={<UserDetails/>} />
+
+      <Route path="/pets" element={<PetDetails/>} />
+
+      <Route path="/add-pets" element={<Addpets/>} />
       
       <Route path="/logout" element={<HomePage />} />
       
