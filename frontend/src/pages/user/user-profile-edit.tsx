@@ -10,72 +10,185 @@ import { Label } from "@/components/ui/label"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { ModernSidebar } from "@/components/user/app-sidebar"
-import { Globe, Shield, Camera, Save, X, User, Upload } from "lucide-react"
+import { Globe, Shield, Camera, Save, X, User, Upload, MapPin } from "lucide-react"
+import type { UserDocument, UserUpdatePayload } from "@/types/user.type"
+import type { RootState } from "@/redux/store"
+import { useSelector } from "react-redux"
+import { userService } from "@/services/user/userService"
+import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
-interface UserFormData {
-  fullName: string
-  email: string
-  phone: string
-  bio: string
-  location: string
-  dateOfBirth: string
-  gender: string
-  profileImage: string
+interface GeoPoint {
+  type: 'Point';
+  coordinates: [number, number];
+}
+
+interface FormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  location: GeoPoint;
+  profileImage: string;
 }
 
 export default function ProfileEditPage() {
   const [sidebarCollapsed] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
-  const [imagePreview, setImagePreview] = React.useState<string>("/placeholder.svg")
-
-  const [formData, setFormData] = React.useState<UserFormData>({
-    fullName: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    bio: "Pet lover and enthusiast. I have been caring for pets for over 5 years.",
-    location: "New York, NY",
-    dateOfBirth: "1990-01-15",
-    gender: "male",
-    profileImage: "/placeholder.svg",
+  const [locationLoading, setLocationLoading] = React.useState(false)
+  const [locationStatus, setLocationStatus] = React.useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [errors, setErrors] = React.useState<{ location?: string }>({})
+  const [imagePreview, setImagePreview] = React.useState<string>("")
+  const [user, setUser] = React.useState<UserDocument | null>(null)
+  const [formData, setFormData] = React.useState<FormData>({
+    fullName: '',
+    email: '',
+    phone: '',
+    location: { type: 'Point', coordinates: [0, 0] },
+    profileImage: ''
   })
 
-  const handleInputChange = (field: keyof UserFormData, value: string) => {
-    setFormData((prev) => ({
+  const userState = useSelector((state: RootState) => state.user.userDatas)
+  const navigate = useNavigate()
+
+  React.useEffect(() => {
+    async function fetchUser() {
+      try {
+        if (!userState?.id) {
+          navigate('/login')
+          return
+        }
+
+        const data = await userService.getUser(userState.id)
+        setUser(data)
+        setFormData({
+          fullName: data.fullName || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          location: data.location || { type: 'Point', coordinates: [0, 0] },
+          profileImage: data.profileImage || ''
+        })
+        setImagePreview(data.profileImage || "/placeholder.svg")
+      } catch (err) {
+        console.error("Failed to fetch user:", err)
+        toast.error("Failed to load user profile")
+      }
+    }
+
+    fetchUser()
+  }, [userState?.id, navigate])
+
+  const handleInputChange = (field: keyof Omit<FormData, 'location'>, value: string) => {
+    setFormData(prev => ({
       ...prev,
-      [field]: value,
+      [field]: value
     }))
   }
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
       reader.onload = (e) => {
         const result = e.target?.result as string
         setImagePreview(result)
-        setFormData((prev) => ({
+        setFormData(prev => ({
           ...prev,
-          profileImage: result,
+          profileImage: result
         }))
       }
       reader.readAsDataURL(file)
     }
   }
 
+  const getLiveLocation = () => {
+    if (!navigator.geolocation) {
+      setErrors((prev) => ({ ...prev, location: "Geolocation not supported in your browser" }))
+      return
+    }
+
+    setLocationLoading(true)
+    setLocationStatus("loading")
+    setErrors((prev) => ({ ...prev, location: "" }))
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setFormData(prev => ({
+          ...prev,
+          location: {
+            type: "Point",
+            coordinates: [longitude, latitude],
+          },
+        }))
+        setLocationLoading(false)
+        setLocationStatus("success")
+      },
+      (error) => {
+        console.error("Location error:", error)
+        let errorMessage = "Unable to fetch location. Please allow location access."
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location permissions."
+            break
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable."
+            break
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out."
+            break
+        }
+
+        setErrors((prev) => ({ ...prev, location: errorMessage }))
+        setLocationLoading(false)
+        setLocationStatus("error")
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    
+    if (!userState?.id) {
+      toast.error("User not authenticated")
+      return
+    }
 
+    setLoading(true)
+    
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      console.log("Updated profile data:", formData)
-      // Handle success (redirect, show message, etc.)
+      const updatePayload: UserUpdatePayload = {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        profileImage: formData.profileImage,
+        location: formData.location
+      }
+
+      await userService.editUser(userState.id, updatePayload)
+      toast.success("Profile updated successfully!")
+      navigate('/profile')
     } catch (error) {
       console.error("Failed to update profile:", error)
+      toast.error("Failed to update profile")
     } finally {
       setLoading(false)
     }
+  }
+
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-500 dark:text-gray-300">Loading profile...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -101,7 +214,7 @@ export default function ProfileEditPage() {
                 <Button
                   variant="outline"
                   className="border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 bg-transparent"
-                  onClick={() => window.history.back()}
+                  onClick={() => navigate('/profile')}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Cancel
@@ -118,12 +231,9 @@ export default function ProfileEditPage() {
                         <div className="flex items-end gap-4">
                           <div className="relative">
                             <Avatar className="h-24 w-24 border-4 border-white dark:border-black shadow-xl">
-                              <AvatarImage src={imagePreview || "/placeholder.svg"} alt="Profile" />
+                              <AvatarImage src={imagePreview} alt="Profile" />
                               <AvatarFallback className="bg-white dark:bg-black text-gray-900 dark:text-white text-2xl font-bold">
-                                {formData.fullName
-                                  .split(" ")
-                                  .map((name) => name[0])
-                                  .join("")}
+                                {formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <label
@@ -184,6 +294,7 @@ export default function ProfileEditPage() {
                             onChange={(e) => handleInputChange("fullName", e.target.value)}
                             className="border-gray-300 dark:border-gray-700 focus:border-gray-500 dark:focus:border-gray-400"
                             placeholder="Enter your full name"
+                            required
                           />
                         </div>
 
@@ -195,10 +306,11 @@ export default function ProfileEditPage() {
                             id="email"
                             type="email"
                             value={formData.email}
-                            onChange={(e) => handleInputChange("email", e.target.value)}
-                            className="border-gray-300 dark:border-gray-700 focus:border-gray-500 dark:focus:border-gray-400"
+                            className="border-gray-300 dark:border-gray-700 focus:border-gray-500 dark:focus:border-gray-400 bg-gray-50 dark:bg-gray-900"
                             placeholder="Enter your email address"
+                            disabled
                           />
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
                         </div>
 
                         <div className="space-y-2">
@@ -216,16 +328,29 @@ export default function ProfileEditPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="location" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Location
                           </Label>
-                          <Input
-                            id="location"
-                            value={formData.location}
-                            onChange={(e) => handleInputChange("location", e.target.value)}
-                            className="border-gray-300 dark:border-gray-700 focus:border-gray-500 dark:focus:border-gray-400"
-                            placeholder="Enter your location"
-                          />
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 bg-transparent"
+                              onClick={getLiveLocation}
+                              disabled={locationLoading}
+                            >
+                              <MapPin className="h-4 w-4 mr-2" />
+                              {locationLoading ? 'Fetching Location...' : 'Get Live Location'}
+                            </Button>
+                          </div>
+                          {errors.location && (
+                            <p className="text-xs text-red-500 dark:text-red-400">{errors.location}</p>
+                          )}
+                          {locationStatus === 'success' && (
+                            <p className="text-xs text-green-500 dark:text-green-400">
+                              Location updated: {formData.location.coordinates[1].toFixed(4)}, {formData.location.coordinates[0].toFixed(4)}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -270,7 +395,7 @@ export default function ProfileEditPage() {
                     type="button"
                     variant="outline"
                     className="border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 bg-transparent"
-                    onClick={() => window.history.back()}
+                    onClick={() => navigate('/profile')}
                   >
                     Cancel
                   </Button>

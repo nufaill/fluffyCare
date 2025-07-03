@@ -20,7 +20,7 @@ const UserRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
       
-      {/* Public routes  */}
+      {/* Public routes for unauthenticated users */}
       <Route 
         path="/login" 
         element={
@@ -53,7 +53,11 @@ const UserRoutes = () => {
           </PublicRoute>
         } 
       />
-      {/* <Route 
+      
+      <Route path="/verify-otp" element={<VerifyOtpPage />} />
+
+      {/* Protected routes - require authentication */}
+      <Route 
         path="/profile" 
         element={
           <PrivateRoute userType="user">
@@ -61,20 +65,35 @@ const UserRoutes = () => {
           </PrivateRoute>
         } 
       />
-       */}
-      
-      <Route path="/verify-otp" element={<VerifyOtpPage />} />
 
-      <Route path="/profile" element={<UserDetails/>} />
+      <Route 
+        path="/profile/update" 
+        element={
+          <PrivateRoute userType="user">
+            <UserEdit />
+          </PrivateRoute>
+        } 
+      />
 
-      <Route path="/profile/update" element={<UserEdit/>} />
+      <Route 
+        path="/pets" 
+        element={
+          <PrivateRoute userType="user">
+            <PetDetails />
+          </PrivateRoute>
+        } 
+      />
 
-      <Route path="/pets" element={<PetDetails/>} />
-
-      <Route path="/add-pets" element={<Addpets/>} />
+      <Route 
+        path="/add-pets" 
+        element={
+          <PrivateRoute userType="user">
+            <Addpets />
+          </PrivateRoute>
+        } 
+      />
       
       <Route path="/logout" element={<HomePage />} />
-      
     </Routes>
   );
 };

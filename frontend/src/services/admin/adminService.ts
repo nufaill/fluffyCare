@@ -150,7 +150,7 @@ export const updateShopStatus = async (shopId: string, isActive: boolean) => {
 }
 export const getUnverifiedShops = async () => {
   try {
-    const response = await AdminAxios.get(`/verification`);
+    const response = await AdminAxios.get(`/unverified`);
 
     if (response.status !== 200) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -175,7 +175,7 @@ export const approveShop = async (shopId: string) => {
   });
 
   try {
-    const response = await AdminAxios.patch(`/verification/${shopId}/approve`);
+    const response = await AdminAxios.patch(`/unverified/${shopId}/approve`);
 
     if (response.status !== 200) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -224,7 +224,7 @@ export const rejectShop = async (shopId: string, rejectionReason?: string) => {
   });
   
   try {
-    const response = await AdminAxios.patch(`/verification/${shopId}/reject`, {
+    const response = await AdminAxios.patch(`/unverified/${shopId}/reject`, {
       rejectionReason
     });
     

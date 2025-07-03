@@ -8,7 +8,7 @@ router.post('/signup', authDependencies.authController.register);
 router.post('/verify-otp', authDependencies.authController.verifyOtp);
 router.post('/resend-otp', authDependencies.authController.resendOtp);
 router.post('/login', authDependencies.authController.login);
-router.post('/google-auth', authDependencies.authController.googleAuth);
+router.post('/google-login', authDependencies.authController.googleAuth);
 router.post('/refresh-token', authDependencies.authController.refreshToken);
 router.post('/forgot-password', authDependencies.authController.sendResetLink);
 router.post('/reset-password', authDependencies.authController.resetPassword);

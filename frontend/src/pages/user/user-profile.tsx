@@ -7,31 +7,77 @@ import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { ModernSidebar } from "@/components/user/app-sidebar"
 import { Edit, Mail, Phone, MapPin, Calendar, Activity, Globe, Clock, Shield, Camera } from 'lucide-react'
-import { userService,  } from "@/services/user/userService"
+import { userService, } from "@/services/user/userService"
 import type { UserDocument } from "@/types/user.type"
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from "react-redux"
+import type { RootState } from "@/redux/store"
+import axios from "axios"
 
 
 export default function ProfilePage() {
   const [sidebarCollapsed] = React.useState(false);
   const [user, setUser] = React.useState<UserDocument | null>(null)
-  const [loading, setLoading] = React.useState(true)
+  const [locationName, setLocationName] = React.useState("")
+
+  const userState = useSelector((state: RootState) => state.user.userDatas);
+  const apiKey = import.meta.env.VITE_OPENCAGE_API_KEY
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate('/profile/update');
+  };
 
   React.useEffect(() => {
     async function fetchUser() {
       try {
-        const data = await userService.getUser()
+        const data = await userService.getUser(userState?.id || "")
+        console.log("user data:", data)
         setUser(data)
+
+        const [lng, lat] = data.location.coordinates
+
+
+        const geoResponse = await axios.get("https://api.opencagedata.com/geocode/v1/json", {
+          params: {
+            key: apiKey,
+            q: `${lat},${lng}`,
+            pretty: 1
+          }
+        })
+
+        const result = geoResponse.data.results?.[0]
+
+        if (result && result.components) {
+          const comp = result.components
+          const suburb = comp.suburb || comp.village || ""
+          const city = comp.city || comp.town || comp.county || ""
+          const state = comp.state || ""
+          const postcode = comp.postcode || ""
+          const country = comp.country || ""
+
+          const formatted = `${suburb}, ${city} – ${postcode}, ${state}, ${country}`
+          setLocationName(formatted)
+        } else {
+          setLocationName("Unknown location")
+        }
       } catch (err) {
-        console.error("Failed to fetch user:", err)
-      } finally {
-        setLoading(false)
+        console.error("Failed to fetch user or location:", err)
+        setLocationName("Unable to load location")
       }
     }
 
     fetchUser()
   }, [])
 
-  if (loading || !user) return <div className="p-6">Loading profile...</div>
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-gray-500 dark:text-gray-300">Loading profile...</p>
+      </div>
+    )
+  }
+
 
   return (
     <><div className="flex flex-col h-screen bg-white dark:bg-black">
@@ -56,10 +102,7 @@ export default function ProfilePage() {
                           <Avatar className="h-24 w-24 border-4 border-white dark:border-black shadow-xl">
                             <AvatarImage src={user.profileImage || "/placeholder.svg"} alt={user.fullName} />
                             <AvatarFallback className="bg-white dark:bg-black text-gray-900 dark:text-white text-2xl font-bold">
-                              {user.fullName
-                                .split(" ")
-                                .map((name) => name[0])
-                                .join("")}
+                              {user.fullName}
                             </AvatarFallback>
                           </Avatar>
                           <Button
@@ -82,7 +125,10 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       </div>
-                      <Button className="bg-white dark:bg-black text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900 font-semibold">
+                      <Button
+                        onClick={handleClick}
+                        className="bg-white dark:bg-black text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-900 font-semibold"
+                      >
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Profile
                       </Button>
@@ -157,9 +203,8 @@ export default function ProfilePage() {
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                           Location
                         </p>
-                        <p className="text-gray-900 dark:text-white font-medium">New York, NY</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {user.location.coordinates[1].toFixed(4)}, {user.location.coordinates[0].toFixed(4)}
+                        <p className="text-gray-900 dark:text-white font-medium">
+                          {locationName || "Fetching location..."}
                         </p>
                       </div>
                     </div>
