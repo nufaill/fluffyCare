@@ -35,13 +35,12 @@ import {
   Calendar,
   FileText,
   Eye,
-  ArrowLeft,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { getUnverifiedShops, approveShop, rejectShop } from "@/services/admin/adminService"
 import toast from 'react-hot-toast'
 
-type VerificationStatus = "approved" | "rejected" | "pending"
+type VerificationStatus = "approved" | "rejected" 
 
 interface Shop {
   id: string
@@ -76,30 +75,58 @@ const ShopVerification: React.FC = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [activeMenuItem, setActiveMenuItem] = useState("Verification")
 
-  // Fetch unverified shops on component mount
-  useEffect(() => {
-    const fetchUnverifiedShops = async () => {
-      setLoading(true)
-      try {
-        const data = await getUnverifiedShops()
-        setShops(data.shops || []) 
-      } catch (error) {
-        toast.error("Failed to fetch unverified shops", {
-          position: 'top-right',
-          duration: 4000,
-          style: {
-            background: '#FEE2E2',
-            color: '#DC2626',
-            border: '1px solid #F87171'
-          }
-        })
-        console.error("Error fetching unverified shops:", error)
-      } finally {
-        setLoading(false)
+useEffect(() => {
+  const fetchUnverifiedShops = async () => {
+    setLoading(true);
+    try {
+      const response = await getUnverifiedShops();
+      // Log the raw response for debugging
+      console.log("API Response:", response);
+
+      // Ensure the response has the expected structure
+      if (!response.success || !Array.isArray(response.data)) {
+        throw new Error("Invalid API response structure");
       }
+
+      // Map API response to Shop interface
+      const transformedShops: Shop[] = response.data.map((shop: any) => ({
+        id: shop._id,
+        name: shop.name,
+        logo: shop.logo || "/placeholder.svg?height=48&width=48",
+        email: shop.email,
+        phone: shop.phone,
+        address: `${shop.streetAddress}, ${shop.city}`,
+        isVerified: shop.isVerified ? "approved" : "pending", 
+        rating: shop.rating || 0,
+        totalServices: shop.totalServices || 0,
+        joinDate: shop.createdAt,
+        lastActive: shop.updatedAt,
+        totalRevenue: shop.totalRevenue || 0,
+        description: shop.description || "",
+        documents: shop.certificateUrl ? [shop.certificateUrl] : [],
+        verificationNotes: shop.verificationNotes || "",
+        submittedDate: shop.createdAt,
+      }));
+
+      setShops(transformedShops);
+    } catch (error: any) {
+      console.error("Error fetching unverified shops:", error);
+      toast.error(error.message || "Failed to fetch unverified shops", {
+        position: "top-right",
+        duration: 4000,
+        style: {
+          background: "#FEE2E2",
+          color: "#DC2626",
+          border: "1px solid #F87171",
+        },
+      });
+      setShops([]);
+    } finally {
+      setLoading(false);
     }
-    fetchUnverifiedShops()
-  }, [])
+  };
+  fetchUnverifiedShops();
+}, []);
 
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
@@ -195,9 +222,6 @@ const ShopVerification: React.FC = () => {
     }
   }
 
-  const handleGoBack = (): void => {
-    navigate("/admin/shop-details")
-  }
 
   const columns: TableColumn<Shop>[] = [
     {
@@ -410,14 +434,6 @@ const ShopVerification: React.FC = () => {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={handleGoBack}
-                className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Shops
-              </Button>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                   Shop Verification

@@ -20,7 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick, onLogout }) 
     { id: "ServicesDetail", label: "Services Detail", icon: Settings, path: "/admin/services-detail" },
     { id: "Shops", label: "Shops", icon: Store, path: "/admin/shops" },
     { id: "Reviews", label: "Reviews", icon: Star, path: "/admin/reviews" },
-    { id: "Verification", label: "Verification", icon: Shield, path: "/admin/verification" },
+    { id: "Verification", label: "Verification", icon: Shield, path: "/admin/unverified" },
     { id: "CustomerPetsDetail", label: "Customer&Pets Detail", icon: Users, path: "/admin/users" },
   ]
 
