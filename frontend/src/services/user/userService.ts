@@ -1,51 +1,30 @@
-import adminAxios from "@/api/admin.axios";
-import type { User } from "@/types/user.type";
-import axios from "axios";
+// src/services/userService/userService.ts
+// import toast from 'react-hot-toast';
+import Useraxios from "@/api/user.axios";
+import type { UserDocument, UserUpdatePayload } from "@/types/user.type";
 
+export const userService = {
+  async getUser(): Promise<UserDocument> {
+    const res = await Useraxios.get("/profile");
+    const data = res.data;
 
-export class UserService {
+    return {
+      ...data,
+      createdAt: new Date(data.createdAt),
+      updatedAt: new Date(data.updatedAt),
+    };
+  },
 
-  async getAllUsers(): Promise<User[]> {
-    try {
-      const response = await adminAxios.get(`/admin/users`);
-      
-      if (response.status !== 200) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.data;
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-      if (axios.isAxiosError(error)) {
-            const message = error.response?.data?.message || "Failed to fetch users.";
-            console.error(message)
-            throw new Error(message);
-        } else {
-            throw new Error("An unexpected error occurred.");
-        }
-    }
-  }
+  async editUser(data: UserUpdatePayload): Promise<UserDocument> {
+    const res = await Useraxios.patch("/profile/update", data);
+    const updated = res.data;
 
-  async updateUserStatus(userId: string, isActive: boolean): Promise<User> {
-    try {
-      const response = await adminAxios.patch(`/admin/users/${userId}/status`, {
-        isActive
-      });
-      
-      if (response.status !== 200) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.data;
-    } catch (error) {
-      console.error('Failed to update user status:', error);
-      if (axios.isAxiosError(error)) {
-            const message = error.response?.data?.message || "Failed to update status users";
-            console.error(message)
-            throw new Error(message);
-        } else {
-            throw new Error("An unexpected error occurred.");
-        }
-    }
-  }
-}
+    
+    return {
+      ...updated,
+      createdAt: new Date(updated.createdAt),
+      updatedAt: new Date(updated.updatedAt),
+    };
+  },
+};
+

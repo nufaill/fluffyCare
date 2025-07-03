@@ -27,3 +27,12 @@ export interface UserDocument {
   createdAt: Date
   updatedAt: Date
 }
+export interface UserUpdatePayload {
+  fullName?: string
+  phone?: string
+  profileImage?: string
+  location?: {
+    type: "Point"
+    coordinates: [number, number]
+  }
+}

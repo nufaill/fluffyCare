@@ -32,7 +32,7 @@ const AdminRoutes = () => {
       
       Example:
       <Route 
-        path="/admin/customer-pets-detail" 
+        path="/admin/users" 
         element={
           <PrivateRoute userType="admin">
             <CustomerDetails/>
@@ -48,7 +48,7 @@ const AdminRoutes = () => {
         } 
       />
       <Route 
-        path="/admin/verification" 
+        path="/admin/unverified" 
         element={
           <PrivateRoute userType="admin">
             <ShopVerification />

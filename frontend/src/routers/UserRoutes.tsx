@@ -8,6 +8,7 @@ import VerifyOtpPage from "@/pages/user/VerifyOtp";
 import ForgotPassword from '@/pages/user/ForgotPasswordForm';
 import ResetPassword from '@/pages/user/ResetPasswordForm';
 import UserDetails from '@/pages/user/user-profile';
+import UserEdit from '@/pages/user/user-profile-edit';
 import PetDetails from '@/pages/user/pet-details';
 import Addpets from '@/pages/user/add-pet';
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
@@ -65,6 +66,8 @@ const UserRoutes = () => {
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
 
       <Route path="/profile" element={<UserDetails/>} />
+
+      <Route path="/profile/update" element={<UserEdit/>} />
 
       <Route path="/pets" element={<PetDetails/>} />
 

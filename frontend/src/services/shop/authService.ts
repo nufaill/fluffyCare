@@ -96,17 +96,6 @@ export const loginShop = async (data: ShopLoginData): Promise<ShopAuthResponse> 
     const errorMessage = ErrorHandler.extractMessage(error);
     console.error('[loginShop] Login error:', errorMessage);
 
-    // Show error toast
-    toast.error(errorMessage, {
-      position: 'top-right',
-      duration: 5000,
-      style: {
-        background: '#FEE2E2',
-        color: '#DC2626',
-        border: '1px solid #FECACA',
-      },
-    });
-
     throw error;
   }
 };

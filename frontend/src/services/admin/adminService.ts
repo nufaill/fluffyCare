@@ -63,7 +63,7 @@ export const logoutAdmin = async () => {
 
 export const getAllUsers = async () => {
   try {
-    const response = await AdminAxios.get(`/customer-pets-detail`);
+    const response = await AdminAxios.get(`/users`);
 
     if (response.status !== 200) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -84,7 +84,7 @@ export const getAllUsers = async () => {
 
 export const updateUserStatus = async (userId: string, isActive: boolean) => {
   try {
-    const response = await AdminAxios.patch(`/customer-pets-detail/${userId}/status`, {
+    const response = await AdminAxios.patch(`/users/${userId}/status`, {
       isActive
     });
 

@@ -4,7 +4,8 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import "reflect-metadata";
 import { initializeDatabase } from "@config/connectDB";
-import authRoutes from './routes/auth.route';
+import authRoutes from './routes/auth.route'; 
+import userRoutes from './routes/user.route'; 
 import shopRoutes from './routes/shop.route';
 import adminRoutes from './routes/admin.route';
 
@@ -25,7 +26,8 @@ async function startApp(): Promise<void> {
   app.use(cookieParser());
 
   // Routes
-  app.use("/user", authRoutes);
+  app.use("/auth", authRoutes);
+  app.use("/user", userRoutes);
   app.use("/shop", shopRoutes);
   app.use("/admin", adminRoutes);
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import  Useraxios  from '@/api/user.axios';
+import  Authaxios  from '@/api/auth.axios';
 
 interface OtpFormData {
   otp: string;
@@ -89,7 +89,7 @@ const VerifyOtpPage: React.FC = () => {
     try {
       setLoading(true);
       
-      const response = await Useraxios.post('/verify-otp', {
+      const response = await Authaxios.post('/verify-otp', {
         email: email,
         otp: data.otp,
       });
@@ -131,7 +131,7 @@ const VerifyOtpPage: React.FC = () => {
     try {
       setResendLoading(true);
       
-      const response = await Useraxios.post('/resend-otp', {
+      const response = await Authaxios.post('/resend-otp', {
         email: email,
       });
 

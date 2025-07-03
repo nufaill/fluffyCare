@@ -1,47 +1,22 @@
-// backend/src/routes/admin.route.ts
-import express from "express";
-import { AdminAuthController } from "../controllers/admin/admin.controller";
-import { UserController } from '../controllers/user/user.controller';
-import { ShopController } from '../controllers/shop/shop.controller';
-import { validateRequest } from "../middlewares/validateRequest";
-import { loginSchema } from "../validations/login.validation";
+// routes/admin.routes.ts
+import { Router } from 'express';
+import { adminDependencies } from '../di/adminInjection';
 
-// Dependencies
-import { AdminRepository } from "../repositories/adminRepository";
-import { JwtService } from "../services/jwt/jwtService";
-import { AuthService } from "../services/admin/adminService";
-import { UserRepository } from "../repositories/userRepository";
-import { ShopRepository } from "../repositories/shopRepository";
-import { AdminMiddleware } from "../middlewares/admin.middleware";
+const router = Router();
 
-const router = express.Router();
+// Admin auth routes
+router.post('/login', adminDependencies.adminAuthController.login);
+router.post('/logout', adminDependencies.adminAuthController.logout);
 
-// Initialize dependencies
-const adminRepository = new AdminRepository();
-const jwtService = new JwtService();
-const authService = new AuthService(adminRepository, jwtService);
-const adminAuthController = new AdminAuthController(authService);
-const userRepository = new UserRepository();
-const adminUserController = new UserController(userRepository);
-const shopRepository = new ShopRepository();
-const adminShopController = new ShopController(shopRepository);
-const adminMiddleware = new AdminMiddleware(jwtService);
+// Shop management routes
+router.get('/shops', adminDependencies.shopController.getAllShops);
+router.patch('/shops/:shopId/status', adminDependencies.shopController.updateShopStatus);
+router.get('/unverified', adminDependencies.shopController.getUnverifiedShops);
+router.patch('/unverified/:shopId/approve', adminDependencies.shopController.approveShop);
+router.patch('/unverified/:shopId/reject', adminDependencies.shopController.rejectShop);
 
-// Public routes 
-router.post("/login", validateRequest(loginSchema), adminAuthController.login);
-router.post("/logout", adminAuthController.logout);
-
-// customer Management 
-router.get('/customer-pets-detail',  adminUserController.getAllUsers);
-router.patch('/customer-pets-detail/:userId/status',  adminUserController.updateUserStatus);
-
-//Shop Management
-router.get('/shops',  adminShopController.getAllShops);
-router.patch('/shops/:shopId/status',  adminShopController.updateShopStatus);
-
-// Protected routes - Shop Verification Management
-router.get('/verification', adminShopController.getUnverifiedShops);
-router.patch('/verification/:shopId/approve', adminShopController.approveShop);
-router.patch('/verification/:shopId/reject', adminShopController.rejectShop);
+// User management routes
+router.get('/users', adminDependencies.userController.getAllUsers);
+router.patch('/users/:userId/status', adminDependencies.userController.updateUserStatus);
 
 export default router;

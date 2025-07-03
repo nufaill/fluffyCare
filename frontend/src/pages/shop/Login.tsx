@@ -13,8 +13,6 @@ const Login: React.FC = () => {
   const handleSubmit = async (formData: { email: string; password: string }) => {
     try {
       const response = await loginShop(formData);
-      console.log('Login response:', response); // Debug log
-      console.log('Shop isVerified:', response.shop?.isVerified); // Debug log
 
       if (response.success) {
         dispatch(addShop(response.shop));
@@ -25,7 +23,6 @@ const Login: React.FC = () => {
         throw new Error(response.message);
       }
     } catch (error: any) {
-      console.log(error)
       if (error.response.data.message === "Unauthorized: No user found in request") {
         navigate('/shop/shop-verify');
       } else {

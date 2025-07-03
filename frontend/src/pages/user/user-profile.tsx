@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,41 +7,31 @@ import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { ModernSidebar } from "@/components/user/app-sidebar"
 import { Edit, Mail, Phone, MapPin, Calendar, Activity, Globe, Clock, Shield, Camera } from 'lucide-react'
+import { userService,  } from "@/services/user/userService"
+import type { UserDocument } from "@/types/user.type"
 
-interface UserDocument {
-  _id: string
-  fullName: string
-  email: string
-  profileImage?: string
-  phone?: string
-  location: {
-    type: "Point"
-    coordinates: [number, number]
-  }
-  isActive: boolean
-  googleId?: string
-  createdAt: Date
-  updatedAt: Date
-}
-
-const mockUser: UserDocument = {
-  _id: "1",
-  fullName: "Sarah Johnson",
-  email: "sarah.johnson@example.com",
-  profileImage: "/placeholder.svg?height=120&width=120",
-  phone: "+1 (555) 123-4567",
-  location: {
-    type: "Point",
-    coordinates: [-74.006, 40.7128],
-  },
-  isActive: true,
-  googleId: "google_123456789",
-  createdAt: new Date("2023-01-15"),
-  updatedAt: new Date("2024-01-02"),
-}
 
 export default function ProfilePage() {
-  const [sidebarCollapsed] = React.useState(false)
+  const [sidebarCollapsed] = React.useState(false);
+  const [user, setUser] = React.useState<UserDocument | null>(null)
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    async function fetchUser() {
+      try {
+        const data = await userService.getUser()
+        setUser(data)
+      } catch (err) {
+        console.error("Failed to fetch user:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUser()
+  }, [])
+
+  if (loading || !user) return <div className="p-6">Loading profile...</div>
 
   return (
     <><div className="flex flex-col h-screen bg-white dark:bg-black">
@@ -66,9 +54,9 @@ export default function ProfilePage() {
                       <div className="flex items-end gap-4">
                         <div className="relative">
                           <Avatar className="h-24 w-24 border-4 border-white dark:border-black shadow-xl">
-                            <AvatarImage src={mockUser.profileImage || "/placeholder.svg"} alt={mockUser.fullName} />
+                            <AvatarImage src={user.profileImage || "/placeholder.svg"} alt={user.fullName} />
                             <AvatarFallback className="bg-white dark:bg-black text-gray-900 dark:text-white text-2xl font-bold">
-                              {mockUser.fullName
+                              {user.fullName
                                 .split(" ")
                                 .map((name) => name[0])
                                 .join("")}
@@ -82,14 +70,14 @@ export default function ProfilePage() {
                           </Button>
                         </div>
                         <div className="pb-2">
-                          <h1 className="text-2xl font-bold text-white dark:text-black mb-1">{mockUser.fullName}</h1>
+                          <h1 className="text-2xl font-bold text-white dark:text-black mb-1">{user.fullName}</h1>
                           <div className="flex items-center gap-2">
                             <Badge className="bg-white/20 dark:bg-black/20 text-white dark:text-black border-white/30 dark:border-black/30">Premium Member</Badge>
                             <Badge
-                              variant={mockUser.isActive ? "default" : "secondary"}
-                              className={mockUser.isActive ? "bg-gray-600 hover:bg-gray-700 text-white" : "bg-gray-400 text-white"}
+                              variant={user.isActive ? "default" : "secondary"}
+                              className={user.isActive ? "bg-gray-600 hover:bg-gray-700 text-white" : "bg-gray-400 text-white"}
                             >
-                              {mockUser.isActive ? "Active" : "Inactive"}
+                              {user.isActive ? "Active" : "Inactive"}
                             </Badge>
                           </div>
                         </div>
@@ -105,7 +93,7 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {Math.floor((new Date().getTime() - mockUser.createdAt.getTime()) / (1000 * 60 * 60 * 24))}
+                        {Math.floor((new Date().getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24))}
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Days Active</p>
                     </div>
@@ -143,11 +131,11 @@ export default function ProfilePage() {
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                           Email Address
                         </p>
-                        <p className="text-gray-900 dark:text-white font-medium break-all">{mockUser.email}</p>
+                        <p className="text-gray-900 dark:text-white font-medium break-all">{user.email}</p>
                       </div>
                     </div>
 
-                    {mockUser.phone && (
+                    {user.phone && (
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
                           <Phone className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -156,7 +144,7 @@ export default function ProfilePage() {
                           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             Phone Number
                           </p>
-                          <p className="text-gray-900 dark:text-white font-medium">{mockUser.phone}</p>
+                          <p className="text-gray-900 dark:text-white font-medium">{user.phone}</p>
                         </div>
                       </div>
                     )}
@@ -171,7 +159,7 @@ export default function ProfilePage() {
                         </p>
                         <p className="text-gray-900 dark:text-white font-medium">New York, NY</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {mockUser.location.coordinates[1].toFixed(4)}, {mockUser.location.coordinates[0].toFixed(4)}
+                          {user.location.coordinates[1].toFixed(4)}, {user.location.coordinates[0].toFixed(4)}
                         </p>
                       </div>
                     </div>
@@ -200,11 +188,11 @@ export default function ProfilePage() {
                           Status
                         </p>
                         <Badge
-                          className={mockUser.isActive
+                          className={user.isActive
                             ? "bg-gray-800 text-white dark:bg-gray-200 dark:text-black"
                             : "bg-gray-400 text-white dark:bg-gray-600 dark:text-white"}
                         >
-                          {mockUser.isActive ? "Active Account" : "Inactive Account"}
+                          {user.isActive ? "Active Account" : "Inactive Account"}
                         </Badge>
                       </div>
                     </div>
@@ -218,7 +206,7 @@ export default function ProfilePage() {
                           Member Since
                         </p>
                         <p className="text-gray-900 dark:text-white font-medium">
-                          {mockUser.createdAt.toLocaleDateString("en-US", {
+                          {user.createdAt.toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
                             day: "numeric",
@@ -236,7 +224,7 @@ export default function ProfilePage() {
                           Last Updated
                         </p>
                         <p className="text-gray-900 dark:text-white font-medium">
-                          {mockUser.updatedAt.toLocaleDateString("en-US", {
+                          {user.updatedAt.toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
                             day: "numeric",
@@ -268,11 +256,11 @@ export default function ProfilePage() {
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                           Account ID
                         </p>
-                        <p className="text-gray-900 dark:text-white font-mono text-sm">{mockUser._id}</p>
+                        <p className="text-gray-900 dark:text-white font-mono text-sm">{user._id}</p>
                       </div>
                     </div>
 
-                    {mockUser.googleId && (
+                    {user.googleId && (
                       <div className="flex items-start gap-3">
                         <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg mt-1">
                           <Globe className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -286,7 +274,7 @@ export default function ProfilePage() {
                               Connected
                             </Badge>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">{mockUser.googleId}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">{user.googleId}</p>
                         </div>
                       </div>
                     )}
