@@ -92,3 +92,22 @@ export interface ShopAuthResponse {
   shop: ShopProfile;
   tokens: TokenPair;
 }
+
+export interface ShopVerificationResponse {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  streetAddress: string;
+  description?: string;
+  certificateUrl: string;
+  isActive: boolean;
+  isVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ShopRejectionData {
+  rejectionReason?: string;
+}

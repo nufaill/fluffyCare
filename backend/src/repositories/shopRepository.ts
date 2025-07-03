@@ -63,6 +63,7 @@ export class ShopRepository {
       .select('-password -resetPasswordToken -resetPasswordExpires')
       .sort({ createdAt: -1 });
   }
+
   async updateShopStatus(shopId: string, isActive: boolean): Promise<ShopDocument | null> {
     return await Shop.findByIdAndUpdate(
       shopId,
@@ -70,4 +71,20 @@ export class ShopRepository {
       { new: true, runValidators: true }
     ).select('-password -resetPasswordToken -resetPasswordExpires');
   }
+
+    async getUnverifiedShops(): Promise<ShopDocument[]> {
+    return await Shop.find({ isVerified: false })
+      .select('-password -resetPasswordToken -resetPasswordExpires')
+      .sort({ createdAt: -1 });
+  }
+
+  
+  async updateShopVerification(shopId: string, isVerified: boolean): Promise<ShopDocument | null> {
+    return await Shop.findByIdAndUpdate(
+      shopId,
+      { isVerified },
+      { new: true, runValidators: true }
+    ).select('-password -resetPasswordToken -resetPasswordExpires');
+  }
+  
 }

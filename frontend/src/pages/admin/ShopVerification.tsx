@@ -1,7 +1,5 @@
-"use client"
-
 import type React from "react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Navbar from "@/components/admin/Navbar"
 import Sidebar from "@/components/admin/Sidebar"
 import Footer from "@/components/user/Footer"
@@ -14,13 +12,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+ 
+
 import {
   Search,
   Filter,
@@ -38,6 +38,8 @@ import {
   ArrowLeft,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { getUnverifiedShops, approveShop, rejectShop } from "@/services/admin/adminService"
+import toast from 'react-hot-toast'
 
 type VerificationStatus = "approved" | "rejected" | "pending"
 
@@ -60,75 +62,9 @@ interface Shop {
   submittedDate: string
 }
 
-// Sample data generator for verification page
-const generateVerificationShops = (): Shop[] => {
-  const shopNames: string[] = [
-    "Paws & Claws Grooming",
-    "Happy Tails Pet Spa",
-    "Furry Friends Care",
-    "Pet Paradise Salon",
-    "Whiskers & Wags",
-    "The Pet Boutique",
-    "Canine Couture",
-    "Feline Fine Grooming",
-    "Pet Palace",
-    "Tail Waggers Spa",
-    "Precious Paws",
-    "Pet Perfection",
-    "Furry Angels Care",
-    "Pet Luxury Lounge",
-    "Paw-some Grooming",
-  ]
-
-  const addresses: string[] = [
-    "123 Main St, Downtown",
-    "456 Oak Ave, Midtown",
-    "789 Pine Rd, Uptown",
-    "321 Elm St, Westside",
-    "654 Maple Dr, Eastside",
-    "987 Cedar Ln, Northside",
-    "147 Birch St, Southside",
-    "258 Willow Ave, Central",
-    "369 Spruce Rd, Heights",
-    "741 Ash Dr, Valley",
-  ]
-
-  const documents = ["Business License", "Insurance Certificate", "Tax ID", "Health Permit"]
-
-  return shopNames.map(
-    (name, index): Shop => ({
-      id: `shop-${index + 1}`,
-      name,
-      logo: Math.random() > 0.4 ? `/placeholder.svg?height=40&width=40` : undefined,
-      email: name.toLowerCase().replace(/[^a-z0-9]/g, "") + "@petcare.com",
-      phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      address: addresses[Math.floor(Math.random() * addresses.length)],
-      isVerified: "pending",
-      rating: Math.round((Math.random() * 2 + 3) * 10) / 10,
-      totalServices: Math.floor(Math.random() * 50) + 5,
-      joinDate: new Date(
-        2020 + Math.floor(Math.random() * 4),
-        Math.floor(Math.random() * 12),
-        Math.floor(Math.random() * 28) + 1,
-      )
-        .toISOString()
-        .split("T")[0],
-      lastActive: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      totalRevenue: Math.floor(Math.random() * 50000) + 5000,
-      description: `Professional pet care services with experienced staff and modern facilities. We provide comprehensive grooming, training, and wellness services for all types of pets.`,
-      documents: documents.slice(0, Math.floor(Math.random() * 3) + 2),
-      submittedDate: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-    }),
-  )
-}
-
 const ShopVerification: React.FC = () => {
   const navigate = useNavigate()
-  const [shops] = useState<Shop[]>(generateVerificationShops())
+  const [shops, setShops] = useState<Shop[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
@@ -139,6 +75,31 @@ const ShopVerification: React.FC = () => {
   const [verificationNotes, setVerificationNotes] = useState("")
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [activeMenuItem, setActiveMenuItem] = useState("Verification")
+
+  // Fetch unverified shops on component mount
+  useEffect(() => {
+    const fetchUnverifiedShops = async () => {
+      setLoading(true)
+      try {
+        const data = await getUnverifiedShops()
+        setShops(data.shops || []) 
+      } catch (error) {
+        toast.error("Failed to fetch unverified shops", {
+          position: 'top-right',
+          duration: 4000,
+          style: {
+            background: '#FEE2E2',
+            color: '#DC2626',
+            border: '1px solid #F87171'
+          }
+        })
+        console.error("Error fetching unverified shops:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUnverifiedShops()
+  }, [])
 
   // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
@@ -200,12 +161,21 @@ const ShopVerification: React.FC = () => {
     notes: string,
   ): Promise<void> => {
     setLoading(true)
-    setTimeout(() => {
-      console.log(`Shop ${shopId} ${action}d with notes: ${notes}`)
-      setLoading(false)
+    try {
+      if (action === "approve") {
+        await approveShop(shopId)
+      } else {
+        await rejectShop(shopId, notes)
+      }
+      // Update local state to remove the processed shop
+      setShops((prevShops) => prevShops.filter((shop) => shop.id !== shopId))
       setVerificationNotes("")
       setSelectedShop(null)
-    }, 1000)
+    } catch (error) {
+      console.error(`Failed to ${action} shop:`, error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleViewDetails = (shop: Shop): void => {
@@ -235,7 +205,7 @@ const ShopVerification: React.FC = () => {
       title: "Shop Information",
       dataIndex: "name",
       sortable: true,
-      render: (value: string, record: Shop) => (
+      render: (_value: string, record: Shop) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 ring-2 ring-gray-200 dark:ring-gray-600">
             <AvatarImage src={record.logo || "/placeholder.svg?height=48&width=48"} />
@@ -267,7 +237,7 @@ const ShopVerification: React.FC = () => {
       title: "Submission Details",
       dataIndex: "submittedDate",
       sortable: true,
-      render: (value: string, record: Shop) => (
+      render: (_value: string, record: Shop) => (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-gray-400" />
@@ -291,7 +261,7 @@ const ShopVerification: React.FC = () => {
       title: "Status",
       dataIndex: "isVerified",
       align: "center",
-      render: (value: VerificationStatus) => (
+      render: (_value: VerificationStatus) => (
         <Badge className="bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
           <Clock className="h-3 w-3 mr-1" />
           Pending Review
@@ -303,7 +273,7 @@ const ShopVerification: React.FC = () => {
       title: "Actions",
       dataIndex: "actions",
       align: "center",
-      render: (value: undefined, record: Shop) => (
+      render: (_value: undefined, record: Shop) => (
         <div className="flex items-center gap-2">
           <Button
             size="sm"

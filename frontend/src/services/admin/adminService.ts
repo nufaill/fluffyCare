@@ -57,94 +57,214 @@ export const logoutAdmin = async () => {
       position: 'top-right'
     });
     console.error('Admin logout error:', error);
-    return { success: true }; 
+    return { success: true };
   }
 };
 
 export const getAllUsers = async () => {
   try {
-      const response = await AdminAxios.get(`/customer-pets-detail`);
-      
-      if (response.status !== 200) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.data;
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-      if (axios.isAxiosError(error)) {
-            const message = error.response?.data?.message || "Failed to fetch users.";
-            console.error(message)
-            throw new Error(message);
-        } else {
-            throw new Error("An unexpected error occurred.");
-        }
+    const response = await AdminAxios.get(`/customer-pets-detail`);
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    return await response.data;
+  } catch (error) {
+    console.error('Failed to fetch users:', error);
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message || "Failed to fetch users.";
+      console.error(message)
+      throw new Error(message);
+    } else {
+      throw new Error("An unexpected error occurred.");
+    }
+  }
 }
 
 export const updateUserStatus = async (userId: string, isActive: boolean) => {
- try {
-      const response = await AdminAxios.patch(`/customer-pets-detail/${userId}/status`, {
-        isActive
-      });
-      
-      if (response.status !== 200) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.data;
-    } catch (error) {
-      console.error('Failed to update user status:', error);
-      if (axios.isAxiosError(error)) {
-            const message = error.response?.data?.message || "Failed to update status users";
-            console.error(message)
-            throw new Error(message);
-        } else {
-            throw new Error("An unexpected error occurred.");
-        }
+  try {
+    const response = await AdminAxios.patch(`/customer-pets-detail/${userId}/status`, {
+      isActive
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    return await response.data;
+  } catch (error) {
+    console.error('Failed to update user status:', error);
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message || "Failed to update status users";
+      console.error(message)
+      throw new Error(message);
+    } else {
+      throw new Error("An unexpected error occurred.");
+    }
+  }
 }
 
 export const getAllShops = async () => {
   try {
-      const response = await AdminAxios.get(`/shops`);
-      
-      if (response.status !== 200) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.data;
-    } catch (error) {
-      console.error('Failed to fetch Shop:', error);
-      if (axios.isAxiosError(error)) {
-            const message = error.response?.data?.message || "Failed to fetch shops.";
-            console.error(message)
-            throw new Error(message);
-        } else {
-            throw new Error("An unexpected error occurred.");
-        }
+    const response = await AdminAxios.get(`/shops`);
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    return await response.data;
+  } catch (error) {
+    console.error('Failed to fetch Shop:', error);
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message || "Failed to fetch shops.";
+      console.error(message)
+      throw new Error(message);
+    } else {
+      throw new Error("An unexpected error occurred.");
+    }
+  }
 }
 
 export const updateShopStatus = async (shopId: string, isActive: boolean) => {
- try {
-      const response = await AdminAxios.patch(`/shops/${shopId}/status`, {
-        isActive
-      });
-      
-      if (response.status !== 200) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.data;
-    } catch (error) {
-      console.error('Failed to update shop status:', error);
-      if (axios.isAxiosError(error)) {
-            const message = error.response?.data?.message || "Failed to update status shops";
-            console.error(message)
-            throw new Error(message);
-        } else {
-            throw new Error("An unexpected error occurred.");
-        }
+  try {
+    const response = await AdminAxios.patch(`/shops/${shopId}/status`, {
+      isActive
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    return await response.data;
+  } catch (error) {
+    console.error('Failed to update shop status:', error);
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message || "Failed to update status shops";
+      console.error(message)
+      throw new Error(message);
+    } else {
+      throw new Error("An unexpected error occurred.");
+    }
+  }
 }
+export const getUnverifiedShops = async () => {
+  try {
+    const response = await AdminAxios.get(`/verification`);
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch unverified shops:', error);
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message || "Failed to fetch unverified shops.";
+      console.error(message);
+      throw new Error(message);
+    } else {
+      throw new Error("An unexpected error occurred.");
+    }
+  }
+};
+
+export const approveShop = async (shopId: string) => {
+  const loadingToast = toast.loading('Approving shop...', {
+    position: 'top-right'
+  });
+
+  try {
+    const response = await AdminAxios.patch(`/verification/${shopId}/approve`);
+
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    toast.dismiss(loadingToast);
+    toast.success('Shop approved successfully! ✅', {
+      position: 'top-right',
+      duration: 4000,
+      style: {
+        background: '#D1FAE5',
+        color: '#059669',
+        border: '1px solid #34D399'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    toast.dismiss(loadingToast);
+    console.error('Failed to approve shop:', error);
+
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message || "Failed to approve shop.";
+      toast.error(message, {
+        position: 'top-right',
+        duration: 4000,
+        style: {
+          background: '#FEE2E2',
+          color: '#DC2626',
+          border: '1px solid #F87171'
+        }
+      });
+      throw new Error(message);
+    } else {
+      toast.error("An unexpected error occurred.", {
+        position: 'top-right'
+      });
+      throw new Error("An unexpected error occurred.");
+    }
+  }
+};
+
+export const rejectShop = async (shopId: string, rejectionReason?: string) => {
+  const loadingToast = toast.loading('Processing rejection...', {
+    position: 'top-right'
+  });
+  
+  try {
+    const response = await AdminAxios.patch(`/verification/${shopId}/reject`, {
+      rejectionReason
+    });
+    
+    if (response.status !== 200) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    toast.dismiss(loadingToast);
+    toast.success('Shop rejection processed successfully! ❌', {
+      position: 'top-right',
+      duration: 4000,
+      style: {
+        background: '#FEF3C7',
+        color: '#D97706',
+        border: '1px solid #FBBF24'
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    toast.dismiss(loadingToast);
+    console.error('Failed to reject shop:', error);
+    
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message || "Failed to reject shop.";
+      toast.error(message, {
+        position: 'top-right',
+        duration: 4000,
+        style: {
+          background: '#FEE2E2',
+          color: '#DC2626',
+          border: '1px solid #F87171'
+        }
+      });
+      throw new Error(message);
+    } else {
+      toast.error("An unexpected error occurred.", {
+        position: 'top-right'
+      });
+      throw new Error("An unexpected error occurred.");
+    }
+  }
+};

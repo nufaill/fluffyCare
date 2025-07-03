@@ -31,10 +31,17 @@ const adminMiddleware = new AdminMiddleware(jwtService);
 router.post("/login", validateRequest(loginSchema), adminAuthController.login);
 router.post("/logout", adminAuthController.logout);
 
-// Protected routes 
+// customer Management 
 router.get('/customer-pets-detail',  adminUserController.getAllUsers);
 router.patch('/customer-pets-detail/:userId/status',  adminUserController.updateUserStatus);
+
+//Shop Management
 router.get('/shops',  adminShopController.getAllShops);
 router.patch('/shops/:shopId/status',  adminShopController.updateShopStatus);
+
+// Protected routes - Shop Verification Management
+router.get('/verification', adminShopController.getUnverifiedShops);
+router.patch('/verification/:shopId/approve', adminShopController.approveShop);
+router.patch('/verification/:shopId/reject', adminShopController.rejectShop);
 
 export default router;
