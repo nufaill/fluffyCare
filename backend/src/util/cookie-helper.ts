@@ -8,7 +8,7 @@ export const setAuthCookies = (
 ): void => {
   const isProduction = process.env.NODE_ENV === 'production';
   
-  // Set access token cookie
+  //  access token cookie
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
     secure: isProduction,
@@ -17,7 +17,7 @@ export const setAuthCookies = (
     path: '/',
   });
 
-  // Set refresh token cookie
+  //  refresh token cookie
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: isProduction,
