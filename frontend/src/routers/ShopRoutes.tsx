@@ -9,6 +9,9 @@ import ForgotPassword from "@/pages/shop/ForgotPasswordForm";
 import ResetPassword from "@/pages/shop/ResetPasswordForm";
 import VerifyShop from "@/pages/shop/thank-you-page";
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
+import ShopProfilePage from './../pages/shop/ShopProfilePage';
+import ShopProfilePageEdit from './../pages/shop/ShopProfilePageEdit'
+import ServicesPage from "@/pages/shop/Services";
 
 const ShopRoutes = () => {
   return (
@@ -64,6 +67,31 @@ const ShopRoutes = () => {
         element={
           <PrivateRoute userType="shop">
             <Dashboard />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/shop/profile"
+        element={
+          <PrivateRoute userType="shop">
+            <ShopProfilePage/>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/shop/profile/update"
+        element={
+          <PrivateRoute userType="shop">
+            <ShopProfilePageEdit/>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/shop/services"
+        element={
+          <PrivateRoute userType="shop">
+            <ServicesPage/>
           </PrivateRoute>
         }
       />

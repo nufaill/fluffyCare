@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { LayoutDashboard, Calendar, Settings, Store, Star, Shield, Users, LogOut } from "lucide-react"
+import { LayoutDashboard, Calendar, Settings, Store, Star, Shield, Users, LogOut, PawPrint, Scissors } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 
 interface SidebarProps {
@@ -14,7 +14,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick, onLogout }) 
   const navigate = useNavigate()
   const location = useLocation()
 
-  const menuItems = [
+ const menuItems = [
     { id: "Dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/admin/" },
     { id: "BookingList", label: "Booking List", icon: Calendar, path: "/admin/booking-list" },
     { id: "ServicesDetail", label: "Services Detail", icon: Settings, path: "/admin/services-detail" },
@@ -22,7 +22,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick, onLogout }) 
     { id: "Reviews", label: "Reviews", icon: Star, path: "/admin/reviews" },
     { id: "Verification", label: "Verification", icon: Shield, path: "/admin/unverified" },
     { id: "CustomerPetsDetail", label: "Customer&Pets Detail", icon: Users, path: "/admin/users" },
-  ]
+    { id: "PetCategory", label: "Pet Category", icon: PawPrint, path: "/admin/pet-category" },
+    { id: "PetServices", label: "Pet Services", icon: Scissors, path: "/admin/pet-services" },
+];
 
   const handleItemClick = (itemId: string, path: string) => {
     if (onItemClick) {

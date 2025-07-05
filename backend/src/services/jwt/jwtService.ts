@@ -21,15 +21,25 @@ export class JwtService implements ITokenService {
   generateAccessToken(payload: {
     id: string;
     email: string;
+    role: "user" | "shop" | "admin";
   }): string {
-    return jwt.sign(
-      { userId: payload.id, email: payload.email },
-      this._accessSecret,
-      {
-        expiresIn: this._accessExpiresIn as ms.StringValue,
-      }
-    );
+    const idKey = payload.role === "user"
+      ? "userId"
+      : payload.role === "admin"
+        ? "adminId"
+        : "shopId";
+
+    const jwtPayload = {
+      [idKey]: payload.id,
+      email: payload.email,
+      role: payload.role,
+    };
+
+    return jwt.sign(jwtPayload, this._accessSecret, {
+      expiresIn: this._accessExpiresIn as ms.StringValue,
+    });
   }
+
 
   generateRefreshToken(payload: {
     id: string;
@@ -47,6 +57,7 @@ export class JwtService implements ITokenService {
   generateTokens(payload: {
     id: string;
     email: string;
+    role: "user" | "shop" | "admin";
   }): { accessToken: string; refreshToken: string } {
     const accessToken = this.generateAccessToken(payload);
     const refreshToken = this.generateRefreshToken(payload);
@@ -81,7 +92,6 @@ export class JwtService implements ITokenService {
 
   decodeAccessToken(token: string): JwtPayload | null {
     try {
-      console.log("Token inside the decodeAccessToken method:", token);
       return jwt.decode(token) as JwtPayload;
     } catch (error) {
       console.error("Token decoding failed:", error);

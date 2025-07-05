@@ -3,18 +3,11 @@ import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../services/jwt/jwtService';
 import { HTTP_STATUS } from '../shared/constant';
 
-export interface AuthenticatedAdminRequest extends Request {
-  admin?: {
-    id: string;
-    email: string;
-  };
-}
-
 export class AdminMiddleware {
   constructor(private readonly jwtService: JwtService) {}
 
   public authenticate = async (
-    req: AuthenticatedAdminRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
@@ -70,7 +63,7 @@ export class AdminMiddleware {
       }
 
       req.admin = {
-        id: adminId,
+        adminId: adminId,
         email: payload.email,
       };
 

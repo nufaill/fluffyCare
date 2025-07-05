@@ -5,16 +5,6 @@ import { ShopRepository } from '../../repositories/shopRepository';
 import { JwtService } from '../jwt/jwtService';
 import { EmailService } from '../emailService/emailService';
 import { OtpRepository } from '../../repositories/otpRepository';
-import { 
-  CreateShopData, 
-  ShopDocument, 
-  ShopLoginData, 
-  ShopRegisterData, 
-  ShopAuthResponse,
-  TokenPair,
-  ShopProfile,
-  GeoLocation
-} from '../../types/Shop.types';
 import { JwtPayload } from '../../types/auth.types';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';

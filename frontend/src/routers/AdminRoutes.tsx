@@ -6,6 +6,8 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import CustomerDetails from "@/pages/admin/CustomerDetails";
 import ShopDetails from "@/pages/admin/ShopDetails";
 import ShopVerification from "@/pages/admin/ShopVerification";
+import PetCategory from '@/pages/admin/PetCategory';
+import PetServices from '@/pages/admin/PetServices';
 
 const AdminRoutes = () => {
   return (
@@ -52,6 +54,30 @@ const AdminRoutes = () => {
         element={
           <PrivateRoute userType="admin">
             <ShopVerification />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/admin/unverified" 
+        element={
+          <PrivateRoute userType="admin">
+            <ShopVerification />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/admin/pet-category" 
+        element={
+          <PrivateRoute userType="admin">
+            <PetCategory />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/admin/pet-services" 
+        element={
+          <PrivateRoute userType="admin">
+            <PetServices />
           </PrivateRoute>
         } 
       />

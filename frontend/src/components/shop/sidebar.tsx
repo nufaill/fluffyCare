@@ -1,171 +1,287 @@
-import React, { useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { ChevronRight, Sparkles } from 'lucide-react';
-import { Badge } from '../ui/Badge';
-import { Progress } from '../ui/Progress';
+"use client"
+
+import type React from "react"
+import { useState } from "react"
+import {
+  LayoutDashboard,
+  Users,
+  Calendar,
+  MessageCircle,
+  DollarSign,
+  Clock,
+  Settings,
+  LogOut,
+  Dog,
+  ChevronRight,
+  Award,
+  BarChart3,
+  PieChart,
+  TrendingUp,
+} from "lucide-react"
+import { Badge } from "@/components/ui/Badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { useNavigate, useLocation } from "react-router-dom"
 
 export interface SidebarItem {
-  title: string;
-  icon: LucideIcon;
-  url: string;
-  isActive?: boolean;
-  badge?: string | number;
-  isNew?: boolean;
-  subItems?: Omit<SidebarItem, 'subItems'>[];
+  title: string
+  icon: React.ElementType
+  url?: string
+  badge?: string | number
+  isNew?: boolean
+  subItems?: Omit<SidebarItem, "subItems">[]
 }
 
-interface AppSidebarProps {
-  className?: string;
-  menuItems: SidebarItem[];
-  footerItems?: SidebarItem[];
-  onItemClick?: (item: SidebarItem) => void;
-  userProgress?: {
-    level: number;
-    xp: number;
-    maxXp: number;
-  };
+interface PetCareSidebarProps {
+  className?: string
+  isCollapsed?: boolean
+  onToggle?: () => void
+  menuItems?: SidebarItem[]
+  footerItems?: SidebarItem[]
+  onItemClick?: (item: SidebarItem) => void
 }
 
-export function AppSidebar({
-  className = '',
-  menuItems,
-  footerItems = [],
+const defaultMenuItems: SidebarItem[] = [
+  {
+    title: "Dashboard",
+    icon: LayoutDashboard,
+    url: "/shop/dashboard",
+  },
+  {
+    title: "Pet Owners",
+    icon: Users,
+    url: "/owners",
+    badge: "24",
+    subItems: [
+      { title: "All Owners", icon: Users, url: "/owners/all", badge: "156" },
+      { title: "New Owners", icon: Users, url: "/owners/new", badge: "12" },
+      { title: "VIP Owners", icon: Award, url: "/owners/vip", badge: "8" },
+    ],
+  },
+  {
+    title: "Appointments",
+    icon: Calendar,
+    url: "/appointments",
+    badge: "12",
+    subItems: [
+      { title: "Today", icon: Calendar, url: "/appointments/today", badge: "5" },
+      { title: "This Week", icon: Calendar, url: "/appointments/week", badge: "12" },
+      { title: "Pending", icon: Clock, url: "/appointments/pending", badge: "3" },
+    ],
+  },
+  {
+    title: "Messages",
+    icon: MessageCircle,
+    url: "/messages",
+    badge: "5",
+    isNew: true,
+  },
+  {
+    title: "Analytics",
+    icon: BarChart3,
+    url: "/analytics",
+    subItems: [
+      { title: "Revenue", icon: DollarSign, url: "/analytics/revenue" },
+      { title: "Performance", icon: TrendingUp, url: "/analytics/performance" },
+      { title: "Reports", icon: PieChart, url: "/analytics/reports" },
+    ],
+  },
+  {
+    title: "Pet Services",
+    icon: Dog,
+    url: "/shop/services",
+  },
+  {
+    title: "Earnings",
+    icon: DollarSign,
+    url: "/earnings",
+  },
+  {
+    title: "Schedule",
+    icon: Clock,
+    url: "/schedule",
+  },
+]
+
+const defaultFooterItems: SidebarItem[] = [
+  { title: "Settings", icon: Settings, url: "/settings" },
+  { title: "Logout", icon: LogOut, url: "/logout" },
+]
+
+export function PetCareSidebar({
+  className = "",
+  menuItems: customMenuItems,
+  footerItems: customFooterItems,
   onItemClick,
-  userProgress = { level: 5, xp: 750, maxXp: 1000 },
-}: AppSidebarProps) {
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+}: PetCareSidebarProps) {
+  const menuItems = customMenuItems || defaultMenuItems
+  const footerItems = customFooterItems || defaultFooterItems
 
-  const handleItemClick = (item: SidebarItem, event: React.MouseEvent) => {
+  const [expandedItems, setExpandedItems] = useState<string[]>(["Pet Owners"])
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const handleItemClick = (item: SidebarItem, event?: React.MouseEvent) => {
     if (item.subItems) {
-      event.preventDefault();
+      event?.preventDefault()
       setExpandedItems((prev) =>
-        prev.includes(item.title) 
-          ? prev.filter((title) => title !== item.title) 
-          : [...prev, item.title]
-      );
-    } else if (onItemClick) {
-      event.preventDefault();
-      onItemClick(item);
+        prev.includes(item.title) ? prev.filter((title) => title !== item.title) : [...prev, item.title],
+      )
+    } else if (item.url) {
+      navigate(item.url)
+      onItemClick?.(item)
     }
-  };
+  }
+
+  const handleSubItemClick = (subItem: SidebarItem) => {
+    if (subItem.url) {
+      navigate(subItem.url)
+      onItemClick?.(subItem)
+    }
+  }
+
+  const isActiveRoute = (url?: string) => url && location.pathname === url
 
   return (
-    <div className={`flex flex-col h-screen w-64 bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border-r border-gray-200 dark:border-gray-700 transition-colors duration-300 ${className}`}>
-      {/* Header with User Progress */}
-      <div className="p-4">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 rounded-xl p-4 text-white shadow-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-4 w-4" />
-            <span className="text-sm font-medium">Level {userProgress.level}</span>
+    <aside
+      className={`fixed left-0 top-0 z-40 h-screen w-72 bg-sidebar border-r border-sidebar-border transition-all duration-300 ${className}`}
+    >
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0 p-6 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center">
+              <Dog className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-sidebar-foreground">PetCare Pro</h2>
+              <p className="text-sm text-sidebar-foreground/60">Management Hub</p>
+            </div>
           </div>
-          <Progress 
-            value={(userProgress.xp / userProgress.maxXp) * 100} 
-            className="h-2 bg-white/20" 
-          />
-          <p className="text-xs mt-1 opacity-90">
-            {userProgress.xp}/{userProgress.maxXp} XP
-          </p>
         </div>
-      </div>
 
-      {/* Main Menu Content */}
-      <div className="flex-1 overflow-y-auto px-2">
-        <nav className="space-y-1">
-          {menuItems.map((item) => (
-            <div key={item.title}>
-              {/* Main Menu Item */}
-              <a
-                href={item.url}
-                onClick={(e) => handleItemClick(item, e)}
-                className={`group flex items-center justify-between w-full px-3 py-3 text-sm font-medium transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 hover:shadow-sm rounded-lg ${
-                  item.isActive
-                    ? 'bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/40 dark:to-purple-900/40 text-blue-700 dark:text-blue-300 shadow-sm border border-blue-200 dark:border-blue-700'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      item.isActive
-                        ? 'bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-300'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-600 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                    }`}
-                  >
-                    <item.icon className="h-4 w-4" />
-                  </div>
-                  <span>{item.title}</span>
-                  {item.isNew && (
-                    <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs px-2 py-0.5 border-0">
-                      New
-                    </Badge>
-                  )}
-                </div>
+        {/* Stats Card - Fixed */}
+        <div className="flex-shrink-0 p-4">
+          <Card className="bg-gradient-to-r from-black to-gray-800 text-white border-0">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  {item.badge && (
-                    <Badge variant="secondary" className="text-xs">
-                      {item.badge}
-                    </Badge>
-                  )}
-                  {item.subItems && (
-                    <ChevronRight
-                      className={`h-4 w-4 transition-transform text-gray-400 dark:text-gray-500 ${
-                        expandedItems.includes(item.title) ? 'rotate-90' : ''
-                      }`}
-                    />
-                  )}
+                  <Award className="h-4 w-4" />
+                  <span className="text-sm font-medium">Today's Stats</span>
                 </div>
-              </a>
+                <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                  Live
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold">24</p>
+                  <p className="text-xs opacity-80">Appointments</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">18</p>
+                  <p className="text-xs opacity-80">Completed</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-              {/* Sub Items */}
-              {item.subItems && expandedItems.includes(item.title) && (
-                <div className="ml-6 mt-1 space-y-1">
-                  {item.subItems.map((subItem) => (
-                    <a
-                      key={subItem.title}
-                      href={subItem.url}
-                      onClick={(e) => handleItemClick(subItem, e)}
-                      className={`flex items-center gap-3 w-full px-3 py-2 text-sm transition-colors duration-200 rounded-lg ${
-                        subItem.isActive
-                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+        {/* Scrollable Navigation */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+          <nav className="space-y-1 py-2">
+            {menuItems.map((item) => (
+              <div key={item.title}>
+                <Button
+                  variant={isActiveRoute(item.url) ? "default" : "ghost"}
+                  className={`w-full justify-between h-12 px-4 ${
+                    isActiveRoute(item.url)
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                  }`}
+                  onClick={(e) => handleItemClick(item, e)}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`p-1.5 rounded-lg flex-shrink-0 ${
+                        isActiveRoute(item.url) ? "bg-white/20" : "bg-sidebar-accent group-hover:bg-sidebar-primary/10"
                       }`}
                     >
-                      <subItem.icon className="h-3 w-3" />
-                      <span>{subItem.title}</span>
-                      {subItem.badge && (
-                        <Badge variant="secondary" className="ml-auto text-xs">
-                          {subItem.badge}
-                        </Badge>
-                      )}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </nav>
-      </div>
+                      <item.icon className="h-4 w-4" />
+                    </div>
+                    <span className="font-medium truncate">{item.title}</span>
+                    {item.isNew && (
+                      <Badge className="bg-destructive text-white border-0 text-xs px-2 py-0.5 flex-shrink-0">
+                        New
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {item.badge && (
+                      <Badge variant="secondary" className="bg-sidebar-accent text-sidebar-accent-foreground border-0">
+                        {item.badge}
+                      </Badge>
+                    )}
+                    {item.subItems && (
+                      <ChevronRight
+                        className={`h-4 w-4 transition-transform ${
+                          expandedItems.includes(item.title) ? "rotate-90" : ""
+                        }`}
+                      />
+                    )}
+                  </div>
+                </Button>
 
-      {/* Footer Items */}
-      {footerItems.length > 0 && (
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <nav className="space-y-1">
-            {footerItems.map((item) => (
-              <a
-                key={item.title}
-                href={item.url}
-                onClick={(e) => handleItemClick(item, e)}
-                className="flex items-center gap-3 w-full px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 rounded-lg"
-              >
-                <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-600">
-                  <item.icon className="h-4 w-4" />
-                </div>
-                <span>{item.title}</span>
-              </a>
+                {item.subItems && expandedItems.includes(item.title) && (
+                  <div className="ml-6 mt-2 space-y-1 border-l-2 border-sidebar-border pl-4">
+                    {item.subItems.map((subItem) => (
+                      <Button
+                        key={subItem.title}
+                        variant="ghost"
+                        className={`w-full justify-between h-10 px-3 text-sm ${
+                          isActiveRoute(subItem.url)
+                            ? "text-sidebar-foreground font-semibold bg-sidebar-accent"
+                            : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                        }`}
+                        onClick={() => handleSubItemClick(subItem)}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <subItem.icon className="h-3.5 w-3.5 flex-shrink-0" />
+                          <span className="truncate">{subItem.title}</span>
+                        </div>
+                        {subItem.badge && <Badge className="text-xs flex-shrink-0">{subItem.badge}</Badge>}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
         </div>
-      )}
-    </div>
-  );
+
+        {/* Footer - Fixed */}
+        <div className="flex-shrink-0 p-4 border-t border-sidebar-border">
+          <div className="space-y-1">
+            {footerItems.map((item) => (
+              <Button
+                key={item.title}
+                variant="ghost"
+                className={`w-full justify-start h-10 px-4 ${
+                  isActiveRoute(item.url)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                }`}
+                onClick={() => handleItemClick(item)}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.title}</span>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </aside>
+  )
 }

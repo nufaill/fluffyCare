@@ -3,18 +3,11 @@ import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../services/jwt/jwtService';
 import { HTTP_STATUS } from '../shared/constant';
 
-export interface AuthenticatedUserRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-  };
-}
-
 export class UserMiddleware {
   constructor(private readonly jwtService: JwtService) {}
 
   public authenticate = async (
-    req: AuthenticatedUserRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
@@ -42,7 +35,7 @@ export class UserMiddleware {
       }
 
       req.user = {
-        id: payload.userId,
+        userId: payload.userId,
         email: payload.email,
       };
 

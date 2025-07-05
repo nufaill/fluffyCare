@@ -21,6 +21,24 @@ export interface Shop {
   updatedAt: string;
 }
 
+// Backend types for API responses
+export interface shopDocument extends Shop {
+  isActive: boolean;
+  password: string;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+}
+
+export interface shopUpdatePayload {
+  name?: string;
+  phone?: string;
+  city?: string;
+  streetAddress?: string;
+  description?: string;
+  logo?: string;
+  location?: GeoLocation;
+}
+
 export interface ShopLoginData {
   email: string;
   password: string;

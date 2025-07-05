@@ -6,7 +6,9 @@ import { AuthService as AdminAuthService } from "../services/admin/adminService"
 import { ShopRepository } from "../repositories/shopRepository";
 import { UserRepository } from "../repositories/userRepository";
 import { JwtService } from "../services/jwt/jwtService";
-import {AdminRepository} from "../repositories/adminRepository"
+import {AdminRepository} from "../repositories/adminRepository";
+import { AuthMiddleware } from 'middlewares/auth.middleware';
+
 // Initialize repositories
 const shopRepository = new ShopRepository();
 const userRepository = new UserRepository();
@@ -16,14 +18,19 @@ const adminRepository = new AdminRepository();
 const jwtService = new JwtService();
 const adminAuthService = new AdminAuthService(adminRepository,jwtService);
 
+const authMiddlewareInstance = new AuthMiddleware(jwtService);
+
+const authMiddleware = authMiddlewareInstance;
+
 // Initialize controllers with dependencies
-export const injectedAdminAuthController = new AdminAuthController(adminAuthService);
-export const injectedShopController = new ShopController(shopRepository);
-export const injectedUserController = new UserController(userRepository);
+const injectedAdminAuthController = new AdminAuthController(adminAuthService);
+const injectedShopController = new ShopController(shopRepository);
+const injectedUserController = new UserController(userRepository);
 
 // Export for route usage
 export const adminDependencies = {
   adminAuthController: injectedAdminAuthController,
   shopController: injectedShopController,
-  userController: injectedUserController
+  userController: injectedUserController,
+  authMiddleware
 };

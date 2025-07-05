@@ -8,12 +8,6 @@ import { NextFunction } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-  };
-}
 
 export class AuthController {
   constructor(private authService: AuthService) { }
@@ -329,35 +323,6 @@ export class AuthController {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR || 500).json({
         success: false,
         message: 'Logout failed',
-      });
-    }
-  };
-
-  me = async (req: AuthRequest, res: Response): Promise<void> => {
-    try {
-      if (!req.user) {
-        res.status(HTTP_STATUS.UNAUTHORIZED || 401).json({
-          success: false,
-          message: 'User not authenticated',
-        });
-        return;
-      }
-
-      console.log("🔧 [AuthController] Fetching user profile...");
-
-      res.status(HTTP_STATUS.OK || 200).json({
-        success: true,
-        user: {
-          id: req.user.id,
-          email: req.user.email
-        },
-      });
-    } catch (error) {
-      console.error("❌ [AuthController] Profile fetch error:", error);
-
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR || 500).json({
-        success: false,
-        message: 'Failed to fetch user profile',
       });
     }
   };

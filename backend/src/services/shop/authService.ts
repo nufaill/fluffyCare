@@ -65,7 +65,8 @@ export class AuthService {
   private generateTokens(id: string, email: string): TokenPair {
     return this.jwtService.generateTokens({
       id,
-      email
+      email,
+      role:"user"
     });
   }
 
@@ -298,6 +299,7 @@ export class AuthService {
       const newAccessToken = this.jwtService.generateAccessToken({
         id: shop._id.toString(),
         email: shop.email,
+        role:"shop"
       });
 
       console.log("✅ [ShopAuthService] Token refreshed successfully");

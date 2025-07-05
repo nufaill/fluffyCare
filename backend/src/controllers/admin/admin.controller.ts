@@ -5,13 +5,6 @@ import { setAuthCookies, clearAuthCookies } from '../../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-  };
-}
-
 export class AdminAuthController {
   constructor(private authService: AuthService) {}
 

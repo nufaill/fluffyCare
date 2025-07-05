@@ -50,7 +50,8 @@ export class AuthService {
   generateTokens(id: string, email: string) {
     return this.jwtService.generateTokens({
       id,
-      email
+      email,
+      role: "admin"
     });
   }
 }
