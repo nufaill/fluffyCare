@@ -21,4 +21,19 @@ router.patch('/unverified/:shopId/reject', adminDependencies.shopController.reje
 router.get('/users', adminDependencies.userController.getAllUsers as RequestHandler);
 router.patch('/users/:userId/status', adminDependencies.userController.updateUserStatus as RequestHandler);
 
+// Pet Type management routes
+router.post('/pet-types', adminDependencies.petController.createPetType as RequestHandler);
+router.get('/pet-types', adminDependencies.petController.getAllPetTypes as RequestHandler);
+router.get('/pet-types/:id', adminDependencies.petController.getPetTypeById as RequestHandler);
+router.put('/pet-types/:id', adminDependencies.petController.updatePetType as RequestHandler);
+router.patch('/pet-types/:id/status', adminDependencies.petController.updatePetTypeStatus as RequestHandler);
+
+
+// Service Type management routes
+router.post('/service-types', adminDependencies.serviceController.createServiceType as RequestHandler);
+router.get('/service-types', adminDependencies.serviceController.getAllServiceTypes as RequestHandler);
+router.get('/service-types/:id', adminDependencies.serviceController.getServiceTypeById as RequestHandler);
+router.put('/service-types/:id', adminDependencies.serviceController.updateServiceType as RequestHandler);
+router.patch('/service-types/:id/status', adminDependencies.serviceController.updateServiceTypeStatus as RequestHandler);
+
 export default router;

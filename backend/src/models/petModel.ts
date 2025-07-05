@@ -3,8 +3,8 @@ import { PetDocument } from '../types/Pet.types';
 
 const petSchema = new Schema<PetDocument>(
   {
-    // userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    // petCategoryId: { type: Schema.Types.ObjectId, ref: 'PetCategory', required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    petTypeId: { type: Schema.Types.ObjectId, ref: 'PetType', required: true },
     profileImage: { type: String, required: true },
     name: { type: String, required: true },
     breed: { type: String, required: true },

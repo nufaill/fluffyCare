@@ -22,8 +22,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick, onLogout }) 
     { id: "Reviews", label: "Reviews", icon: Star, path: "/admin/reviews" },
     { id: "Verification", label: "Verification", icon: Shield, path: "/admin/unverified" },
     { id: "CustomerPetsDetail", label: "Customer&Pets Detail", icon: Users, path: "/admin/users" },
-    { id: "PetCategory", label: "Pet Category", icon: PawPrint, path: "/admin/pet-category" },
-    { id: "PetServices", label: "Pet Services", icon: Scissors, path: "/admin/pet-services" },
+    { id: "PetCategory", label: "Pet Category", icon: PawPrint, path: "/admin/pet-types" },
+    { id: "PetServices", label: "Pet Services", icon: Scissors, path: "/admin/service-types" },
 ];
 
   const handleItemClick = (itemId: string, path: string) => {

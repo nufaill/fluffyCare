@@ -66,7 +66,7 @@ const AdminRoutes = () => {
         } 
       />
       <Route 
-        path="/admin/pet-category" 
+        path="/admin/pet-types" 
         element={
           <PrivateRoute userType="admin">
             <PetCategory />
@@ -74,7 +74,7 @@ const AdminRoutes = () => {
         } 
       />
       <Route 
-        path="/admin/pet-services" 
+        path="/admin/service-types" 
         element={
           <PrivateRoute userType="admin">
             <PetServices />

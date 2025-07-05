@@ -27,6 +27,7 @@ export const SUCCESS_MESSAGES = {
   ALREADY_WISHLIST: "Item alredy in wishlist",
   REMOVED_WHISHLIST: "Item removed from wishlist",
   USERS_FETCHED_SUCESS: "Users fetched successfully",
+  FETCHED_SUCESS: "fetched successfully",
   PROFILE_FETCHED_SUCCESS: 'Profile fetched successfully',
   PROFILE_UPDATED_SUCCESS: 'Profile updated successfully'
 };

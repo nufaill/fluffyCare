@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PawPrint, Search, Edit2, Shield, ShieldCheck } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -6,60 +6,115 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/Badge"
 import { Switch } from "@/components/ui/switch"
 import { Table } from "@/components/ui/Table"
-import  AdminSidebar  from "@/components/admin/Sidebar"
-import  AdminNavbar  from "@/components/admin/Navbar"
+import AdminSidebar from "@/components/admin/Sidebar"
+import AdminNavbar from "@/components/admin/Navbar"
 import { AddItemForm } from "@/components/admin/add-item-form"
 import { StatsCards } from "@/components/admin/stats-cards"
+import { createServiceType, getAllServiceTypes, updateServiceType, updateServiceTypeStatus } from "@/services/admin/adminService"
+import toast from 'react-hot-toast'
 
-interface Service {
-  id: string
+interface ServiceType {
+  _id: string
   name: string
+  isActive: boolean
   createdAt: string
-  status: "active" | "blocked"
+  updatedAt: string
 }
 
-export default function PetServicePage() {
-  const [Services, setServices] = useState<Service[]>([
-    { id: "1", name: "Pet grooming", createdAt: "2024-01-15", status: "active" },
-    { id: "2", name: "puppy training", createdAt: "2024-01-10", status: "active" },
-    { id: "3", name: "hire cut", createdAt: "2024-01-08", status: "blocked" },
-    { id: "4", name: "nile polish", createdAt: "2024-01-05", status: "active" },
-  ])
 
+
+export default function ServiceCategoryPage() {
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([])
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(undefined)
+  const [loading, setLoading] = useState(true)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState<string>("")
 
-  const filteredServices = Services.filter((Service) =>
-    Service.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  // Fetch service types on component mount
+  useEffect(() => {
+    fetchServiceTypes()
+  }, [])
 
-  const activeServices = Services.filter((cat) => cat.status === "active").length
-  const blockedServices = Services.filter((cat) => cat.status === "blocked").length
-
-  const handleAddService = (name: string) => {
-    const isDuplicate = Services.some((cat) => cat.name.toLowerCase() === name.toLowerCase())
-
-    if (isDuplicate) {
-      alert("Service already exists")
-      return
+  const fetchServiceTypes = async () => {
+    try {
+      setLoading(true)
+      const response = await getAllServiceTypes()
+      if (response.success) {
+        setServiceTypes(response.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch service types:', error)
+      toast.error('Failed to fetch service types')
+    } finally {
+      setLoading(false)
     }
-
-    const newCat: Service = {
-      id: Date.now().toString(),
-      name: name,
-      createdAt: new Date().toISOString().split("T")[0],
-      status: "active",
-    }
-    setServices((prev) => [...prev, newCat])
   }
 
-  const handleToggleStatus = (ServiceId: string) => {
-    setServices((prev) =>
-      prev.map((cat) =>
-        cat.id === ServiceId ? { ...cat, status: cat.status === "active" ? "blocked" : "active" } : cat,
-      ),
-    )
+  const filteredServiceTypes = serviceTypes.filter((serviceType) =>
+    serviceType.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
+
+  const activeServiceTypes = serviceTypes.filter((service) => service.isActive).length
+  const blockedServiceTypes = serviceTypes.filter((service) => !service.isActive).length
+
+  const handleAddServiceType = async (name: string) => {
+    try {
+      const response = await createServiceType({ name })
+      if (response.success) {
+        setServiceTypes((prev) => [response.data, ...prev])
+      }
+    } catch (error: any) {
+      console.error('Failed to create service type:', error)
+      // Toast is already handled in service
+    }
+  }
+
+  const handleToggleStatus = async (serviceTypeId: string, currentStatus: boolean) => {
+    try {
+      const response = await updateServiceTypeStatus(serviceTypeId, !currentStatus)
+      if (response.success) {
+        setServiceTypes((prev) =>
+          prev.map((service) =>
+            service._id === serviceTypeId ? { ...service, isActive: !currentStatus } : service,
+          ),
+        )
+      }
+    } catch (error: any) {
+      console.error('Failed to update service type status:', error)
+      // Toast is already handled in service
+    }
+  }
+
+  const handleStartEdit = (serviceType: ServiceType) => {
+    setEditingId(serviceType._id)
+    setEditingName(serviceType.name)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editingName.trim()) return
+
+    try {
+      const response = await updateServiceType(editingId, { name: editingName.trim() })
+      if (response.success) {
+        setServiceTypes((prev) =>
+          prev.map((service) =>
+            service._id === editingId ? { ...service, name: editingName.trim() } : service,
+          ),
+        )
+        setEditingId(null)
+        setEditingName("")
+      }
+    } catch (error: any) {
+      console.error('Failed to update service type:', error)
+      // Toast is already handled in service
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setEditingName("")
   }
 
   const handleSort = (key: string, order: "asc" | "desc") => {
@@ -68,17 +123,27 @@ export default function PetServicePage() {
   }
 
   const statsData = [
-    { label: "Active Services", value: activeServices, color: "text-green-600 dark:text-green-400" },
-    { label: "Blocked Services", value: blockedServices, color: "text-red-600 dark:text-red-400" },
+    { label: "Active Service Types", value: activeServiceTypes, color: "text-green-600 dark:text-green-400" },
+    { label: "Blocked Service Types", value: blockedServiceTypes, color: "text-red-600 dark:text-red-400" },
   ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading service types...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AdminSidebar activeItem="PetService" />
+      <AdminSidebar activeItem="ServiceCategory" />
       <AdminNavbar userName="NUFAIL" onSearch={setSearchTerm} />
 
       <main className="ml-64 pt-16 p-6 space-y-6">
-
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center space-x-3">
@@ -86,16 +151,16 @@ export default function PetServicePage() {
               <PawPrint className="h-6 w-6 text-white dark:text-black" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Pet Services</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage pet Services for your services</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Service Types</h1>
+              <p className="text-gray-600 dark:text-gray-400">Manage service types for your services</p>
             </div>
           </div>
         </div>
-        {/* Add Service Section */}
+        {/* Add Service Type Section */}
         <AddItemForm
-          title="Add New Pet Service"
-          placeholder="Enter Service name (e.g., grooming, puppy training, massage)"
-          onAdd={handleAddService}
+          title="Add New Service Type"
+          placeholder="Enter service type name (e.g., Grooming, Training, Massage)"
+          onAdd={handleAddServiceType}
           icon={<PawPrint className="h-4 w-4 text-white dark:text-black" />}
         />
 
@@ -106,7 +171,7 @@ export default function PetServicePage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
                 <Input
-                  placeholder="Search Services..."
+                  placeholder="Search service types..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
@@ -118,41 +183,57 @@ export default function PetServicePage() {
           <StatsCards stats={statsData} />
         </div>
 
-        {/* Services Table */}
+        {/* Service Types Table */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
-              <span>Services List</span>
+              <span>Service Types List</span>
               <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                {filteredServices.length} Services
+                {filteredServiceTypes.length} service types
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Table<Service>
+            <Table<ServiceType>
               columns={[
                 {
                   key: "name",
-                  title: "Service Name",
+                  title: "Service Type Name",
                   dataIndex: "name",
                   sortable: true,
                   align: "left",
+                  render: (value: string, record: ServiceType) => (
+                    editingId === record._id ? (
+                      <Input
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={handleSaveEdit}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') handleSaveEdit()
+                          if (e.key === 'Escape') handleCancelEdit()
+                        }}
+                        className="w-full"
+                      />
+                    ) : (
+                      <span>{value}</span>
+                    )
+                  ),
                 },
                 {
-                  key: "status",
+                  key: "isActive",
                   title: "Status",
-                  dataIndex: "status",
+                  dataIndex: "isActive",
                   sortable: true,
                   align: "left",
-                  render: (value: "active" | "blocked") => (
+                  render: (value: boolean) => (
                     <Badge
                       className={
-                        value === "active"
+                        value
                           ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30"
                           : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
                       }
                     >
-                      {value === "active" ? (
+                      {value ? (
                         <>
                           <ShieldCheck className="h-3 w-3 mr-1" />
                           Active
@@ -179,34 +260,56 @@ export default function PetServicePage() {
                   title: "Actions",
                   dataIndex: "actions",
                   align: "center",
-                  render: (_, record: Service) => (
+                  render: (_, record: ServiceType) => (
                     <div className="flex items-center justify-center space-x-3">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
+                      {editingId === record._id ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleSaveEdit}
+                            className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCancelEdit}
+                            className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleStartEdit(record)}
+                          className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      )}
                       <div className="flex items-center space-x-2">
                         <Switch
-                          checked={record.status === "active"}
-                          onCheckedChange={() => handleToggleStatus(record.id)}
+                          checked={record.isActive}
+                          onCheckedChange={() => handleToggleStatus(record._id, record.isActive)}
                         />
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {record.status === "active" ? "Block" : "Unblock"}
+                          {record.isActive ? "Block" : "Unblock"}
                         </span>
                       </div>
                     </div>
                   ),
                 },
               ]}
-              data={filteredServices}
-              rowKey="id"
+              data={filteredServiceTypes}
+              rowKey="_id"
               sortBy={sortBy}
               sortOrder={sortOrder}
               onSort={handleSort}
-              emptyText={searchTerm ? "No Services found matching your search." : "No Services available."}
+              emptyText={searchTerm ? "No service types found matching your search." : "No service types available."}
             />
           </CardContent>
         </Card>

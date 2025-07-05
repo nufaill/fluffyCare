@@ -3,7 +3,7 @@ import { Types, Document } from 'mongoose';
 export interface Pet {
   id: string;
   userId: string;
-  petCategoryId: string;
+  petTypeId: string;
   profileImage: string;
   name: string;
   breed: string;
@@ -22,6 +22,8 @@ export interface Pet {
 
 export interface CreatePetData extends Omit<Pet, 'id' | 'createdAt' | 'updatedAt'> {}
 
-export interface PetDocument extends Omit<Pet, 'id'>, Document {
+export interface PetDocument extends Omit<Pet, 'id' | 'userId'|'petTypeId'>, Document {
   _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  petTypeId: Types.ObjectId;
 }

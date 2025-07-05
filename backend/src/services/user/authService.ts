@@ -75,7 +75,8 @@ export class AuthService {
   generateTokens(id: string, email: string) {
     return this.jwtService.generateTokens({
       id,
-      email
+      email,
+      role :"user"
     });
   }
 
@@ -232,7 +233,8 @@ export class AuthService {
       console.log("🎟️ [AuthService] Generating JWT tokens...");
       const tokens = this.jwtService.generateTokens({
         id: user._id.toString(),
-        email: user.email
+        email: user.email,
+        role :"user"
       });
 
       return {
@@ -306,7 +308,8 @@ export class AuthService {
       console.log("🎟️ [AuthService] Generating JWT tokens...");
       const tokens = this.jwtService.generateTokens({
         id: user._id.toString(),
-        email: user.email
+        email: user.email,
+        role :"user"
       });
 
       return {
@@ -349,7 +352,8 @@ export class AuthService {
 
       const newAccessToken = this.jwtService.generateAccessToken({
         id: user._id.toString(),
-        email: user.email
+        email: user.email,
+        role :"user"
       });
 
       console.log("✅ [AuthService] Token refreshed successfully");
