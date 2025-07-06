@@ -7,100 +7,190 @@ import { Badge } from "@/components/ui/Badge"
 import { ModernSidebar } from "@/components/user/app-sidebar"
 import { PetCard } from "@/components/user/pet-card"
 import type { Pet } from "@/types/pet.type"
-import { Plus, Search, Filter, Heart, Users } from "lucide-react"
+import { Plus, Search, Filter, Heart, Users, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { useNavigate } from "react-router-dom"
-
-const mockPets: Pet[] = [
-  {
-    id: "1",
-    userId: "1",
-    petCategoryId: "cat",
-    profileImage: "/placeholder.svg?height=200&width=200",
-    name: "Luna",
-    breed: "Persian Cat",
-    age: 3,
-    gender: "Female",
-    weight: 4.5,
-    additionalNotes: "Very friendly and loves to play with toys. Enjoys sunny spots by the window.",
-    friendlyWithPets: true,
-    friendlyWithOthers: true,
-    trainedBefore: true,
-    vaccinationStatus: true,
-    medication: "",
-    createdAt: new Date("2023-03-10"),
-    updatedAt: new Date("2024-01-01"),
-  },
-  {
-    id: "2",
-    userId: "1",
-    petCategoryId: "dog",
-    profileImage: "/placeholder.svg?height=200&width=200",
-    name: "Max",
-    breed: "Golden Retriever",
-    age: 5,
-    gender: "Male",
-    weight: 28.5,
-    additionalNotes: "Energetic and loves long walks. Great with children and other dogs.",
-    friendlyWithPets: true,
-    friendlyWithOthers: true,
-    trainedBefore: true,
-    vaccinationStatus: true,
-    medication: "Joint supplements",
-    createdAt: new Date("2023-01-20"),
-    updatedAt: new Date("2023-12-15"),
-  },
-  {
-    id: "3",
-    userId: "1",
-    petCategoryId: "cat",
-    profileImage: "/placeholder.svg?height=200&width=200",
-    name: "Whiskers",
-    breed: "Maine Coon",
-    age: 2,
-    gender: "Male",
-    weight: 6.2,
-    additionalNotes: "Independent but affectionate. Loves climbing and exploring high places.",
-    friendlyWithPets: false,
-    friendlyWithOthers: true,
-    trainedBefore: false,
-    vaccinationStatus: true,
-    medication: "",
-    createdAt: new Date("2023-06-15"),
-    updatedAt: new Date("2023-12-20"),
-  },
-]
+import { userService, type PetType } from "@/services/user/userService"
 
 export default function PetsPage() {
   const [searchTerm, setSearchTerm] = React.useState("")
   const [selectedFilter, setSelectedFilter] = React.useState<"all" | "dogs" | "cats">("all")
-   const navigate = useNavigate();
+  const [pets, setPets] = React.useState<Pet[]>([])
+  const [petTypes, setPetTypes] = React.useState<PetType[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const navigate = useNavigate()
+
+  // Get user ID from localStorage or context (adjust based on your auth implementation)
+  const userId = localStorage.getItem('userId') || '1' // Fallback to '1' if not found
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // Fetch pets and pet types concurrently
+        const [petsResponse, petTypesResponse] = await Promise.all([
+          userService.getPetsByUserId(userId),
+          userService.getAllPetTypes()
+        ])
+
+        // Transform API data to match Pet interface
+        const transformedPets: Pet[] = petsResponse.map(pet => ({
+          ...pet,
+          id: pet.id ,
+          createdAt: new Date(pet.createdAt),
+          updatedAt: new Date(pet.updatedAt)
+        }))
+
+        setPets(transformedPets)
+        setPetTypes(petTypesResponse)
+      } catch (err) {
+        console.error('Error fetching pets:', err)
+        setError('Failed to load pets. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [userId])
 
   const filteredPets = React.useMemo(() => {
-    return mockPets.filter((pet) => {
+    return pets.filter((pet) => {
       const matchesSearch =
         pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         pet.breed.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesFilter =
-        selectedFilter === "all" ||
-        (selectedFilter === "dogs" && pet.petCategoryId === "dog") ||
-        (selectedFilter === "cats" && pet.petCategoryId === "cat")
+      
+      const matchesFilter = (() => {
+        if (selectedFilter === "all") return true
+        
+        // Find the pet type name from petTypes array
+        const petType = petTypes.find(type => type._id === pet.petTypeId)
+        const petTypeName = petType?.name.toLowerCase() || ''
+        
+        return (
+          (selectedFilter === "dogs" && petTypeName.includes("dog")) ||
+          (selectedFilter === "cats" && petTypeName.includes("cat"))
+        )
+      })()
+      
       return matchesSearch && matchesFilter
     })
-  }, [searchTerm, selectedFilter])
+  }, [searchTerm, selectedFilter, pets, petTypes])
 
   const petStats = React.useMemo(() => {
-    const total = mockPets.length
-    const dogs = mockPets.filter((pet) => pet.petCategoryId === "dog").length
-    const cats = mockPets.filter((pet) => pet.petCategoryId === "cat").length
-    const vaccinated = mockPets.filter((pet) => pet.vaccinationStatus).length
-    const trained = mockPets.filter((pet) => pet.trainedBefore).length
-    const friendly = mockPets.filter((pet) => pet.friendlyWithOthers).length
+    const total = pets.length
+    
+    // Count pets by type
+    const dogs = pets.filter(pet => {
+      const petType = petTypes.find(type => type._id === pet.petTypeId)
+      return petType?.name.toLowerCase().includes("dog")
+    }).length
+    
+    const cats = pets.filter(pet => {
+      const petType = petTypes.find(type => type._id === pet.petTypeId)
+      return petType?.name.toLowerCase().includes("cat")
+    }).length
+    
+    const vaccinated = pets.filter((pet) => pet.vaccinationStatus).length
+    const trained = pets.filter((pet) => pet.trainedBefore).length
+    const friendly = pets.filter((pet) => pet.friendlyWithOthers).length
 
     return { total, dogs, cats, vaccinated, trained, friendly }
-  }, [])
+  }, [pets, petTypes])
+
+  const handleAddPet = () => {
+    navigate("/add-pets")
+  }
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'add':
+        navigate("/add-pets")
+        break
+      case 'health':
+        // Navigate to health records page
+        navigate("/health-records")
+        break
+      case 'training':
+        // Navigate to training sessions page
+        navigate("/training-sessions")
+        break
+      case 'export':
+        // Handle export functionality
+        console.log('Export data functionality to be implemented')
+        break
+      default:
+        break
+    }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <div className="flex flex-col h-screen bg-white dark:bg-black">
+          <Header />
+          <div className="flex flex-1 overflow-hidden">
+            <ModernSidebar />
+            <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
+              <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center gap-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-900 dark:text-white" />
+                  <p className="text-gray-600 dark:text-gray-400">Loading your pets...</p>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+        <Footer />
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <div className="flex flex-col h-screen bg-white dark:bg-black">
+          <Header />
+          <div className="flex flex-1 overflow-hidden">
+            <ModernSidebar />
+            <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
+              <div className="flex items-center justify-center h-full">
+                <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm max-w-md">
+                  <CardContent className="p-6 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="p-4 bg-red-100 dark:bg-red-900 rounded-full">
+                        <Heart className="h-8 w-8 text-red-500" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          Error Loading Pets
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          {error}
+                        </p>
+                        <Button 
+                          onClick={() => window.location.reload()}
+                          className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold"
+                        >
+                          Try Again
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </main>
+          </div>
+        </div>
+        <Footer />
+      </>
+    )
+  }
 
   return (
     <>
@@ -118,12 +208,13 @@ export default function PetsPage() {
                 <div className="flex items-center gap-3">
                   <h1 className="text-xl font-bold text-gray-900 dark:text-white">My Pets</h1>
                   <Badge className="bg-gray-900 text-white dark:bg-white dark:text-black font-medium">
-                    {mockPets.length} {mockPets.length === 1 ? "Pet" : "Pets"}
+                    {pets.length} {pets.length === 1 ? "Pet" : "Pets"}
                   </Badge>
                 </div>
                 <Button 
-                onClick={() => navigate("/add-pets")}
-                className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold">
+                  onClick={handleAddPet}
+                  className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Pet
                 </Button>
@@ -247,7 +338,10 @@ export default function PetsPage() {
                             : "Add your first pet to get started!"}
                         </p>
                         {!searchTerm && selectedFilter === "all" && (
-                          <Button className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold">
+                          <Button 
+                            onClick={handleAddPet}
+                            className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold"
+                          >
                             <Plus className="h-4 w-4 mr-2" />
                             Add Your First Pet
                           </Button>
@@ -268,6 +362,7 @@ export default function PetsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <Button
                         variant="outline"
+                        onClick={() => handleQuickAction('add')}
                         className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
                       >
                         <Plus className="h-4 w-4 mr-2" />
@@ -275,6 +370,7 @@ export default function PetsPage() {
                       </Button>
                       <Button
                         variant="outline"
+                        onClick={() => handleQuickAction('health')}
                         className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
                       >
                         <Heart className="h-4 w-4 mr-2" />
@@ -282,6 +378,7 @@ export default function PetsPage() {
                       </Button>
                       <Button
                         variant="outline"
+                        onClick={() => handleQuickAction('training')}
                         className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
                       >
                         <Users className="h-4 w-4 mr-2" />
@@ -289,6 +386,7 @@ export default function PetsPage() {
                       </Button>
                       <Button
                         variant="outline"
+                        onClick={() => handleQuickAction('export')}
                         className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
                       >
                         <Filter className="h-4 w-4 mr-2" />

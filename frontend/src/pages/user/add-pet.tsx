@@ -15,42 +15,11 @@ import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { Upload, Save, X, Heart, Camera } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-
-interface PetCategory {
-    id: string
-    name: string
-    icon: string
-}
-
-const petCategories: PetCategory[] = [
-    { id: "dog", name: "Dog", icon: "🐕" },
-    { id: "cat", name: "Cat", icon: "🐱" },
-    { id: "bird", name: "Bird", icon: "🐦" },
-    { id: "rabbit", name: "Rabbit", icon: "🐰" },
-    { id: "hamster", name: "Hamster", icon: "🐹" },
-    { id: "fish", name: "Fish", icon: "🐠" },
-    { id: "reptile", name: "Reptile", icon: "🦎" },
-    { id: "other", name: "Other", icon: "🐾" },
-]
-
-interface AddPetFormData {
-    petCategoryId: string
-    profileImage: string
-    name: string
-    breed: string
-    age: number | ""
-    gender: "Male" | "Female" | ""
-    weight: number | ""
-    additionalNotes: string
-    friendlyWithPets: boolean
-    friendlyWithOthers: boolean
-    trainedBefore: boolean
-    vaccinationStatus: boolean
-    medication: string
-}
+import { userService, type PetType } from "@/services/user/userService"
+import type { CreatePetData } from "@/types/pet.type"
 
 interface FormErrors {
-    petCategoryId?: string
+    petTypeId?: string
     profileImage?: string
     name?: string
     breed?: string
@@ -66,30 +35,43 @@ interface FormErrors {
 }
 
 export default function AddPetPage() {
-    const [formData, setFormData] = React.useState<AddPetFormData>({
-        petCategoryId: "",
+    const [formData, setFormData] = React.useState<CreatePetData>({
+        petTypeId: "",
         profileImage: "",
         name: "",
         breed: "",
-        age: "",
-        gender: "",
-        weight: "",
+        age: 0,
+        gender: "" as "Male" | "Female",
+        weight: 0,
         additionalNotes: "",
         friendlyWithPets: false,
         friendlyWithOthers: false,
         trainedBefore: false,
         vaccinationStatus: false,
         medication: "",
+        userId: "" 
     })
 
     const [errors, setErrors] = React.useState<FormErrors>({})
     const [isSubmitting, setIsSubmitting] = React.useState(false)
-    const navigate = useNavigate();
+    const [petTypes, setPetTypes] = React.useState<PetType[]>([])
+    const navigate = useNavigate()
 
-    const handleInputChange = (field: keyof AddPetFormData, value: any) => {
+    React.useEffect(() => {
+        const fetchPetTypes = async () => {
+            try {
+                const types: PetType[] = await userService.getAllPetTypes()
+                setPetTypes(types)
+            } catch (error) {
+                console.error('Error fetching pet types:', error)
+            }
+        }
+        fetchPetTypes()
+    }, [])
+
+    const handleInputChange = <K extends keyof CreatePetData>(field: K, value: CreatePetData[K]) => {
         setFormData((prev) => ({ ...prev, [field]: value }))
-        // Clear error when user starts typing
-        if (errors[field]) {
+        if (field in errors) {
             setErrors((prev) => ({ ...prev, [field]: undefined }))
         }
     }
@@ -97,7 +79,8 @@ export default function AddPetPage() {
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {}
 
-        if (!formData.petCategoryId) newErrors.petCategoryId = "Pet category is required"
+        if (!formData.petTypeId) newErrors.petTypeId = "Pet type is required"
+        if (!formData.profileImage) newErrors.profileImage = "Profile image is required"
         if (!formData.name.trim()) newErrors.name = "Pet name is required"
         if (!formData.breed.trim()) newErrors.breed = "Breed is required"
         if (!formData.age || formData.age <= 0) newErrors.age = "Valid age is required"
@@ -108,7 +91,46 @@ export default function AddPetPage() {
         return Object.keys(newErrors).length === 0
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Validate file type and size
+        const validImageTypes = ['image/jpeg', 'image/png', 'image/gif']
+        if (!validImageTypes.includes(file.type)) {
+            setErrors((prev) => ({ ...prev, profileImage: "Only JPG, PNG, or GIF files are allowed" }))
+            return
+        }
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            setErrors((prev) => ({ ...prev, profileImage: "Image size must not exceed 5MB" }))
+            return
+        }
+
+        // Upload to Cloudinary
+        try {
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET)
+
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                method: 'POST',
+                body: formData,
+            })
+
+            const data = await response.json()
+            if (data.secure_url) {
+                handleInputChange("profileImage", data.secure_url)
+                setErrors((prev) => ({ ...prev, profileImage: undefined }))
+            } else {
+                setErrors((prev) => ({ ...prev, profileImage: "Failed to upload image to Cloudinary" }))
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error)
+            setErrors((prev) => ({ ...prev, profileImage: "Error uploading image" }))
+        }
+    }
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         if (!validateForm()) return
@@ -116,36 +138,24 @@ export default function AddPetPage() {
         setIsSubmitting(true)
 
         try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000))
-            console.log("Pet data to submit:", formData)
-            // Handle success (redirect, show success message, etc.)
-        } catch (error) {
+            await userService.createPet(formData)
+            navigate("/pets")
+        } catch (error: any) {
             console.error("Error adding pet:", error)
+            if (error.response?.data?.message) {
+                alert(error.response.data.message)
+            }
         } finally {
             setIsSubmitting(false)
-        }
-    }
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (file) {
-            // In a real app, you'd upload to a server and get back a URL
-            const imageUrl = URL.createObjectURL(file)
-            handleInputChange("profileImage", imageUrl)
         }
     }
 
     return (
         <>
             <div className="flex flex-col h-screen bg-white dark:bg-black">
-                {/* Header spans full width at top */}
                 <Header />
-
-                {/* Sidebar and main content below header */}
                 <div className="flex flex-1 overflow-hidden">
                     <ModernSidebar />
-
                     <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
                         <header className="flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 dark:border-gray-800 px-4 lg:px-6 bg-white dark:bg-black">
                             <div className="flex items-center justify-between w-full">
@@ -168,7 +178,6 @@ export default function AddPetPage() {
 
                         <div className="p-4 lg:p-6">
                             <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
-                                {/* Basic Information */}
                                 <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
                                     <CardHeader>
                                         <CardTitle className="text-gray-900 dark:text-white font-bold flex items-center gap-2">
@@ -178,14 +187,13 @@ export default function AddPetPage() {
                                     </CardHeader>
                                     <CardContent className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* Profile Image */}
                                             <div className="md:col-span-2">
-                                                <Label className="text-gray-900 dark:text-white font-medium">Profile Image</Label>
+                                                <Label className="text-gray-900 dark:text-white font-medium">Profile Image *</Label>
                                                 <div className="mt-2 flex items-center gap-4">
                                                     <div className="h-20 w-20 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden">
                                                         {formData.profileImage ? (
                                                             <img
-                                                                src={formData.profileImage || "/placeholder.svg"}
+                                                                src={formData.profileImage}
                                                                 alt="Pet preview"
                                                                 className="h-full w-full object-cover rounded-full"
                                                             />
@@ -211,33 +219,27 @@ export default function AddPetPage() {
                                                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">JPG, PNG or GIF (max 5MB)</p>
                                                     </div>
                                                 </div>
+                                                {errors.profileImage && <p className="text-sm text-red-500 mt-1">{errors.profileImage}</p>}
                                             </div>
-
-                                            {/* Pet Category */}
                                             <div>
                                                 <Label className="text-gray-900 dark:text-white font-medium">Pet Category *</Label>
                                                 <Select
-                                                    value={formData.petCategoryId}
-                                                    onValueChange={(value: any) => handleInputChange("petCategoryId", value)}
+                                                    value={formData.petTypeId}
+                                                    onValueChange={(value) => handleInputChange("petTypeId", value)}
                                                 >
                                                     <SelectTrigger className="mt-2 border-gray-300 dark:border-gray-700">
-                                                        <SelectValue placeholder="Select pet category" />
+                                                        <SelectValue placeholder="Select pet type" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {petCategories.map((category) => (
-                                                            <SelectItem key={category.id} value={category.id}>
-                                                                <span className="flex items-center gap-2">
-                                                                    <span>{category.icon}</span>
-                                                                    {category.name}
-                                                                </span>
+                                                        {petTypes.map((type) => (
+                                                            <SelectItem key={type._id} value={type._id}>
+                                                                {type.name}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
-                                                {errors.petCategoryId && <p className="text-sm text-red-500 mt-1">{errors.petCategoryId}</p>}
+                                                {errors.petTypeId && <p className="text-sm text-red-500 mt-1">{errors.petTypeId}</p>}
                                             </div>
-
-                                            {/* Pet Name */}
                                             <div>
                                                 <Label htmlFor="name" className="text-gray-900 dark:text-white font-medium">
                                                     Pet Name *
@@ -251,8 +253,6 @@ export default function AddPetPage() {
                                                 />
                                                 {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
                                             </div>
-
-                                            {/* Breed */}
                                             <div>
                                                 <Label htmlFor="breed" className="text-gray-900 dark:text-white font-medium">
                                                     Breed *
@@ -266,8 +266,6 @@ export default function AddPetPage() {
                                                 />
                                                 {errors.breed && <p className="text-sm text-red-500 mt-1">{errors.breed}</p>}
                                             </div>
-
-                                            {/* Age */}
                                             <div>
                                                 <Label htmlFor="age" className="text-gray-900 dark:text-white font-medium">
                                                     Age (years) *
@@ -277,17 +275,15 @@ export default function AddPetPage() {
                                                     type="number"
                                                     min="0"
                                                     max="50"
-                                                    value={formData.age}
+                                                    value={formData.age || ""}
                                                     onChange={(e) =>
-                                                        handleInputChange("age", e.target.value ? Number.parseInt(e.target.value) : "")
+                                                        handleInputChange("age", e.target.value ? Number.parseInt(e.target.value) : 0)
                                                     }
                                                     placeholder="Enter age"
                                                     className="mt-2 border-gray-300 dark:border-gray-700"
                                                 />
                                                 {errors.age && <p className="text-sm text-red-500 mt-1">{errors.age}</p>}
                                             </div>
-
-                                            {/* Weight */}
                                             <div>
                                                 <Label htmlFor="weight" className="text-gray-900 dark:text-white font-medium">
                                                     Weight (kg) *
@@ -297,22 +293,20 @@ export default function AddPetPage() {
                                                     type="number"
                                                     min="0"
                                                     step="0.1"
-                                                    value={formData.weight}
+                                                    value={formData.weight || ""}
                                                     onChange={(e) =>
-                                                        handleInputChange("weight", e.target.value ? Number.parseFloat(e.target.value) : "")
+                                                        handleInputChange("weight", e.target.value ? Number.parseFloat(e.target.value) : 0)
                                                     }
                                                     placeholder="Enter weight"
                                                     className="mt-2 border-gray-300 dark:border-gray-700"
                                                 />
                                                 {errors.weight && <p className="text-sm text-red-500 mt-1">{errors.weight}</p>}
                                             </div>
-
-                                            {/* Gender */}
                                             <div>
                                                 <Label className="text-gray-900 dark:text-white font-medium">Gender *</Label>
                                                 <RadioGroup
                                                     value={formData.gender}
-                                                    onValueChange={(value: any) => handleInputChange("gender", value)}
+                                                    onValueChange={(value) => handleInputChange("gender", value as "Male" | "Female")}
                                                     className="mt-2"
                                                 >
                                                     <div className="flex items-center space-x-2">
@@ -333,8 +327,6 @@ export default function AddPetPage() {
                                         </div>
                                     </CardContent>
                                 </Card>
-
-                                {/* Behavioral Information */}
                                 <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
                                     <CardHeader>
                                         <CardTitle className="text-gray-900 dark:text-white font-bold">Behavioral Information</CardTitle>
@@ -345,40 +337,37 @@ export default function AddPetPage() {
                                                 <Checkbox
                                                     id="friendlyWithPets"
                                                     checked={formData.friendlyWithPets}
-                                                    onCheckedChange={(checked: any) => handleInputChange("friendlyWithPets", checked)}
+                                                    onCheckedChange={(checked) => handleInputChange("friendlyWithPets", checked as boolean)}
                                                 />
                                                 <Label htmlFor="friendlyWithPets" className="text-gray-700 dark:text-gray-300">
                                                     Friendly with other pets
                                                 </Label>
                                             </div>
-
                                             <div className="flex items-center space-x-2">
                                                 <Checkbox
                                                     id="friendlyWithOthers"
                                                     checked={formData.friendlyWithOthers}
-                                                    onCheckedChange={(checked: any) => handleInputChange("friendlyWithOthers", checked)}
+                                                    onCheckedChange={(checked) => handleInputChange("friendlyWithOthers", checked as boolean)}
                                                 />
                                                 <Label htmlFor="friendlyWithOthers" className="text-gray-700 dark:text-gray-300">
                                                     Friendly with people
                                                 </Label>
                                             </div>
-
                                             <div className="flex items-center space-x-2">
                                                 <Checkbox
                                                     id="trainedBefore"
                                                     checked={formData.trainedBefore}
-                                                    onCheckedChange={(checked: any) => handleInputChange("trainedBefore", checked)}
+                                                    onCheckedChange={(checked) => handleInputChange("trainedBefore", checked as boolean)}
                                                 />
                                                 <Label htmlFor="trainedBefore" className="text-gray-700 dark:text-gray-300">
                                                     Has been trained before
                                                 </Label>
                                             </div>
-
                                             <div className="flex items-center space-x-2">
                                                 <Checkbox
                                                     id="vaccinationStatus"
                                                     checked={formData.vaccinationStatus}
-                                                    onCheckedChange={(checked: any) => handleInputChange("vaccinationStatus", checked)}
+                                                    onCheckedChange={(checked) => handleInputChange("vaccinationStatus", checked as boolean)}
                                                 />
                                                 <Label htmlFor="vaccinationStatus" className="text-gray-700 dark:text-gray-300">
                                                     Up to date with vaccinations
@@ -387,8 +376,6 @@ export default function AddPetPage() {
                                         </div>
                                     </CardContent>
                                 </Card>
-
-                                {/* Additional Information */}
                                 <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
                                     <CardHeader>
                                         <CardTitle className="text-gray-900 dark:text-white font-bold">Additional Information</CardTitle>
@@ -406,7 +393,6 @@ export default function AddPetPage() {
                                                 className="mt-2 border-gray-300 dark:border-gray-700"
                                             />
                                         </div>
-
                                         <div>
                                             <Label htmlFor="additionalNotes" className="text-gray-900 dark:text-white font-medium">
                                                 Additional Notes
@@ -422,12 +408,11 @@ export default function AddPetPage() {
                                         </div>
                                     </CardContent>
                                 </Card>
-
-                                {/* Submit Buttons */}
                                 <div className="flex justify-end gap-4 pt-6">
                                     <Button
                                         type="button"
                                         variant="outline"
+                                        onClick={() => navigate("/pets")}
                                         className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
                                     >
                                         Cancel
