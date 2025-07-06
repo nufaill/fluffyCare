@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
 import { Switch } from "@/components/ui/switch"
 import { Search, Filter, Download, Phone, Mail, User } from 'lucide-react'
 import { useNavigate } from "react-router-dom"
-import { getAllUsers, updateUserStatus } from "@/services/admin/adminService"
+import { getAllUsers, updateUserStatus } from "@/services/admin/admin.service"
 
 // Define the User interface based on your API response
 interface User {

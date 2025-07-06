@@ -37,7 +37,7 @@ import {
   Eye,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { getUnverifiedShops, approveShop, rejectShop } from "@/services/admin/adminService"
+import { getUnverifiedShops, approveShop, rejectShop } from "@/services/admin/admin.service"
 import toast from 'react-hot-toast'
 
 type VerificationStatus = "approved" | "rejected" 

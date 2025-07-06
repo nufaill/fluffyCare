@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Mail, ArrowLeft, Send } from 'lucide-react';
 import logo from "@/assets/user/logo.png"
 import { useNavigate } from 'react-router-dom';
-import { userSendResetLink } from '@/services/user/authService';
-import { shopSendResetLink } from '@/services/shop/authService';
+import { userSendResetLink } from '@/services/user/auth.service';
+import { shopSendResetLink } from '@/services/shop/auth.service';
 
 interface ForgotPasswordFormProps {
     role: 'user' | 'shop';

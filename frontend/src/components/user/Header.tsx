@@ -7,7 +7,7 @@ import { useSelector, useDispatch } from "react-redux"
 import type { RootState } from "@/redux/store"
 import DefaultAvatar from "@/assets/user/default-avatar.jpeg"
 import { removeUser } from "@/redux/slices/user.slice"
-import { logoutUser } from "@/services/user/authService"
+import { logoutUser } from "@/services/user/auth.service"
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false)

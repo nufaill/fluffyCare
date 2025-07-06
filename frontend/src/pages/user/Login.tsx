@@ -1,7 +1,7 @@
 import AuthLogin from "@/components/shared/AuthLogin";
 import loginImage from '@/assets/authImages/login-image.png';
 import { useNavigate } from 'react-router-dom';
-import { loginUser } from "@/services/user/authService";
+import { loginUser } from "@/services/user/auth.service";
 import { useDispatch } from "react-redux";
 import { addUser } from "@/redux/slices/user.slice";
 

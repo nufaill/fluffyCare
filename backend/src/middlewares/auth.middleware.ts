@@ -1,6 +1,6 @@
 // backend/src/middlewares/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
-import { JwtService } from '../services/jwt/jwtService';
+import { JwtService } from '../services/jwt/jwt.service';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../shared/constant';
 import { CustomError } from '../util/CustomerError';
 

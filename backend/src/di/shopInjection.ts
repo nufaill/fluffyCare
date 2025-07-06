@@ -2,9 +2,9 @@
 import { ShopAuthController } from "../controllers/shop/auth.controller";
 import { ShopController } from "../controllers/shop/shop.controller";
 import { ShopRepository } from "../repositories/shopRepository";
-import { AuthService as ShopAuthService } from "../services/shop/authService";
-import { JwtService } from "../services/jwt/jwtService";
-import { EmailService } from "../services/emailService/emailService";
+import { AuthService as ShopAuthService } from "../services/shop/auth.service";
+import { JwtService } from "../services/jwt/jwt.service";
+import { EmailService } from "../services/emailService/email.service";
 import { OtpRepository } from "../repositories/otpRepository";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
 

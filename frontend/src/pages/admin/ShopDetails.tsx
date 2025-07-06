@@ -30,7 +30,7 @@ import {
   Phone,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { getAllShops, updateShopStatus } from "@/services/admin/adminService"
+import { getAllShops, updateShopStatus } from "@/services/admin/admin.service"
 import toast from 'react-hot-toast'
 
 type VerificationStatus = "approved" | "rejected" | "pending"

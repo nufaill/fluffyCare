@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import logo from "@/assets/user/logo.png"
-import { userResetPassword } from '@/services/user/authService';
-import { shopResetPassword } from '@/services/shop/authService';
+import { userResetPassword } from '@/services/user/auth.service';
+import { shopResetPassword } from '@/services/shop/auth.service';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface ResetPasswordFormProps {

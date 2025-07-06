@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { setAuthCookies, clearAuthCookies, updateAccessTokenCookie } from '../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../shared/constant';
-import { PetService } from '../services/petServices';
+import { PetService } from '../services/petType.service';
 import { CustomError } from '../util/CustomerError';
 import { NextFunction } from 'express-serve-static-core';
 

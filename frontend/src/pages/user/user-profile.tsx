@@ -7,7 +7,7 @@ import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { ModernSidebar } from "@/components/user/app-sidebar"
 import { Edit, Mail, Phone, MapPin, Calendar, Activity, Globe, Clock, Shield, Camera } from 'lucide-react'
-import { userService, } from "@/services/user/userService"
+import { userService, } from "@/services/user/user.service"
 import type { UserDocument } from "@/types/user.type"
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from "react-redux"

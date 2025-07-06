@@ -4,7 +4,7 @@ import AuthSignup from "@/components/shared/AuthSignup";
 import signupImage from '@/assets/authImages/signup-image.png';
 import shopLogo from '@/assets/user/logo.png';
 import { useNavigate } from 'react-router-dom';
-import { registerShop } from "@/services/shop/authService";
+import { registerShop } from "@/services/shop/auth.service";
 import { StorageUtils } from '@/types/shop.type';
 import type { SignupForm } from "@/types/auth.type";
 

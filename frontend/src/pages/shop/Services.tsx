@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { PawPrint, Search, Edit2, Save, X } from "lucide-react"
+import { PawPrint, Search, Edit2, Save, X, Plus } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,9 +19,9 @@ interface Service {
   name: string
   description: string
   category: string
-  petType: "Dog" | "Cat" | "All"
+  petType: ("Dog" | "Cat" | "All")[]
   charge: number
-  duration: number // in minutes
+  duration: number
   image?: string
   createdAt: string
   status: "active" | "inactive" | "blocked"
@@ -42,6 +42,8 @@ const SERVICE_CATEGORIES = [
   "Other",
 ]
 
+const PET_TYPES: ("Dog" | "Cat" | "All")[] = ["All", "Dog", "Cat"]
+
 function AddServiceForm({
   title,
   placeholder,
@@ -54,7 +56,7 @@ function AddServiceForm({
     name: string
     description: string
     category: string
-    petType: "Dog" | "Cat" | "All"
+    petType: ("Dog" | "Cat" | "All")[]
     charge: number
     duration: number
     image?: string
@@ -64,28 +66,28 @@ function AddServiceForm({
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
-  const [petType, setPetType] = useState<"Dog" | "Cat" | "All" | "">("")
+  const [petTypes, setPetTypes] = useState<("Dog" | "Cat" | "All")[]>([])
   const [charge, setCharge] = useState("")
   const [duration, setDuration] = useState("")
   const [image, setImage] = useState<File | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (name.trim() && category.trim() && petType && charge && duration) {
+    if (name.trim() && category.trim() && petTypes.length > 0 && charge && duration) {
       const imageUrl = image ? URL.createObjectURL(image) : undefined
       onAdd({
         name,
         description,
         category,
-        petType: petType as "Dog" | "Cat" | "All",
+        petType: petTypes,
         charge: Number.parseFloat(charge),
-        duration: Number.parseInt(duration),
+        duration: Number.parseFloat(duration),
         image: imageUrl,
       })
       setName("")
       setDescription("")
       setCategory("")
-      setPetType("")
+      setPetTypes([])
       setCharge("")
       setDuration("")
       setImage(null)
@@ -120,16 +122,41 @@ function AddServiceForm({
             </SelectContent>
           </Select>
 
-          <Select value={petType} onValueChange={(value) => setPetType(value as "Dog" | "Cat" | "All")}>
-            <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
-              <SelectValue placeholder="Select pet type" />
-            </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
-              <SelectItem value="Dog">Dog</SelectItem>
-              <SelectItem value="Cat">Cat</SelectItem>
-              <SelectItem value="All">All Pets</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Pet Types</label>
+            <div className="flex flex-wrap gap-2">
+              {PET_TYPES.map((type) => (
+                <Button
+                  key={type}
+                  type="button"
+                  variant={petTypes.includes(type) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (type === "All") {
+                      setPetTypes(["All"])
+                    } else {
+                      setPetTypes((prev) => {
+                        const newTypes = prev.filter((t) => t !== "All")
+                        if (prev.includes(type)) {
+                          const filtered = newTypes.filter((t) => t !== type)
+                          return filtered.length === 0 ? ["All"] : filtered
+                        } else {
+                          return [...newTypes, type]
+                        }
+                      })
+                    }
+                  }}
+                  className={
+                    petTypes.includes(type)
+                      ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                      : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }
+                >
+                  {type === "All" ? "All Pets" : type}
+                </Button>
+              ))}
+            </div>
+          </div>
 
           <Textarea
             placeholder="Enter description"
@@ -141,7 +168,7 @@ function AddServiceForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               type="number"
-              placeholder="Enter service charge ($)"
+              placeholder="Enter service charge (₹)"
               value={charge}
               onChange={(e) => setCharge(e.target.value)}
               className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
@@ -151,11 +178,12 @@ function AddServiceForm({
             />
             <Input
               type="number"
-              placeholder="Enter service duration (minutes)"
+              placeholder="Enter service duration (hours)"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
               min="0"
+              step="0.25"
               required
             />
           </div>
@@ -187,10 +215,10 @@ export default function ServicesPage() {
       name: "Pet Grooming",
       description: "Complete grooming services including bathing, brushing, nail trimming, and styling",
       category: "Grooming",
-      petType: "All",
+      petType: ["All"],
       charge: 50.0,
-      duration: 60,
-      image: "/images/grooming.jpg",
+      duration: 1,
+      image: "/placeholder.svg?height=40&width=40",
       createdAt: new Date("2024-01-15T10:30:00Z").toISOString(),
       status: "active",
     },
@@ -199,10 +227,10 @@ export default function ServicesPage() {
       name: "Puppy Training",
       description: "Basic obedience training for puppies including house training and socialization",
       category: "Training",
-      petType: "Dog",
+      petType: ["Dog"],
       charge: 75.0,
-      duration: 45,
-      image: "/images/training.jpg",
+      duration: 0.75,
+      image: "/placeholder.svg?height=40&width=40",
       createdAt: new Date("2024-01-10T14:45:00Z").toISOString(),
       status: "active",
     },
@@ -211,10 +239,10 @@ export default function ServicesPage() {
       name: "Pet Boarding",
       description: "Safe and comfortable overnight care for pets when owners are away",
       category: "Boarding",
-      petType: "All",
+      petType: ["All"],
       charge: 40.0,
-      duration: 1440, // 24 hours
-      image: "/images/boarding.jpg",
+      duration: 24,
+      image: "/placeholder.svg?height=40&width=40",
       createdAt: new Date("2024-01-08T09:15:00Z").toISOString(),
       status: "inactive",
     },
@@ -223,28 +251,60 @@ export default function ServicesPage() {
       name: "Veterinary Checkup",
       description: "Professional medical care including checkups, vaccinations, and treatments",
       category: "Medical",
-      petType: "All",
+      petType: ["All"],
       charge: 100.0,
-      duration: 30,
-      image: "/images/vet.jpg",
+      duration: 0.5,
+      image: "/placeholder.svg?height=40&width=40",
       createdAt: new Date("2024-01-05T11:20:00Z").toISOString(),
+      status: "active",
+    },
+    {
+      id: "5",
+      name: "Cat Behavioral Training",
+      description: "Specialized training for cats to address behavioral issues and improve socialization",
+      category: "Training",
+      petType: ["Cat"],
+      charge: 65.0,
+      duration: 0.83,
+      image: "/placeholder.svg?height=40&width=40",
+      createdAt: new Date("2024-01-12T16:20:00Z").toISOString(),
+      status: "active",
+    },
+    {
+      id: "6",
+      name: "Dog Walking Service",
+      description: "Daily walking service for dogs to ensure proper exercise and outdoor time",
+      category: "Walking",
+      petType: ["Dog"],
+      charge: 25.0,
+      duration: 0.5,
+      image: "/placeholder.svg?height=40&width=40",
+      createdAt: new Date("2024-01-18T08:30:00Z").toISOString(),
       status: "active",
     },
   ])
 
   const [searchTerm, setSearchTerm] = useState<string>("")
+  const [selectedPetTypes, setSelectedPetTypes] = useState<("All" | "Dog" | "Cat")[]>(["All"])
   const [sortBy, setSortBy] = useState<string | undefined>(undefined)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(undefined)
   const [editingService, setEditingService] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<Service>>({})
+  const [showAddForm, setShowAddForm] = useState(false)
 
-  const filteredServices = services.filter((service) => service.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredServices = services.filter((service) => {
+    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesPetType =
+      selectedPetTypes.includes("All") ||
+      selectedPetTypes.some((selectedType) => service.petType.includes(selectedType) || service.petType.includes("All"))
+    return matchesSearch && matchesPetType
+  })
 
   const handleAddService = (data: {
     name: string
     description: string
     category: string
-    petType: "Dog" | "Cat" | "All"
+    petType: ("Dog" | "Cat" | "All")[]
     charge: number
     duration: number
     image?: string
@@ -263,18 +323,27 @@ export default function ServicesPage() {
       petType: data.petType,
       charge: data.charge,
       duration: data.duration,
-      image: data.image,
+      image: data.image || "/placeholder.svg?height=40&width=40",
       createdAt: new Date().toISOString(),
       status: "active",
     }
     setServices((prev) => [...prev, newService])
+    setShowAddForm(false)
   }
 
   const handleSort = (key: string, order: "asc" | "desc") => {
     setSortBy(key)
     setSortOrder(order)
+    const validKeys: (keyof Service)[] = ["name", "category", "petType", "charge", "duration", "createdAt", "status"]
+    if (!validKeys.includes(key as keyof Service)) {
+      return // Ignore invalid keys
+    }
     const sorted = [...services].sort((a, b) => {
-      if (key === "name" || key === "category" || key === "petType" || key === "createdAt") {
+      if (key === "petType") {
+        const aValue = a[key].join(",")
+        const bValue = b[key].join(",")
+        return order === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
+      } else if (key === "name" || key === "category" || key === "createdAt" || key === "status") {
         return order === "asc" ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key])
       } else if (key === "charge" || key === "duration") {
         return order === "asc" ? a[key] - b[key] : b[key] - a[key]
@@ -343,14 +412,23 @@ export default function ServicesPage() {
               <p className="text-gray-600 dark:text-gray-400">Manage services for your pet care shop</p>
             </div>
           </div>
+          <Button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add New Service
+          </Button>
         </div>
 
-        <AddServiceForm
-          title="Add New Shop Service"
-          placeholder="Enter service name (e.g., Grooming, Training)"
-          onAdd={handleAddService}
-          icon={<PawPrint className="h-4 w-4 text-white dark:text-black" />}
-        />
+        {showAddForm && (
+          <AddServiceForm
+            title="Add New Shop Service"
+            placeholder="Enter service name (e.g., Grooming, Training)"
+            onAdd={handleAddService}
+            icon={<PawPrint className="h-4 w-4 text-white dark:text-black" />}
+          />
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -372,6 +450,46 @@ export default function ServicesPage() {
           </div>
         </div>
 
+        {/* Pet Type Filter */}
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <CardHeader>
+            <CardTitle className="text-gray-900 dark:text-gray-100">Filter by Pet Type</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {PET_TYPES.map((petType) => (
+                <Button
+                  key={petType}
+                  variant={selectedPetTypes.includes(petType) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (petType === "All") {
+                      setSelectedPetTypes(["All"])
+                    } else {
+                      setSelectedPetTypes((prev) => {
+                        const newTypes = prev.filter((t) => t !== "All")
+                        if (prev.includes(petType)) {
+                          const filtered = newTypes.filter((t) => t !== petType)
+                          return filtered.length === 0 ? ["All"] : filtered
+                        } else {
+                          return [...newTypes, petType]
+                        }
+                      })
+                    }
+                  }}
+                  className={
+                    selectedPetTypes.includes(petType)
+                      ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                      : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }
+                >
+                  {petType === "All" ? "All Pets" : petType}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
@@ -391,6 +509,16 @@ export default function ServicesPage() {
                     dataIndex: "name",
                     sortable: true,
                     align: "left",
+                    render: (value: string, record: Service) =>
+                      editingService === record.id ? (
+                        <Input
+                          value={editForm.name || value}
+                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                          className="w-full min-w-[150px]"
+                        />
+                      ) : (
+                        <span className="font-medium">{value}</span>
+                      ),
                   },
                   {
                     key: "category",
@@ -398,6 +526,31 @@ export default function ServicesPage() {
                     dataIndex: "category",
                     sortable: true,
                     align: "left",
+                    render: (value: string, record: Service) =>
+                      editingService === record.id ? (
+                        <Select
+                          value={editForm.category || value}
+                          onValueChange={(newValue) => setEditForm({ ...editForm, category: newValue })}
+                        >
+                          <SelectTrigger className="w-full min-w-[120px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SERVICE_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {cat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                        >
+                          {value}
+                        </Badge>
+                      ),
                   },
                   {
                     key: "petType",
@@ -405,6 +558,63 @@ export default function ServicesPage() {
                     dataIndex: "petType",
                     sortable: true,
                     align: "left",
+                    render: (value: ("Dog" | "Cat" | "All")[], record: Service) =>
+                      editingService === record.id ? (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1">
+                            {PET_TYPES.map((type) => (
+                              <Button
+                                key={type}
+                                type="button"
+                                variant={
+                                  (editForm.petType || value).includes(type)
+                                    ? "default"
+                                    : "outline"
+                                }
+                                size="sm"
+                                onClick={() => {
+                                  const currentTypes = editForm.petType || value
+                                  if (type === "All") {
+                                    setEditForm({ ...editForm, petType: ["All"] })
+                                  } else {
+                                    const newTypes = currentTypes.filter((t) => t !== "All")
+                                    if (currentTypes.includes(type)) {
+                                      const filtered = newTypes.filter((t) => t !== type)
+                                      setEditForm({ ...editForm, petType: filtered.length === 0 ? ["All"] : filtered })
+                                    } else {
+                                      setEditForm({
+                                        ...editForm,
+                                        petType: [...newTypes, type],
+                                      })
+                                    }
+                                  }
+                                }}
+                                className="text-xs h-6"
+                              >
+                                {type === "All" ? "All" : type}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {value.map((type, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className={
+                                type === "Dog"
+                                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400"
+                                  : type === "Cat"
+                                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400"
+                                    : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                              }
+                            >
+                              {type}
+                            </Badge>
+                          ))}
+                        </div>
+                      ),
                   },
                   {
                     key: "description",
@@ -412,28 +622,60 @@ export default function ServicesPage() {
                     dataIndex: "description",
                     sortable: false,
                     align: "left",
-                    render: (value: string) => (
-                      <div className="max-w-xs">
-                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate" title={value}>
-                          {value}
-                        </p>
-                      </div>
-                    ),
+                    render: (value: string, record: Service) =>
+                      editingService === record.id ? (
+                        <Textarea
+                          value={editForm.description || value}
+                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                          className="w-full min-w-[200px] min-h-[60px]"
+                        />
+                      ) : (
+                        <div className="max-w-xs">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate" title={value}>
+                            {value}
+                          </p>
+                        </div>
+                      ),
                   },
                   {
                     key: "charge",
-                    title: "Charge ($)",
+                    title: "Charge (₹)",
                     dataIndex: "charge",
                     sortable: true,
                     align: "right",
-                    render: (value: number) => `$${value.toFixed(2)}`,
+                    render: (value: number, record: Service) =>
+                      editingService === record.id ? (
+                        <Input
+                          type="number"
+                          value={editForm.charge || value}
+                          onChange={(e) => setEditForm({ ...editForm, charge: Number.parseFloat(e.target.value) })}
+                          className="w-full min-w-[100px]"
+                          min="0"
+                          step="0.01"
+                        />
+                      ) : (
+                        `₹${value.toFixed(2)}`
+                      ),
                   },
                   {
                     key: "duration",
-                    title: "Duration (min)",
+                    title: "Duration (hrs)",
                     dataIndex: "duration",
                     sortable: true,
                     align: "right",
+                    render: (value: number, record: Service) =>
+                      editingService === record.id ? (
+                        <Input
+                          type="number"
+                          value={editForm.duration || value}
+                          onChange={(e) => setEditForm({ ...editForm, duration: Number.parseFloat(e.target.value) })}
+                          className="w-full min-w-[100px]"
+                          min="0"
+                          step="0.25"
+                        />
+                      ) : (
+                        `${value}h`
+                      ),
                   },
                   {
                     key: "image",
@@ -441,16 +683,13 @@ export default function ServicesPage() {
                     dataIndex: "image",
                     sortable: false,
                     align: "center",
-                    render: (value: string | undefined) =>
-                      value ? (
-                        <img
-                          src={value || "/placeholder.svg"}
-                          alt="Service"
-                          className="h-10 w-10 object-cover rounded"
-                        />
-                      ) : (
-                        <span className="text-gray-400">No Image</span>
-                      ),
+                    render: (value: string | undefined) => (
+                      <img
+                        src={value || "/placeholder.svg?height=40&width=40"}
+                        alt="Service"
+                        className="h-10 w-10 object-cover rounded"
+                      />
+                    ),
                   },
                   {
                     key: "status",
@@ -542,7 +781,11 @@ export default function ServicesPage() {
                 sortBy={sortBy}
                 sortOrder={sortOrder}
                 onSort={handleSort}
-                emptyText={searchTerm ? "No services found matching your search." : "No services available."}
+                emptyText={
+                  searchTerm || (selectedPetTypes.length > 0 && !selectedPetTypes.includes("All"))
+                    ? "No services found matching your filters."
+                    : "No services available."
+                }
               />
             </div>
           </CardContent>

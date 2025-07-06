@@ -1,7 +1,7 @@
 import AuthSignup from "@/components/shared/AuthSignup";
 import signupImage from '@/assets/authImages/signup-image.png';
 import { useNavigate } from 'react-router-dom';
-import { registerUser } from "@/services/user/authService";
+import { registerUser } from "@/services/user/auth.service";
 import type { SignupForm } from "@/types/auth.type";
 
 const Signup: React.FC = () => {

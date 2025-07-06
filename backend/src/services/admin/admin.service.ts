@@ -1,8 +1,8 @@
 // backend/src/services/admin/adminService.ts
 import bcrypt from 'bcrypt';
 import { AdminRepository } from '../../repositories/adminRepository';
-import { JwtService } from '../jwt/jwtService';
-import { AuthResponse } from '../../types/Admin.types';
+import { JwtService } from '../jwt/jwt.service';
+import { AuthResponse } from '../../types/admin.types';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from "../../util/CustomerError";
 

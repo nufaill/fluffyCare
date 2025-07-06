@@ -1,15 +1,15 @@
 
 // userInjection.ts 
 import { UserController } from "../controllers/user/user.controller";
-import { AuthService } from "../services/user/authService";
+import { AuthService } from "../services/user/auth.service";
 import { UserRepository } from "../repositories/userRepository";
-import { JwtService } from "../services/jwt/jwtService";
-import { GoogleAuthService } from "../services/googleAuth/googleService";
-import { EmailService } from "../services/emailService/emailService";
+import { JwtService } from "../services/jwt/jwt.service";
+import { GoogleAuthService } from "../services/googleAuth/google.service";
+import { EmailService } from "../services/emailService/email.service";
 import { OtpRepository } from "../repositories/otpRepository";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
 import { PetController } from "../controllers/pet.controller";
-import { PetService } from "../services/petServices";
+import { PetService } from "../services/petType.service";
 import { PetRepository } from "../repositories/petRepository";
 
 // Initialize repositories

@@ -1,6 +1,6 @@
 // backend/src/repositories/adminRepository.ts
 import { Admin } from '../models/adminModel';
-import { AdminDocument } from '../types/Admin.types';
+import { AdminDocument } from '../types/admin.types';
 
 export class AdminRepository {
   

@@ -15,7 +15,7 @@ import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { Upload, Save, X, Heart, Camera } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { userService, type PetType } from "@/services/user/userService"
+import { userService, type PetType } from "@/services/user/user.service"
 import type { CreatePetData } from "@/types/pet.type"
 
 interface FormErrors {

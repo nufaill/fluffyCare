@@ -1,6 +1,6 @@
 // backend/src/middlewares/admin.middleware.ts
 import { Request, Response, NextFunction } from 'express';
-import { JwtService } from '../services/jwt/jwtService';
+import { JwtService } from '../services/jwt/jwt.service';
 import { HTTP_STATUS } from '../shared/constant';
 
 export class AdminMiddleware {

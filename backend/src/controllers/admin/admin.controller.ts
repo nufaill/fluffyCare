@@ -1,6 +1,6 @@
 // backend/src/controllers/admin/admin.controller.ts
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../../services/admin/adminService';
+import { AuthService } from '../../services/admin/admin.service';
 import { setAuthCookies, clearAuthCookies } from '../../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';

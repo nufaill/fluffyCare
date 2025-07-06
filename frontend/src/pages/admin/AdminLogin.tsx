@@ -2,7 +2,7 @@
 import AuthLogin from "@/components/shared/AuthLogin";
 import loginImage from '@/assets/authImages/login-image.png';
 import { useNavigate } from 'react-router-dom';
-import { loginAdmin } from "@/services/admin/adminService";
+import { loginAdmin } from "@/services/admin/admin.service";
 import { useDispatch } from "react-redux";
 import { addAdmin } from "@/redux/slices/admin.slice"; 
 

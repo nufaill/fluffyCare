@@ -1,6 +1,6 @@
 // backend/src/controllers/shop/auth.controller.ts
 import { Request, Response, NextFunction } from "express";
-import { AuthService } from "../../services/shop/authService";
+import { AuthService } from "../../services/shop/auth.service";
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../../shared/constant";
 import { CustomError } from "../../util/CustomerError";
 import { setAuthCookies } from "util/cookie-helper";

@@ -6,7 +6,7 @@ import { Search, Bell, MessageSquare, ShoppingCart, ChevronDown } from "lucide-r
 import { useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { logoutAdmin as logoutAdminAction } from "@/redux/slices/admin.slice"
-import { logoutAdmin } from "@/services/admin/adminService"
+import { logoutAdmin } from "@/services/admin/admin.service"
 
 interface NavbarProps {
   userName?: string

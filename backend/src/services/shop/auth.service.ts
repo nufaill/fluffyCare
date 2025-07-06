@@ -2,8 +2,8 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { ShopRepository } from '../../repositories/shopRepository';
-import { JwtService } from '../jwt/jwtService';
-import { EmailService } from '../emailService/emailService';
+import { JwtService } from '../jwt/jwt.service';
+import { EmailService } from '../emailService/email.service';
 import { OtpRepository } from '../../repositories/otpRepository';
 import { 
   CreateShopData, 

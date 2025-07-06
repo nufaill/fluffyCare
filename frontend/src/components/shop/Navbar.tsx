@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/Badge"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/redux/store"
 import { removeShop } from "@/redux/slices/shop.slice"
-import { logoutShop } from "@/services/shop/authService"
+import { logoutShop } from "@/services/shop/auth.service"
 
 interface NavbarProps {
   className?: string

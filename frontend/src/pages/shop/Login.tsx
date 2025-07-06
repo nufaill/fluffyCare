@@ -4,7 +4,7 @@ import shopLogo from '@/assets/user/logo.png';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addShop } from "@/redux/slices/shop.slice";
-import { loginShop } from "@/services/shop/authService";
+import { loginShop } from "@/services/shop/auth.service";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();

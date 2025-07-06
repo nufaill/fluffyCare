@@ -10,7 +10,7 @@ import AdminSidebar from "@/components/admin/Sidebar"
 import AdminNavbar from "@/components/admin/Navbar"
 import { AddItemForm } from "@/components/admin/add-item-form"
 import { StatsCards } from "@/components/admin/stats-cards"
-import { createServiceType, getAllServiceTypes, updateServiceType, updateServiceTypeStatus } from "@/services/admin/adminService"
+import { createServiceType, getAllServiceTypes, updateServiceType, updateServiceTypeStatus } from "@/services/admin/admin.service"
 import toast from 'react-hot-toast'
 
 interface ServiceType {

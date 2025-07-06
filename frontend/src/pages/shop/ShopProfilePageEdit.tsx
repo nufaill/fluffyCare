@@ -10,7 +10,7 @@ import { Camera } from 'lucide-react';
 import { Navbar } from '@/components/shop/Navbar';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { shopService } from '@/services/shop/shopService';
+import { shopService } from '@/services/shop/shop.service';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

@@ -1,8 +1,8 @@
 // backend/src/services/user/authService.ts
 import bcrypt from 'bcrypt';
 import { UserRepository } from '../../repositories/userRepository';
-import { JwtService } from '../jwt/jwtService';
-import { GoogleAuthService } from '../googleAuth/googleService';
+import { JwtService } from '../jwt/jwt.service';
+import { GoogleAuthService } from '../googleAuth/google.service';
 import { AuthResponse, JwtPayload } from '../../types/auth.types';
 import { CreateUserData } from '../../types/User.types';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
@@ -12,7 +12,7 @@ import { OtpRepository } from 'repositories/otpRepository';
 import { sendMail } from '../../util/mailer';
 import crypto from 'crypto';
 import { config } from '../../config/env';
-import { EmailService } from '../emailService/emailService';
+import { EmailService } from '../emailService/email.service';
 import PASSWORD_RESET_MAIL_CONTENT from 'shared/mailTemplate';
 import { RegisterUserDTO } from '../../dtos/user.dto';
 

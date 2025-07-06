@@ -9,7 +9,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import type { RootState } from "@/redux/store"
 import { logoutAdmin as logoutAdminAction } from "@/redux/slices/admin.slice"
-import { logoutAdmin } from "@/services/admin/adminService"
+import { logoutAdmin } from "@/services/admin/admin.service"
 import Footer from "@/components/user/Footer"
 
 const AdminDashboard: React.FC = () => {

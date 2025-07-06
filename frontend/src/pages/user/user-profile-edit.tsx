@@ -14,7 +14,7 @@ import { Globe, Shield, Camera, Save, X, User, Upload, MapPin } from "lucide-rea
 import type { UserDocument, UserUpdatePayload } from "@/types/user.type"
 import type { RootState } from "@/redux/store"
 import { useSelector } from "react-redux"
-import { userService } from "@/services/user/userService"
+import { userService } from "@/services/user/user.service"
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
