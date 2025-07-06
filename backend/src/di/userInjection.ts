@@ -10,7 +10,7 @@ import { OtpRepository } from "../repositories/otpRepository";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
 import { PetController } from "../controllers/pet/pet.controller";
 import { PetService } from "../services/pet/pet.service";
-import { PetRepository } from "../repositories/pet.repository";
+import { PetRepository } from "../repositories/petRepository";
 
 // Initialize repositories
 const userRepository = new UserRepository();

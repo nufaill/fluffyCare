@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { setAuthCookies, clearAuthCookies, updateAccessTokenCookie } from '../util/cookie-helper';
-import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../shared/constant';
-import { ServiceRepository } from '../repositories/serviceTypeRepository';
-import { CustomError } from '../util/CustomerError';
+import { setAuthCookies, clearAuthCookies, updateAccessTokenCookie } from '../../util/cookie-helper';
+import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
+import { ServiceRepository } from '../../repositories/serviceTypeRepository';
+import { CustomError } from '../../util/CustomerError';
 import { NextFunction } from 'express-serve-static-core';
-import {ServiceService} from '../services/serviceType.service'
+import {ServiceService} from '../../services/service/serviceType.service'
 
 export class ServiceController {
   private serviceService: ServiceService;
