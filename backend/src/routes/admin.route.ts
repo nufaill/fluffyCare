@@ -22,11 +22,11 @@ router.get('/users', adminDependencies.userController.getAllUsers as RequestHand
 router.patch('/users/:userId/status', adminDependencies.userController.updateUserStatus as RequestHandler);
 
 // Pet Type management routes
-router.post('/pet-types', adminDependencies.petController.createPetType as RequestHandler);
-router.get('/pet-types', adminDependencies.petController.getAllPetTypes as RequestHandler);
-router.get('/pet-types/:id', adminDependencies.petController.getPetTypeById as RequestHandler);
-router.put('/pet-types/:id', adminDependencies.petController.updatePetType as RequestHandler);
-router.patch('/pet-types/:id/status', adminDependencies.petController.updatePetTypeStatus as RequestHandler);
+router.post('/pet-types', adminDependencies.petTypeController.createPetType as RequestHandler);
+router.get('/pet-types', adminDependencies.petTypeController.getAllPetTypes as RequestHandler);
+router.get('/pet-types/:id', adminDependencies.petTypeController.getPetTypeById as RequestHandler);
+router.put('/pet-types/:id', adminDependencies.petTypeController.updatePetType as RequestHandler);
+router.patch('/pet-types/:id/status', adminDependencies.petTypeController.updatePetTypeStatus as RequestHandler);
 
 
 // Service Type management routes
