@@ -1,12 +1,12 @@
 import { Types } from 'mongoose';
 import { Pet } from '../models/petModel';
 import { CreatePetData, PetDocument } from '../types/Pet.types';
-import { PetTypeDocument } from 'types/PetType.type';
-import { PetType } from '@models/petTypeModel';
+import { PetTypeDocument } from '../types/PetType.type';
+import { PetType } from '../models/petTypeModel';
 
 export class PetRepository {
 
-     async createPet(petData: CreatePetData): Promise<PetDocument> {
+  async createPet(petData: CreatePetData): Promise<PetDocument> {
     const pet = new Pet(petData);
     return await pet.save();
   }
@@ -28,10 +28,10 @@ export class PetRepository {
       .populate('petTypeId', 'name');
   }
 
-  
+
 
   async checkPetNameExists(userId: string, name: string, excludePetId?: string): Promise<boolean> {
-    const query: any = { 
+    const query: any = {
       userId: new Types.ObjectId(userId),
       name: { $regex: new RegExp(`^${name}$`, 'i') }
     };
@@ -43,12 +43,12 @@ export class PetRepository {
   }
 
   async getPetsByUserIdAndType(userId: string, petTypeId: string): Promise<PetDocument[]> {
-    return await Pet.find({ 
-      userId: new Types.ObjectId(userId), 
-      petTypeId: new Types.ObjectId(petTypeId) 
+    return await Pet.find({
+      userId: new Types.ObjectId(userId),
+      petTypeId: new Types.ObjectId(petTypeId)
     });
   }
-async getAllPetTypes(): Promise<PetTypeDocument[]> {
+  async getAllPetTypes(): Promise<PetTypeDocument[]> {
     return await PetType.find().sort({ createdAt: -1 });
   }
 

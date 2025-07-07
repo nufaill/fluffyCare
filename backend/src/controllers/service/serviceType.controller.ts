@@ -1,15 +1,12 @@
 import { Request, Response } from 'express';
-import { setAuthCookies, clearAuthCookies, updateAccessTokenCookie } from '../../util/cookie-helper';
-import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
-import { ServiceRepository } from '../../repositories/serviceTypeRepository';
-import { CustomError } from '../../util/CustomerError';
+import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { NextFunction } from 'express-serve-static-core';
-import {ServiceService} from '../../services/service/serviceType.service'
+import {ServiceTypeService} from '../../services/service/serviceType.service'
 
 export class ServiceController {
-  private serviceService: ServiceService;
+  private serviceService: ServiceTypeService;
 
-  constructor(ServiceService: ServiceService) {
+  constructor(ServiceService: ServiceTypeService) {
     this.serviceService = ServiceService;
   }
 
@@ -38,12 +35,12 @@ export class ServiceController {
 
   getAllServiceTypes = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const ServiceTypes = await this.serviceService.getAllServiceTypes();
+      const serviceTypes = await this.serviceService.getAllServiceTypes();
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.FETCHED_SUCESS,
-        data: ServiceTypes
+        data: serviceTypes
       });
     } catch (error) {
       next(error);

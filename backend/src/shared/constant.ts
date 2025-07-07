@@ -29,7 +29,11 @@ export const SUCCESS_MESSAGES = {
   USERS_FETCHED_SUCESS: "Users fetched successfully",
   FETCHED_SUCESS: "fetched successfully",
   PROFILE_FETCHED_SUCCESS: 'Profile fetched successfully',
-  PROFILE_UPDATED_SUCCESS: 'Profile updated successfully'
+  PROFILE_UPDATED_SUCCESS: 'Profile updated successfully',
+    SERVICE_CREATED: 'Service created successfully',
+  SERVICE_UPDATED: 'Service updated successfully',
+  SERVICE_STATUS_UPDATED: 'Service status updated successfully',
+  DATA_RETRIEVED: 'Data retrieved successfully',
 };
 
 
@@ -70,4 +74,6 @@ export const ERROR_MESSAGES = {
   PROFILE_UPDATE_FAILED: 'Failed to update profile',
   INVALID_LOCATION: 'Location must be a valid GeoJSON Point',
   INVALID_INPUT: 'At least one field must be provided for update',
+  SERVICE_NOT_FOUND: 'Service not found',
+  SERVICE_NAME_EXISTS: 'Service name already exists for this shop',
 };

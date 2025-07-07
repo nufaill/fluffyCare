@@ -16,7 +16,7 @@ export class AdminAuthController {
       const result = await this.authService.login({ email, password });
 
       // Set cookies for tokens
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken,'admin');
 
       res.status(HTTP_STATUS.OK).json({
         success: true,

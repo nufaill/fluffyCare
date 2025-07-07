@@ -4,7 +4,7 @@ export interface Service {
   id: string;
   shopId: string;
   serviceTypeId: string;
-  petTypeId: string;
+  petTypeIds: string[];
   name: string;
   description: string;
   price: number;
@@ -12,6 +12,7 @@ export interface Service {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  image?: File;
 }
 
 export interface CreateServiceData extends Omit<Service, 'id' | 'createdAt' | 'updatedAt'> {}

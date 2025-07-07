@@ -9,8 +9,8 @@ import { ShopRepository } from "../repositories/shopRepository";
 import { UserRepository } from "../repositories/userRepository";
 import { PetTypeRepository } from "../repositories/petTypeRepository";
 import { PetTypeService } from "../services/pet/petType.service";
-import { ServiceRepository } from "repositories/serviceTypeRepository";
-import { ServiceService } from "services/service/serviceType.service";
+import { ServiceTypeRepository } from "repositories/serviceTypeRepository";
+import { ServiceTypeService } from "services/service/serviceType.service";
 import { JwtService } from "../services/jwt/jwt.service";
 import { AdminRepository } from "../repositories/adminRepository";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
@@ -20,13 +20,13 @@ const shopRepository = new ShopRepository();
 const userRepository = new UserRepository();
 const adminRepository = new AdminRepository();
 const petTypeRepository = new PetTypeRepository();
-const serviceRepository = new ServiceRepository();
+const serviceTypeRepository = new ServiceTypeRepository();
 
 // Initialize services
 const jwtService = new JwtService();
 const adminAuthService = new AdminAuthService(adminRepository, jwtService);
 const petTypeService = new PetTypeService(petTypeRepository);
-const serviceService = new ServiceService(serviceRepository)
+const serviceService = new ServiceTypeService(serviceTypeRepository)
 
 const authMiddlewareInstance = new AuthMiddleware(jwtService);
 const authMiddleware = authMiddlewareInstance;

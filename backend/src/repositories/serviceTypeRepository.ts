@@ -1,8 +1,7 @@
-import { Types } from 'mongoose';
 import { ServiceType } from '../models/serviceTypeModel';
 import { CreateServiceType, ServiceTypeDocument } from '../types/serviceType.type';
 
-export class ServiceRepository {
+export class ServiceTypeRepository {
 
     async createServiceType(serviceTypeData: Partial<CreateServiceType>): Promise<ServiceTypeDocument> {
         const serviceType = new ServiceType(serviceTypeData);

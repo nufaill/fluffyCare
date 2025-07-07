@@ -57,7 +57,7 @@ export class AuthController {
 
       const result = await this.authService.verifyOtpAndCompleteRegistration(email, otp);
 
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, "user");
 
       res.status(HTTP_STATUS.CREATED || 201).json({
         success: true,
@@ -126,7 +126,7 @@ export class AuthController {
 
       const result = await this.authService.login(req.body);
 
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken,"user");
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -167,7 +167,7 @@ export class AuthController {
 
       const result = await this.authService.googleLogin(credential);
 
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken,"user");
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -207,7 +207,7 @@ export class AuthController {
       console.log("🔧 [AuthController] Refreshing token...");
       const newAccessToken = await this.authService.refreshToken(refreshToken);
 
-      updateAccessTokenCookie(res, newAccessToken);
+      updateAccessTokenCookie(res, newAccessToken,'user');
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,

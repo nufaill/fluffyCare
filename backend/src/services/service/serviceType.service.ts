@@ -1,24 +1,24 @@
-import { ServiceRepository } from '../repositories/serviceTypeRepository';
-import { CreateServiceType, ServiceTypeDocument } from '../types/serviceType.type';
-import { CustomError } from '../util/CustomerError';
+import { ServiceTypeRepository } from '../../repositories/serviceTypeRepository';
+import { CreateServiceType, ServiceTypeDocument } from '../../types/serviceType.type';
+import { CustomError } from '../../util/CustomerError';
 
-export class ServiceService {
-  private serviceRepository: ServiceRepository;
+export class ServiceTypeService {
+  private serviceTypeRepository: ServiceTypeRepository;
 
-  constructor(serviceRepository: ServiceRepository) {
-    this.serviceRepository = serviceRepository;
+  constructor(serviceTypeRepository: ServiceTypeRepository) {
+    this.serviceTypeRepository = serviceTypeRepository;
   }
 
   async createServiceType(ServiceTypeData: { name: string }): Promise<ServiceTypeDocument> {
     const { name } = ServiceTypeData;
 
     // Check if Service type already exists
-    const exists = await this.serviceRepository.checkServiceTypeExists(name);
+    const exists = await this.serviceTypeRepository.checkServiceTypeExists(name);
     if (exists) {
       throw new CustomError('Service type already exists', 400);
     }
 
-    const newServiceType = await this.serviceRepository.createServiceType({
+    const newServiceType = await this.serviceTypeRepository.createServiceType({
       name: name.trim(),
       isActive: true,
       createdAt: new Date(),
@@ -29,11 +29,11 @@ export class ServiceService {
   }
 
   async getAllServiceTypes(): Promise<ServiceTypeDocument[]> {
-    return await this.serviceRepository.getAllServiceTypes();
+    return await this.serviceTypeRepository.getAllServiceTypes();
   }
 
   async getServiceTypeById(id: string): Promise<ServiceTypeDocument> {
-    const ServiceType = await this.serviceRepository.getServiceTypeById(id);
+    const ServiceType = await this.serviceTypeRepository.getServiceTypeById(id);
     if (!ServiceType) {
       throw new CustomError('Service type not found', 404);
     }
@@ -44,20 +44,20 @@ export class ServiceService {
     const { name } = updateData;
 
     // Check if Service type exists
-    const existingServiceType = await this.serviceRepository.getServiceTypeById(id);
+    const existingServiceType = await this.serviceTypeRepository.getServiceTypeById(id);
     if (!existingServiceType) {
       throw new CustomError('Service type not found', 404);
     }
 
     // Check if name is being changed and if new name already exists
     if (name && name.trim() !== existingServiceType.name) {
-      const nameExists = await this.serviceRepository.checkServiceTypeExists(name, id);
+      const nameExists = await this.serviceTypeRepository.checkServiceTypeExists(name, id);
       if (nameExists) {
         throw new CustomError('Service type name already exists', 400);
       }
     }
 
-    const updatedServiceType = await this.serviceRepository.updateServiceType(id, {
+    const updatedServiceType = await this.serviceTypeRepository.updateServiceType(id, {
       name: name.trim(),
       updatedAt: new Date()
     });
@@ -70,12 +70,12 @@ export class ServiceService {
   }
 
   async updateServiceTypeStatus(id: string, isActive: boolean): Promise<ServiceTypeDocument> {
-    const existingServiceType = await this.serviceRepository.getServiceTypeById(id);
+    const existingServiceType = await this.serviceTypeRepository.getServiceTypeById(id);
     if (!existingServiceType) {
       throw new CustomError('Service type not found', 404);
     }
 
-    const updatedServiceType = await this.serviceRepository.updateServiceTypeStatus(id, isActive);
+    const updatedServiceType = await this.serviceTypeRepository.updateServiceTypeStatus(id, isActive);
     if (!updatedServiceType) {
       throw new CustomError('Failed to update Service type status', 500);
     }

@@ -12,9 +12,18 @@ export class AuthMiddleware {
     res: Response,
     next: NextFunction
   ) => {
+    console.log(role)
     try {
+      let accessToken="";
+      if(role === "user"){
+        accessToken = req.cookies.userAccessToken;
+      }else if (role === "shop"){
+        accessToken = req.cookies.shopAccessToken
+      }else{
+        accessToken = req.cookies.adminAccessToken
+      }
 
-      const { accessToken } = req.cookies;
+      console.log(accessToken)
 
       const user = this.jwtService.decodeAccessToken(accessToken);
       if (!user) {
@@ -23,6 +32,7 @@ export class AuthMiddleware {
         })
         return;
       }
+
 
       if (role !== user.role) {
         res.status(HTTP_STATUS.UNAUTHORIZED).json({

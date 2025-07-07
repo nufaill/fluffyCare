@@ -66,7 +66,7 @@ export class AuthService {
     return this.jwtService.generateTokens({
       id,
       email,
-      role:"user"
+      role:"shop"
     });
   }
 

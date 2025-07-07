@@ -5,13 +5,6 @@ import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../../shared/cons
 import { CustomError } from "../../util/CustomerError";
 import { setAuthCookies } from "util/cookie-helper";
 
-export interface ShopAuthRequest extends Request {
-  shop?: {
-    id: string;
-    email: string;
-  };
-}
-
 // GeoJSON validation helper
 const validateGeoJSONPoint = (location: any): boolean => {
   if (!location || typeof location !== 'object') return false;
@@ -180,6 +173,8 @@ export class ShopAuthController {
 
       const result = await this.authService.login({ email, password });
 
+      console.log(result)
+
       if (!result.shop.isVerified) {
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
           success: false,
@@ -188,7 +183,7 @@ export class ShopAuthController {
         return;
       }
 
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken)
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken,'shop')
 
       
 
@@ -362,58 +357,6 @@ export class ShopAuthController {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: "Logout failed",
-      });
-    }
-  };
-
-  // Get current shop details
-  public me = async (req: ShopAuthRequest, res: Response): Promise<void> => {
-    try {
-      if (!req.shop) {
-        res.status(HTTP_STATUS.UNAUTHORIZED).json({
-          success: false,
-          message: 'Shop not authenticated',
-        });
-        return;
-      }
-
-      console.log("🔧 [ShopAuthController] Fetching shop profile...");
-
-      const shop = await this.authService.getShopById(req.shop.id);
-
-      if (!shop) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-          success: false,
-          message: 'Shop not found',
-        });
-        return;
-      }
-
-      res.status(HTTP_STATUS.OK).json({
-        success: true,
-        shop: {
-          id: shop._id.toString(),
-          name: shop.name,
-          email: shop.email,
-          phone: shop.phone,
-          logo: shop.logo,
-          city: shop.city,
-          streetAddress: shop.streetAddress,
-          description: shop.description,
-          certificateUrl: shop.certificateUrl,
-          location: shop.location,
-          isActive: shop.isActive,
-          isVerified: shop.isVerified,
-          createdAt: shop.createdAt,
-          updatedAt: shop.updatedAt,
-        },
-      });
-    } catch (error) {
-      console.error("❌ [ShopAuthController] Profile fetch error:", error);
-
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: "Failed to get shop info",
       });
     }
   };

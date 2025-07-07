@@ -1,491 +1,839 @@
 "use client"
 
-import type React from "react"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { PawPrint, Search, Edit2, Save, X, Plus, Clock, DollarSign, AlertCircle, CheckCircle2, Trash2 } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/Badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { Layout } from "@/components/shop/Layout";
+import { serviceService } from "@/services/shop/service.service";
+import type { PetType, ServiceType, CreateServiceData, UpdateServiceData } from "@/types/service.type";
 
-import { useState } from "react"
-import { PawPrint, Search, Edit2, Save, X, Plus } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/Badge"
-import { Table } from "@/components/ui/Table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { StatsCards } from "@/components/admin/stats-cards"
-import { Layout } from "@/components/shop/Layout"
-
+// Updated Service interface to support multiple pet types
 interface Service {
-  id: string
-  name: string
-  description: string
-  category: string
-  petType: ("Dog" | "Cat" | "All")[]
-  charge: number
-  duration: number
-  image?: string
-  createdAt: string
-  status: "active" | "inactive" | "blocked"
+  _id: string;
+  name: string;
+  description: string;
+  serviceTypeId: string;
+  petTypeIds: string[];
+  price: number;
+  durationHoure: number;
+  image?: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
-const SERVICE_CATEGORIES = [
-  "Grooming",
-  "Training",
-  "Boarding",
-  "Medical",
-  "Daycare",
-  "Walking",
-  "Sitting",
-  "Veterinary",
-  "Emergency",
-  "Nutrition",
-  "Behavioral",
-  "Other",
-]
+interface ServiceFormData {
+  name: string;
+  description: string;
+  serviceTypeId: string;
+  petTypeIds: string[];
+  price: string;
+  durationHoure: string;
+  image?: File | string;
+}
 
-const PET_TYPES: ("Dog" | "Cat" | "All")[] = ["All", "Dog", "Cat"]
+interface ValidationErrors {
+  name?: string;
+  description?: string;
+  serviceTypeId?: string;
+  petTypeIds?: string;
+  price?: string;
+  durationHoure?: string;
+  image?: string;
+}
 
-function AddServiceForm({
-  title,
-  placeholder,
-  onAdd,
-  icon,
-}: {
-  title: string
-  placeholder: string
-  onAdd: (data: {
-    name: string
-    description: string
-    category: string
-    petType: ("Dog" | "Cat" | "All")[]
-    charge: number
-    duration: number
-    image?: string
-  }) => void
-  icon: React.ReactNode
-}) {
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
-  const [category, setCategory] = useState("")
-  const [petTypes, setPetTypes] = useState<("Dog" | "Cat" | "All")[]>([])
-  const [charge, setCharge] = useState("")
-  const [duration, setDuration] = useState("")
-  const [image, setImage] = useState<File | null>(null)
+const handleImageUpload = async (file: File): Promise<string | undefined> => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (name.trim() && category.trim() && petTypes.length > 0 && charge && duration) {
-      const imageUrl = image ? URL.createObjectURL(image) : undefined
-      onAdd({
-        name,
-        description,
-        category,
-        petType: petTypes,
-        charge: Number.parseFloat(charge),
-        duration: Number.parseFloat(duration),
-        image: imageUrl,
-      })
-      setName("")
-      setDescription("")
-      setCategory("")
-      setPetTypes([])
-      setCharge("")
-      setDuration("")
-      setImage(null)
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+    return data.secure_url || undefined;
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    return undefined;
+  }
+};
+
+const validateForm = (data: ServiceFormData): ValidationErrors => {
+  const errors: ValidationErrors = {};
+
+  if (!data.name.trim()) {
+    errors.name = "Service name is required";
+  } else if (data.name.length < 2 || data.name.length > 100) {
+    errors.name = "Service name must be between 2 and 100 characters";
+  }
+
+  if (!data.description.trim()) {
+    errors.description = "Description is required";
+  } else if (data.description.length < 10 || data.description.length > 500) {
+    errors.description = "Description must be between 10 and 500 characters";
+  }
+
+  if (!data.serviceTypeId) {
+    errors.serviceTypeId = "Service type is required";
+  } else if (!/^[a-f\d]{24}$/i.test(data.serviceTypeId)) {
+    errors.serviceTypeId = "Invalid service type ID";
+  }
+
+  if (!Array.isArray(data.petTypeIds) || data.petTypeIds.length === 0) {
+    errors.petTypeIds = "At least one pet type must be selected";
+  } else {
+    const invalidIds = data.petTypeIds.filter(id => !/^[a-f\d]{24}$/i.test(id));
+    if (invalidIds.length > 0) {
+      errors.petTypeIds = "One or more pet type IDs are invalid";
     }
   }
 
+  const price = parseFloat(data.price);
+  if (isNaN(price)) {
+    errors.price = "Price must be a number";
+  } else if (price < 0) {
+    errors.price = "Price must be greater than or equal to 0";
+  }
+
+  const duration = parseFloat(data.durationHoure);
+  if (isNaN(duration)) {
+    errors.durationHoure = "Duration must be a number";
+  } else if (duration < 0.25) {
+    errors.durationHoure = "Duration must be at least 0.25 hours";
+  }
+
+  if (data.image instanceof File) {
+    if (data.image.size > 5 * 1024 * 1024) {
+      errors.image = "Image size must be less than 5MB";
+    } else if (!data.image.type.startsWith("image/")) {
+      errors.image = "Please select a valid image file";
+    }
+  }
+
+  return errors;
+};
+
+function PetTypeMultiSelect({
+  selectedIds,
+  onSelectionChange,
+  petTypes,
+  error,
+}: {
+  selectedIds: string[];
+  onSelectionChange: (ids: string[]) => void;
+  petTypes: PetType[];
+  error?: string;
+}) {
+  const togglePetType = (petTypeId: string) => {
+    if (selectedIds.includes(petTypeId)) {
+      onSelectionChange(selectedIds.filter((id) => id !== petTypeId));
+    } else {
+      onSelectionChange([...selectedIds, petTypeId]);
+    }
+  };
+
+  const removeAll = () => {
+    onSelectionChange([]);
+  };
+
   return (
-    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium">Pet Types *</Label>
+        {selectedIds.length > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={removeAll}
+            className="h-6 text-xs text-muted-foreground hover:text-destructive"
+          >
+            Clear all
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {petTypes.map((petType) => {
+          const isSelected = selectedIds.includes(petType._id);
+          return (
+            <div
+              key={petType._id}
+              onClick={() => togglePetType(petType._id)}
+              className={`
+                relative cursor-pointer rounded-lg border-2 p-3 text-center transition-all duration-200
+                ${isSelected
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-muted hover:border-primary/50 hover:bg-muted/50"
+                }
+                ${error ? "border-destructive/50" : ""}
+              `}
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <span className="text-sm font-medium">{petType.name}</span>
+                {isSelected && <CheckCircle2 className="h-4 w-4 text-primary" />}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedIds.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {selectedIds.map((id) => {
+            const petType = petTypes.find((pt) => pt._id === id);
+            return (
+              <Badge key={id} variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                {petType?.name}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePetType(id);
+                  }}
+                  className="ml-1 h-4 w-4 p-0 hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            );
+          })}
+        </div>
+      )}
+
+      {error && (
+        <p className="text-sm text-destructive flex items-center gap-1">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function StatusToggle({
+  isActive,
+  onToggle,
+  disabled = false,
+}: {
+  isActive: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center space-x-3">
+      <Switch
+        checked={isActive}
+        onCheckedChange={onToggle}
+        disabled={disabled}
+        className="data-[state=checked]:bg-green-500"
+      />
+      <div className="flex items-center space-x-2">
+        <Badge
+          variant={isActive ? "default" : "secondary"}
+          className={
+            isActive
+              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+              : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+          }
+        >
+          {isActive ? "Active" : "Inactive"}
+        </Badge>
+      </div>
+    </div>
+  );
+}
+
+function ServiceForm({
+  onSubmit,
+  onCancel,
+  initialData,
+  isEditing = false,
+}: {
+  onSubmit: (data: ServiceFormData) => Promise<void>;
+  onCancel: () => void;
+  initialData?: Partial<ServiceFormData>;
+  isEditing?: boolean;
+}) {
+  const [formData, setFormData] = useState<ServiceFormData>({
+    name: initialData?.name || "",
+    description: initialData?.description || "",
+    serviceTypeId: initialData?.serviceTypeId || "",
+    petTypeIds: initialData?.petTypeIds || [],
+    price: initialData?.price || "",
+    durationHoure: initialData?.durationHoure || "",
+    image: initialData?.image,
+  });
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
+  const [petTypes, setPetTypes] = useState<PetType[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
+
+  useEffect(() => {
+    const fetchPetTypes = async () => {
+      try {
+        const types = await serviceService.getAllPetTypes();
+        setPetTypes(types);
+      } catch (error) {
+        console.error("Error fetching pet types:", error);
+      }
+    };
+    fetchPetTypes();
+  }, []);
+
+  useEffect(() => {
+    const fetchServiceTypes = async () => {
+      try {
+        const types = await serviceService.getAllServiceTypes();
+        setServiceTypes(types);
+      } catch (error) {
+        console.error("Error fetching service types:", error);
+      }
+    };
+    fetchServiceTypes();
+  }, []);
+
+  const handleInputChange = (field: keyof ServiceFormData, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, image: "Image size must be less than 5MB" }));
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        setErrors((prev) => ({ ...prev, image: "Please select a valid image file" }));
+        return;
+      }
+      setFormData((prev) => ({ ...prev, image: file }));
+      setErrors((prev) => ({ ...prev, image: undefined }));
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result;
+        if (typeof result === "string") {
+          setImagePreview(result);
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+      setFormData((prev) => ({ ...prev, image: undefined }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const validationErrors = validateForm(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      let imageUrl: string | undefined = typeof formData.image === "string" ? formData.image : undefined;
+      if (formData.image instanceof File) {
+        imageUrl = await handleImageUpload(formData.image);
+        if (!imageUrl) {
+          setErrors((prev) => ({ ...prev, image: "Failed to upload image" }));
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      await onSubmit({ ...formData, image: imageUrl });
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setErrors((prev) => ({ ...prev, image: "Failed to process form" }));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Card className="w-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
       <CardHeader>
-        <CardTitle className="text-gray-900 dark:text-gray-100">{title}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
+          <PawPrint className="h-5 w-5" />
+          {isEditing ? "Edit Service" : "Add New Service"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            placeholder={placeholder}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-            required
-          />
-
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
-              <SelectValue placeholder="Select service category" />
-            </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
-              {SERVICE_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">Service Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder="e.g., Premium Dog Grooming"
+              className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.name ? "border-destructive" : ""}`}
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {errors.name}
+              </p>
+            )}
+          </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Pet Types</label>
-            <div className="flex flex-wrap gap-2">
-              {PET_TYPES.map((type) => (
-                <Button
-                  key={type}
-                  type="button"
-                  variant={petTypes.includes(type) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    if (type === "All") {
-                      setPetTypes(["All"])
-                    } else {
-                      setPetTypes((prev) => {
-                        const newTypes = prev.filter((t) => t !== "All")
-                        if (prev.includes(type)) {
-                          const filtered = newTypes.filter((t) => t !== type)
-                          return filtered.length === 0 ? ["All"] : filtered
-                        } else {
-                          return [...newTypes, type]
-                        }
-                      })
-                    }
-                  }}
-                  className={
-                    petTypes.includes(type)
-                      ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                      : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }
-                >
-                  {type === "All" ? "All Pets" : type}
-                </Button>
-              ))}
+            <Label className="text-gray-700 dark:text-gray-300">Service Type *</Label>
+            <Select value={formData.serviceTypeId} onValueChange={(value) => handleInputChange("serviceTypeId", value)}>
+              <SelectTrigger className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.serviceTypeId ? "border-destructive" : ""}`}>
+                <SelectValue placeholder="Select service type" />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
+                {serviceTypes.map((type) => (
+                  <SelectItem key={type._id} value={type._id}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.serviceTypeId && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {errors.serviceTypeId}
+              </p>
+            )}
+          </div>
+
+          <PetTypeMultiSelect
+            selectedIds={formData.petTypeIds}
+            onSelectionChange={(ids) => handleInputChange("petTypeIds", ids)}
+            petTypes={petTypes}
+            error={errors.petTypeIds}
+          />
+
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-gray-700 dark:text-gray-300">Description *</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Describe the service in detail..."
+              rows={4}
+              className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.description ? "border-destructive" : ""}`}
+            />
+            {errors.description && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {errors.description}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="price" className="flex items-center gap-1 text-gray-700 dark:text-gray-300">
+                <DollarSign className="h-4 w-4" />
+                Price (₹) *
+……
+
+              </Label>
+              <Input
+                id="price"
+                type="number"
+                value={formData.price}
+                onChange={(e) => handleInputChange("price", e.target.value)}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.price ? "border-destructive" : ""}`}
+              />
+              {errors.price && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors.price}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="duration" className="flex items-center gap-1 text-gray-700 dark:text-gray-300">
+                <Clock className="h-4 w-4" />
+                Duration (hours) *
+              </Label>
+              <Input
+                id="duration"
+                type="number"
+                value={formData.durationHoure}
+                onChange={(e) => handleInputChange("durationHoure", e.target.value)}
+                placeholder="0.5"
+                min="0"
+                step="0.25"
+                className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.durationHoure ? "border-destructive" : ""}`}
+              />
+              {errors.durationHoure && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors.durationHoure}
+                </p>
+              )}
             </div>
           </div>
 
-          <Textarea
-            placeholder="Enter description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="image" className="text-gray-700 dark:text-gray-300">Service Image</Label>
             <Input
-              type="number"
-              placeholder="Enter service charge (₹)"
-              value={charge}
-              onChange={(e) => setCharge(e.target.value)}
-              className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-              min="0"
-              step="0.01"
-              required
+              id="image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.image ? "border-destructive" : ""}`}
             />
-            <Input
-              type="number"
-              placeholder="Enter service duration (hours)"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-              min="0"
-              step="0.25"
-              required
-            />
+            {imagePreview && (
+              <div className="flex items-center gap-3">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="h-16 w-16 object-cover rounded-lg border"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setImagePreview(null);
+                    setFormData((prev) => ({ ...prev, image: undefined }));
+                  }}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            {errors.image && (
+              <p className="text-sm text-destructive flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {errors.image}
+              </p>
+            )}
           </div>
 
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setImage(e.target.files?.[0] || null)}
-            className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-          />
+          <Separator />
 
-          <Button
-            type="submit"
-            className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-          >
-            {icon}
-            <span className="ml-2">Add Service</span>
-          </Button>
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+              className="text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="min-w-[120px] bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+            >
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  {isEditing ? "Updating..." : "Adding..."}
+                </div>
+              ) : (
+                <>
+                  {isEditing ? <Save className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                  {isEditing ? "Update Service" : "Add Service"}
+                </>
+              )}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>([
-    {
-      id: "1",
-      name: "Pet Grooming",
-      description: "Complete grooming services including bathing, brushing, nail trimming, and styling",
-      category: "Grooming",
-      petType: ["All"],
-      charge: 50.0,
-      duration: 1,
-      image: "/placeholder.svg?height=40&width=40",
-      createdAt: new Date("2024-01-15T10:30:00Z").toISOString(),
-      status: "active",
-    },
-    {
-      id: "2",
-      name: "Puppy Training",
-      description: "Basic obedience training for puppies including house training and socialization",
-      category: "Training",
-      petType: ["Dog"],
-      charge: 75.0,
-      duration: 0.75,
-      image: "/placeholder.svg?height=40&width=40",
-      createdAt: new Date("2024-01-10T14:45:00Z").toISOString(),
-      status: "active",
-    },
-    {
-      id: "3",
-      name: "Pet Boarding",
-      description: "Safe and comfortable overnight care for pets when owners are away",
-      category: "Boarding",
-      petType: ["All"],
-      charge: 40.0,
-      duration: 24,
-      image: "/placeholder.svg?height=40&width=40",
-      createdAt: new Date("2024-01-08T09:15:00Z").toISOString(),
-      status: "inactive",
-    },
-    {
-      id: "4",
-      name: "Veterinary Checkup",
-      description: "Professional medical care including checkups, vaccinations, and treatments",
-      category: "Medical",
-      petType: ["All"],
-      charge: 100.0,
-      duration: 0.5,
-      image: "/placeholder.svg?height=40&width=40",
-      createdAt: new Date("2024-01-05T11:20:00Z").toISOString(),
-      status: "active",
-    },
-    {
-      id: "5",
-      name: "Cat Behavioral Training",
-      description: "Specialized training for cats to address behavioral issues and improve socialization",
-      category: "Training",
-      petType: ["Cat"],
-      charge: 65.0,
-      duration: 0.83,
-      image: "/placeholder.svg?height=40&width=40",
-      createdAt: new Date("2024-01-12T16:20:00Z").toISOString(),
-      status: "active",
-    },
-    {
-      id: "6",
-      name: "Dog Walking Service",
-      description: "Daily walking service for dogs to ensure proper exercise and outdoor time",
-      category: "Walking",
-      petType: ["Dog"],
-      charge: 25.0,
-      duration: 0.5,
-      image: "/placeholder.svg?height=40&width=40",
-      createdAt: new Date("2024-01-18T08:30:00Z").toISOString(),
-      status: "active",
-    },
-  ])
+export default function Services() {
+  const [services, setServices] = useState<Service[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPetTypeFilter, setSelectedPetTypeFilter] = useState("all");
+  const [selectedServiceTypeFilter, setSelectedServiceTypeFilter] = useState("all");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [petTypes, setPetTypes] = useState<PetType[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [searchTerm, setSearchTerm] = useState<string>("")
-  const [selectedPetTypes, setSelectedPetTypes] = useState<("All" | "Dog" | "Cat")[]>(["All"])
-  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(undefined)
-  const [editingService, setEditingService] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<Partial<Service>>({})
-  const [showAddForm, setShowAddForm] = useState(false)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [servicesData, petTypesData, serviceTypesData] = await Promise.all([
+          serviceService.getServices(),
+          serviceService.getAllPetTypes(),
+          serviceService.getAllServiceTypes(),
+        ]);
+        setServices(servicesData);
+        setPetTypes(petTypesData);
+        setServiceTypes(serviceTypesData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
 
   const filteredServices = services.filter((service) => {
-    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesPetType =
-      selectedPetTypes.includes("All") ||
-      selectedPetTypes.some((selectedType) => service.petType.includes(selectedType) || service.petType.includes("All"))
-    return matchesSearch && matchesPetType
-  })
+    const matchesSearch =
+      service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPetType = selectedPetTypeFilter === "all" || service.petTypeIds.includes(selectedPetTypeFilter);
+    const matchesServiceType = selectedServiceTypeFilter === "all" || service.serviceTypeId === selectedServiceTypeFilter;
+    return matchesSearch && matchesPetType && matchesServiceType;
+  });
 
-  const handleAddService = (data: {
-    name: string
-    description: string
-    category: string
-    petType: ("Dog" | "Cat" | "All")[]
-    charge: number
-    duration: number
-    image?: string
-  }) => {
-    const isDuplicate = services.some((srv) => srv.name.toLowerCase() === data.name.toLowerCase())
-    if (isDuplicate) {
-      alert("Service already exists")
-      return
+  const handleAddService = async (data: ServiceFormData) => {
+    try {
+      const serviceData: CreateServiceData = {
+        name: data.name,
+        description: data.description,
+        serviceTypeId: data.serviceTypeId,
+        petTypeIds: data.petTypeIds,
+        price: Number.parseFloat(data.price),
+        durationHoure: Number.parseFloat(data.durationHoure),
+        image: typeof data.image === "string" ? data.image : data.image ? await handleImageUpload(data.image) : undefined,
+      };
+      const newService = await serviceService.createService(serviceData);
+      setServices((prev) => [...prev, newService]);
+      setShowAddForm(false);
+      showSuccess("Service added successfully!");
+    } catch (error) {
+      console.error("Error adding service:", error);
     }
+  };
 
-    const newService: Service = {
-      id: Date.now().toString(),
-      name: data.name,
-      description: data.description,
-      category: data.category,
-      petType: data.petType,
-      charge: data.charge,
-      duration: data.duration,
-      image: data.image || "/placeholder.svg?height=40&width=40",
-      createdAt: new Date().toISOString(),
-      status: "active",
-    }
-    setServices((prev) => [...prev, newService])
-    setShowAddForm(false)
-  }
+  const handleEditService = async (data: ServiceFormData) => {
+    if (!editingService) return;
 
-  const handleSort = (key: string, order: "asc" | "desc") => {
-    setSortBy(key)
-    setSortOrder(order)
-    const validKeys: (keyof Service)[] = ["name", "category", "petType", "charge", "duration", "createdAt", "status"]
-    if (!validKeys.includes(key as keyof Service)) {
-      return // Ignore invalid keys
-    }
-    const sorted = [...services].sort((a, b) => {
-      if (key === "petType") {
-        const aValue = a[key].join(",")
-        const bValue = b[key].join(",")
-        return order === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
-      } else if (key === "name" || key === "category" || key === "createdAt" || key === "status") {
-        return order === "asc" ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key])
-      } else if (key === "charge" || key === "duration") {
-        return order === "asc" ? a[key] - b[key] : b[key] - a[key]
+    try {
+      let imageUrl: string | undefined = typeof data.image === "string" ? data.image : undefined;
+      if (data.image instanceof File) {
+        imageUrl = await handleImageUpload(data.image);
+        if (!imageUrl) {
+          throw new Error("Failed to upload image");
+        }
       }
-      return 0
-    })
-    setServices(sorted)
-  }
-
-  const handleEditService = (serviceId: string) => {
-    const service = services.find((s) => s.id === serviceId)
-    if (service) {
-      setEditingService(serviceId)
-      setEditForm(service)
+      const updatedService = await serviceService.updateService(editingService._id, {
+        name: data.name,
+        description: data.description,
+        serviceTypeId: data.serviceTypeId,
+        petTypeIds: data.petTypeIds,
+        price: Number.parseFloat(data.price),
+        durationHoure: Number.parseFloat(data.durationHoure),
+        image: imageUrl,
+      } as UpdateServiceData);
+      setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));
+      setEditingService(null);
+      showSuccess("Service updated successfully!");
+    } catch (error) {
+      console.error("Error updating service:", error);
     }
-  }
+  };
 
-  const handleSaveEdit = () => {
-    if (editingService && editForm) {
-      setServices((prev) =>
-        prev.map((service) => (service.id === editingService ? { ...service, ...editForm } : service)),
-      )
-      setEditingService(null)
-      setEditForm({})
+  const handleToggleStatus = async (serviceId: string) => {
+    try {
+      const updatedService = await serviceService.toggleServiceStatus(serviceId);
+      setServices((prev) => prev.map((service) => (service._id === serviceId ? updatedService : service)));
+      showSuccess("Service status updated!");
+    } catch (error) {
+      console.error("Error toggling service status:", error);
     }
-  }
+  };
 
-  const handleCancelEdit = () => {
-    setEditingService(null)
-    setEditForm({})
-  }
-
-  const handleStatusChange = (serviceId: string, newStatus: "active" | "inactive" | "blocked") => {
-    setServices((prev) =>
-      prev.map((service) => (service.id === serviceId ? { ...service, status: newStatus } : service)),
-    )
-  }
-
-  const activeServices = services.filter((service) => service.status === "active").length
-  const inactiveServices = services.filter((service) => service.status === "inactive").length
-  const blockedServices = services.filter((service) => service.status === "blocked").length
-
-  const statsData = [
-    { label: "Active Services", value: activeServices, color: "text-green-600 dark:text-green-400" },
-    { label: "Inactive Services", value: inactiveServices, color: "text-yellow-600 dark:text-yellow-400" },
-    { label: "Blocked Services", value: blockedServices, color: "text-red-600 dark:text-red-400" },
-  ]
+  const activeServices = services.filter((s) => s.isActive).length;
+  const totalRevenue = services.reduce((sum, s) => sum + (s.isActive ? s.price : 0), 0);
 
   const sidebarItems = [
     { title: "Dashboard", icon: PawPrint, url: "/shop/dashboard" },
     { title: "Services", icon: PawPrint, url: "/shop/services" },
     { title: "Appointments", icon: PawPrint, url: "/shop/appointments" },
     { title: "Settings", icon: PawPrint, url: "/shop/settings" },
-  ]
+  ];
+
+  if (isLoading) {
+    return (
+      <Layout sidebarItems={sidebarItems}>
+        <div className="container mx-auto p-6">
+          <p className="text-gray-900 dark:text-gray-100">Loading...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout sidebarItems={sidebarItems}>
-      <div className="p-6 space-y-6 max-w-full overflow-x-hidden">
+      <div className="container mx-auto p-6 space-y-6 max-w-full overflow-x-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-black dark:bg-white rounded-lg">
-              <PawPrint className="h-6 w-6 text-white dark:text-black" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Shop Services</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage services for your pet care shop</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3 text-gray-900 dark:text-gray-100">
+              <div className="p-2 bg-black dark:bg-white rounded-lg">
+                <PawPrint className="h-6 w-6 text-white dark:text-black" />
+              </div>
+              Services Management
+            </h1>
+            <p className="text-muted-foreground mt-1">Manage your pet care services with multiple pet type support</p>
           </div>
           <Button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+            onClick={() => setShowAddForm(true)}
+            size="lg"
+            className="min-w-[160px] bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add New Service
           </Button>
         </div>
 
-        {showAddForm && (
-          <AddServiceForm
-            title="Add New Shop Service"
-            placeholder="Enter service name (e.g., Grooming, Training)"
-            onAdd={handleAddService}
-            icon={<PawPrint className="h-4 w-4 text-white dark:text-black" />}
-          />
+        {successMessage && (
+          <Alert className="border-green-200 bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-            <CardContent className="p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
-                <Input
-                  placeholder="Search Services..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-                />
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Services</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{services.length}</p>
+                </div>
+                <PawPrint className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
-
-          <div className="md:col-span-3">
-            <StatsCards stats={statsData} />
-          </div>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Active Services</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{activeServices}</p>
+                </div>
+                <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">₹{totalRevenue.toFixed(2)}</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Pet Type Filter */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-gray-900 dark:text-gray-100">Filter by Pet Type</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {PET_TYPES.map((petType) => (
-                <Button
-                  key={petType}
-                  variant={selectedPetTypes.includes(petType) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    if (petType === "All") {
-                      setSelectedPetTypes(["All"])
-                    } else {
-                      setSelectedPetTypes((prev) => {
-                        const newTypes = prev.filter((t) => t !== "All")
-                        if (prev.includes(petType)) {
-                          const filtered = newTypes.filter((t) => t !== petType)
-                          return filtered.length === 0 ? ["All"] : filtered
-                        } else {
-                          return [...newTypes, petType]
-                        }
-                      })
-                    }
-                  }}
-                  className={
-                    selectedPetTypes.includes(petType)
-                      ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                      : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+        {(showAddForm || editingService) && (
+          <ServiceForm
+            onSubmit={editingService ? handleEditService : handleAddService}
+            onCancel={() => {
+              setShowAddForm(false);
+              setEditingService(null);
+            }}
+            initialData={
+              editingService
+                ? {
+                    name: editingService.name,
+                    description: editingService.description,
+                    serviceTypeId: editingService.serviceTypeId,
+                    petTypeIds: editingService.petTypeIds,
+                    price: editingService.price.toString(),
+                    durationHoure: editingService.durationHoure.toString(),
+                    image: editingService.image,
                   }
-                >
-                  {petType === "All" ? "All Pets" : petType}
-                </Button>
-              ))}
+                : undefined
+            }
+            isEditing={!!editingService}
+          />
+        )}
+
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-gray-700 dark:text-gray-300">Search Services</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search by name or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-gray-700 dark:text-gray-300">Filter by Pet Type</Label>
+                <Select value={selectedPetTypeFilter} onValueChange={setSelectedPetTypeFilter}>
+                  <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
+                    <SelectItem value="all">All Pet Types</SelectItem>
+                    {petTypes.map((type) => (
+                      <SelectItem key={type._id} value={type._id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-gray-700 dark:text-gray-300">Filter by Service Type</Label>
+                <Select value={selectedServiceTypeFilter} onValueChange={setSelectedServiceTypeFilter}>
+                  <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
+                    <SelectItem value="all">All Service Types</SelectItem>
+                    {serviceTypes.map((type) => (
+                      <SelectItem key={type._id} value={type._id}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -493,304 +841,111 @@ export default function ServicesPage() {
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
-              <span>Services List</span>
+              Services List
               <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                {filteredServices.length} services
+                {filteredServices.length} of {services.length} services
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
-            <div className="min-w-full">
-              <Table<Service>
-                columns={[
-                  {
-                    key: "name",
-                    title: "Service Name",
-                    dataIndex: "name",
-                    sortable: true,
-                    align: "left",
-                    render: (value: string, record: Service) =>
-                      editingService === record.id ? (
-                        <Input
-                          value={editForm.name || value}
-                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                          className="w-full min-w-[150px]"
-                        />
-                      ) : (
-                        <span className="font-medium">{value}</span>
-                      ),
-                  },
-                  {
-                    key: "category",
-                    title: "Category",
-                    dataIndex: "category",
-                    sortable: true,
-                    align: "left",
-                    render: (value: string, record: Service) =>
-                      editingService === record.id ? (
-                        <Select
-                          value={editForm.category || value}
-                          onValueChange={(newValue) => setEditForm({ ...editForm, category: newValue })}
-                        >
-                          <SelectTrigger className="w-full min-w-[120px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {SERVICE_CATEGORIES.map((cat) => (
-                              <SelectItem key={cat} value={cat}>
-                                {cat}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Badge
-                          variant="secondary"
-                          className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                        >
-                          {value}
-                        </Badge>
-                      ),
-                  },
-                  {
-                    key: "petType",
-                    title: "Pet Type",
-                    dataIndex: "petType",
-                    sortable: true,
-                    align: "left",
-                    render: (value: ("Dog" | "Cat" | "All")[], record: Service) =>
-                      editingService === record.id ? (
+          <CardContent className="p-0">
+            {filteredServices.length === 0 ? (
+              <div className="text-center py-12">
+                <PawPrint className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">No services found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm || selectedPetTypeFilter !== "all" || selectedServiceTypeFilter !== "all"
+                    ? "Try adjusting your filters"
+                    : "Get started by adding your first service"}
+                </p>
+                {!showAddForm && (
+                  <Button
+                    onClick={() => setShowAddForm(true)}
+                    className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Service
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 p-6">
+                {filteredServices.map((service) => (
+                  <Card key={service._id} className="hover:shadow-md transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardContent className="p-4">
+                      <div className="space-y-4">
+                        {service.image && (
+                          <img
+                            src={service.image || "/placeholder.svg?height=128&width=128"}
+                            alt={service.name}
+                            className="w-full h-32 object-cover rounded-lg"
+                          />
+                        )}
                         <div className="space-y-2">
-                          <div className="flex flex-wrap gap-1">
-                            {PET_TYPES.map((type) => (
-                              <Button
-                                key={type}
-                                type="button"
-                                variant={
-                                  (editForm.petType || value).includes(type)
-                                    ? "default"
-                                    : "outline"
-                                }
-                                size="sm"
-                                onClick={() => {
-                                  const currentTypes = editForm.petType || value
-                                  if (type === "All") {
-                                    setEditForm({ ...editForm, petType: ["All"] })
-                                  } else {
-                                    const newTypes = currentTypes.filter((t) => t !== "All")
-                                    if (currentTypes.includes(type)) {
-                                      const filtered = newTypes.filter((t) => t !== type)
-                                      setEditForm({ ...editForm, petType: filtered.length === 0 ? ["All"] : filtered })
-                                    } else {
-                                      setEditForm({
-                                        ...editForm,
-                                        petType: [...newTypes, type],
-                                      })
-                                    }
-                                  }
-                                }}
-                                className="text-xs h-6"
-                              >
-                                {type === "All" ? "All" : type}
-                              </Button>
-                            ))}
+                          <div className="flex items-start justify-between">
+                            <h3 className="font-semibold text-lg leading-tight text-gray-900 dark:text-gray-100">{service.name}</h3>
+                            <StatusToggle isActive={service.isActive} onToggle={() => handleToggleStatus(service._id)} />
+                          </div>
+                          <Badge className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                            {serviceTypes.find((st) => st._id === service.serviceTypeId)?.name || "Unknown"}
+                          </Badge>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <p className="text-muted-foreground line-clamp-2">{service.description}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                              <DollarSign className="h-4 w-4" />
+                              <span className="font-semibold">₹{service.price.toFixed(2)}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Clock className="h-4 w-4" />
+                              <span>{service.durationHoure}h</span>
+                            </div>
                           </div>
                         </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {value.map((type, index) => (
-                            <Badge
-                              key={index}
-                              variant="secondary"
-                              className={
-                                type === "Dog"
-                                  ? "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400"
-                                  : type === "Cat"
-                                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400"
-                                    : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                              }
-                            >
-                              {type}
-                            </Badge>
-                          ))}
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground">Pet Types:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {service.petTypeIds.length > 0 ? (
+                              service.petTypeIds.map((id) => {
+                                const petType = petTypes.find((pt) => pt._id === id);
+                                return (
+                                  <Badge
+                                    key={id}
+                                    variant="secondary"
+                                    className="bg-primary/10 text-primary hover:bg-primary/20"
+                                  >
+                                    {petType ? petType.name : "Unknown"}
+                                  </Badge>
+                                );
+                              })
+                            ) : (
+                              <p className="text-sm text-muted-foreground">No pet types assigned</p>
+                            )}
+                          </div>
                         </div>
-                      ),
-                  },
-                  {
-                    key: "description",
-                    title: "Description",
-                    dataIndex: "description",
-                    sortable: false,
-                    align: "left",
-                    render: (value: string, record: Service) =>
-                      editingService === record.id ? (
-                        <Textarea
-                          value={editForm.description || value}
-                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                          className="w-full min-w-[200px] min-h-[60px]"
-                        />
-                      ) : (
-                        <div className="max-w-xs">
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate" title={value}>
-                            {value}
-                          </p>
-                        </div>
-                      ),
-                  },
-                  {
-                    key: "charge",
-                    title: "Charge (₹)",
-                    dataIndex: "charge",
-                    sortable: true,
-                    align: "right",
-                    render: (value: number, record: Service) =>
-                      editingService === record.id ? (
-                        <Input
-                          type="number"
-                          value={editForm.charge || value}
-                          onChange={(e) => setEditForm({ ...editForm, charge: Number.parseFloat(e.target.value) })}
-                          className="w-full min-w-[100px]"
-                          min="0"
-                          step="0.01"
-                        />
-                      ) : (
-                        `₹${value.toFixed(2)}`
-                      ),
-                  },
-                  {
-                    key: "duration",
-                    title: "Duration (hrs)",
-                    dataIndex: "duration",
-                    sortable: true,
-                    align: "right",
-                    render: (value: number, record: Service) =>
-                      editingService === record.id ? (
-                        <Input
-                          type="number"
-                          value={editForm.duration || value}
-                          onChange={(e) => setEditForm({ ...editForm, duration: Number.parseFloat(e.target.value) })}
-                          className="w-full min-w-[100px]"
-                          min="0"
-                          step="0.25"
-                        />
-                      ) : (
-                        `${value}h`
-                      ),
-                  },
-                  {
-                    key: "image",
-                    title: "Image",
-                    dataIndex: "image",
-                    sortable: false,
-                    align: "center",
-                    render: (value: string | undefined) => (
-                      <img
-                        src={value || "/placeholder.svg?height=40&width=40"}
-                        alt="Service"
-                        className="h-10 w-10 object-cover rounded"
-                      />
-                    ),
-                  },
-                  {
-                    key: "status",
-                    title: "Status",
-                    dataIndex: "status",
-                    sortable: true,
-                    align: "left",
-                    render: (value: "active" | "inactive" | "blocked", record: Service) => (
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          className={
-                            value === "active"
-                              ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400"
-                              : value === "inactive"
-                                ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400"
-                                : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400"
-                          }
-                        >
-                          {value.charAt(0).toUpperCase() + value.slice(1)}
-                        </Badge>
-                        <Select
-                          value={value}
-                          onValueChange={(newStatus) =>
-                            handleStatusChange(record.id, newStatus as "active" | "inactive" | "blocked")
-                          }
-                        >
-                          <SelectTrigger className="w-20 h-6 text-xs border-0 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-700">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                            <SelectItem value="blocked">Blocked</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ),
-                  },
-                  {
-                    key: "createdAt",
-                    title: "Created Date",
-                    dataIndex: "createdAt",
-                    sortable: true,
-                    align: "left",
-                    render: (value: string) => new Date(value).toLocaleDateString(),
-                  },
-                  {
-                    key: "actions",
-                    title: "Actions",
-                    dataIndex: "actions",
-                    align: "center",
-                    render: (_, record: Service) => (
-                      <div className="flex items-center justify-center space-x-2">
-                        {editingService === record.id ? (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleSaveEdit}
-                              className="hover:bg-green-100 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400"
-                            >
-                              <Save className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleCancelEdit}
-                              className="hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        ) : (
+                        <div className="flex justify-between items-center pt-2 border-t">
+                          <span className="text-xs text-muted-foreground">
+                            Created {new Date(service.createdAt).toLocaleDateString()}
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEditService(record.id)}
-                            className="hover:bg-blue-100 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                            onClick={() => setEditingService(service)}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                           >
-                            <Edit2 className="h-4 w-4" />
+                            <Edit2 className="h-4 w-4 mr-1" />
+                            Edit
                           </Button>
-                        )}
+                        </div>
                       </div>
-                    ),
-                  },
-                ]}
-                data={filteredServices}
-                rowKey="id"
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={handleSort}
-                emptyText={
-                  searchTerm || (selectedPetTypes.length > 0 && !selectedPetTypes.includes("All"))
-                    ? "No services found matching your filters."
-                    : "No services available."
-                }
-              />
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
     </Layout>
-  )
+  );
 }
