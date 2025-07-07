@@ -886,7 +886,7 @@ export default function Services() {
                             <StatusToggle isActive={service.isActive} onToggle={() => handleToggleStatus(service._id)} />
                           </div>
                           <Badge className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                            {serviceTypes.find((st) => st._id === service.serviceTypeId)?.name || "Unknown"}
+                            {serviceTypes.find((st) => st._id === service.serviceTypeId._id)?.name || "Unknown"}
                           </Badge>
                         </div>
                         <div className="space-y-2 text-sm">
@@ -906,11 +906,11 @@ export default function Services() {
                           <p className="text-xs font-medium text-muted-foreground">Pet Types:</p>
                           <div className="flex flex-wrap gap-1">
                             {service.petTypeIds.length > 0 ? (
-                              service.petTypeIds.map((id) => {
-                                const petType = petTypes.find((pt) => pt._id === id);
+                              service.petTypeIds.map((petTypeId) => {
+                                const petType = petTypes.find((pt) => pt._id === petTypeId._id);
                                 return (
                                   <Badge
-                                    key={id}
+                                    key={petType?._id}
                                     variant="secondary"
                                     className="bg-primary/10 text-primary hover:bg-primary/20"
                                   >

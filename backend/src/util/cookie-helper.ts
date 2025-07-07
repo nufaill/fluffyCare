@@ -2,32 +2,32 @@
 import { Response } from 'express';
 
 export const setAuthCookies = (
-  res: Response, 
-  accessToken: string, 
+  res: Response,
+  accessToken: string,
   refreshToken: string,
-  role:'user'|'admin'|'shop'
+  role: 'user' | 'admin' | 'shop'
 ): void => {
   const isProduction = process.env.NODE_ENV === 'production';
 
   let tokenName = "";
   let refreshTokenName = ""
-  if(role ==='user'){
-    tokenName="userAccessToken";
-    refreshTokenName="userRefreshToken"
-  }else if(role === 'shop'){
+  if (role === 'user') {
+    tokenName = "userAccessToken";
+    refreshTokenName = "userRefreshToken"
+  } else if (role === 'shop') {
     tokenName = "shopAccessToken";
-     refreshTokenName="shopRefreshToken"
-  }else{
+    refreshTokenName = "shopRefreshToken"
+  } else {
     tokenName = "adminAccessToken";
-     refreshTokenName="adminRefreshToken"
+    refreshTokenName = "adminRefreshToken"
   }
-  
+
   //  access token cookie
   res.cookie(tokenName, accessToken, {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'none' : 'lax',
-    maxAge: 15 * 60 * 1000, // 15 minutes
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
   });
 
@@ -43,29 +43,29 @@ export const setAuthCookies = (
 
 // Alternative signature for when tokens are passed as an object
 export const setAuthCookiesFromObject = (
-  res: Response, 
+  res: Response,
   tokens: { accessToken: string; refreshToken: string },
-  role: "user"|"admin"|"shop"
+  role: "user" | "admin" | "shop"
 ): void => {
   setAuthCookies(res, tokens.accessToken, tokens.refreshToken, role);
 };
 
 export const updateAccessTokenCookie = (
-  res: Response, 
+  res: Response,
   accessToken: string,
-  role : 'user'|'admin'|'shop'
+  role: 'user' | 'admin' | 'shop'
 ): void => {
   const isProduction = process.env.NODE_ENV === 'production';
 
-   let tokenName = "";
-  if(role ==='user'){
-    tokenName="userAccessToken";
-  }else if(role === 'shop'){
+  let tokenName = "";
+  if (role === 'user') {
+    tokenName = "userAccessToken";
+  } else if (role === 'shop') {
     tokenName = "shopAccessToken";
-  }else{
+  } else {
     tokenName = "adminAccessToken";
   }
-  
+
   res.cookie(tokenName, accessToken, {
     httpOnly: true,
     secure: isProduction,
