@@ -7,7 +7,6 @@ export const loginAdmin = async (data: { email: string; password: string }) => {
   try {
     const response = await AdminAxios.post('/login', data);
     if (response.data.success) {
-      // Store admin data and token
       localStorage.setItem('adminToken', response.data.token);
       localStorage.setItem('adminDatas', JSON.stringify(response.data.admin));
     }

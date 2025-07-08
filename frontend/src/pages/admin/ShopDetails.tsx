@@ -9,7 +9,6 @@ import { Table, type TableColumn } from "@/components/ui/Table"
 import { Pagination } from "@/components/ui/Pagination"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/Badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
@@ -20,9 +19,8 @@ import {
   Mail,
   Store,
   Eye,
-  CheckCircle,
-  XCircle,
-  Clock,
+  Lock,
+  Unlock,
   MapPin,
   Star,
   Users,
@@ -33,14 +31,12 @@ import { useNavigate } from "react-router-dom"
 import { getAllShops, updateShopStatus } from "@/services/admin/admin.service"
 import toast from 'react-hot-toast'
 
-type VerificationStatus = "approved" | "rejected" | "pending"
-
 interface Shop {
   _id: string
   name: string
   logo?: string
   email: string
-  isVerified: VerificationStatus
+  isVerified: boolean
   isActive: boolean
   address: string
   phone: string
@@ -74,7 +70,8 @@ const ShopDetails: React.FC = () => {
       setLoading(true)
       try {
         const response = await getAllShops()
-        setShops(response.data || [])
+        // Filter only verified shops
+        setShops(response.data?.filter((shop: Shop) => shop.isVerified === true) || [])
       } catch (error) {
         console.error('Error fetching shops:', error)
       } finally {
@@ -90,7 +87,7 @@ const ShopDetails: React.FC = () => {
       (shop) =>
         shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shop.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shop.address.toLowerCase().includes(searchTerm.toLowerCase()),
+        shop.address.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     if (sortBy) {
@@ -139,7 +136,7 @@ const ShopDetails: React.FC = () => {
   }
 
   const handleToggleActive = async (shopId: string, isActive: boolean): Promise<void> => {
-    console.log('Toggle active called with:', { shopId, isActive });
+    console.log('Toggle active called with:', { shopId, isActive })
     setLoading(true)
     try {
       const response = await updateShopStatus(shopId, isActive)
@@ -148,13 +145,13 @@ const ShopDetails: React.FC = () => {
         setShops(prevShops =>
           prevShops.map(shop =>
             shop._id === shopId
-              ? { ...shop, isActive: isActive }
+              ? { ...shop, isActive }
               : shop
           )
         )
 
         toast.success(
-          `Shop ${isActive ? 'activated' : 'deactivated'} successfully!`,
+          `Shop ${isActive ? 'Unblocked' : 'blocked'} successfully!`,
           {
             position: 'top-right',
             duration: 3000,
@@ -188,11 +185,11 @@ const ShopDetails: React.FC = () => {
       setLoading(false)
     }
   }
+
   const handleViewDetails = (shop: Shop): void => {
     setSelectedShop(shop)
     setIsModalOpen(true)
   }
-
 
   const handleGoToVerification = (): void => {
     navigate("/admin/shop-verification")
@@ -207,34 +204,6 @@ const ShopDetails: React.FC = () => {
     setCurrentPage(page)
     if (newPageSize) {
       setPageSize(newPageSize)
-    }
-  }
-
-  const getVerificationBadge = (status: VerificationStatus): React.ReactNode => {
-    switch (status) {
-      case "approved":
-        return (
-          <Badge className="bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Verified
-          </Badge>
-        )
-      case "rejected":
-        return (
-          <Badge className="bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800">
-            <XCircle className="h-3 w-3 mr-1" />
-            Rejected
-          </Badge>
-        )
-      case "pending":
-        return (
-          <Badge className="bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
-            <Clock className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        )
-      default:
-        return null
     }
   }
 
@@ -292,16 +261,28 @@ const ShopDetails: React.FC = () => {
     {
       key: "status",
       title: "Status",
-      dataIndex: "isVerified",
+      dataIndex: "isActive",
       sortable: true,
       align: "center",
-      render: (_value: VerificationStatus, record: Shop) => (
-        <div className="space-y-2">{getVerificationBadge(record.isVerified)}</div>
+      render: (_value: boolean, record: Shop) => (
+        <div className="flex items-center justify-center">
+          {record.isActive ? (
+            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+              <Unlock className="h-4 w-4" />
+              <span>Active</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-red-600 dark:text-red-400">
+              <Lock className="h-4 w-4" />
+              <span>Blocked</span>
+            </div>
+          )}
+        </div>
       ),
     },
     {
       key: "isActive",
-      title: "Active",
+      title: "Toggle Status",
       dataIndex: "isActive",
       align: "center",
       render: (_value: boolean, record: Shop) => (
@@ -335,10 +316,10 @@ const ShopDetails: React.FC = () => {
     {
       key: "joinDate",
       title: "Join Date",
-      dataIndex: "createdAt",
+      dataIndex: "joinDate",
       sortable: true,
       render: (value: string) => (
-        <span className="text-gray-900 dark:text-gray-100">{typeof value === 'string' ? new Date(value).toLocaleDateString() : 'N/A'}</span>
+        <span className="text-gray-900 dark:text-gray-100">{new Date(value).toLocaleDateString()}</span>
       ),
     },
     {
@@ -362,8 +343,6 @@ const ShopDetails: React.FC = () => {
     },
   ]
 
-  const approvedShops = shops.filter((shop) => shop.isVerified === "approved")
-  const pendingShops = shops.filter((shop) => shop.isVerified === "pending")
   const totalRevenue = shops.reduce((sum, shop) => sum + shop.totalRevenue, 0)
 
   return (
@@ -383,12 +362,12 @@ const ShopDetails: React.FC = () => {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                 Shop Details
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">Manage shop information and status</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Manage verified shop information and status</p>
             </div>
             <div className="flex items-center gap-3">
               <Button onClick={handleGoToVerification} className="bg-yellow-600 hover:bg-yellow-700 text-white">
                 <Settings className="h-4 w-4 mr-2" />
-                Manage Verification ({pendingShops.length})
+                Manage Verification
               </Button>
               <Button
                 variant="outline"
@@ -401,12 +380,12 @@ const ShopDetails: React.FC = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Shops</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Verified Shops</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{shops.length}</p>
                   </div>
                   <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
@@ -420,25 +399,11 @@ const ShopDetails: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Verified Shops</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{approvedShops.length}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Shops</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{shops.filter(shop => shop.isActive).length}</p>
                   </div>
                   <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Verification</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{pendingShops.length}</p>
-                  </div>
-                  <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                    <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                    <Unlock className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                 </div>
               </CardContent>
@@ -552,8 +517,14 @@ const ShopDetails: React.FC = () => {
                       <p className="text-base">{selectedShop.phone}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Verification Status</p>
-                      <div className="mt-1">{getVerificationBadge(selectedShop.isVerified)}</div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+                      <p className="text-base">
+                        {selectedShop.isActive ? (
+                          <span className="text-green-600 dark:text-green-400">Active</span>
+                        ) : (
+                          <span className="text-red-600 dark:text-red-400">Blocked</span>
+                        )}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rating</p>
