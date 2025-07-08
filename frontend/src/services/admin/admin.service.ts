@@ -147,6 +147,7 @@ export const updateShopStatus = async (shopId: string, isActive: boolean) => {
     }
   }
 }
+
 export const getUnverifiedShops = async () => {
   try {
     const response = await AdminAxios.get(`/unverified`);
@@ -209,9 +210,6 @@ export const approveShop = async (shopId: string) => {
       });
       throw new Error(message);
     } else {
-      toast.error("An unexpected error occurred.", {
-        position: 'top-right'
-      });
       throw new Error("An unexpected error occurred.");
     }
   }
@@ -221,16 +219,16 @@ export const rejectShop = async (shopId: string, rejectionReason?: string) => {
   const loadingToast = toast.loading('Processing rejection...', {
     position: 'top-right'
   });
-  
+
   try {
     const response = await AdminAxios.patch(`/unverified/${shopId}/reject`, {
       rejectionReason
     });
-    
+
     if (response.status !== 200) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     toast.dismiss(loadingToast);
     toast.success('Shop rejection processed successfully! ❌', {
       position: 'top-right',
@@ -241,12 +239,12 @@ export const rejectShop = async (shopId: string, rejectionReason?: string) => {
         border: '1px solid #FBBF24'
       }
     });
-    
+
     return response.data;
   } catch (error) {
     toast.dismiss(loadingToast);
     console.error('Failed to reject shop:', error);
-    
+
     if (axios.isAxiosError(error)) {
       const message = error.response?.data?.message || "Failed to reject shop.";
       toast.error(message, {
@@ -260,9 +258,6 @@ export const rejectShop = async (shopId: string, rejectionReason?: string) => {
       });
       throw new Error(message);
     } else {
-      toast.error("An unexpected error occurred.", {
-        position: 'top-right'
-      });
       throw new Error("An unexpected error occurred.");
     }
   }
@@ -274,6 +269,29 @@ export const createPetType = async (data: { name: string }) => {
   });
 
   try {
+    // Fetch existing pet types to check for duplicates
+    const petTypesResponse = await getAllPetTypes();
+    if (petTypesResponse.success) {
+      const existingPetTypes = petTypesResponse.data;
+      const nameExists = existingPetTypes.some(
+        (petType: { name: string }) => petType.name.toLowerCase() === data.name.toLowerCase()
+      );
+
+      if (nameExists) {
+        toast.dismiss(loadingToast);
+        toast.error('Pet type with this name already exists.', {
+          position: 'top-right',
+          duration: 4000,
+          style: {
+            background: '#FEE2E2',
+            color: '#DC2626',
+            border: '1px solid #F87171'
+          }
+        });
+        throw new Error('Pet type with this name already exists.');
+      }
+    }
+
     const response = await AdminAxios.post('/pet-types', data);
 
     if (response.status !== 201) {
@@ -309,9 +327,6 @@ export const createPetType = async (data: { name: string }) => {
       });
       throw new Error(message);
     } else {
-      toast.error("An unexpected error occurred.", {
-        position: 'top-right'
-      });
       throw new Error("An unexpected error occurred.");
     }
   }
@@ -379,9 +394,6 @@ export const updatePetType = async (id: string, data: { name: string }) => {
       });
       throw new Error(message);
     } else {
-      toast.error("An unexpected error occurred.", {
-        position: 'top-right'
-      });
       throw new Error("An unexpected error occurred.");
     }
   }
@@ -431,15 +443,10 @@ export const updatePetTypeStatus = async (id: string, isActive: boolean) => {
       });
       throw new Error(message);
     } else {
-      toast.error("An unexpected error occurred.", {
-        position: 'top-right'
-      });
       throw new Error("An unexpected error occurred.");
     }
   }
 };
-
-
 
 export const createServiceType = async (data: { name: string }) => {
   const loadingToast = toast.loading('Creating Service type...', {
@@ -447,6 +454,28 @@ export const createServiceType = async (data: { name: string }) => {
   });
 
   try {
+    const serviceTypesResponse = await getAllServiceTypes();
+    if (serviceTypesResponse.success) {
+      const existingServiceTypes = serviceTypesResponse.data;
+      const nameExists = existingServiceTypes.some(
+        (serviceType: { name: string }) => serviceType.name.toLowerCase() === data.name.toLowerCase()
+      );
+
+      if (nameExists) {
+        toast.dismiss(loadingToast);
+        toast.error('Service type with this name already exists.', {
+          position: 'top-right',
+          duration: 4000,
+          style: {
+            background: '#FEE2E2',
+            color: '#DC2626',
+            border: '1px solid #F87171'
+          }
+        });
+        throw new Error('Service type with this name already exists.');
+      }
+    }
+
     const response = await AdminAxios.post('/service-types', data);
 
     if (response.status !== 201) {
@@ -482,9 +511,6 @@ export const createServiceType = async (data: { name: string }) => {
       });
       throw new Error(message);
     } else {
-      toast.error("An unexpected error occurred.", {
-        position: 'top-right'
-      });
       throw new Error("An unexpected error occurred.");
     }
   }
@@ -552,9 +578,6 @@ export const updateServiceType = async (id: string, data: { name: string }) => {
       });
       throw new Error(message);
     } else {
-      toast.error("An unexpected error occurred.", {
-        position: 'top-right'
-      });
       throw new Error("An unexpected error occurred.");
     }
   }
@@ -604,9 +627,6 @@ export const updateServiceTypeStatus = async (id: string, isActive: boolean) => 
       });
       throw new Error(message);
     } else {
-      toast.error("An unexpected error occurred.", {
-        position: 'top-right'
-      });
       throw new Error("An unexpected error occurred.");
     }
   }
