@@ -17,7 +17,7 @@ import { Layout } from "@/components/shop/Layout";
 import { serviceService } from "@/services/shop/service.service";
 import type { PetType, ServiceType, CreateServiceData, UpdateServiceData } from "@/types/service.type";
 
-// Updated Service interface to support multiple pet types
+
 interface Service {
   _id: string;
   name: string;
@@ -38,7 +38,7 @@ interface ServiceFormData {
   petTypeIds: string[];
   price: string;
   durationHoure: string;
-  image?: string; // Changed to string | undefined to avoid File type issues
+  image?: string; 
 }
 
 interface ValidationErrors {
@@ -872,7 +872,7 @@ export default function Services() {
                             <StatusToggle isActive={service.isActive} onToggle={() => handleToggleStatus(service._id)} />
                           </div>
                           <Badge className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                            {serviceTypes.find((st) => st._id === service.serviceTypeId)?.name || "Unknown"}
+                            { service.serviceTypeId.name}
                           </Badge>
                         </div>
                         <div className="space-y-2 text-sm">
@@ -900,7 +900,7 @@ export default function Services() {
                                     variant="secondary"
                                     className="bg-primary/10 text-primary hover:bg-primary/20"
                                   >
-                                    {petType ? petType.name : "Unknown"}
+                                    { petTypeId.name }
                                   </Badge>
                                 );
                               })

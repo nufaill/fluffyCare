@@ -4,8 +4,9 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, SlidersHorizontal } from 'lucide-react';
+import { MapPin, SlidersHorizontal, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 
 interface FilterBarProps {
@@ -38,7 +39,6 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
     const newPetTypes = checked 
       ? [...filters.petType, petType]
       : filters.petType.filter(type => type !== petType);
-    
     onFiltersChange({ ...filters, petType: newPetTypes });
   };
 
@@ -46,7 +46,6 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
     const newServiceTypes = checked
       ? [...filters.serviceType, serviceType]
       : filters.serviceType.filter(type => type !== serviceType);
-    
     onFiltersChange({ ...filters, serviceType: newServiceTypes });
   };
 
@@ -66,14 +65,19 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
     onFiltersChange({ ...filters, nearMe: !filters.nearMe });
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFiltersChange({ ...filters, search: e.target.value });
+  };
+
   const clearFilters = () => {
     onFiltersChange({
       petType: [],
       serviceType: [],
-      priceRange: [0, 200],
+      priceRange: [0, 20000],
       duration: [0, 24],
       rating: 0,
       nearMe: false,
+      search: '',
     });
   };
 
@@ -81,7 +85,8 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
     filters.petType.length + 
     filters.serviceType.length + 
     (filters.rating > 0 ? 1 : 0) + 
-    (filters.nearMe ? 1 : 0);
+    (filters.nearMe ? 1 : 0) +
+    (filters.search ? 1 : 0);
 
   return (
     <Card className="p-4 mb-6 bg-card border-border">
@@ -113,6 +118,16 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
               {showMap ? 'Hide Map' : 'Show Map'}
             </Button>
           )}
+
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Search services..."
+              value={filters.search || ''}
+              onChange={handleSearchChange}
+              className="w-64"
+            />
+            <Search className="w-4 h-4 text-muted-foreground" />
+          </div>
         </div>
 
         {activeFiltersCount > 0 && (
@@ -124,7 +139,6 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
 
       {isExpanded && (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Pet Types */}
           <div>
             <h3 className="font-medium mb-3 text-card-foreground">Pet Types</h3>
             <div className="space-y-2">
@@ -148,7 +162,6 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
             </div>
           </div>
 
-          {/* Service Types */}
           <div>
             <h3 className="font-medium mb-3 text-card-foreground">Service Types</h3>
             <div className="space-y-2">
@@ -172,14 +185,13 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
             </div>
           </div>
 
-          {/* Price Range & Duration */}
           <div>
             <h3 className="font-medium mb-3 text-card-foreground">Price Range</h3>
             <div className="px-2">
               <Slider
                 value={filters.priceRange}
                 onValueChange={handlePriceRangeChange}
-                max={200}
+                max={20000}
                 step={5}
                 className="mb-2"
               />
@@ -205,7 +217,6 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
             </div>
           </div>
 
-          {/* Rating & Near Me */}
           <div>
             <h3 className="font-medium mb-3 text-card-foreground">Minimum Rating</h3>
             <Select value={filters.rating.toString()} onValueChange={handleRatingChange}>

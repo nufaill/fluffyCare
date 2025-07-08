@@ -16,7 +16,6 @@ const shopRepository = new ShopRepository();
 const serviceRepository = new ServiceRepository();
 const otpRepository = new OtpRepository();
 
-// Initialize services
 const jwtService = new JwtService();
 const emailService = new EmailService();
 
@@ -32,12 +31,10 @@ const shopAuthService = new ShopAuthService(
 
 const serviceService = new ServiceService(serviceRepository);
 
-// Initialize controllers with dependencies
 const injectedShopAuthController = new ShopAuthController(shopAuthService);
 const injectedShopController = new ShopController(shopRepository);
 const injectedServiceController = new ServiceController(serviceService);
 
-// Export for route usage
 export const shopDependencies = {
   shopAuthController: injectedShopAuthController,
   shopController: injectedShopController,

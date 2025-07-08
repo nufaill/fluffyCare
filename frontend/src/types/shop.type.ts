@@ -63,6 +63,42 @@ export interface ShopAuthResponse {
   token: string;
   shop: Shop;
 }
+export interface ShopUpdatePayload {
+  name?: string;
+  phone?: string;
+  city?: string;
+  streetAddress?: string;
+  description?: string;
+  logo?: string;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+}
+
+export interface ShopApiResponse {
+  success: boolean;
+  data: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    city: string;
+    streetAddress: string;
+    description: string;
+    logo: string;
+    certificateUrl: string;
+    location: {
+      type: 'Point';
+      coordinates: [number, number];
+    };
+    isActive: boolean;
+    isVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
+  };
+  message: string;
+}
 
 export interface ApiError {
   response?: {

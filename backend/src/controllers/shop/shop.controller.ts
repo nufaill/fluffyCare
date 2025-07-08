@@ -7,6 +7,7 @@ import { CreateShopData } from 'types/Shop.types';
 
 export class ShopController {
   constructor(private shopRepository: ShopRepository) { }
+  
   getAllShops = async (req: Request, res: Response): Promise<void> => {
     try {
       const shops = await this.shopRepository.getAllShops();
@@ -32,9 +33,9 @@ export class ShopController {
       });
     }
   };
+
   updateShopStatus = async (req: Request, res: Response): Promise<void> => {
     try {
-
       const { shopId } = req.params;
       const { isActive } = req.body;
 
@@ -113,7 +114,6 @@ export class ShopController {
     }
   };
 
-  // Approve shop verification
   approveShop = async (req: Request, res: Response): Promise<void> => {
     try {
       const { shopId } = req.params;
@@ -159,7 +159,6 @@ export class ShopController {
     }
   };
 
-  // Reject shop (no status change, just for logging/tracking)
   rejectShop = async (req: Request, res: Response): Promise<void> => {
     try {
       const { shopId } = req.params;
@@ -173,7 +172,6 @@ export class ShopController {
         return;
       }
 
-      // Check if shop exists and is unverified
       const shop = await this.shopRepository.findById(shopId);
 
       if (!shop) {
@@ -218,13 +216,14 @@ export class ShopController {
       });
     }
   };
+
   getShopProfile = async (req: Request, res: Response): Promise<void> => {
     try {
       const { shopId } = req.params;
       if (!shopId) {
-        res.status(HTTP_STATUS.UNAUTHORIZED || 401).json({
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
           success: false,
-          message: ERROR_MESSAGES.UNAUTH_NO_USER_FOUND
+          message: 'Shop ID is required'
         });
         return;
       }
@@ -276,12 +275,15 @@ export class ShopController {
 
   updateShopProfile = async (req: Request, res: Response): Promise<void> => {
     try {
-      if(!req.shop){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          message :ERROR_MESSAGES.UNAUTHORIZED_ACCESS
-        })
+      // Check if shop is authenticated
+      if (!req.shop) {
+        res.status(HTTP_STATUS.UNAUTHORIZED || 401).json({
+          success: false,
+          message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS
+        });
         return;
       }
+
       const { shopId } = req.shop;
       if (!shopId) {
         res.status(HTTP_STATUS.UNAUTHORIZED || 401).json({
@@ -291,23 +293,20 @@ export class ShopController {
         return;
       }
 
-      const { name, phone, logo, location } = req.body;
+      const { name, phone, logo, location, city, streetAddress, description } = req.body;
 
-      // Validate input
-      if (!name && !phone && !logo && !location) {
+      if (!name && !phone && !logo && !location && !city && !streetAddress && !description) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
           success: false,
-          message: ERROR_MESSAGES.INVALID_INPUT || 'At least one field must be provided for update'
+          message: 'At least one field must be provided for update'
         });
         return;
       }
-
-      // Validate location if provided
       if (location) {
         if (!location.type || location.type !== 'Point' || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
           res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
             success: false,
-            message: ERROR_MESSAGES.INVALID_LOCATION || 'Location must be a valid GeoJSON Point'
+            message: 'Location must be a valid GeoJSON Point'
           });
           return;
         }
@@ -315,10 +314,50 @@ export class ShopController {
         if (typeof lng !== 'number' || typeof lat !== 'number' || lng < -180 || lng > 180 || lat < -90 || lat > 90) {
           res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
             success: false,
-            message: ERROR_MESSAGES.INVALID_LOCATION || 'Invalid longitude or latitude values'
+            message: 'Invalid longitude or latitude values'
           });
           return;
         }
+      }
+
+      if (name && (name.length < 3 || name.length > 100)) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'Shop name must be between 3 and 100 characters'
+        });
+        return;
+      }
+
+      if (phone && !/^\+?[\d\s-]{10,}$/.test(phone)) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'Please enter a valid phone number'
+        });
+        return;
+      }
+
+      if (city && (city.length < 2 || city.length > 100)) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'City must be between 2 and 100 characters'
+        });
+        return;
+      }
+
+      if (streetAddress && (streetAddress.length < 5 || streetAddress.length > 200)) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'Street address must be between 5 and 200 characters'
+        });
+        return;
+      }
+
+      if (description && description.length > 1000) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'Description must be less than 1000 characters'
+        });
+        return;
       }
 
       const updateData: Partial<CreateShopData> = {};
@@ -326,13 +365,16 @@ export class ShopController {
       if (phone) updateData.phone = phone;
       if (logo) updateData.logo = logo;
       if (location) updateData.location = location;
+      if (city) updateData.city = city;
+      if (streetAddress) updateData.streetAddress = streetAddress;
+      if (description) updateData.description = description;
 
       const updatedShop = await this.shopRepository.updateShop(shopId, updateData);
 
       if (!updatedShop) {
         res.status(HTTP_STATUS.NOT_FOUND || 404).json({
           success: false,
-          message: ERROR_MESSAGES.USER_NOT_FOUND
+          message: 'Shop not found'
         });
         return;
       }
@@ -340,7 +382,7 @@ export class ShopController {
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: {
-          id: updatedShop.id.toString(),
+          id: updatedShop._id.toString(),
           logo: updatedShop.logo,
           name: updatedShop.name,
           email: updatedShop.email,

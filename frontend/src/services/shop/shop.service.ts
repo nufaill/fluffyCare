@@ -1,43 +1,7 @@
 // src/services/shopService/shopService.ts
 import shopaxios from "@/api/shop.axios";
-import type { Shop } from "@/types/shop.type";
+import type { Shop,ShopUpdatePayload, ShopApiResponse} from "@/types/shop.type";
 
-export interface ShopUpdatePayload {
-  name?: string;
-  phone?: string;
-  city?: string;
-  streetAddress?: string;
-  description?: string;
-  logo?: string;
-  location?: {
-    type: 'Point';
-    coordinates: [number, number];
-  };
-}
-
-export interface ShopApiResponse {
-  success: boolean;
-  data: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    city: string;
-    streetAddress: string;
-    description: string;
-    logo: string;
-    certificateUrl: string;
-    location: {
-      type: 'Point';
-      coordinates: [number, number];
-    };
-    isActive: boolean;
-    isVerified: boolean;
-    createdAt: string;
-    updatedAt: string;
-  };
-  message: string;
-}
 
 export const shopService = {
   async getShop(shopId: string): Promise<Shop> {
@@ -66,9 +30,9 @@ export const shopService = {
     }
   },
 
-  async editShop(shopId: string, updateData: ShopUpdatePayload): Promise<Shop> {
+  async editShop(updateData: ShopUpdatePayload): Promise<Shop> {
     try {
-      const response = await shopaxios.patch<ShopApiResponse>(`/profile/update/${shopId}`, updateData);
+      const response = await shopaxios.patch<ShopApiResponse>('/profile/update', updateData);
       const data = response.data.data;
 
       return {

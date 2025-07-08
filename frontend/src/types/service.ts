@@ -1,27 +1,47 @@
+export interface Shop {
+  _id: string;
+  name: string;
+  email?: string;
+  logo?: string;
+  phone?: string;
+  city?: string;
+  streetAddress?: string;
+  location?: {
+    type: string;
+    coordinates: [number, number];
+  };
+}
+
+export interface ServiceType {
+  _id: string;
+  name: string;
+}
+
+export interface PetType {
+  _id: string;
+  name: string;
+}
+
 export interface PetService {
-  id: string;
-  serviceName: string;
+  _id: string;
+  shopId: Shop;
+  serviceTypeId: ServiceType;
+  petTypeIds: PetType[];
+  name: string;
   description: string;
   price: number;
-  serviceImage: string;
-  duration: number;
-  rating: number;
-  reviewCount: number;
-  shopName: string;
-  shopLogo: string;
-  location: {
-    city: string;
-    state: string;
-    coordinates?: {
-      lat: number;
-      lng: number;
-    };
-  };
-  serviceType: string;
-  petTypes: string[];
+  image: string;
+  durationHoure: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  location?: {
+    city: string;
+    state: string;
+  };
+  rating?: number;
+  reviewCount: number;
+  reviews: string;
 }
 
 export interface FilterOptions {
@@ -31,4 +51,7 @@ export interface FilterOptions {
   duration: [number, number];
   rating: number;
   nearMe: boolean;
+  search?: string;
+  page?: number;
+  pageSize?: number;
 }

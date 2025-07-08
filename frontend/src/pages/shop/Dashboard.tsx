@@ -12,7 +12,7 @@ import {
   Calendar,
   Dog,
   Cat,
-  Star,
+  // Star,
   Award,
   MessageCircle,
   Plus,
@@ -87,7 +87,7 @@ export default function PetCareDashboard() {
             />
           </div>
           
-          <div className="fade-slide-in" style={{ animationDelay: '0.4s' }}>
+          {/* <div className="fade-slide-in" style={{ animationDelay: '0.4s' }}>
             <PetStatsCard
               title="Client Satisfaction"
               value="4.9/5"
@@ -95,7 +95,7 @@ export default function PetCareDashboard() {
               trend="up"
               icon={<Star className="h-5 w-5 text-black" />}
             />
-          </div>
+          </div> */}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

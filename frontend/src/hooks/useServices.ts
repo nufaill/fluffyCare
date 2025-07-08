@@ -1,29 +1,41 @@
-// hooks/useServices.ts
 import { useState, useEffect } from 'react';
 import { PetServiceService } from '@/services/user/petservice.service';
 import type { PetService, FilterOptions } from '@/types/service';
 
-export const useServices = (initialFilters?: FilterOptions) => {
+interface UseServicesProps {
+  page?: number;
+  pageSize?: number;
+  initialFilters?: FilterOptions;
+}
+
+export const useServices = ({ page = 1, pageSize = 9, initialFilters }: UseServicesProps = {}) => {
   const [services, setServices] = useState<PetService[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FilterOptions>(initialFilters || {
-    petType: [],
-    serviceType: [],
-    priceRange: [0, 200],
-    duration: [0, 24],
-    rating: 0,
-    nearMe: false,
+  const [filters, setFilters] = useState<FilterOptions>({
+    petType: initialFilters?.petType || [],
+    serviceType: initialFilters?.serviceType || [],
+    priceRange: initialFilters?.priceRange || [0, 20000],
+    duration: initialFilters?.duration || [0, 24],
+    rating: initialFilters?.rating || 0,
+    nearMe: initialFilters?.nearMe || false,
+    search: initialFilters?.search || '',
   });
 
   const petServiceService = new PetServiceService();
 
-  const fetchServices = async (currentFilters: FilterOptions) => {
+  const fetchServices = async (currentFilters: FilterOptions, currentPage: number, currentPageSize: number) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await petServiceService.getAllServices(currentFilters);
-      setServices(data);
+      const response = await petServiceService.getAllServices({
+        ...currentFilters,
+        page: currentPage,
+        pageSize: currentPageSize,
+      });
+      setServices((response.services || []) as PetService[]);
+      setTotal(response.total || 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch services');
     } finally {
@@ -32,23 +44,24 @@ export const useServices = (initialFilters?: FilterOptions) => {
   };
 
   useEffect(() => {
-    fetchServices(filters);
-  }, [filters]);
+    fetchServices(filters, page, pageSize);
+  }, [filters, page, pageSize]);
 
-  const updateFilters = (newFilters: FilterOptions) => {
-    setFilters(newFilters);
+  const updateFilters = (newFilters: Partial<FilterOptions>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
   const refreshServices = () => {
-    fetchServices(filters);
+    fetchServices(filters, page, pageSize);
   };
 
   return {
     services,
+    total,
     loading,
     error,
     filters,
     updateFilters,
-    refreshServices
+    refreshServices,
   };
 };

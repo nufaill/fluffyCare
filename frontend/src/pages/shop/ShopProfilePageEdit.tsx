@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { PetCareLayout } from '@/components/layout/PetCareLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +17,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { RootState } from '@/redux/store';
+import { useDispatch } from 'react-redux';
+import { addShop } from '@/redux/slices/shop.slice';
 
 // Define validation schema using Zod
 const shopSchema = z.object({
@@ -35,7 +38,7 @@ export default function ShopEditPage() {
     const [previewLogo, setPreviewLogo] = useState<string | null>(null);
     const [fileError, setFileError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [shopId, setShopId] = useState<string | null>(null);
+    const dispatch = useDispatch()
 
     const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<ShopFormData>({
         resolver: zodResolver(shopSchema),
@@ -50,7 +53,6 @@ export default function ShopEditPage() {
     });
 
     useEffect(() => {
-        console.log('Redux shopData:', shop);
         if (shop) {
             reset({
                 name: shop.name,
@@ -61,25 +63,10 @@ export default function ShopEditPage() {
                 logo: shop.logo || ''
             });
             setPreviewLogo(shop.logo || null);
-            setShopId(shop._id);
         } else {
-            // Attempt to fetch shop data if not available
-            const fetchShopData = async () => {
-                try {
-                    setLoading(true);
-                    // Assuming shopId is stored somewhere or passed via route
-                    // For now, we'll show an error if shop is undefined
-                    toast.error('Shop data not found. Please try again.');
-                    navigate('/shop/profile');
-                } catch (error) {
-                    console.error('Error fetching shop data:', error);
-                    toast.error('Failed to load shop data');
-                    navigate('/shop/profile');
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchShopData();
+            // If no shop data, redirect to profile
+            toast.error('Shop data not found. Please try again.');
+            navigate('/shop/profile');
         }
     }, [shop, reset, navigate]);
 
@@ -119,11 +106,6 @@ export default function ShopEditPage() {
 
     const onSubmit = async (data: ShopFormData) => {
         console.log('Form submitted with data:', data);
-        if (!shopId) {
-            console.log('Shop ID missing:', shop);
-            toast.error('Shop ID not found');
-            return;
-        }
 
         try {
             setLoading(true);
@@ -132,7 +114,11 @@ export default function ShopEditPage() {
                 logo: data.logo || undefined
             };
             console.log('Sending payload to API:', payload);
-            await shopService.editShop(shopId, payload);
+
+            // Call the updated service method without shopId
+            const shopData = await shopService.editShop(payload);
+            console.log(shopData)
+            dispatch(addShop(shopData))
             toast.success('Profile updated successfully');
             navigate('/shop/profile');
         } catch (error) {
@@ -148,9 +134,6 @@ export default function ShopEditPage() {
         navigate('/shop/profile');
     };
 
-    // Log form errors for debugging
-    console.log('Form errors:', errors);
-
     if (!shop || loading) {
         return (
             <PetCareLayout>
@@ -164,6 +147,7 @@ export default function ShopEditPage() {
             </PetCareLayout>
         );
     }
+
 
     return (
         <PetCareLayout>
@@ -285,7 +269,7 @@ export default function ShopEditPage() {
                                 <Button
                                     type="submit"
                                     className="bg-black text-white hover:bg-gray-800"
-                                    disabled={loading || !shopId}
+                                    disabled={loading || !shop}
                                     onClick={() => console.log('Save button clicked')}
                                 >
                                     {loading ? 'Saving...' : 'Save'}

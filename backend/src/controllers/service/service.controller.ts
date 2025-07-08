@@ -155,7 +155,6 @@ export class ServiceController {
         }
     };
 
-    // FIXED: Add comprehensive debugging
     getAllServices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             console.log('🚀 getAllServices called with query:', req.query);
@@ -215,12 +214,13 @@ export class ServiceController {
             console.log('🔍 Final filters:', JSON.stringify(filters, null, 2));
 
             const services = await this.serviceService.getAllServices(filters);
-            console.log('✅ Services retrieved:', services.length);
+            console.log('✅ Services retrieved:', services.data.length);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: SUCCESS_MESSAGES.DATA_RETRIEVED,
-                data: services
+                services: services.data,
+                total: services.total
             });
         } catch (error) {
             console.error('❌ getAllServices error:', error);

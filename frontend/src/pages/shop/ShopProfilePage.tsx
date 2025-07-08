@@ -70,6 +70,7 @@ export default function ShopProfilePage() {
 
     useEffect(() => {
         if (shop) {
+            console.log('Certificate URL:', shop.certificateUrl); // Debug certificateUrl
             reset({
                 name: shop.name,
                 phone: shop.phone,
@@ -90,12 +91,10 @@ export default function ShopProfilePage() {
 
         setLoading(true);
         try {
-            await shopService.editShop(shop._id, data);
+            await shopService.editShop(data); // Fixed: Removed shop._id argument
             setIsEditing(false);
             toast.success('Profile updated successfully');
-
-            // Refresh the page to show updated data
-            navigate(0); // This triggers a page refresh
+            navigate(0);
         } catch (error) {
             console.error('Error updating shop profile:', error);
             toast.error('Failed to update profile');
@@ -211,7 +210,7 @@ export default function ShopProfilePage() {
                                                     </>
                                                 ) : (
                                                     <Button onClick={() => navigate(`/shop/profile/update`)} variant="outline">
-                                                        <Edit className="h-4 w4 mr-2" />
+                                                        <Edit className="h-4 w-4 mr-2" />
                                                         Edit Profile
                                                     </Button>
                                                 )}
@@ -342,9 +341,17 @@ export default function ShopProfilePage() {
                                                 <p className="text-sm font-medium">Certificate</p>
                                                 <p className="text-xs text-muted-foreground">Professional certification</p>
                                             </div>
-                                            <Button size="sm" variant="outline">
-                                                View
-                                            </Button>
+                                            {shop.certificateUrl ? (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => window.open(shop.certificateUrl, '_blank')}
+                                                >
+                                                    View
+                                                </Button>
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground">No certificate available</p>
+                                            )}
                                         </div>
                                     </div>
                                 </CardContent>

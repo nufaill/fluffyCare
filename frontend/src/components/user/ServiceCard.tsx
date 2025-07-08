@@ -13,28 +13,100 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
   const navigate = useNavigate();
 
   const handleViewDetails = () => {
-    navigate(`/service/${service.id}`);
+    navigate(`/service/${service._id}`);
   };
 
-  const formatPetTypes = (petTypes: string[]) => {
-    return petTypes.map(type => type.charAt(0).toUpperCase() + type.slice(1)).join(', ');
+  const formatPetTypes = (petTypes: any) => {
+    if (!petTypes) return 'Not specified';
+    
+    if (Array.isArray(petTypes)) {
+      return petTypes.map(type => {
+        if (typeof type === 'object' && type.name) {
+          return type.name; 
+        }
+        return typeof type === 'string' ? type : 'Unknown';
+      }).join(', ');
+    }
+    
+    if (typeof petTypes === 'object' && petTypes.name) {
+      return petTypes.name;
+    }
+
+    if (typeof petTypes === 'string') {
+      return petTypes;
+    }
+    
+    return 'Not specified';
   };
 
-  const formatServiceType = (serviceType: string) => {
-    return serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+  const formatServiceType = (serviceType: any) => {
+    if (!serviceType) return 'Service';
+    
+    if (typeof serviceType === 'object' && serviceType.name) {
+      return serviceType.name;
+    }
+    
+    if (typeof serviceType === 'string') {
+      return serviceType;
+    }
+    
+    return 'Service';
+  };
+
+  const getServiceImage = () => {
+    return service.image || '/placeholder-service.jpg';
+  };
+
+  const getShopLogo = () => {
+    return service.shopId.logo || '/placeholder-logo.jpg';
+  };
+
+  const getShopName = () => {
+    if (service.shopId && typeof service.shopId === 'object' && service.shopId.name) {
+      return service.shopId.name;
+    }
+    return service.name || 'Shop Name';
+  };
+
+  const getServiceName = () => {
+    return service.name ||  'Service Name';
+  };
+
+  const getLocation = () => {
+    return service.shopId.city ? `${service.shopId.city}, ${service.shopId.streetAddress || ''}` : 'Location not specified';
+  };
+
+  const getDuration = () => {
+    const duration = service.durationHoure ;
+    return `${duration} ${duration === 1 ? 'hour' : 'hours'}`;
+  };
+
+  const getRating = () => {
+    return service.rating || 0;
+  };
+
+  const getReviewCount = () => {
+    return service.reviewCount || service.reviews || 0;
+  };
+
+  const getPrice = () => {
+    return service.price || 0;
   };
 
   return (
     <Card className="overflow-hidden bg-card hover:shadow-pet-lg transition-all duration-300 hover:-translate-y-1 border-border">
       <div className="relative">
         <img
-          src={service.serviceImage}
-          alt={service.serviceName}
+          src={getServiceImage()}
+          alt={getServiceName()}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/placeholder-service.jpg';
+          }}
         />
         <div className="absolute top-4 right-4">
           <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm">
-            ₹{service.price}
+            ₹{getPrice()}
           </Badge>
         </div>
       </div>
@@ -42,44 +114,47 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
       <CardContent className="p-4">
         <div className="flex items-center gap-3 mb-3">
           <img
-            src={service.shopLogo}
-            alt={`${service.shopName} logo`}
+            src={getShopLogo()}
+            alt={`${getShopName()} logo`}
             className="w-10 h-10 rounded-full object-cover border border-border"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder-logo.jpg';
+            }}
           />
           <div>
             <h3 className="font-semibold text-card-foreground text-sm">
-              {service.shopName}
+              {getShopName()}
             </h3>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Star className="w-3 h-3 fill-current" />
-              <span>{service.rating}</span>
-              <span>({service.reviewCount})</span>
+              <span>{getRating()}</span>
+              <span>({getReviewCount()})</span>
             </div>
           </div>
         </div>
         
         <h4 className="font-bold text-lg text-card-foreground mb-2">
-          {service.serviceName}
+          {getServiceName()}
         </h4>
         
         <div className="space-y-2 mb-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="w-4 h-4" />
-            <span>{service.location.city}, {service.location.state}</span>
+            <span>{getLocation()}</span>
           </div>
           
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="w-4 h-4" />
-            <span>{service.duration} {service.duration === 1 ? 'hour' : 'hours'}</span>
+            <span>{getDuration()}</span>
           </div>
         </div>
         
         <div className="flex flex-wrap gap-2 mb-3">
-          <Badge  className="text-xs">
-            {formatServiceType(service.serviceType)}
+          <Badge className="text-xs">
+            {formatServiceType(service.serviceTypeId)}
           </Badge>
           <Badge className="text-xs">
-            {formatPetTypes(service.petTypes)}
+            {formatPetTypes(service.petTypeIds)}
           </Badge>
         </div>
       </CardContent>

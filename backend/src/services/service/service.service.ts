@@ -108,7 +108,10 @@ export class ServiceService {
 
         return service;
     }
-    async getAllServices(filters: any = {}): Promise<ServiceDocument[]> {
-    return await this.serviceRepository.getAllServices(filters);
-}
+    async getAllServices(filters: any = {}): Promise<{
+        data: ServiceDocument[];
+        total: number;
+    }> {
+        return await this.serviceRepository.getAllServices(filters);
+    }
 }
