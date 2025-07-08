@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.route';
 import userRoutes from './routes/user.route'; 
 import shopRoutes from './routes/shop.route';
 import adminRoutes from './routes/admin.route';
+// import { swaggerUi, swaggerSpec } from './config/swagger';
 
 dotenv.config();
 
@@ -21,7 +22,6 @@ async function startApp(): Promise<void> {
     credentials: true, 
   }));
 
-  // Middleware to parse JSON and cookies
   app.use(express.json());
   app.use(cookieParser());
 
@@ -30,6 +30,8 @@ async function startApp(): Promise<void> {
   app.use("/user", userRoutes);
   app.use("/shop", shopRoutes);
   app.use("/admin", adminRoutes);
+
+  // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {

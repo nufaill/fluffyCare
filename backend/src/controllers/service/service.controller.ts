@@ -157,64 +157,61 @@ export class ServiceController {
 
     getAllServices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            console.log('🚀 getAllServices called with query:', req.query);
-            
-            const { 
-                petTypes, 
-                serviceTypes, 
-                minPrice, 
-                maxPrice, 
-                minDuration, 
-                maxDuration, 
-                minRating, 
-                nearMe 
+
+            const {
+                petTypeIds,
+                serviceTypeIds,
+                minPrice,
+                maxPrice,
+                minDuration,
+                maxDuration,
+                minRating,
+                nearMe,
+                search,
+                page = 1,
+                pageSize = 9
             } = req.query;
 
-            const filters: any = {};
-            
-            if (petTypes) {
-                const petTypeArray = typeof petTypes === 'string' ? petTypes.split(',') : petTypes;
-                filters.petTypeIds = { $in: petTypeArray };
-                console.log('🐾 Pet type filter:', petTypeArray);
-            }
-            
-            if (serviceTypes) {
-                const serviceTypeArray = typeof serviceTypes === 'string' ? serviceTypes.split(',') : serviceTypes;
-                filters.serviceTypeId = { $in: serviceTypeArray };
-                console.log('🔧 Service type filter:', serviceTypeArray);
-            }
-            
-            if (minPrice || maxPrice) {
-                filters.price = {};
-                if (minPrice) filters.price.$gte = parseFloat(minPrice as string);
-                if (maxPrice) filters.price.$lte = parseFloat(maxPrice as string);
-                console.log('💰 Price filter:', filters.price);
-            }
-            
-            // FIXED: Handle both duration field names
-            if (minDuration || maxDuration) {
-                const durationFilter: any = {};
-                if (minDuration) durationFilter.$gte = parseFloat(minDuration as string);
-                if (maxDuration) durationFilter.$lte = parseFloat(maxDuration as string);
-                
-                // Use $or to handle both field names
-                filters.$or = [
-                    { duration: durationFilter },
-                    { durationHoure: durationFilter }
-                ];
-                console.log('⏰ Duration filter:', durationFilter);
-            }
-            
-            if (minRating) {
-                filters.rating = { $gte: parseFloat(minRating as string) };
-                console.log('⭐ Rating filter:', filters.rating);
+            const filters: any = {
+                page: parseInt(page as string),
+                pageSize: parseInt(pageSize as string)
+            };
+
+            // Pet types filter
+            if (petTypeIds && typeof petTypeIds === 'string') {
+                filters.petTypeIds = petTypeIds;
             }
 
-            filters.isActive = true;
-            console.log('🔍 Final filters:', JSON.stringify(filters, null, 2));
+            // Service types filter
+            if (serviceTypeIds && typeof serviceTypeIds === 'string') {
+                filters.serviceTypeIds = serviceTypeIds;
+            }
+
+            // Price range filter
+            if (minPrice) filters.minPrice = parseFloat(minPrice as string);
+            if (maxPrice) filters.maxPrice = parseFloat(maxPrice as string);
+
+            // Duration filter
+            if (minDuration) filters.minDuration = parseInt(minDuration as string);
+            if (maxDuration) filters.maxDuration = parseInt(maxDuration as string);
+
+            // Rating filter
+            if (minRating) filters.minRating = parseFloat(minRating as string);
+
+            // Location filter
+            if (nearMe === 'true') {
+                filters.nearMe = true;
+                if (req.query.lat && req.query.lng) {
+                    filters.lat = parseFloat(req.query.lat as string);
+                    filters.lng = parseFloat(req.query.lng as string);
+                }
+            }
+
+            if (search && typeof search === 'string') {
+                filters.search = search.trim();
+            }
 
             const services = await this.serviceService.getAllServices(filters);
-            console.log('✅ Services retrieved:', services.data.length);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,

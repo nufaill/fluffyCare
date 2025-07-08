@@ -19,15 +19,15 @@ interface FilterBarProps {
 const petTypeOptions = [
   { value: 'dog', label: 'Dogs' },
   { value: 'cat', label: 'Cats' },
-  { value: 'bird', label: 'Birds' },
-  { value: 'rabbit', label: 'Rabbits' },
-  { value: 'other', label: 'Other' },
+  { value: 'rat', label: 'Rat' },
+  // { value: 'rabbit', label: 'Rabbits' },
+  // { value: 'other', label: 'Other' },
 ];
 
 const serviceTypeOptions = [
   { value: 'grooming', label: 'Grooming' },
-  { value: 'walking', label: 'Walking' },
   { value: 'veterinary', label: 'Veterinary' },
+  { value: 'walking', label: 'Walking' },
   { value: 'boarding', label: 'Boarding' },
   { value: 'training', label: 'Training' },
 ];

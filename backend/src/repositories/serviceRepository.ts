@@ -52,16 +52,15 @@ export class ServiceRepository {
   }
 
   async getAllServiceTypes(): Promise<ServiceTypeDocument[]> {
-  
-    return await ServiceType.find({isActive:true}).sort({ createdAt: -1 });
+
+    return await ServiceType.find({ isActive: true }).sort({ createdAt: -1 });
   }
 
   async getAllPetTypes(): Promise<PetTypeDocument[]> {
-    return await PetType.find({isActive:true}).sort({ createdAt: -1 });
+    return await PetType.find({ isActive: true }).sort({ createdAt: -1 });
   }
 
   async getAllServices(filters: any = {}): Promise<{ data: ServiceDocument[]; total: number }> {
-
     try {
       const query: any = { isActive: true };
 
@@ -77,42 +76,47 @@ export class ServiceRepository {
 
       if (filters.minPrice || filters.maxPrice) {
         query.price = {};
-        if (filters.minPrice) query.price.$gte = parseFloat(filters.minPrice);
-        if (filters.maxPrice) query.price.$lte = parseFloat(filters.maxPrice);
+        if (filters.minPrice) query.price.$gte = filters.minPrice;
+        if (filters.maxPrice) query.price.$lte = filters.maxPrice;
       }
 
       if (filters.minDuration || filters.maxDuration) {
-        query.durationHoure = {};
-        if (filters.minDuration) query.durationHoure.$gte = parseInt(filters.minDuration);
-        if (filters.maxDuration) query.durationHoure.$lte = parseInt(filters.maxDuration);
+        const durationFilter: any = {};
+        if (filters.minDuration) durationFilter.$gte = filters.minDuration;
+        if (filters.maxDuration) durationFilter.$lte = filters.maxDuration;
+
+        query.$or = [
+          { duration: durationFilter },
+          { durationHoure: durationFilter }
+        ];
       }
 
       if (filters.minRating) {
-        query.rating = { $gte: parseFloat(filters.minRating) };
+        query.rating = { $gte: filters.minRating };
       }
 
       if (filters.search) {
         query.$or = [
           { name: { $regex: filters.search, $options: 'i' } },
-          { 'shopId.name': { $regex: filters.search, $options: 'i' } },
+          { description: { $regex: filters.search, $options: 'i' } }
         ];
       }
 
       if (filters.nearMe && filters.lat && filters.lng) {
-        const maxDistance = 10000; // Default max distance in meters
+        const maxDistance = 10000; 
         query['shopId.location'] = {
           $near: {
             $geometry: {
               type: 'Point',
-              coordinates: [parseFloat(filters.lng), parseFloat(filters.lat)]
+              coordinates: [filters.lng, filters.lat]
             },
             $maxDistance: maxDistance
           }
         };
       }
 
-      const page = parseInt(filters.page) || 1;
-      const pageSize = parseInt(filters.pageSize) || 9;
+      const page = filters.page || 1;
+      const pageSize = filters.pageSize || 9;
       const skip = (page - 1) * pageSize;
 
       const [services, total] = await Promise.all([
@@ -123,16 +127,16 @@ export class ServiceRepository {
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(pageSize),
-        Service.countDocuments(query),
+        Service.countDocuments(query)
       ]);
 
-      console.log(`Found ${services.length} services, total: ${total}`);
       return { data: services, total };
     } catch (error) {
       console.error('❌ Repository error:', error);
       throw error;
     }
   }
+
 
   async getServicesNearLocation(lat: number, lng: number, maxDistance: number = 10000): Promise<ServiceDocument[]> {
     return await Service.find({
