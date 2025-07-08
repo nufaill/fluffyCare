@@ -38,7 +38,7 @@ interface ServiceFormData {
   petTypeIds: string[];
   price: string;
   durationHoure: string;
-  image?: File | string;
+  image?: string; // Changed to string | undefined to avoid File type issues
 }
 
 interface ValidationErrors {
@@ -115,14 +115,6 @@ const validateForm = (data: ServiceFormData): ValidationErrors => {
     errors.durationHoure = "Duration must be a number";
   } else if (duration < 0.25) {
     errors.durationHoure = "Duration must be at least 0.25 hours";
-  }
-
-  if (data.image instanceof File) {
-    if (data.image.size > 5 * 1024 * 1024) {
-      errors.image = "Image size must be less than 5MB";
-    } else if (!data.image.type.startsWith("image/")) {
-      errors.image = "Please select a valid image file";
-    }
   }
 
   return errors;
@@ -251,7 +243,7 @@ function StatusToggle({
           className={
             isActive
               ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-              : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+              : "bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300"
           }
         >
           {isActive ? "Active" : "Inactive"}
@@ -279,11 +271,12 @@ function ServiceForm({
     petTypeIds: initialData?.petTypeIds || [],
     price: initialData?.price || "",
     durationHoure: initialData?.durationHoure || "",
-    image: initialData?.image,
+    image: initialData?.image || undefined,
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [petTypes, setPetTypes] = useState<PetType[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
 
@@ -322,14 +315,14 @@ function ServiceForm({
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, image: "Image size must be less than 5MB" }));
+        setErrors((prev) => ({ ...prev, image: "Image size must be less than 5MB"}));
         return;
       }
       if (!file.type.startsWith("image/")) {
         setErrors((prev) => ({ ...prev, image: "Please select a valid image file" }));
         return;
       }
-      setFormData((prev) => ({ ...prev, image: file }));
+      setSelectedFile(file);
       setErrors((prev) => ({ ...prev, image: undefined }));
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -341,6 +334,7 @@ function ServiceForm({
       reader.readAsDataURL(file);
     } else {
       setImagePreview(null);
+      setSelectedFile(null);
       setFormData((prev) => ({ ...prev, image: undefined }));
     }
   };
@@ -355,9 +349,9 @@ function ServiceForm({
 
     setIsSubmitting(true);
     try {
-      let imageUrl: string | undefined = typeof formData.image === "string" ? formData.image : undefined;
-      if (formData.image instanceof File) {
-        imageUrl = await handleImageUpload(formData.image);
+      let imageUrl: string | undefined = formData.image;
+      if (selectedFile) {
+        imageUrl = await handleImageUpload(selectedFile);
         if (!imageUrl) {
           setErrors((prev) => ({ ...prev, image: "Failed to upload image" }));
           setIsSubmitting(false);
@@ -367,7 +361,7 @@ function ServiceForm({
       await onSubmit({ ...formData, image: imageUrl });
     } catch (error) {
       console.error("Error submitting form:", error);
-      setErrors((prev) => ({ ...prev, image: "Failed to process form" }));
+      setErrors((prev) => ({ ...prev, form: "Failed to process form" }));
     } finally {
       setIsSubmitting(false);
     }
@@ -452,8 +446,6 @@ function ServiceForm({
               <Label htmlFor="price" className="flex items-center gap-1 text-gray-700 dark:text-gray-300">
                 <DollarSign className="h-4 w-4" />
                 Price (₹) *
-……
-
               </Label>
               <Input
                 id="price"
@@ -519,6 +511,7 @@ function ServiceForm({
                   size="sm"
                   onClick={() => {
                     setImagePreview(null);
+                    setSelectedFile(null);
                     setFormData((prev) => ({ ...prev, image: undefined }));
                   }}
                   className="text-destructive hover:text-destructive"
@@ -626,7 +619,7 @@ export default function Services() {
         petTypeIds: data.petTypeIds,
         price: Number.parseFloat(data.price),
         durationHoure: Number.parseFloat(data.durationHoure),
-        image: typeof data.image === "string" ? data.image : data.image ? await handleImageUpload(data.image) : undefined,
+        image: data.image,
       };
       const newService = await serviceService.createService(serviceData);
       setServices((prev) => [...prev, newService]);
@@ -641,13 +634,6 @@ export default function Services() {
     if (!editingService) return;
 
     try {
-      let imageUrl: string | undefined = typeof data.image === "string" ? data.image : undefined;
-      if (data.image instanceof File) {
-        imageUrl = await handleImageUpload(data.image);
-        if (!imageUrl) {
-          throw new Error("Failed to upload image");
-        }
-      }
       const updatedService = await serviceService.updateService(editingService._id, {
         name: data.name,
         description: data.description,
@@ -655,7 +641,7 @@ export default function Services() {
         petTypeIds: data.petTypeIds,
         price: Number.parseFloat(data.price),
         durationHoure: Number.parseFloat(data.durationHoure),
-        image: imageUrl,
+        image: data.image,
       } as UpdateServiceData);
       setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));
       setEditingService(null);
@@ -701,7 +687,7 @@ export default function Services() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3 text-gray-900 dark:text-gray-100">
-              <div className="p-2 bg-black dark:bg-white rounded-lg">
+              <div className="p-2 bg-black dark:bg-gray-200 rounded-lg">
                 <PawPrint className="h-6 w-6 text-white dark:text-black" />
               </div>
               Services Management
@@ -719,7 +705,7 @@ export default function Services() {
         </div>
 
         {successMessage && (
-          <Alert className="border-green-200 bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+          <Alert className="border-green-600 bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-400">
             <CheckCircle2 className="h-4 w-4" />
             <AlertDescription>{successMessage}</AlertDescription>
           </Alert>
@@ -886,7 +872,7 @@ export default function Services() {
                             <StatusToggle isActive={service.isActive} onToggle={() => handleToggleStatus(service._id)} />
                           </div>
                           <Badge className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                            {serviceTypes.find((st) => st._id === service.serviceTypeId._id)?.name || "Unknown"}
+                            {serviceTypes.find((st) => st._id === service.serviceTypeId)?.name || "Unknown"}
                           </Badge>
                         </div>
                         <div className="space-y-2 text-sm">
@@ -907,10 +893,10 @@ export default function Services() {
                           <div className="flex flex-wrap gap-1">
                             {service.petTypeIds.length > 0 ? (
                               service.petTypeIds.map((petTypeId) => {
-                                const petType = petTypes.find((pt) => pt._id === petTypeId._id);
+                                const petType = petTypes.find((pt) => pt._id === petTypeId);
                                 return (
                                   <Badge
-                                    key={petType?._id}
+                                    key={petTypeId}
                                     variant="secondary"
                                     className="bg-primary/10 text-primary hover:bg-primary/20"
                                   >
