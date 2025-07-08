@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/Badge"
 import { Switch } from "@/components/ui/switch"
 import { Table } from "@/components/ui/Table"
+import { Pagination } from "@/components/ui/Pagination"
 import AdminSidebar from "@/components/admin/Sidebar"
 import AdminNavbar from "@/components/admin/Navbar"
 import { AddItemForm } from "@/components/admin/add-item-form"
@@ -21,8 +22,6 @@ interface ServiceType {
   updatedAt: string
 }
 
-
-
 export default function ServiceCategoryPage() {
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([])
   const [searchTerm, setSearchTerm] = useState<string>("")
@@ -31,8 +30,10 @@ export default function ServiceCategoryPage() {
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState<string>("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
-  // Fetch service types on component mount
+  
   useEffect(() => {
     fetchServiceTypes()
   }, [])
@@ -64,10 +65,10 @@ export default function ServiceCategoryPage() {
       const response = await createServiceType({ name })
       if (response.success) {
         setServiceTypes((prev) => [response.data, ...prev])
+        setCurrentPage(1) 
       }
     } catch (error: any) {
       console.error('Failed to create service type:', error)
-      // Toast is already handled in service
     }
   }
 
@@ -83,7 +84,6 @@ export default function ServiceCategoryPage() {
       }
     } catch (error: any) {
       console.error('Failed to update service type status:', error)
-      // Toast is already handled in service
     }
   }
 
@@ -108,7 +108,6 @@ export default function ServiceCategoryPage() {
       }
     } catch (error: any) {
       console.error('Failed to update service type:', error)
-      // Toast is already handled in service
     }
   }
 
@@ -122,10 +121,21 @@ export default function ServiceCategoryPage() {
     setSortOrder(order)
   }
 
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    setCurrentPage(page)
+    if (newPageSize) {
+      setPageSize(newPageSize)
+    }
+  }
+
   const statsData = [
     { label: "Active Service Types", value: activeServiceTypes, color: "text-green-600 dark:text-green-400" },
     { label: "Blocked Service Types", value: blockedServiceTypes, color: "text-red-600 dark:text-red-400" },
   ]
+
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedServiceTypes = filteredServiceTypes.slice(startIndex, endIndex)
 
   if (loading) {
     return (
@@ -144,7 +154,6 @@ export default function ServiceCategoryPage() {
       <AdminNavbar userName="NUFAIL" onSearch={setSearchTerm} />
 
       <main className="ml-64 pt-16 p-6 space-y-6">
-        {/* Page Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center space-x-3">
             <div className="p-3 bg-black dark:bg-white rounded-lg">
@@ -156,7 +165,6 @@ export default function ServiceCategoryPage() {
             </div>
           </div>
         </div>
-        {/* Add Service Type Section */}
         <AddItemForm
           title="Add New Service Type"
           placeholder="Enter service type name (e.g., Grooming, Training, Massage)"
@@ -164,7 +172,6 @@ export default function ServiceCategoryPage() {
           icon={<PawPrint className="h-4 w-4 text-white dark:text-black" />}
         />
 
-        {/* Search and Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-4">
@@ -304,7 +311,7 @@ export default function ServiceCategoryPage() {
                   ),
                 },
               ]}
-              data={filteredServiceTypes}
+              data={paginatedServiceTypes}
               rowKey="_id"
               sortBy={sortBy}
               sortOrder={sortOrder}
@@ -313,6 +320,20 @@ export default function ServiceCategoryPage() {
             />
           </CardContent>
         </Card>
+            <Pagination
+              current={currentPage}
+              total={filteredServiceTypes.length}
+              pageSize={pageSize}
+              onChange={handlePageChange}
+              showSizeChanger={true}
+              showQuickJumper={true}
+              showTotal={(total, range) => (
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Showing {range[0]} to {range[1]} of {total} entries
+                </span>
+              )}
+              pageSizeOptions={[10, 20, 50, 100]}
+            />
       </main>
     </div>
   )

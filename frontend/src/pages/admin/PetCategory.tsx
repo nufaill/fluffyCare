@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/Badge"
 import { Switch } from "@/components/ui/switch"
 import { Table } from "@/components/ui/Table"
+import { Pagination } from "@/components/ui/Pagination"
 import AdminSidebar from "@/components/admin/Sidebar"
 import AdminNavbar from "@/components/admin/Navbar"
 import { AddItemForm } from "@/components/admin/add-item-form"
@@ -21,8 +22,6 @@ interface PetType {
   updatedAt: string
 }
 
-
-
 export default function PetCategoryPage() {
   const [petTypes, setPetTypes] = useState<PetType[]>([])
   const [searchTerm, setSearchTerm] = useState<string>("")
@@ -31,6 +30,8 @@ export default function PetCategoryPage() {
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState<string>("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   // Fetch pet types on component mount
   useEffect(() => {
@@ -64,10 +65,10 @@ export default function PetCategoryPage() {
       const response = await createPetType({ name })
       if (response.success) {
         setPetTypes((prev) => [response.data, ...prev])
+        setCurrentPage(1) 
       }
     } catch (error: any) {
       console.error('Failed to create pet type:', error)
-      // Toast is already handled in service
     }
   }
 
@@ -83,7 +84,6 @@ export default function PetCategoryPage() {
       }
     } catch (error: any) {
       console.error('Failed to update pet type status:', error)
-      // Toast is already handled in service
     }
   }
 
@@ -108,7 +108,6 @@ export default function PetCategoryPage() {
       }
     } catch (error: any) {
       console.error('Failed to update pet type:', error)
-      // Toast is already handled in service
     }
   }
 
@@ -122,10 +121,21 @@ export default function PetCategoryPage() {
     setSortOrder(order)
   }
 
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    setCurrentPage(page)
+    if (newPageSize) {
+      setPageSize(newPageSize)
+    }
+  }
+
   const statsData = [
     { label: "Active Categories", value: activePetTypes, color: "text-green-600 dark:text-green-400" },
     { label: "Blocked Categories", value: blockedPetTypes, color: "text-red-600 dark:text-red-400" },
   ]
+
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedPetTypes = filteredPetTypes.slice(startIndex, endIndex)
 
   if (loading) {
     return (
@@ -174,7 +184,9 @@ export default function PetCategoryPage() {
                   placeholder="Search categories..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  className="pl-10 bg-white
+
+ dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </CardContent>
@@ -304,7 +316,7 @@ export default function PetCategoryPage() {
                   ),
                 },
               ]}
-              data={filteredPetTypes}
+              data={paginatedPetTypes}
               rowKey="_id"
               sortBy={sortBy}
               sortOrder={sortOrder}
@@ -313,6 +325,20 @@ export default function PetCategoryPage() {
             />
           </CardContent>
         </Card>
+            <Pagination
+              current={currentPage}
+              total={filteredPetTypes.length}
+              pageSize={pageSize}
+              onChange={handlePageChange}
+              showSizeChanger={true}
+              showQuickJumper={true}
+              showTotal={(total, range) => (
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  Showing {range[0]} to {range[1]} of {total} entries
+                </span>
+              )}
+              pageSizeOptions={[10, 20, 50, 100]}
+            />
       </main>
     </div>
   )
