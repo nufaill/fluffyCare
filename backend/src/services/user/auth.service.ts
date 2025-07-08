@@ -188,16 +188,11 @@ export class AuthService {
       console.log(`❌ No pending verification found for ${email}`);
       throw new CustomError('No pending verification found for this email. Please start registration again.', HTTP_STATUS.BAD_REQUEST || 400);
     }
-
-    console.log(`✅ Found existing OTP record for ${email}`);
-
-    // Generate new OTP
     const otp = generateOtp();
-    console.log(`🔢 Generated new OTP: ${otp} for ${email}`); // Remove this in production
+    console.log(`🔢 Generated new OTP: ${otp} for ${email}`); 
 
     await this.otpRepository.createOtp(email, otp, existingOtp.userData);
 
-    // Send new OTP email
     const userName = existingOtp.userData?.fullName || existingOtp.userData?.name || undefined;
     await sendOtpEmail(email, otp, userName);
 
@@ -366,79 +361,6 @@ export class AuthService {
       throw new CustomError('Token refresh failed', HTTP_STATUS.UNAUTHORIZED || 401);
     }
   }
-
-  // Static method for Google login (alternative approach)
-  // static async googleLogin(credential: string): Promise<AuthResponse> {
-  //   try {
-  //     console.log("🔧 [AuthService Static] Starting Google authentication...");
-
-  //     // Import services dynamically
-  //     const { GoogleAuthService } = await import('../googleAuth/googleService');
-  //     const { UserRepository } = await import('../../repositories/userRepository');
-  //     const { JwtService } = await import('../jwt/jwtService');
-
-  //     const googleService = new GoogleAuthService();
-  //     const userRepository = new UserRepository();
-  //     const jwtService = new JwtService();
-
-  //     // Verify the Google ID token
-  //     const googleUser = await googleService.verifyIdToken(credential);
-  //     console.log("✅ [AuthService Static] Google token verified");
-
-  //     const normalizedEmail = googleUser.email.trim().toLowerCase();
-
-  //     let user = await userRepository.findByEmail(normalizedEmail);
-
-  //     if (!user) {
-  //       console.log("📝 [AuthService Static] Creating new user from Google data...");
-
-  //       const userData: CreateUserData = {
-  //         fullName: googleUser.name,
-  //         email: normalizedEmail,
-  //         phone: '',
-  //         password: '',
-  //         profileImage: googleUser.picture || undefined,
-  //         isGoogleUser: true,
-  //         googleId: googleUser.id,
-  //         isActive: true,
-  //       };
-
-  //       user = await userRepository.createUser(userData);
-  //       console.log("✅ [AuthService Static] New Google user created");
-  //     } else {
-  //       console.log("✅ [AuthService Static] Existing user found");
-  //     }
-
-  //     if (!user.isActive) {
-  //       throw new CustomError('Account is inactive', HTTP_STATUS.FORBIDDEN || 403);
-  //     }
-
-
-  //     console.log("🎟️ [AuthService Static] Generating JWT tokens...");
-  //     const tokens = jwtService.generateTokens({
-  //       id: user._id.toString(),
-  //       email: user.email
-  //     });
-
-  //     return {
-  //       success: true,
-  //       user: {
-  //         id: user._id.toString(),
-  //         email: user.email,
-  //         fullName: user.fullName,
-  //         profileImage: user.profileImage,
-  //         location: user.location,
-  //       },
-  //       tokens,
-  //     };
-  //   } catch (error) {
-  //     console.error("❌ [AuthService Static] Google login error:", error);
-  //     if (error instanceof CustomError) {
-  //       throw error;
-  //     }
-  //     throw new CustomError('Google authentication failed', HTTP_STATUS.BAD_REQUEST || 400);
-  //   }
-  // }
 
   
   async sendResetLink(email: string) {

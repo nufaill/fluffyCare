@@ -36,3 +36,5 @@ otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 otpSchema.index({ email: 1 });
 
 export const OtpModel = mongoose.model<IOtp>('Otp', otpSchema);
+
+export { IOtp };

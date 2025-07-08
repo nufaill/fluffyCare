@@ -12,7 +12,6 @@ export class AuthMiddleware {
     res: Response,
     next: NextFunction
   ) => {
-    console.log(role)
     try {
       let accessToken="";
       if(role === "user"){
@@ -22,8 +21,6 @@ export class AuthMiddleware {
       }else{
         accessToken = req.cookies.adminAccessToken
       }
-
-      console.log(accessToken)
 
       const user = this.jwtService.decodeAccessToken(accessToken);
       if (!user) {

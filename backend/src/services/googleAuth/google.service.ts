@@ -15,7 +15,6 @@ export class GoogleAuthService {
 
   async verifyIdToken(idToken: string): Promise<GoogleUserInfo> {
     try {
-      console.log("🔧 [GoogleService] Verifying Google ID token...");
 
       const ticket = await this.client.verifyIdToken({
         idToken,
@@ -31,8 +30,6 @@ export class GoogleAuthService {
         throw new Error('Missing required Google profile data');
       }
 
-      console.log("✅ [GoogleService] Token verified successfully");
-
       return {
         id: payload.sub,
         email: payload.email,
@@ -47,12 +44,10 @@ export class GoogleAuthService {
   }
 }
 
-// Standalone function for verification (alternative approach)
 export async function verifyGoogleToken(idToken: string): Promise<GoogleUserInfo> {
   const client = new OAuth2Client(config.google.CLIENT_ID);
 
   try {
-    console.log("🔧 [GoogleService] Verifying token with standalone function...");
 
     const ticket = await client.verifyIdToken({
       idToken,
@@ -67,8 +62,6 @@ export async function verifyGoogleToken(idToken: string): Promise<GoogleUserInfo
     if (!payload.email || !payload.name) {
       throw new Error('Missing required Google profile data');
     }
-
-    console.log("✅ [GoogleService] Standalone verification successful");
 
     return {
       id: payload.sub,

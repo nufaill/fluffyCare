@@ -73,23 +73,12 @@ export class AuthService {
   // REGISTER SHOP WITH OTP
   async register(shopData: ShopRegisterData): Promise<{ email: string }> {
     const { email, password, location, ...otherData } = shopData;
-
-    console.log(`🔍 [ShopAuthService] Checking if shop exists: ${email}`);
-
-    // Validate GeoJSON location
     this.validateGeoLocation(location);
-    console.log(`✅ [ShopAuthService] Location validation passed:`, location);
-
-    // Check if shop already exists
     const existingShop = await this.shopRepository.findByEmail(email);
     if (existingShop) {
       console.log(`❌ [ShopAuthService] Shop already exists: ${email}`);
       throw new CustomError('Shop with this email already exists', HTTP_STATUS.CONFLICT);
     }
-
-    console.log(`✅ [ShopAuthService] Shop doesn't exist, proceeding with OTP generation`);
-
-    // Hash password before storing in temporary data
     const hashedPassword = await bcrypt.hash(password, this.saltRounds);
     const tempShopData: CreateShopData = {
       ...otherData,
@@ -103,13 +92,10 @@ export class AuthService {
       isVerified: false,
     };
 
-    // Generate and send OTP
     const otp = generateOtp();
     console.log(`🔢 [ShopAuthService] Generated OTP: ${otp} for ${email}`);
-
     await this.otpRepository.createOtp(email, otp, tempShopData);
 
-    // Send OTP email
     const shopName = shopData.name;
     await sendOtpEmail(email, otp, shopName);
 
@@ -138,11 +124,8 @@ export class AuthService {
     }
 
     console.log(`✅ [ShopAuthService] OTP verified successfully for ${email}`);
-
-    // Create shop with the stored data
     const shopData = verificationResult.userData as CreateShopData;
     
-    // Ensure location is in correct GeoJSON format
     if (shopData.location) {
       this.validateGeoLocation(shopData.location);
     }
@@ -202,7 +185,7 @@ export class AuthService {
     console.log(`✅ [ShopAuthService] Found existing OTP record for ${email}`);
 
     // Validate existing location data
-    const userData = existingOtp.userData as CreateShopData;
+    const userData = existingOtp.userData as unknown as CreateShopData;
     if (userData.location) {
       this.validateGeoLocation(userData.location);
     }

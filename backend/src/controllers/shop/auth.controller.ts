@@ -24,9 +24,6 @@ export class ShopAuthController {
   // Register shop 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("📥 [ShopAuthController] Registration request received");
-
-      // Validate required fields
       const { location, email, password, name, phone, city, streetAddress, certificateUrl } = req.body;
 
       if (!email || !password || !name || !phone || !city || !streetAddress || !certificateUrl) {
@@ -36,8 +33,6 @@ export class ShopAuthController {
         });
         return;
       }
-
-      // Validate GeoJSON location
       if (!validateGeoJSONPoint(location)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
@@ -75,8 +70,6 @@ export class ShopAuthController {
   // Verify OTP and complete registration
   public verifyOtp = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [ShopAuthController] OTP verification request received");
-
       const { email, otp } = req.body;
 
       if (!email || !otp) {
@@ -119,8 +112,6 @@ export class ShopAuthController {
   // Resend OTP
   public resendOtp = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [ShopAuthController] Resend OTP request received");
-
       const { email } = req.body;
 
       if (!email) {
@@ -158,8 +149,6 @@ export class ShopAuthController {
   // Shop login
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [ShopAuthController] Login request received");
-
       const { email, password } = req.body;
 
       if (!email || !password) {
@@ -172,8 +161,6 @@ export class ShopAuthController {
       
 
       const result = await this.authService.login({ email, password });
-
-      console.log(result)
 
       if (!result.shop.isVerified) {
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
@@ -238,7 +225,6 @@ export class ShopAuthController {
         return;
       }
 
-      console.log("🔧 [ShopAuthController] Refreshing token...");
       const newAccessToken = await this.authService.refreshToken(refreshToken);
 
       res.status(HTTP_STATUS.OK).json({
@@ -267,7 +253,6 @@ export class ShopAuthController {
   // Send password reset link
   public sendResetLink = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      console.log("🔧 [ShopAuthController] Send reset link request received");
 
       const { email } = req.body;
 
@@ -306,7 +291,6 @@ export class ShopAuthController {
   // Reset password
   public resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      console.log("🔧 [ShopAuthController] Reset password request received");
 
       const { token, password, confirmPassword } = req.body;
 
@@ -345,8 +329,6 @@ export class ShopAuthController {
   // Logout
   public logout = async (_req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [ShopAuthController] Logout request received");
-
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: "Logged out successfully",

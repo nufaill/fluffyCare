@@ -14,12 +14,7 @@ export class AdminMiddleware {
     try {
       const authHeader = req.headers.authorization;
       
-      // Debug logging
-      console.log('🔍 [AdminMiddleware] Auth Header:', authHeader);
-      console.log('🔍 [AdminMiddleware] All Headers:', req.headers);
-      
       if (!authHeader) {
-        console.log('❌ [AdminMiddleware] No authorization header found');
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
           success: false,
           message: 'Authorization header is required',
@@ -28,7 +23,6 @@ export class AdminMiddleware {
       }
 
       if (!authHeader.startsWith('Bearer ')) {
-        console.log('❌ [AdminMiddleware] Invalid authorization header format');
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid authorization header format. Use: Bearer <token>',
@@ -37,13 +31,10 @@ export class AdminMiddleware {
       }
 
       const token = authHeader.substring(7); 
-      console.log('🔍 [AdminMiddleware] Extracted token:', token.substring(0, 20) + '...');
 
       const payload = this.jwtService.verifyAccessToken(token);
-      console.log('🔍 [AdminMiddleware] Token payload:', payload);
       
       if (!payload || typeof payload === 'string') {
-        console.log('❌ [AdminMiddleware] Invalid token payload');
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid or expired access token',
@@ -54,7 +45,6 @@ export class AdminMiddleware {
       // Handle both userId and id fields for compatibility
       const adminId = payload.userId || payload.id;
       if (!adminId) {
-        console.log('❌ [AdminMiddleware] No user ID found in token payload');
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
           success: false,
           message: 'Invalid token payload structure',
@@ -66,8 +56,6 @@ export class AdminMiddleware {
         adminId: adminId,
         email: payload.email,
       };
-
-      console.log('✅ [AdminMiddleware] Authentication successful for admin:', req.admin);
       next();
     } catch (error:any) {
       console.error('❌ [AdminMiddleware] Authentication error:', error);

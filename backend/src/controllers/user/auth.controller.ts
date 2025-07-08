@@ -13,8 +13,6 @@ export class AuthController {
   constructor(private authService: AuthService) { }
   register = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [AuthController] Registration request received");
-
       const result = await this.authService.register(req.body);
 
       res.status(HTTP_STATUS.OK || 200).json({
@@ -43,8 +41,6 @@ export class AuthController {
 
   verifyOtp = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [AuthController] OTP verification request received");
-
       const { email, otp } = req.body;
 
       if (!email || !otp) {
@@ -84,8 +80,6 @@ export class AuthController {
 
   resendOtp = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [AuthController] Resend OTP request received");
-
       const { email } = req.body;
 
       if (!email) {
@@ -122,8 +116,6 @@ export class AuthController {
 
   login = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [AuthController] Login request received");
-
       const result = await this.authService.login(req.body);
 
       setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken,"user");
@@ -163,8 +155,6 @@ export class AuthController {
         return;
       }
 
-      console.log("🔧 [AuthController] Processing Google authentication...");
-
       const result = await this.authService.googleLogin(credential);
 
       setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken,"user");
@@ -203,8 +193,6 @@ export class AuthController {
         });
         return;
       }
-
-      console.log("🔧 [AuthController] Refreshing token...");
       const newAccessToken = await this.authService.refreshToken(refreshToken);
 
       updateAccessTokenCookie(res, newAccessToken,'user');
@@ -232,8 +220,6 @@ export class AuthController {
   };
    sendResetLink=async(req: Request, res: Response, next: NextFunction) =>{
     try {
-      console.log("🔧 [AuthController] Send reset link request received");
-
       const { email } = req.body;
 
       if (!email) {
@@ -271,7 +257,6 @@ export class AuthController {
  
   resetPassword = async(req: Request, res: Response, next: NextFunction) =>{
     try {
-      console.log("🔧 [AuthController] Reset password request received");
 
       const { token, password, confirmPassword } = req.body;
 
@@ -309,7 +294,6 @@ export class AuthController {
 
   logout = async (req: Request, res: Response): Promise<void> => {
     try {
-      console.log("🔧 [AuthController] Logout request received");
 
       clearAuthCookies(res);
 

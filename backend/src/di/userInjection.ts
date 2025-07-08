@@ -1,6 +1,7 @@
 
 // userInjection.ts 
 import { UserController } from "../controllers/user/user.controller";
+import { ServiceController } from "../controllers/service/service.controller";
 import { AuthService } from "../services/user/auth.service";
 import { UserRepository } from "../repositories/userRepository";
 import { JwtService } from "../services/jwt/jwt.service";
@@ -11,11 +12,14 @@ import { AuthMiddleware } from 'middlewares/auth.middleware';
 import { PetController } from "../controllers/pet/pet.controller";
 import { PetService } from "../services/pet/pet.service";
 import { PetRepository } from "../repositories/petRepository";
+import { ServiceService } from "services/service/service.service";
+import { ServiceRepository } from "repositories/serviceRepository";
 
 // Initialize repositories
 const userRepository = new UserRepository();
 const otpRepository = new OtpRepository();
 const petRepository = new PetRepository();
+const serviceRepository = new ServiceRepository();
 
 // Initialize services
 const jwtService = new JwtService();
@@ -35,13 +39,18 @@ const authService = new AuthService(
   otpRepository
 );
 
+const serviceService = new ServiceService(serviceRepository);
+
+
 // Initialize controller with dependencies
 const injectedUserController = new UserController(userRepository);
 const petController = new PetController(petService);
+const injectedServiceController = new ServiceController(serviceService);
 
 // Export for route usage
 export const userDependencies = {
   userController: injectedUserController,
+  serviceController: injectedServiceController,
   authService,
   userRepository,
   jwtService,

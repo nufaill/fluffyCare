@@ -105,9 +105,7 @@ const AuthLogin: React.FC<AuthLoginProps> = ({
           icon: '🎉',
         });
       } else {
-        // Default behavior - simulate API call
         await new Promise(resolve => setTimeout(resolve, 2000));
-        console.log('Login Form Submitted:', formData);
 
         // Success toast
         toast.success('Login successful! Welcome back!', {

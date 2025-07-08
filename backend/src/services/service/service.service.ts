@@ -11,11 +11,11 @@ export class ServiceService {
     constructor(serviceRepository: ServiceRepository) {
         this.serviceRepository = serviceRepository;
     }
-    
+
     async createService(shopId: string, serviceData: Omit<CreateServiceData, 'shopId'>): Promise<ServiceDocument> {
         const { name, serviceTypeId, petTypeIds } = serviceData;
 
-       
+
         if (!Array.isArray(petTypeIds) || petTypeIds.length === 0) {
             throw new CustomError('At least one pet type must be selected', 400);
         }
@@ -37,7 +37,7 @@ export class ServiceService {
         });
         return newService;
     }
-    
+
     async getServiceByShopId(shopId: string): Promise<ServiceDocument[]> {
         return await this.serviceRepository.getServicesByShopId(shopId)
     }
@@ -49,7 +49,7 @@ export class ServiceService {
         }
         return service;
     }
-    
+
     async updateService(ServiceId: string, shopId: string, updateData: Partial<Omit<CreateServiceData, 'shopId'>>): Promise<ServiceDocument> {
         const existingService = await this.serviceRepository.getServiceById(ServiceId);
         if (!existingService) {
@@ -59,12 +59,12 @@ export class ServiceService {
             throw new CustomError('Not authorized to update this Service', 403);
         }
 
-        
+
         if (updateData.petTypeIds) {
             if (!Array.isArray(updateData.petTypeIds) || updateData.petTypeIds.length === 0) {
                 throw new CustomError('At least one pet type must be selected', 400);
             }
-            
+
             const invalidIds = updateData.petTypeIds.filter(id => !/^[a-f\d]{24}$/i.test(id));
             if (invalidIds.length > 0) {
                 throw new CustomError('One or more pet type IDs are invalid', 400);
@@ -89,12 +89,26 @@ export class ServiceService {
 
         return updatedService;
     }
-    
+
     async getAllServiceTypes(): Promise<ServiceTypeDocument[]> {
         return await this.serviceRepository.getAllServiceTypes();
     }
-    
+
     async getAllPetTypes(): Promise<PetTypeDocument[]> {
         return await this.serviceRepository.getAllPetTypes();
     }
+    async getServiceByIdPublic(serviceId: string): Promise<ServiceDocument> {
+        const service = await this.serviceRepository.getServiceById(serviceId);
+        if (!service) {
+            throw new CustomError('Service not found', 404);
+        }
+        if (!service.isActive) {
+            throw new CustomError('Service not found', 404);
+        }
+
+        return service;
+    }
+    async getAllServices(filters: any = {}): Promise<ServiceDocument[]> {
+    return await this.serviceRepository.getAllServices(filters);
+}
 }

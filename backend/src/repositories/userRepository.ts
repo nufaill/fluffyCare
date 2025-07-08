@@ -6,9 +6,7 @@ import { Types } from 'mongoose';
 
 export class UserRepository {
   async findByEmail(email: string): Promise<UserDocument | null> {
-    console.log("🔍 Searching user by email:", email);
     const user = await User.findOne({ email });
-    console.log("📦 Found user:", user);
     return user;
   }
 
@@ -53,7 +51,6 @@ export class UserRepository {
     return !!user;
   }
   async setResetToken(email: string, token: string, expires: Date): Promise<UserDocument | null> {
-    console.log("🔧 [UserRepository] Setting reset token for email:", email);
     return await User.findOneAndUpdate(
       { email },
       {
@@ -65,7 +62,6 @@ export class UserRepository {
   }
 
   async findByResetToken(token: string): Promise<UserDocument | null> {
-    console.log("🔧 [UserRepository] Finding user by reset token");
     return await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: new Date() }
@@ -73,7 +69,6 @@ export class UserRepository {
   }
 
   async updatePasswordAndClearToken(userId: Types.ObjectId, hashedPassword: string): Promise<UserDocument | null> {
-    console.log("🔧 [UserRepository] Updating password and clearing reset token");
     return await User.findByIdAndUpdate(
       userId,
       {

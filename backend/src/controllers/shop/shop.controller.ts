@@ -192,9 +192,6 @@ export class ShopController {
         return;
       }
 
-
-      console.log(`🚫 [AdminShopController] Shop ${shopId} rejected. Reason: ${rejectionReason || 'No reason provided'}`);
-
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: 'Shop rejection processed successfully',

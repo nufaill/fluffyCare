@@ -66,8 +66,6 @@ export class JwtService implements ITokenService {
 
   verifyAccessToken(token: string): string | JwtPayload | null {
     try {
-      console.log("Inside verify access token", this._accessSecret);
-      console.log("TOKEN:", token);
       return jwt.verify(token, this._accessSecret) as JwtPayload;
     } catch (error) {
       console.error("Access token verification failed:", error);
@@ -77,7 +75,6 @@ export class JwtService implements ITokenService {
 
   verifyRefreshToken(token: string): string | JwtPayload | null {
     try {
-      console.log("TOKEN IN REFRESH TOKEN", token);
       return jwt.verify(token, this._accessSecret) as JwtPayload;
     } catch (error) {
       console.error("Refresh token verification failed:", error);

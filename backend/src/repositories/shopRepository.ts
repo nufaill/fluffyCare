@@ -27,7 +27,6 @@ export class ShopRepository {
     return !!shop;
   }
   async setResetToken(email: string, token: string, expires: Date): Promise<ShopDocument | null> {
-    console.log("🔧 [ShopRepository] Setting reset token for email:", email);
     return await Shop.findOneAndUpdate(
       { email },
       {
@@ -39,7 +38,6 @@ export class ShopRepository {
   }
 
   async findByResetToken(token: string): Promise<ShopDocument | null> {
-    console.log("🔧 [ShopRepository] Finding shop by reset token");
     return await Shop.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: new Date() }
@@ -47,7 +45,6 @@ export class ShopRepository {
   }
 
   async updatePasswordAndClearToken(shopId: Types.ObjectId, hashedPassword: string): Promise<ShopDocument | null> {
-    console.log("🔧 [ShopRepository] Updating password and clearing reset token");
     return await Shop.findByIdAndUpdate(
       shopId,
       {

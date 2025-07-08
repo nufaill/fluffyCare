@@ -11,6 +11,8 @@ import UserDetails from '@/pages/user/user-profile';
 import UserEdit from '@/pages/user/user-profile-edit';
 import PetDetails from '@/pages/user/pet-details';
 import Addpets from '@/pages/user/add-pet';
+import  {Services}  from "@/pages/user/service";
+// import { ServiceDetails } from "@/pages/user/serviceDetails";
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 
 const UserRoutes = () => {
@@ -55,6 +57,8 @@ const UserRoutes = () => {
       />
       
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
+      <Route path="/services" element={<Services />} />
+      {/* <Route path="/services" element={<ServiceDetails />} /> */}
 
       {/* Protected routes - require authentication */}
       <Route 

@@ -49,7 +49,7 @@ export class ServiceTypeService {
       throw new CustomError('Service type not found', 404);
     }
 
-    // Check if name is being changed and if new name already exists
+    
     if (name && name.trim() !== existingServiceType.name) {
       const nameExists = await this.serviceTypeRepository.checkServiceTypeExists(name, id);
       if (nameExists) {
