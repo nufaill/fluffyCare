@@ -4,11 +4,12 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import "reflect-metadata";
 import { initializeDatabase } from "@config/connectDB";
-import authRoutes from './routes/auth.route'; 
-import userRoutes from './routes/user.route'; 
+import authRoutes from './routes/auth.route';
+import userRoutes from './routes/user.route';
 import shopRoutes from './routes/shop.route';
 import adminRoutes from './routes/admin.route';
-// import { swaggerUi, swaggerSpec } from './config/swagger';
+import { swaggerUi, swaggerSpec } from './config/swagger';
+import { morganLogger } from "./config/logs";
 
 dotenv.config();
 
@@ -19,11 +20,20 @@ async function startApp(): Promise<void> {
 
   app.use(cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true, 
+    credentials: true,
   }));
 
   app.use(express.json());
   app.use(cookieParser());
+
+
+  app.use(morganLogger);
+
+  if (process.env.NODE_ENV !== "production") {
+    const morgan = await import("morgan");
+    app.use(morgan.default("dev"));
+  }
+
 
   // Routes
   app.use("/auth", authRoutes);
@@ -31,7 +41,7 @@ async function startApp(): Promise<void> {
   app.use("/shop", shopRoutes);
   app.use("/admin", adminRoutes);
 
-  // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {

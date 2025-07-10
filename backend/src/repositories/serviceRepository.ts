@@ -20,10 +20,20 @@ export class ServiceRepository {
   }
 
   async getServiceById(serviceId: string): Promise<ServiceDocument | null> {
-    return await Service.findById(serviceId)
-      .populate('serviceTypeId', 'name')
-      .populate('petTypeIds', 'name')
-      .populate('shopId', 'name email logo phone city streetAddress location');
+    try {
+      console.log(`ServiceRepository: Querying service with ID: ${serviceId}`);
+      const service = await Service.findById(serviceId)
+        .populate('serviceTypeId', 'name')
+        .populate('petTypeIds', 'name')
+        .populate('shopId', 'name email logo phone city streetAddress location');
+      if (!service) {
+        console.log(`ServiceRepository: No service found for ID: ${serviceId}`);
+      }
+      return service;
+    } catch (error:any) {
+      console.error(`Error in getServiceById [Repository]: ${error.message}`, error);
+      throw error;
+    }
   }
 
   async updateService(serviceId: string, updateData: Partial<CreateServiceData>): Promise<ServiceDocument | null> {
@@ -103,7 +113,7 @@ export class ServiceRepository {
       }
 
       if (filters.nearMe && filters.lat && filters.lng) {
-        const maxDistance = 10000; 
+        const maxDistance = 10000;
         query['shopId.location'] = {
           $near: {
             $geometry: {

@@ -1,15 +1,14 @@
-// src/services/userService/userService.ts
 import Useraxios from "@/api/user.axios";
 import type { UserDocument, UserUpdatePayload } from "@/types/user.type";
 import type { PetDocument, CreatePetData } from "@/types/pet.type";
 
-  export interface PetType {
-    _id:string
-    name: string;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  }
+export interface PetType {
+  _id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export const userService = {
   async getUser(userId: string): Promise<UserDocument> {
@@ -18,6 +17,7 @@ export const userService = {
 
     return {
       ...data,
+      id: data._id,
       createdAt: new Date(data.createdAt),
       updatedAt: new Date(data.updatedAt),
     };
@@ -29,34 +29,65 @@ export const userService = {
 
     return {
       ...updated,
+      id: updated._id.toString(),
       createdAt: new Date(updated.createdAt),
       updatedAt: new Date(updated.updatedAt),
     };
   },
 
-   async createPet(petData: CreatePetData): Promise<PetDocument> {
+  async createPet(petData: CreatePetData): Promise<PetDocument> {
     const res = await Useraxios.post('/add-pets', petData);
-    return res.data.data;
+    const data = res.data.data;
+    return {
+      ...data,
+      id: data._id.toString(),
+    };
   },
 
   async getPetsByUserId(userId: string): Promise<PetDocument[]> {
     const res = await Useraxios.get(`/pets/${userId}`);
-    return res.data.data;
+    return res.data.data.map((pet: any) => ({
+      ...pet,
+      id: pet._id.toString(),
+    }));
   },
 
   async getPetById(petId: string): Promise<PetDocument> {
+    console.log('Fetching pet with ID:', petId);
     const res = await Useraxios.get(`/pets/${petId}`);
-    return res.data.data;
+    console.log('Pet API response:', res.data);
+    let data = res.data.data;
+    if (Array.isArray(data)) {
+      data = data[0];
+    }
+    console.log('......daata,,,,,,', data);
+    return {
+      ...data,
+      id: data._id.toString(),
+    };
   },
 
   async updatePet(petId: string, updateData: Partial<CreatePetData>): Promise<PetDocument> {
-    const res = await Useraxios.put(`/pets/${petId}`, updateData);
-    return res.data.data;
+    console.log('Updating pet with ID:', petId, 'Data:', updateData);
+    try {
+      const res = await Useraxios.put(`/pets/${petId}`, updateData);
+      console.log('Update pet response:', res.data);
+      const data = res.data.data;
+      return {
+        ...data,
+        id: data._id.toString(),
+      };
+    } catch (error: any) {
+      console.error('Update pet error:', error.response?.data || error.message);
+      throw error;
+    }
   },
 
-  async getAllPetTypes():Promise<PetType[]>{
+  async getAllPetTypes(): Promise<PetType[]> {
     const res = await Useraxios.get('/pet-types');
-    return res.data.data 
+    return res.data.data.map((type: any) => ({
+      ...type,
+      id: type._id.toString(),
+    }));
   }
-
 };

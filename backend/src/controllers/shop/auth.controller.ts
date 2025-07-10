@@ -5,7 +5,6 @@ import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../../shared/cons
 import { CustomError } from "../../util/CustomerError";
 import { setAuthCookies } from "util/cookie-helper";
 
-// GeoJSON validation helper
 const validateGeoJSONPoint = (location: any): boolean => {
   if (!location || typeof location !== 'object') return false;
   if (location.type !== 'Point') return false;
@@ -67,7 +66,6 @@ export class ShopAuthController {
     }
   };
 
-  // Verify OTP and complete registration
   public verifyOtp = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, otp } = req.body;
@@ -109,7 +107,6 @@ export class ShopAuthController {
     }
   };
 
-  // Resend OTP
   public resendOtp = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email } = req.body;
@@ -250,7 +247,6 @@ export class ShopAuthController {
     }
   };
 
-  // Send password reset link
   public sendResetLink = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
 

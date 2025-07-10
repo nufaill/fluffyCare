@@ -4,7 +4,6 @@ import { AdminDocument } from '../types/admin.types';
 
 export class AdminRepository {
   
-  // Find admin by email
   async findByEmail(email: string): Promise<AdminDocument | null> {
     try {
       return await Admin.findOne({ email }).exec();
@@ -14,7 +13,6 @@ export class AdminRepository {
     }
   }
 
-  // Find admin by ID
   async findById(id: string): Promise<AdminDocument | null> {
     try {
       return await Admin.findById(id).exec();

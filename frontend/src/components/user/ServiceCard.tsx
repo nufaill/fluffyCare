@@ -13,7 +13,7 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
   const navigate = useNavigate();
 
   const handleViewDetails = () => {
-    navigate(`/service/${service._id}`);
+    navigate(`/services/${service._id}`);
   };
 
   const formatPetTypes = (petTypes: any) => {
@@ -164,7 +164,7 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
           onClick={handleViewDetails}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
         >
-          View Details
+          Book Now
         </Button>
       </CardFooter>
     </Card>

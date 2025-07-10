@@ -64,20 +64,21 @@ export class ServiceController {
         }
     };
 
-    getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const { serviceId } = req.params;
-            const service = await this.serviceService.getServiceByIdPublic(serviceId);
-
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                message: SUCCESS_MESSAGES.DATA_RETRIEVED,
-                data: service
-            });
-        } catch (error) {
-            next(error);
-        }
-    };
+  async getServiceByIdPublic(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        const { serviceId } = req.params;
+        console.log(`Fetching service with ID: ${serviceId}`);
+        const service = await this.serviceService.getServiceByIdPublic(serviceId);
+        res.status(HTTP_STATUS.OK).json({
+            success: true,
+            message: SUCCESS_MESSAGES.DATA_RETRIEVED,
+            data: service
+        });
+    } catch (error: any) {
+        console.error(`Error in getServiceByIdPublic [Controller]: ${error.message}`, error);
+        next(error);
+    }
+}
 
     updateService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
@@ -177,28 +178,22 @@ export class ServiceController {
                 pageSize: parseInt(pageSize as string)
             };
 
-            // Pet types filter
             if (petTypeIds && typeof petTypeIds === 'string') {
                 filters.petTypeIds = petTypeIds;
             }
 
-            // Service types filter
             if (serviceTypeIds && typeof serviceTypeIds === 'string') {
                 filters.serviceTypeIds = serviceTypeIds;
             }
 
-            // Price range filter
             if (minPrice) filters.minPrice = parseFloat(minPrice as string);
             if (maxPrice) filters.maxPrice = parseFloat(maxPrice as string);
 
-            // Duration filter
             if (minDuration) filters.minDuration = parseInt(minDuration as string);
             if (maxDuration) filters.maxDuration = parseInt(maxDuration as string);
 
-            // Rating filter
             if (minRating) filters.minRating = parseFloat(minRating as string);
 
-            // Location filter
             if (nearMe === 'true') {
                 filters.nearMe = true;
                 if (req.query.lat && req.query.lng) {

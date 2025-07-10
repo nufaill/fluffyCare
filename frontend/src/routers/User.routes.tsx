@@ -11,8 +11,9 @@ import UserDetails from '@/pages/user/user-profile';
 import UserEdit from '@/pages/user/user-profile-edit';
 import PetDetails from '@/pages/user/pet-details';
 import Addpets from '@/pages/user/add-pet';
-import  {Services}  from "@/pages/user/service";
-// import { ServiceDetails } from "@/pages/user/serviceDetails";
+import { Services } from "@/pages/user/service";
+import EditPetPage from "@/pages/user/edit pet"
+import { ServiceDetails } from "@/pages/user/serviceDetails";
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 
 const UserRoutes = () => {
@@ -21,82 +22,89 @@ const UserRoutes = () => {
       {/* Public routes - accessible to all */}
       <Route path="/" element={<HomePage />} />
       <Route path="/about" element={<AboutPage />} />
-      
+
       {/* Public routes for unauthenticated users */}
-      <Route 
-        path="/login" 
+      <Route
+        path="/login"
         element={
           <PublicRoute userType="user">
             <Login />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/signup" 
+      <Route
+        path="/signup"
         element={
           <PublicRoute userType="user">
             <Signup />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/forgot-password" 
+      <Route
+        path="/forgot-password"
         element={
           <PublicRoute userType="user">
             <ForgotPassword />
           </PublicRoute>
-        } 
+        }
       />
-      <Route 
-        path="/reset-password" 
+      <Route
+        path="/reset-password"
         element={
           <PublicRoute userType="user">
             <ResetPassword />
           </PublicRoute>
-        } 
+        }
       />
-      
+
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
       <Route path="/services" element={<Services />} />
-      {/* <Route path="/services" element={<ServiceDetails />} /> */}
-
-      {/* Protected routes - require authentication */}
-      <Route 
-        path="/profile" 
+      <Route path="/services/:id" element={<ServiceDetails />} />
+            {/* Protected routes - require authentication */}
+      <Route
+        path="/profile"
         element={
           <PrivateRoute userType="user">
             <UserDetails />
           </PrivateRoute>
-        } 
+        }
       />
 
-      <Route 
-        path="/profile/update" 
+      <Route
+        path="/profile/update"
         element={
           <PrivateRoute userType="user">
             <UserEdit />
           </PrivateRoute>
-        } 
+        }
       />
 
-      <Route 
-        path="/pets" 
+      <Route
+        path="/pets"
         element={
           <PrivateRoute userType="user">
             <PetDetails />
           </PrivateRoute>
-        } 
+        }
       />
 
-      <Route 
-        path="/add-pets" 
+      <Route
+        path="/add-pets"
         element={
           <PrivateRoute userType="user">
             <Addpets />
           </PrivateRoute>
-        } 
+        }
       />
-      
+      <Route
+        path="/edit-pet/:petId"
+        element={
+          <PrivateRoute userType="user">
+            <EditPetPage />
+          </PrivateRoute>
+        }
+      />
+
       <Route path="/logout" element={<HomePage />} />
     </Routes>
   );

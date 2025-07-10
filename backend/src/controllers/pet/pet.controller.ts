@@ -166,7 +166,7 @@ export class PetController {
         });
       }
 
-      // Validate gender if provided
+      
       if (updateData.gender && !['Male', 'Female'].includes(updateData.gender)) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
