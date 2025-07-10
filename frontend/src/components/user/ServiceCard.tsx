@@ -164,7 +164,7 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
           onClick={handleViewDetails}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
         >
-          Book Now
+         View Details
         </Button>
       </CardFooter>
     </Card>

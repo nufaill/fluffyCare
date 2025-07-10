@@ -1,5 +1,5 @@
-// routes/user.route.ts
 import { RequestHandler, Router } from 'express';
+import { serviceDependencies } from '../di/serviceInjection';
 import { userDependencies } from '../di/userInjection';
 
 const router = Router();
@@ -29,7 +29,7 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.get('/service-types', userDependencies.serviceController.getServiceTypes as RequestHandler);
+router.get('/service-types', serviceDependencies.serviceController.getServiceTypes.bind(serviceDependencies.serviceController) as RequestHandler);
 
 /**
  * @swagger
@@ -56,7 +56,7 @@ router.get('/service-types', userDependencies.serviceController.getServiceTypes 
  *       500:
  *         description: Server error
  */
-router.get('/pet-types', userDependencies.serviceController.getPetTypes as RequestHandler);
+router.get('/pet-types', serviceDependencies.serviceController.getPetTypes.bind(serviceDependencies.serviceController) as RequestHandler);
 
 /**
  * @swagger
@@ -76,7 +76,7 @@ router.get('/pet-types', userDependencies.serviceController.getPetTypes as Reque
  *       500:
  *         description: Server error
  */
-router.get('/services', userDependencies.serviceController.getAllServices as RequestHandler);
+router.get('/services', serviceDependencies.serviceController.getAllServices.bind(serviceDependencies.serviceController) as RequestHandler);
 
 /**
  * @swagger
@@ -103,7 +103,7 @@ router.get('/services', userDependencies.serviceController.getAllServices as Req
  *       500:
  *         description: Server error
  */
-router.get('/services/:serviceId', userDependencies.serviceController.getServiceByIdPublic as RequestHandler);
+router.get('/services/:serviceId', serviceDependencies.serviceController.getServiceByIdPublic.bind(serviceDependencies.serviceController) as RequestHandler);
 
 // Protected routes
 router.use(userDependencies.authMiddleware.authenticate("user") as RequestHandler);
