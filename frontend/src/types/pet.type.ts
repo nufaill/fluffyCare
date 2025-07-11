@@ -1,4 +1,3 @@
-// pet.type.ts
 export interface Pet {
   _id: string;
   userId: string;
@@ -19,7 +18,7 @@ export interface Pet {
   updatedAt: Date;
 }
 
-export interface CreatePetData extends Omit<Pet, 'id' | 'createdAt' | 'updatedAt'> {}
+export interface CreatePetData extends Omit<Pet, '_id' | 'createdAt' | 'updatedAt'> {}
 
 export interface UpdatePetPayload {
   profileImage?: string;
@@ -36,4 +35,20 @@ export interface UpdatePetPayload {
   medication?: string;
 }
 
-export interface PetDocument extends Pet {} 
+export interface FormErrors {
+  petTypeId?: string;
+  profileImage?: string;
+  name?: string;
+  breed?: string;
+  age?: string;
+  gender?: string;
+  weight?: string;
+}
+
+export interface PetType {
+  _id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}

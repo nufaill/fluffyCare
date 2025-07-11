@@ -18,6 +18,7 @@ export class PetRepository {
   }
 
   async getPetById(petId: string): Promise<PetDocument | null> {
+    console.log("pet id", petId)
     return await Pet.findById(petId)
       .populate('petTypeId', 'name')
       .populate('userId', 'name email');
@@ -28,7 +29,9 @@ export class PetRepository {
       .populate('petTypeId', 'name');
   }
 
-
+  async getPetTypeById(petTypeId: string): Promise<PetTypeDocument | null> {
+    return await PetType.findById(petTypeId);
+  }
 
   async checkPetNameExists(userId: string, name: string, excludePetId?: string): Promise<boolean> {
     const query: any = {

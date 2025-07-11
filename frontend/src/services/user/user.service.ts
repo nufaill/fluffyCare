@@ -1,14 +1,6 @@
 import Useraxios from "@/api/user.axios";
 import type { UserDocument, UserUpdatePayload } from "@/types/user.type";
-import type { PetDocument, CreatePetData } from "@/types/pet.type";
-
-export interface PetType {
-  _id: string;
-  name: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { Pet, CreatePetData, PetType } from "@/types/pet.type";
 
 export const userService = {
   async getUser(userId: string): Promise<UserDocument> {
@@ -35,7 +27,7 @@ export const userService = {
     };
   },
 
-  async createPet(petData: CreatePetData): Promise<PetDocument> {
+  async createPet(petData: CreatePetData): Promise<Pet> {
     const res = await Useraxios.post('/add-pets', petData);
     const data = res.data.data;
     return {
@@ -44,7 +36,7 @@ export const userService = {
     };
   },
 
-  async getPetsByUserId(userId: string): Promise<PetDocument[]> {
+  async getPetsByUserId(userId: string): Promise<Pet[]> {
     const res = await Useraxios.get(`/pets/${userId}`);
     return res.data.data.map((pet: any) => ({
       ...pet,
@@ -52,22 +44,27 @@ export const userService = {
     }));
   },
 
-  async getPetById(petId: string): Promise<PetDocument> {
+  async getPetById(petId: string): Promise<Pet> {
     console.log('Fetching pet with ID:', petId);
     const res = await Useraxios.get(`/pets/${petId}`);
     console.log('Pet API response:', res.data);
     let data = res.data.data;
     if (Array.isArray(data)) {
+      if (data.length === 0) {
+        throw new Error('No pet data found');
+      }
       data = data[0];
     }
-    console.log('......daata,,,,,,', data);
+    if (!data || !data._id) {
+      throw new Error('Invalid pet data received');
+    }
     return {
       ...data,
       id: data._id.toString(),
     };
   },
 
-  async updatePet(petId: string, updateData: Partial<CreatePetData>): Promise<PetDocument> {
+  async updatePet(petId: string, updateData: Partial<CreatePetData>): Promise<Pet> {
     console.log('Updating pet with ID:', petId, 'Data:', updateData);
     try {
       const res = await Useraxios.put(`/pets/${petId}`, updateData);

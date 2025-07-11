@@ -146,43 +146,43 @@ export class PetController {
     }
   };
 
-  updatePet = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { petId } = req.params;
-      const userId = req.user?.userId;
-      const updateData = req.body;
+ updatePet = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { petId } = req.params;
+    const userId = req.user?.userId;
 
-      if (!petId) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          message: 'Pet ID is required'
-        });
-      }
-
-      if (!userId) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          message: 'User ID is required'
-        });
-      }
-
-      
-      if (updateData.gender && !['Male', 'Female'].includes(updateData.gender)) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          message: 'Gender must be either Male or Female'
-        });
-      }
-
-      const updatedPet = await this.petService.updatePet(petId, userId, updateData);
-
-      res.status(HTTP_STATUS.OK).json({
-        success: true,
-        message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
-        data: updatedPet
+    if (!userId) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: 'Authentication required'
       });
-    } catch (error) {
-      next(error);
     }
-  };
+
+    if (!petId) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'Pet ID is required'
+      });
+    }
+
+    const updateData = req.body;
+
+    if (updateData.gender && !['Male', 'Female'].includes(updateData.gender)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'Gender must be either Male or Female'
+      });
+    }
+
+    const updatedPet = await this.petService.updatePet(petId, userId, updateData);
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
+      data: updatedPet
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 }

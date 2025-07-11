@@ -13,24 +13,8 @@ import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { Upload, Save, X, Heart, Camera, Loader2, AlertCircle } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
-import { userService, type PetType } from "@/services/user/user.service"
-import type { CreatePetData, PetDocument } from "@/types/pet.type"
-
-interface FormErrors {
-    petTypeId?: string
-    profileImage?: string
-    name?: string
-    breed?: string
-    age?: string
-    gender?: string
-    weight?: string
-    additionalNotes?: string
-    friendlyWithPets?: string
-    friendlyWithOthers?: string
-    trainedBefore?: string
-    vaccinationStatus?: string
-    medication?: string
-}
+import { userService } from "@/services/user/user.service"
+import type { CreatePetData, FormErrors, Pet, PetType } from "@/types/pet.type";
 
 export default function EditPetPage() {
     const { petId } = useParams<{ petId: string }>()
@@ -61,30 +45,31 @@ export default function EditPetPage() {
     React.useEffect(() => {
         const fetchData = async () => {
             if (!petId) {
-                console.error('No petId provided in URL params')
-                setLoadingError('Invalid pet ID')
-                navigate("/pets")
-                return
+                console.error('No petId provided in URL params');
+                setLoadingError('Invalid pet ID');
+                navigate("/pets");
+                return;
             }
 
             try {
-                setIsLoading(true)
-                setLoadingError(null)
-                console.log('Fetching data for petId:', petId)
-                
-                const petTypesData = await userService.getAllPetTypes()
-                console.log('Fetched pet types:', petTypesData)
-                setPetTypes(petTypesData)
+                setIsLoading(true);
+                setLoadingError(null);
+                console.log('Fetching data for petId:', petId);
 
-                const petData = await userService.getPetById(petId)
-                console.log('Fetched pet data:', petData)
+                const petTypesData = await userService.getAllPetTypes();
+                console.log('Fetched pet types:', petTypesData);
+                setPetTypes(petTypesData);
 
-                if (!petData || !petData.id) {
-                    throw new Error('Invalid pet data received from server')
+                // Explicitly type petData as Pet
+                const petData: Pet = await userService.getPetById(petId);
+                console.log('Fetched pet data:', petData);
+
+                if (!petData || !petData._id) {
+                    throw new Error('Invalid pet data received from server');
                 }
 
                 setFormData({
-                    petTypeId: petData.petTypeId?.toString() || "",
+                    petTypeId: typeof petData.petTypeId === 'object' ? petData.petTypeId._id.toString() : petData.petTypeId?.toString() || "",
                     profileImage: petData.profileImage || "",
                     name: petData.name || "",
                     breed: petData.breed || "",
@@ -97,40 +82,35 @@ export default function EditPetPage() {
                     trainedBefore: Boolean(petData.trainedBefore),
                     vaccinationStatus: Boolean(petData.vaccinationStatus),
                     medication: petData.medication || "",
-                    userId: petData.userId?.toString() || ""
-                })
+                    userId: typeof petData.userId === 'object' && petData.userId._id.toString()
+                });
 
-                console.log('Form data set successfully')
+                console.log('Form data set successfully');
             } catch (error: any) {
-                console.error('Error fetching pet data:', error)
-                
-                let errorMessage = 'Failed to load pet data. Please try again.'
-                
+                console.error('Error fetching pet data:', error);
+                let errorMessage = 'Failed to load pet data. Please try again.';
                 if (error.response?.status === 404) {
-                    errorMessage = 'Pet not found. It may have been deleted or you may not have permission to view it.'
+                    errorMessage = 'Pet not found. It may have been deleted or you may not have permission to view it.';
                 } else if (error.response?.status === 401) {
-                    errorMessage = 'Unauthorized. Please log in again.'
+                    errorMessage = 'Unauthorized. Please log in again.';
                 } else if (error.response?.status === 403) {
-                    errorMessage = 'You do not have permission to edit this pet.'
+                    errorMessage = 'You do not have permission to edit this pet.';
                 } else if (error.response?.data?.message) {
-                    errorMessage = error.response.data.message
+                    errorMessage = error.response.data.message;
                 } else if (error.message) {
-                    errorMessage = error.message
+                    errorMessage = error.message;
                 }
-                
-                setLoadingError(errorMessage)
-                
+                setLoadingError(errorMessage);
                 setTimeout(() => {
-                    alert(errorMessage)
-                    navigate("/pets")
-                }, 100)
+                    navigate("/pets");
+                }, 100);
             } finally {
-                setIsLoading(false)
+                setIsLoading(false);
             }
-        }
+        };
 
-        fetchData()
-    }, [petId, navigate])
+        fetchData();
+    }, [petId, navigate]);
 
     const handleInputChange = <K extends keyof CreatePetData>(field: K, value: CreatePetData[K]) => {
         setFormData((prev) => ({ ...prev, [field]: value }))
@@ -192,36 +172,37 @@ export default function EditPetPage() {
     }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
+        e.preventDefault();
 
-        if (!validateForm()) return
+        if (!validateForm()) return;
 
-        setIsSubmitting(true)
+        if (!petId || typeof petId !== 'string' || !/^[0-9a-fA-F]{24}$/.test(petId)) {
+            console.error('Invalid petId:', petId);
+            return;
+        }
+
+        setIsSubmitting(true);
 
         try {
-            const { userId, ...updateData } = formData
-            
-            console.log('Submitting update for petId:', petId, 'with data:', updateData)
-            
-            await userService.updatePet(petId!, updateData)
-            
-            alert('Pet updated successfully!')
-            navigate("/pets")
+            const { userId, ...updateData } = formData;
+
+            console.log('Submitting update for petId:', petId, 'with data:', updateData);
+
+            await userService.updatePet(petId, updateData);
+            navigate("/pets");
         } catch (error: any) {
-            console.error("Error updating pet:", error)
-            
-            let errorMessage = 'Failed to update pet. Please try again.'
+            console.error("Error updating pet:", error);
+
+            let errorMessage = 'Failed to update pet. Please try again.';
             if (error.response?.data?.message) {
-                errorMessage = error.response.data.message
+                errorMessage = error.response.data.message;
             } else if (error.message) {
-                errorMessage = error.message
+                errorMessage = error.message;
             }
-            
-            alert(errorMessage)
         } finally {
-            setIsSubmitting(false)
+            setIsSubmitting(false);
         }
-    }
+    };
 
     if (isLoading) {
         return (
@@ -359,7 +340,7 @@ export default function EditPetPage() {
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {petTypes.map((type) => (
-                                                            <SelectItem key={type.id} value={type.id}>
+                                                            <SelectItem key={type._id} value={type._id}>
                                                                 {type.name}
                                                             </SelectItem>
                                                         ))}

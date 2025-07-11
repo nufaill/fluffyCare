@@ -102,9 +102,8 @@ export function PetCard({ pet }: PetCardProps) {
         </div>
         <Button
           onClick={() => {
-            if (!pet._id) {
-              console.error('Pet ID is undefined for pet:', pet);
-              alert('Cannot edit pet: Invalid pet ID');
+            if (!pet._id || typeof pet._id !== 'string' || !/^[0-9a-fA-F]{24}$/.test(pet._id)) {
+              console.error('Invalid pet ID:', pet._id);
               return;
             }
             navigate(`/edit-pet/${pet._id}`);
