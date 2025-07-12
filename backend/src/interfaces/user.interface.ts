@@ -1,13 +1,18 @@
-export interface GeoLocation {
-  type: 'Point';
-  coordinates: [number, number]; // [longitude, latitude]
-}
+import { GeoLocation } from '../dtos/user.dto';
+import { Types } from 'mongoose';
 
 export interface IUser {
-  profileImage?: string;
+  _id: string | Types.ObjectId;
   fullName: string;
   email: string;
   phone?: string;
-  password: string;
-  location?: GeoLocation; 
+  password?: string;
+  profileImage?: string;
+  location?: GeoLocation;
+  googleId?: string;
+  isActive: boolean;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -1,10 +1,10 @@
 // backend/src/services/shop/authService.ts
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { ShopRepository } from '../../repositories/shopRepository';
+import { ShopRepository } from '../../repositories/shop.repository';
 import { JwtService } from '../jwt/jwt.service';
 import { EmailService } from '../emailService/email.service';
-import { OtpRepository } from '../../repositories/otpRepository';
+import { OtpRepository } from '../../repositories/otp.repository';
 import { 
   CreateShopData, 
   ShopDocument, 

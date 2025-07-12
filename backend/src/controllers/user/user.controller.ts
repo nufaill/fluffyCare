@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { AuthService } from '../../services/user/auth.service';
 import { setAuthCookies, clearAuthCookies, updateAccessTokenCookie } from '../../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
-import { UserRepository } from '../../repositories/userRepository';
+import { UserRepository } from '../../repositories/user.repository';
 import { CustomError } from '../../util/CustomerError';
 import { NextFunction } from 'express-serve-static-core';
 import { CreateUserData } from 'types/User.types';

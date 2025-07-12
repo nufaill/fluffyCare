@@ -14,10 +14,12 @@ export enum HTTP_STATUS {
 export const SUCCESS_MESSAGES = {
   OPERATION_SUCCESS: "Opearation Succesfull",
   CREATED: "Created successfully.",
-  LOGIN_SUCCESS: "Login successful.",
+ LOGIN_SUCCESS: 'Login successful',
+  LOGOUT_SUCCESS: 'Logout successful',
+  ADMIN_CREATED: 'Admin created successfully',
+  ADMIN_UPDATED: 'Admin updated successfully',
   REGISTRATION_SUCCESS: "Registration completed successfully.",
   OTP_SEND_SUCCESS: "OTP sent successfully",
-  LOGOUT_SUCCESS: "Logged out successfully.",
   UPDATE_SUCCESS: "Updated successfully.",
   DELETE_SUCCESS: "Deleted successfully.",
   PASSWORD_RESET_SUCCESS: "Password reset successfully.",
@@ -41,6 +43,10 @@ export const SUCCESS_MESSAGES = {
 export const ERROR_MESSAGES = {
   ADMIN_BLOCKED: "Account is Blocked by admin",
   ADMIN_DONOT_ACCEPTED: "Admin Must Verify First",
+  INVALID_CREDENTIALS: 'Invalid email or password',
+  EMAIL_ALREADY_EXISTS: 'Email already exists',
+  ADMIN_NOT_FOUND: 'Admin not found',
+  INTERNAL_SERVER_ERROR: 'Internal server error',
   OTP_SEND_FAILED: "OTP sent failed",
   OTP_INVALID: "Invalid OTP",
   OTP_EXPIRED: "OTP has Expired",
@@ -56,7 +62,6 @@ export const ERROR_MESSAGES = {
   NOT_ALLOWED: "You are not allowed",
   EMAIL_EXISTS: "Email Already Exists",
   INVALID_TOKEN: "Invalid token",
-  INVALID_CREDENTIALS: "Invalid credentials provided.",
   USER_NOT_FOUND: "User not found.",
   USERS_FETCHED_FAILED: "Failed to fetch users",
   UNAUTHORIZED_ACCESS: "Unauthorized access.",
@@ -76,4 +81,4 @@ export const ERROR_MESSAGES = {
   INVALID_INPUT: 'At least one field must be provided for update',
   SERVICE_NOT_FOUND: 'Service not found',
   SERVICE_NAME_EXISTS: 'Service name already exists for this shop',
-};
+}

@@ -137,7 +137,7 @@ export const ServiceDetails = () => {
               />
               <div className="absolute top-4 right-4">
                 <Badge className="bg-background/90 backdrop-blur-sm text-foreground">
-                  ${service.price}
+                  ₹{service.price}
                 </Badge>
               </div>
             </div>
@@ -197,7 +197,7 @@ export const ServiceDetails = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Price</p>
                     <p className="font-medium text-card-foreground">
-                      ${service.price}
+                      ₹{service.price}
                     </p>
                   </div>
                 </div>

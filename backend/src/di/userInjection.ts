@@ -3,17 +3,17 @@
 import { UserController } from "../controllers/user/user.controller";
 import { ServiceController } from "../controllers/service/service.controller";
 import { AuthService } from "../services/user/auth.service";
-import { UserRepository } from "../repositories/userRepository";
+import { UserRepository } from "../repositories/user.repository";
 import { JwtService } from "../services/jwt/jwt.service";
 import { GoogleAuthService } from "../services/googleAuth/google.service";
 import { EmailService } from "../services/emailService/email.service";
-import { OtpRepository } from "../repositories/otpRepository";
+import { OtpRepository } from "../repositories/otp.repository";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
 import { PetController } from "../controllers/pet/pet.controller";
 import { PetService } from "../services/pet/pet.service";
-import { PetRepository } from "../repositories/petRepository";
+import { PetRepository } from "../repositories/pet.repository";
 import { ServiceService } from "services/service/service.service";
-import { ServiceRepository } from "repositories/serviceRepository";
+import { ServiceRepository } from "repositories/service.repository";
 
 // Initialize repositories
 const userRepository = new UserRepository();

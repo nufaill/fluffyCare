@@ -32,7 +32,6 @@ export default function ProfilePage() {
     async function fetchUser() {
       try {
         const data = await userService.getUser(userState?.id || "")
-        console.log("user data:", data)
         setUser(data)
 
         const [lng, lat] = data.location.coordinates

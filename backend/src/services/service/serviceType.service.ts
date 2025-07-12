@@ -1,4 +1,4 @@
-import { ServiceTypeRepository } from '../../repositories/serviceTypeRepository';
+import { ServiceTypeRepository } from '../../repositories/serviceType.repository';
 import { CreateServiceType, ServiceTypeDocument } from '../../types/serviceType.type';
 import { CustomError } from '../../util/CustomerError';
 

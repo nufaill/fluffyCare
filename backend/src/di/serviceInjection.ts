@@ -1,6 +1,6 @@
 import { ServiceController } from '../controllers/service/service.controller';
 import { ServiceService } from '../services/service/service.service';
-import { ServiceRepository } from '../repositories/serviceRepository';
+import { ServiceRepository } from '../repositories/service.repository';
 
 // Instantiate dependencies
 const serviceRepository = new ServiceRepository();

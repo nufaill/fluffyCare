@@ -1,4 +1,4 @@
-// user.slice.ts - Updated with better authentication handling
+// user.slice.ts 
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
@@ -80,7 +80,6 @@ const userSlice = createSlice({
       state.isLoading = action.payload;
     },
     
-    // Deprecated: keeping for backward compatibility
     addUser: (state, action: PayloadAction<UserData>) => {
       state.userDatas = action.payload;
       state.isAuthenticated = true;
@@ -102,8 +101,8 @@ export const {
   logoutUser, 
   updateUser, 
   setUserLoading,
-  addUser, // deprecated
-  removeUser // deprecated
+  addUser, 
+  removeUser 
 } = userSlice.actions;
 
 export default userSlice.reducer;

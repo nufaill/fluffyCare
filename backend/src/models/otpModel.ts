@@ -1,5 +1,13 @@
-import mongoose, { Schema } from 'mongoose';
-import { IOtp } from '../types/otp'
+import { Schema, model, Document } from 'mongoose';
+import { CreateUserDTO } from '../dtos/user.dto';
+
+export interface IOtp extends Document {
+  email: string;
+  otpHash: string;
+  userData: CreateUserDTO;
+  expiresAt: Date;
+  attempts: number;
+}
 
 const otpSchema = new Schema<IOtp>({
   email: {
@@ -13,28 +21,19 @@ const otpSchema = new Schema<IOtp>({
     required: true,
   },
   userData: {
-    type: Schema.Types.Mixed, 
+    type: Schema.Types.Mixed, // Store CreateUserDTO as mixed type
     required: true,
   },
   expiresAt: {
     type: Date,
     required: true,
-    default: () => new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
   },
   attempts: {
     type: Number,
     default: 0,
-    max: 3,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+}, {
+  timestamps: true,
 });
 
-otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-otpSchema.index({ email: 1 });
-
-export const OtpModel = mongoose.model<IOtp>('Otp', otpSchema);
-
-export { IOtp };
+export const OtpModel = model<IOtp>('Otp', otpSchema);

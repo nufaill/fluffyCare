@@ -1,4 +1,4 @@
-import { ServiceRepository } from '../../repositories/serviceRepository';
+import { ServiceRepository } from '../../repositories/service.repository';
 import { CreateServiceData, ServiceDocument } from '../../types/Service.types';
 import { ServiceTypeDocument } from '../../types/serviceType.type';
 import { PetTypeDocument } from '../../types/PetType.type';

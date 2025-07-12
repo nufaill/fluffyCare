@@ -1,19 +1,9 @@
-export interface GeoLocation {
-  type: 'Point';
-  coordinates: [number, number]; // [longitude, latitude]
-}
+import { GeoLocation } from '../dtos/user.dto';
 
-export interface GoogleUserInfo {
+export interface JwtPayload {
   id: string;
   email: string;
-  name: string;
-  picture?: string | null;
-  verified_email: boolean;
-}
-
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
+  role: string;
 }
 
 export interface AuthUser {
@@ -21,19 +11,14 @@ export interface AuthUser {
   email: string;
   fullName: string;
   profileImage?: string;
-  location: GeoLocation; 
+  location?: GeoLocation;
 }
 
 export interface AuthResponse {
   success: boolean;
   user: AuthUser;
-  tokens: AuthTokens;
-}
-
-
-export interface JwtPayload {
-  id: string;
-  email: string;
-  iat?: number;
-  exp?: number;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
 }

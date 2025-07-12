@@ -1,7 +1,7 @@
 // backend/src/controllers/shop/shop.controller.ts 
 import { Request, Response } from 'express';
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
-import { ShopRepository } from '../../repositories/shopRepository';
+import { ShopRepository } from '../../repositories/shop.repository';
 import { CustomError } from '../../util/CustomerError';
 import { CreateShopData } from 'types/Shop.types';
 

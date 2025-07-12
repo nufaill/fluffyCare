@@ -5,14 +5,14 @@ import { UserController } from "../controllers/user/user.controller";
 import { PetTypeController } from "../controllers/pet/petType.controller";
 import { ServiceController } from "@controllers/service/serviceType.controller";
 import { AuthService as AdminAuthService } from "../services/admin/admin.service";
-import { ShopRepository } from "../repositories/shopRepository";
-import { UserRepository } from "../repositories/userRepository";
-import { PetTypeRepository } from "../repositories/petTypeRepository";
+import { ShopRepository } from "../repositories/shop.repository";
+import { UserRepository } from "../repositories/user.repository";
+import { PetTypeRepository } from "../repositories/petType.repository";
 import { PetTypeService } from "../services/pet/petType.service";
-import { ServiceTypeRepository } from "repositories/serviceTypeRepository";
+import { ServiceTypeRepository } from "repositories/serviceType.repository";
 import { ServiceTypeService } from "services/service/serviceType.service";
 import { JwtService } from "../services/jwt/jwt.service";
-import { AdminRepository } from "../repositories/adminRepository";
+import { AdminRepository } from "../repositories/admin.repository";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
 
 // Initialize repositories

@@ -1,12 +1,12 @@
 
 // authInjection.ts 
 import { AuthController } from "../controllers/user/auth.controller";
-import { UserRepository } from "../repositories/userRepository";
+import { UserRepository } from "../repositories/user.repository";
 import { AuthService } from "../services/user/auth.service";
 import { JwtService } from "../services/jwt/jwt.service";
 import { GoogleAuthService } from "../services/googleAuth/google.service"; 
 import { EmailService } from "../services/emailService/email.service";
-import { OtpRepository } from "../repositories/otpRepository";
+import { OtpRepository } from "../repositories/otp.repository";
 
 // Initialize repositories
 const userRepository = new UserRepository();

@@ -1,4 +1,4 @@
-import { PetTypeRepository } from '../../repositories/petTypeRepository';
+import { PetTypeRepository } from '../../repositories/petType.repository';
 import { PetTypeDocument } from '../../types/PetType.type';
 import { CreatePetData, PetDocument } from '../../types/Pet.types';
 import { CustomError } from '../../util/CustomerError';
