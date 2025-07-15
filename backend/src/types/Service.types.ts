@@ -13,6 +13,7 @@ export interface Service {
   createdAt: Date;
   updatedAt: Date;
   image?: File;
+  rating:Number;
 }
 
 export interface CreateServiceData extends Omit<Service, 'id' | 'createdAt' | 'updatedAt'> {}

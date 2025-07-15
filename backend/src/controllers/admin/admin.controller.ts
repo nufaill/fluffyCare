@@ -1,16 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../../services/admin/admin.service';
-import { CreateAdminDto, LoginDto, AuthResponseDto } from '../../dtos/admin.dto';
+import { IAdminService } from '../../interfaces/serviceInterfaces/admin.interface';
+import {  LoginDto, AuthResponseDto } from '../../dtos/admin.dto';
 import { setAuthCookies, clearAuthCookies } from '../../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 
 export class AdminAuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private _adminService: IAdminService) {} 
 
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const loginDto: LoginDto = req.body;
-      const result: AuthResponseDto = await this.authService.login(loginDto);
+      const result: AuthResponseDto = await this._adminService.login(loginDto); 
 
       setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, 'admin');
 
@@ -24,38 +24,6 @@ export class AdminAuthController {
       next(error);
     }
   };
-
-  register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const createAdminDto: CreateAdminDto = req.body;
-      const admin = await this.authService.createAdmin(createAdminDto);
-
-      res.status(HTTP_STATUS.CREATED).json({
-        success: true,
-        message: SUCCESS_MESSAGES.ADMIN_CREATED,
-        admin,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const id = req.params.id;
-      const updateAdminDto: Partial<CreateAdminDto> = req.body;
-      const admin = await this.authService.updateAdmin(id, updateAdminDto);
-
-      res.status(HTTP_STATUS.OK).json({
-        success: true,
-        message: SUCCESS_MESSAGES.ADMIN_UPDATED,
-        admin,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
   logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       clearAuthCookies(res);

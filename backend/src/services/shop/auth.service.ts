@@ -124,7 +124,7 @@ export class AuthService {
     }
 
     console.log(`✅ [ShopAuthService] OTP verified successfully for ${email}`);
-    const shopData = verificationResult.userData as CreateShopData;
+    const shopData = verificationResult.userData as unknown as CreateShopData;
     
     if (shopData.location) {
       this.validateGeoLocation(shopData.location);

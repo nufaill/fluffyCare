@@ -7,23 +7,13 @@ export const generateOtp = (): string => {
   return crypto.randomInt(100000, 999999).toString();
 };
 
-// Setup email transporter (configure based on your email provider)
 const createTransporter = () => {
   return nodemailer.createTransport({
-    // Gmail configuration example - replace with your SMTP settings
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER, 
       pass: process.env.EMAIL_PASS, 
     },
-    // Alternative SMTP configuration
-    // host: process.env.SMTP_HOST,
-    // port: parseInt(process.env.SMTP_PORT || '587'),
-    // secure: false,
-    // auth: {
-    //   user: process.env.SMTP_USER,
-    //   pass: process.env.SMTP_PASS,
-    // },
   });
 };
 

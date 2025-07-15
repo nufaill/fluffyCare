@@ -189,7 +189,7 @@ const CustomerDetails: React.FC = () => {
       title: "Customer",
       dataIndex: "fullName",
       sortable: true,
-      render: (value: unknown, record: User) => (
+      render: (_value: unknown, record: User) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 ring-2 ring-gray-200 dark:ring-gray-600">
             <AvatarImage src={record.profileImage || "/placeholder.svg?height=40&width=40"} />
@@ -214,7 +214,7 @@ const CustomerDetails: React.FC = () => {
       key: "contact",
       title: "Contact Info",
       dataIndex: "email",
-      render: (value: unknown, record: User) => (
+      render: (_value: unknown, record: User) => (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm">
             <Mail className="h-4 w-4 text-gray-400" />
@@ -234,7 +234,7 @@ const CustomerDetails: React.FC = () => {
       title: "Status",
       dataIndex: "isActive",
       sortable: true,
-      render: (value: unknown, record: User) => (
+      render: (_value: unknown, record: User) => (
         <Badge
           className={
             record.isActive
@@ -251,7 +251,7 @@ const CustomerDetails: React.FC = () => {
       title: "Block/Unblock",
       dataIndex: "isActive",
       align: "center",
-      render: (value: unknown, record: User) => (
+      render: (_value: unknown, record: User) => (
         <Switch
           checked={record.isActive}
           onCheckedChange={() => handleToggleUserStatus(record._id, record.isActive)}

@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
-import { CreateUserDTO } from '../dtos/user.dto';
+import { CreateUserDTO } from '../dtos/auth.dto';
 
 export interface IOtp extends Document {
   email: string;

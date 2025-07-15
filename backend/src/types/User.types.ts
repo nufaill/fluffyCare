@@ -1,3 +1,4 @@
+// User.types.ts
 import { Types, Document } from 'mongoose';
 
 export interface GeoLocation {
@@ -18,6 +19,7 @@ export interface CreateUserData {
 }
 
 export interface User {
+  _id: string;
   fullName: string;
   email: string;
   phone?: string;
@@ -33,6 +35,6 @@ export interface User {
   updatedAt: Date;
 }
 
-export interface UserDocument extends User, Document {
+export interface UserDocument extends Omit<User, '_id'>, Document {
   _id: Types.ObjectId;
 }

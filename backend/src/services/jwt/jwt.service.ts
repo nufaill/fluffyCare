@@ -1,6 +1,6 @@
 // backend/src/services/jwt/jwtService.ts
 import ms from "ms";
-import { ITokenService } from "../../interfaces/tokenServiceInterface";
+import { ITokenService } from "../../interfaces/serviceInterfaces/tokenServiceInterface";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 
 export class JwtService implements ITokenService {

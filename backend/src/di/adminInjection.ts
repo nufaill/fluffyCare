@@ -1,4 +1,3 @@
-// adminInjection.ts
 import { AdminAuthController } from "../controllers/admin/admin.controller";
 import { ShopController } from "../controllers/shop/shop.controller";
 import { UserController } from "../controllers/user/user.controller";
@@ -14,6 +13,7 @@ import { ServiceTypeService } from "services/service/serviceType.service";
 import { JwtService } from "../services/jwt/jwt.service";
 import { AdminRepository } from "../repositories/admin.repository";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
+import { IAdminService } from "../interfaces/serviceInterfaces/admin.interface";
 
 // Initialize repositories
 const shopRepository = new ShopRepository();
@@ -24,9 +24,9 @@ const serviceTypeRepository = new ServiceTypeRepository();
 
 // Initialize services
 const jwtService = new JwtService();
-const adminAuthService = new AdminAuthService(adminRepository, jwtService);
+const adminAuthService: IAdminService = new AdminAuthService(adminRepository, jwtService); 
 const petTypeService = new PetTypeService(petTypeRepository);
-const serviceService = new ServiceTypeService(serviceTypeRepository)
+const serviceService = new ServiceTypeService(serviceTypeRepository);
 
 const authMiddlewareInstance = new AuthMiddleware(jwtService);
 const authMiddleware = authMiddlewareInstance;
@@ -36,7 +36,7 @@ const injectedAdminAuthController = new AdminAuthController(adminAuthService);
 const injectedShopController = new ShopController(shopRepository);
 const injectedUserController = new UserController(userRepository);
 const injectedPetTypeController = new PetTypeController(petTypeService);
-const injectedServiceController = new ServiceController(serviceService)
+const injectedServiceController = new ServiceController(serviceService);
 
 // Export for route usage
 export const adminDependencies = {

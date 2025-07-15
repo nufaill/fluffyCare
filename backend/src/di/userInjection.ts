@@ -1,36 +1,18 @@
-
-// userInjection.ts 
+// userInjection.ts
 import { UserController } from "../controllers/user/user.controller";
-import { ServiceController } from "../controllers/service/service.controller";
 import { AuthService } from "../services/user/auth.service";
 import { UserRepository } from "../repositories/user.repository";
-import { JwtService } from "../services/jwt/jwt.service";
-import { GoogleAuthService } from "../services/googleAuth/google.service";
-import { EmailService } from "../services/emailService/email.service";
-import { OtpRepository } from "../repositories/otp.repository";
-import { AuthMiddleware } from 'middlewares/auth.middleware';
+import { AuthMiddleware } from "../middlewares/auth.middleware";
 import { PetController } from "../controllers/pet/pet.controller";
 import { PetService } from "../services/pet/pet.service";
 import { PetRepository } from "../repositories/pet.repository";
-import { ServiceService } from "services/service/service.service";
-import { ServiceRepository } from "repositories/service.repository";
+import { jwtService, googleAuthService, emailService, otpRepository } from "./authInjection";
 
 // Initialize repositories
 const userRepository = new UserRepository();
-const otpRepository = new OtpRepository();
 const petRepository = new PetRepository();
-const serviceRepository = new ServiceRepository();
 
 // Initialize services
-const jwtService = new JwtService();
-const googleAuthService = new GoogleAuthService();
-const emailService = new EmailService();
-const authMiddlewareInstance = new AuthMiddleware(jwtService);
-const petService = new PetService(petRepository);
-
-const authMiddleware = authMiddlewareInstance;
-
-
 const authService = new AuthService(
   userRepository,
   jwtService,
@@ -38,24 +20,21 @@ const authService = new AuthService(
   emailService,
   otpRepository
 );
+const authMiddleware = new AuthMiddleware(jwtService);
+const petService = new PetService(petRepository);
 
-const serviceService = new ServiceService(serviceRepository);
-
-
-// Initialize controller with dependencies
+// Initialize controllers
 const injectedUserController = new UserController(userRepository);
 const petController = new PetController(petService);
-const injectedServiceController = new ServiceController(serviceService);
 
 // Export for route usage
 export const userDependencies = {
   userController: injectedUserController,
-  serviceController: injectedServiceController,
   authService,
   userRepository,
   jwtService,
   authMiddleware,
   petController,
   petService,
-  petRepository
+  petRepository,
 };

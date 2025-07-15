@@ -1,3 +1,4 @@
+// serviceInjection.ts
 import { ServiceController } from '../controllers/service/service.controller';
 import { ServiceService } from '../services/service/service.service';
 import { ServiceRepository } from '../repositories/service.repository';
@@ -9,4 +10,6 @@ const serviceController = new ServiceController(serviceService);
 
 export const serviceDependencies = {
   serviceController,
+  serviceService,
+  serviceRepository,
 };

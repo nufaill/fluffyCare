@@ -111,3 +111,29 @@ export interface ShopVerificationResponse {
 export interface ShopRejectionData {
   rejectionReason?: string;
 }
+
+export interface Shop {
+  logo?: string;
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  city: string;
+  streetAddress: string;
+  description?: string;
+  certificateUrl: string;
+  isActive: boolean;
+  isVerified: boolean;
+  location: {
+    type: 'Point';
+    coordinates: [number, number]; 
+  };
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ShopDocument extends Shop, Document {
+  _id: Types.ObjectId;
+}
