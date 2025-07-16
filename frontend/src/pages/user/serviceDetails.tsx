@@ -185,7 +185,7 @@ export const ServiceDetails = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Duration</p>
                     <p className="font-medium text-card-foreground">
-                      {service.durationHoure} {service.durationHoure === 1 ? 'hour' : 'hours'}
+                      {service.durationHour} {service.durationHour === 1 ? 'hour' : 'hours'}
                     </p>
                   </div>
                   <div>
@@ -307,7 +307,7 @@ export const ServiceDetails = () => {
                   {service.isActive ? 'Book Service' : 'Service Unavailable'}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Duration: {service.durationHoure} {service.durationHoure === 1 ? 'hour' : 'hours'}
+                  Duration: {service.durationHour} {service.durationHour === 1 ? 'hour' : 'hours'}
                 </p>
               </CardContent>
             </Card>

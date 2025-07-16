@@ -2,6 +2,7 @@ import { PetTypeDocument } from 'types/PetType.type';
 import { PetRepository } from '../../repositories/pet.repository';
 import { CreatePetData, PetDocument } from '../../types/Pet.types';
 import { CustomError } from '../../util/CustomerError';
+import { CreatePetDTO, UpdatePetDTO } from '../../dtos/pet.dto';
 
 export class PetService {
   private petRepository: PetRepository;
@@ -9,7 +10,8 @@ export class PetService {
   constructor(petRepository: PetRepository) {
     this.petRepository = petRepository;
   }
-    async createPet(userId: string, petData: Omit<CreatePetData, 'userId'>): Promise<PetDocument> {
+
+  async createPet(userId: string, petData: CreatePetDTO): Promise<PetDocument> {
     const { name, petTypeId } = petData;
 
     const nameExists = await this.petRepository.checkPetNameExists(userId, name);
@@ -21,6 +23,12 @@ export class PetService {
       ...petData,
       userId,
       name: name.trim(),
+      additionalNotes: petData.additionalNotes ?? '',
+      friendlyWithPets: petData.friendlyWithPets ?? false,
+      friendlyWithOthers: petData.friendlyWithOthers ?? false,
+      trainedBefore: petData.trainedBefore ?? false,
+      vaccinationStatus: petData.vaccinationStatus ?? false,
+      medication: petData.medication ?? ''
     });
 
     return newPet;
@@ -38,14 +46,12 @@ export class PetService {
     return pet;
   }
 
-  async updatePet(petId: string, userId: string, updateData: Partial<Omit<CreatePetData, 'userId'>>): Promise<PetDocument> {
-    console.log('Update pet called with:', { petId, userId, updateData });
-    
+  async updatePet(petId: string, userId: string, updateData: UpdatePetDTO): Promise<PetDocument> {
     const existingPet = await this.petRepository.getPetById(petId);
     if (!existingPet) {
       throw new CustomError('Pet not found', 404);
     }
-    
+
     // Verify ownership
     if (existingPet.userId._id.toString() !== userId) {
       throw new CustomError('Not authorized to update this pet', 403);
@@ -61,22 +67,9 @@ export class PetService {
 
     // Validate pet type if being updated and is different from current
     if (updateData.petTypeId && updateData.petTypeId !== existingPet.petTypeId.toString()) {
-      console.log('Validating pet type ID:', updateData.petTypeId);
-      console.log('Current pet type ID:', existingPet.petTypeId.toString());
-      
-      // Get all pet types to validate the petTypeId
       const petTypes = await this.petRepository.getAllPetTypes();
-      console.log('Available pet types:', petTypes.map(type => ({ id: type._id.toString(), name: type.name })));
-      
-      const petTypeExists = petTypes.some(type => {
-        const typeId = type._id.toString();
-        const updateTypeId = updateData.petTypeId?.toString();
-        console.log('Comparing:', { typeId, updateTypeId, match: typeId === updateTypeId });
-        return typeId === updateTypeId;
-      });
-      
-      console.log('Pet type exists:', petTypeExists);
-      
+      const petTypeExists = petTypes.some(type => type._id.toString() === updateData.petTypeId);
+
       if (!petTypeExists) {
         throw new CustomError('Pet type not found', 404);
       }

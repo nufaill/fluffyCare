@@ -1,5 +1,6 @@
 import { ServiceTypeRepository } from '../../repositories/serviceType.repository';
-import { CreateServiceType, ServiceTypeDocument } from '../../types/serviceType.type';
+import { CreateServiceTypeDTO, UpdateServiceTypeDTO, UpdateServiceTypeStatusDTO } from '../../dtos/serviceType.dto';
+import { ServiceTypeDocument } from '../../types/serviceType.type';
 import { CustomError } from '../../util/CustomerError';
 
 export class ServiceTypeService {
@@ -9,10 +10,9 @@ export class ServiceTypeService {
     this.serviceTypeRepository = serviceTypeRepository;
   }
 
-  async createServiceType(ServiceTypeData: { name: string }): Promise<ServiceTypeDocument> {
-    const { name } = ServiceTypeData;
+  async createServiceType(serviceTypeData: CreateServiceTypeDTO): Promise<ServiceTypeDocument> {
+    const { name } = serviceTypeData;
 
-    // Check if Service type already exists
     const exists = await this.serviceTypeRepository.checkServiceTypeExists(name);
     if (exists) {
       throw new CustomError('Service type already exists', 400);
@@ -33,14 +33,14 @@ export class ServiceTypeService {
   }
 
   async getServiceTypeById(id: string): Promise<ServiceTypeDocument> {
-    const ServiceType = await this.serviceTypeRepository.getServiceTypeById(id);
-    if (!ServiceType) {
+    const serviceType = await this.serviceTypeRepository.getServiceTypeById(id);
+    if (!serviceType) {
       throw new CustomError('Service type not found', 404);
     }
-    return ServiceType;
+    return serviceType;
   }
 
-  async updateServiceType(id: string, updateData: { name: string }): Promise<ServiceTypeDocument> {
+  async updateServiceType(id: string, updateData: UpdateServiceTypeDTO): Promise<ServiceTypeDocument> {
     const { name } = updateData;
 
     // Check if Service type exists
@@ -49,7 +49,6 @@ export class ServiceTypeService {
       throw new CustomError('Service type not found', 404);
     }
 
-    
     if (name && name.trim() !== existingServiceType.name) {
       const nameExists = await this.serviceTypeRepository.checkServiceTypeExists(name, id);
       if (nameExists) {
@@ -69,7 +68,9 @@ export class ServiceTypeService {
     return updatedServiceType;
   }
 
-  async updateServiceTypeStatus(id: string, isActive: boolean): Promise<ServiceTypeDocument> {
+  async updateServiceTypeStatus(id: string, statusData: UpdateServiceTypeStatusDTO): Promise<ServiceTypeDocument> {
+    const { isActive } = statusData;
+
     const existingServiceType = await this.serviceTypeRepository.getServiceTypeById(id);
     if (!existingServiceType) {
       throw new CustomError('Service type not found', 404);
@@ -82,5 +83,4 @@ export class ServiceTypeService {
 
     return updatedServiceType;
   }
-
 }

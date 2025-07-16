@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
 import { ServiceService } from '../../services/service/service.service';
 import { CustomError } from '../../util/CustomerError';
+import { CreateServiceDTO, UpdateServiceDTO, ServiceFiltersDTO } from '../../dtos/service.dto';
 
 export class ServiceController {
     private serviceService: ServiceService;
@@ -17,7 +18,19 @@ export class ServiceController {
                 throw new CustomError('Shop ID is required', HTTP_STATUS.UNAUTHORIZED);
             }
 
-            const serviceData = req.body;
+            const serviceData: CreateServiceDTO = req.body;
+
+            // Validate required fields
+            if (!serviceData.name || typeof serviceData.name !== 'string' || serviceData.name.trim().length === 0) {
+                throw new CustomError('Service name is required and must be a non-empty string', HTTP_STATUS.BAD_REQUEST);
+            }
+            if (!serviceData.serviceTypeId || typeof serviceData.serviceTypeId !== 'string') {
+                throw new CustomError('Service type ID is required', HTTP_STATUS.BAD_REQUEST);
+            }
+            if (!Array.isArray(serviceData.petTypeIds) || serviceData.petTypeIds.length === 0) {
+                throw new CustomError('At least one pet type must be selected', HTTP_STATUS.BAD_REQUEST);
+            }
+
             const newService = await this.serviceService.createService(shopId, serviceData);
 
             res.status(HTTP_STATUS.CREATED).json({
@@ -52,6 +65,10 @@ export class ServiceController {
     getServiceById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { serviceId } = req.params;
+            if (!serviceId) {
+                throw new CustomError('Service ID is required', HTTP_STATUS.BAD_REQUEST);
+            }
+
             const service = await this.serviceService.getServiceById(serviceId);
 
             res.status(HTTP_STATUS.OK).json({
@@ -64,21 +81,24 @@ export class ServiceController {
         }
     };
 
-  async getServiceByIdPublic(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { serviceId } = req.params;
-        console.log(`Fetching service with ID: ${serviceId}`);
-        const service = await this.serviceService.getServiceByIdPublic(serviceId);
-        res.status(HTTP_STATUS.OK).json({
-            success: true,
-            message: SUCCESS_MESSAGES.DATA_RETRIEVED,
-            data: service
-        });
-    } catch (error: any) {
-        console.error(`Error in getServiceByIdPublic [Controller]: ${error.message}`, error);
-        next(error);
+    async getServiceByIdPublic(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { serviceId } = req.params;
+            if (!serviceId) {
+                throw new CustomError('Service ID is required', HTTP_STATUS.BAD_REQUEST);
+            }
+            console.log(`Fetching service with ID: ${serviceId}`);
+            const service = await this.serviceService.getServiceByIdPublic(serviceId);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: SUCCESS_MESSAGES.DATA_RETRIEVED,
+                data: service
+            });
+        } catch (error: any) {
+            console.error(`Error in getServiceByIdPublic [Controller]: ${error.message}`, error);
+            next(error);
+        }
     }
-}
 
     updateService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
@@ -87,8 +107,12 @@ export class ServiceController {
             if (!shopId) {
                 throw new CustomError('Shop ID is required', HTTP_STATUS.UNAUTHORIZED);
             }
+            if (!serviceId) {
+                throw new CustomError('Service ID is required', HTTP_STATUS.BAD_REQUEST);
+            }
 
-            const updateData = req.body;
+            const updateData: UpdateServiceDTO = req.body;
+
             const updatedService = await this.serviceService.updateService(serviceId, shopId, updateData);
 
             res.status(HTTP_STATUS.OK).json({
@@ -107,6 +131,9 @@ export class ServiceController {
             const shopId = req.shop?.shopId;
             if (!shopId) {
                 throw new CustomError('Shop ID is required', HTTP_STATUS.UNAUTHORIZED);
+            }
+            if (!serviceId) {
+                throw new CustomError('Service ID is required', HTTP_STATUS.BAD_REQUEST);
             }
 
             const service = await this.serviceService.getServiceById(serviceId);
@@ -158,43 +185,28 @@ export class ServiceController {
 
     getAllServices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-
-            const {
-                petTypeIds,
-                serviceTypeIds,
-                minPrice,
-                maxPrice,
-                minDuration,
-                maxDuration,
-                minRating,
-                nearMe,
-                search,
-                page = 1,
-                pageSize = 9
-            } = req.query;
-
-            const filters: any = {
-                page: parseInt(page as string),
-                pageSize: parseInt(pageSize as string)
+            const filters: ServiceFiltersDTO = {
+                page: parseInt(req.query.page as string) || 1,
+                pageSize: parseInt(req.query.pageSize as string) || 9
             };
 
-            if (petTypeIds && typeof petTypeIds === 'string') {
-                filters.petTypeIds = petTypeIds;
+            if (req.query.petTypeIds && typeof req.query.petTypeIds === 'string') {
+                filters.petTypeIds = req.query.petTypeIds;
             }
 
-            if (serviceTypeIds && typeof serviceTypeIds === 'string') {
-                filters.serviceTypeIds = serviceTypeIds;
+            if (req.query.serviceTypeIds && typeof req.query.serviceTypeIds === 'string') {
+                filters.serviceTypeIds = req.query.serviceTypeIds;
             }
 
-            if (minPrice) filters.minPrice = parseFloat(minPrice as string);
-            if (maxPrice) filters.maxPrice = parseFloat(maxPrice as string);
+            if (req.query.minPrice) filters.minPrice = parseFloat(req.query.minPrice as string);
+            if (req.query.maxPrice) filters.maxPrice = parseFloat(req.query.maxPrice as string);
 
-            if (minDuration) filters.minDuration = parseInt(minDuration as string);
-            if (maxDuration) filters.maxDuration = parseInt(maxDuration as string);
+            if (req.query.minDuration) filters.minDuration = parseInt(req.query.minDuration as string);
+            if (req.query.maxDuration) filters.maxDuration = parseInt(req.query.maxDuration as string);
 
-            if (minRating) filters.minRating = parseFloat(minRating as string);
+            if (req.query.minRating) filters.minRating = parseFloat(req.query.minRating as string);
 
-            if (nearMe === 'true') {
+            if (req.query.nearMe === 'true') {
                 filters.nearMe = true;
                 if (req.query.lat && req.query.lng) {
                     filters.lat = parseFloat(req.query.lat as string);
@@ -202,8 +214,8 @@ export class ServiceController {
                 }
             }
 
-            if (search && typeof search === 'string') {
-                filters.search = search.trim();
+            if (req.query.search && typeof req.query.search === 'string') {
+                filters.search = req.query.search.trim();
             }
 
             const services = await this.serviceService.getAllServices(filters);

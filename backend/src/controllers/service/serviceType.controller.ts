@@ -1,27 +1,29 @@
 import { Request, Response } from 'express';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { NextFunction } from 'express-serve-static-core';
-import {ServiceTypeService} from '../../services/service/serviceType.service'
+import { ServiceTypeService } from '../../services/service/serviceType.service';
+import { CreateServiceTypeDTO, UpdateServiceTypeDTO, UpdateServiceTypeStatusDTO } from '../../dtos/serviceType.dto';
 
-export class ServiceController {
-  private serviceService: ServiceTypeService;
+export class ServiceTypeController {
+  private serviceTypeService: ServiceTypeService;
 
-  constructor(ServiceService: ServiceTypeService) {
-    this.serviceService = ServiceService;
+  constructor(serviceTypeService: ServiceTypeService) {
+    this.serviceTypeService = serviceTypeService;
   }
 
   createServiceType = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { name } = req.body;
+      const serviceTypeData: CreateServiceTypeDTO = req.body;
 
-      if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      // Validate DTO
+      if (!serviceTypeData.name || typeof serviceTypeData.name !== 'string' || serviceTypeData.name.trim().length === 0) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Service type name is required and must be a non-empty string'
         });
       }
 
-      const newServiceType = await this.serviceService.createServiceType({ name });
+      const newServiceType = await this.serviceTypeService.createServiceType(serviceTypeData);
 
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
@@ -35,7 +37,7 @@ export class ServiceController {
 
   getAllServiceTypes = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const serviceTypes = await this.serviceService.getAllServiceTypes();
+      const serviceTypes = await this.serviceTypeService.getAllServiceTypes();
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -58,12 +60,12 @@ export class ServiceController {
         });
       }
 
-      const ServiceType = await this.serviceService.getServiceTypeById(id);
+      const serviceType = await this.serviceTypeService.getServiceTypeById(id);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.FETCHED_SUCESS,
-        data: ServiceType
+        data: serviceType
       });
     } catch (error) {
       next(error);
@@ -73,7 +75,7 @@ export class ServiceController {
   updateServiceType = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const { name } = req.body;
+      const serviceTypeData: UpdateServiceTypeDTO = req.body;
 
       if (!id) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -82,14 +84,14 @@ export class ServiceController {
         });
       }
 
-      if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      if (!serviceTypeData.name || typeof serviceTypeData.name !== 'string' || serviceTypeData.name.trim().length === 0) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Service type name is required and must be a non-empty string'
         });
       }
 
-      const updatedServiceType = await this.serviceService.updateServiceType(id, { name });
+      const updatedServiceType = await this.serviceTypeService.updateServiceType(id, serviceTypeData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -104,7 +106,7 @@ export class ServiceController {
   updateServiceTypeStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const { isActive } = req.body;
+      const statusData: UpdateServiceTypeStatusDTO = req.body;
 
       if (!id) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -113,14 +115,14 @@ export class ServiceController {
         });
       }
 
-      if (typeof isActive !== 'boolean') {
+      if (typeof statusData.isActive !== 'boolean') {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'isActive must be a boolean value'
         });
       }
 
-      const updatedServiceType = await this.serviceService.updateServiceTypeStatus(id, isActive);
+      const updatedServiceType = await this.serviceTypeService.updateServiceTypeStatus(id, statusData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,

@@ -97,7 +97,7 @@ export class ServiceRepository {
 
         query.$or = [
           { duration: durationFilter },
-          { durationHoure: durationFilter }
+          { durationHour: durationFilter }
         ];
       }
 

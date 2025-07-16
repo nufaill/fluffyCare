@@ -25,7 +25,7 @@ interface Service {
   serviceTypeId: string;
   petTypeIds: string[];
   price: number;
-  durationHoure: number;
+  durationHour: number;
   image?: string;
   isActive: boolean;
   createdAt: string;
@@ -37,7 +37,7 @@ interface ServiceFormData {
   serviceTypeId: string;
   petTypeIds: string[];
   price: string;
-  durationHoure: string;
+  durationHour: string;
   image?: string; 
 }
 
@@ -47,7 +47,7 @@ interface ValidationErrors {
   serviceTypeId?: string;
   petTypeIds?: string;
   price?: string;
-  durationHoure?: string;
+  durationHour?: string;
   image?: string;
 }
 
@@ -110,11 +110,11 @@ const validateForm = (data: ServiceFormData): ValidationErrors => {
     errors.price = "Price must be greater than or equal to 0";
   }
 
-  const duration = parseFloat(data.durationHoure);
+  const duration = parseFloat(data.durationHour);
   if (isNaN(duration)) {
-    errors.durationHoure = "Duration must be a number";
+    errors.durationHour = "Duration must be a number";
   } else if (duration < 0.25) {
-    errors.durationHoure = "Duration must be at least 0.25 hours";
+    errors.durationHour = "Duration must be at least 0.25 hours";
   }
 
   return errors;
@@ -270,7 +270,7 @@ function ServiceForm({
     serviceTypeId: initialData?.serviceTypeId || "",
     petTypeIds: initialData?.petTypeIds || [],
     price: initialData?.price || "",
-    durationHoure: initialData?.durationHoure || "",
+    durationHour: initialData?.durationHour || "",
     image: initialData?.image || undefined,
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -358,6 +358,7 @@ function ServiceForm({
           return;
         }
       }
+        console.log("Frontend sending durationHour:", formData.durationHour, "Parsed:", Number.parseFloat(formData.durationHour));
       await onSubmit({ ...formData, image: imageUrl });
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -473,17 +474,17 @@ function ServiceForm({
               <Input
                 id="duration"
                 type="number"
-                value={formData.durationHoure}
-                onChange={(e) => handleInputChange("durationHoure", e.target.value)}
+                value={formData.durationHour}
+                onChange={(e) => handleInputChange("durationHour", e.target.value)}
                 placeholder="0.5"
                 min="0"
                 step="0.25"
-                className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.durationHoure ? "border-destructive" : ""}`}
+                className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.durationHour ? "border-destructive" : ""}`}
               />
-              {errors.durationHoure && (
+              {errors.durationHour && (
                 <p className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" />
-                  {errors.durationHoure}
+                  {errors.durationHour}
                 </p>
               )}
             </div>
@@ -610,46 +611,80 @@ export default function Services() {
     return matchesSearch && matchesPetType && matchesServiceType;
   });
 
-  const handleAddService = async (data: ServiceFormData) => {
-    try {
-      const serviceData: CreateServiceData = {
-        name: data.name,
-        description: data.description,
-        serviceTypeId: data.serviceTypeId,
-        petTypeIds: data.petTypeIds,
-        price: Number.parseFloat(data.price),
-        durationHoure: Number.parseFloat(data.durationHoure),
-        image: data.image,
-      };
-      const newService = await serviceService.createService(serviceData);
-      setServices((prev) => [...prev, newService]);
-      setShowAddForm(false);
-      showSuccess("Service added successfully!");
-    } catch (error) {
-      console.error("Error adding service:", error);
+ const handleAddService = async (data: ServiceFormData) => {
+  try {
+    
+    const durationValue = Number.parseFloat(data.durationHour);
+    const priceValue = Number.parseFloat(data.price);
+    
+    if (isNaN(durationValue) || durationValue <= 0) {
+      console.error("Invalid duration value:", data.durationHour);
+      return;
     }
-  };
-
-  const handleEditService = async (data: ServiceFormData) => {
-    if (!editingService) return;
-
-    try {
-      const updatedService = await serviceService.updateService(editingService._id, {
-        name: data.name,
-        description: data.description,
-        serviceTypeId: data.serviceTypeId,
-        petTypeIds: data.petTypeIds,
-        price: Number.parseFloat(data.price),
-        durationHoure: Number.parseFloat(data.durationHoure),
-        image: data.image,
-      } as UpdateServiceData);
-      setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));
-      setEditingService(null);
-      showSuccess("Service updated successfully!");
-    } catch (error) {
-      console.error("Error updating service:", error);
+    
+    if (isNaN(priceValue) || priceValue < 0) {
+      console.error("Invalid price value:", data.price);
+      return;
     }
-  };
+
+    const serviceData: CreateServiceData = {
+      name: data.name,
+      description: data.description,
+      serviceTypeId: data.serviceTypeId,
+      petTypeIds: data.petTypeIds,
+      price: priceValue,
+      durationHour: durationValue, 
+      image: data.image,
+    };
+    
+    console.log("Sending service data:", serviceData); 
+    
+    const newService = await serviceService.createService(serviceData);
+    setServices((prev) => [...prev, newService]);
+    setShowAddForm(false);
+    showSuccess("Service added successfully!");
+  } catch (error) {
+    console.error("Error adding service:", error);
+  }
+};
+
+ const handleEditService = async (data: ServiceFormData) => {
+  if (!editingService) return;
+
+  try {
+    const durationValue = Number.parseFloat(data.durationHour);
+    const priceValue = Number.parseFloat(data.price);
+    
+    if (isNaN(durationValue) || durationValue <= 0) {
+      console.error("Invalid duration value:", data.durationHour);
+      return;
+    }
+    
+    if (isNaN(priceValue) || priceValue < 0) {
+      console.error("Invalid price value:", data.price);
+      return;
+    }
+
+    const updateData: UpdateServiceData = {
+      name: data.name,
+      description: data.description,
+      serviceTypeId: data.serviceTypeId,
+      petTypeIds: data.petTypeIds,
+      price: priceValue,
+      durationHour: durationValue,
+      image: data.image,
+    };
+    
+    console.log("Updating service data:", updateData); 
+    
+    const updatedService = await serviceService.updateService(editingService._id, updateData);
+    setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));
+    setEditingService(null);
+    showSuccess("Service updated successfully!");
+  } catch (error) {
+    console.error("Error updating service:", error);
+  }
+};
 
   const handleToggleStatus = async (serviceId: string) => {
     try {
@@ -762,7 +797,7 @@ export default function Services() {
                     serviceTypeId: editingService.serviceTypeId,
                     petTypeIds: editingService.petTypeIds,
                     price: editingService.price.toString(),
-                    durationHoure: editingService.durationHoure.toString(),
+                    durationHour: editingService.durationHour.toString(),
                     image: editingService.image,
                   }
                 : undefined
@@ -884,7 +919,7 @@ export default function Services() {
                             </div>
                             <div className="flex items-center gap-1 text-muted-foreground">
                               <Clock className="h-4 w-4" />
-                              <span>{service.durationHoure}h</span>
+                              <span>{service.durationHour}h</span>
                             </div>
                           </div>
                         </div>

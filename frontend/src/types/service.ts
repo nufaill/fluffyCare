@@ -31,7 +31,7 @@ export interface PetService {
   description: string;
   price: number;
   image: string;
-  durationHoure: number;
+  durationHour: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

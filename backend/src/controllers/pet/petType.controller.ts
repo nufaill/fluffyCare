@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { PetTypeService } from '../../services/pet/petType.service';
 import { NextFunction } from 'express-serve-static-core';
+import { CreatePetTypeDTO, UpdatePetTypeDTO, UpdatePetTypeStatusDTO } from '../../dtos/petType.dto';
 
 export class PetTypeController {
   private petService: PetTypeService;
@@ -12,16 +13,16 @@ export class PetTypeController {
 
   createPetType = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { name } = req.body;
+      const petTypeData: CreatePetTypeDTO = req.body;
 
-      if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      if (!petTypeData.name || typeof petTypeData.name !== 'string' || petTypeData.name.trim().length === 0) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Pet type name is required and must be a non-empty string'
         });
       }
 
-      const newPetType = await this.petService.createPetType({ name });
+      const newPetType = await this.petService.createPetType(petTypeData);
 
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
@@ -73,7 +74,7 @@ export class PetTypeController {
   updatePetType = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const { name } = req.body;
+      const petTypeData: UpdatePetTypeDTO = req.body;
 
       if (!id) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -82,14 +83,14 @@ export class PetTypeController {
         });
       }
 
-      if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      if (!petTypeData.name || typeof petTypeData.name !== 'string' || petTypeData.name.trim().length === 0) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Pet type name is required and must be a non-empty string'
         });
       }
 
-      const updatedPetType = await this.petService.updatePetType(id, { name });
+      const updatedPetType = await this.petService.updatePetType(id, petTypeData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -104,7 +105,7 @@ export class PetTypeController {
   updatePetTypeStatus = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
-      const { isActive } = req.body;
+      const statusData: UpdatePetTypeStatusDTO = req.body;
 
       if (!id) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -113,14 +114,14 @@ export class PetTypeController {
         });
       }
 
-      if (typeof isActive !== 'boolean') {
+      if (typeof statusData.isActive !== 'boolean') {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'isActive must be a boolean value'
         });
       }
 
-      const updatedPetType = await this.petService.updatePetTypeStatus(id, isActive);
+      const updatedPetType = await this.petService.updatePetTypeStatus(id, statusData.isActive);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -131,5 +132,4 @@ export class PetTypeController {
       next(error);
     }
   };
-  
 }

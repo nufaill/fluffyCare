@@ -29,7 +29,7 @@ export const validateCreateService: RequestHandler[] = [
         .isFloat({ min: 0 })
         .withMessage('Price must be greater than or equal to 0'),
 
-    body('durationHoure')
+    body('durationHour')
         .isNumeric()
         .withMessage('Duration must be a number')
         .isFloat({ min: 0.25 })

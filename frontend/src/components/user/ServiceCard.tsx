@@ -77,7 +77,7 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
   };
 
   const getDuration = () => {
-    const duration = service.durationHoure ;
+    const duration = service.durationHour ;
     return `${duration} ${duration === 1 ? 'hour' : 'hours'}`;
   };
 

@@ -2,20 +2,24 @@ export interface CreateServiceDTO {
   name: string;
   description: string;
   price: number;
-andoli: number;
-  duration: number;
+  durationHour: number; 
   petTypeIds: string[];
   serviceTypeId: string;
+  image?: string;
+  isActive?: boolean; 
+  rating?: number; 
 }
 
 export interface UpdateServiceDTO {
   name?: string;
   description?: string;
   price?: number;
-  duration?: number;
+  durationHour?: number; 
   petTypeIds?: string[];
   serviceTypeId?: string;
+  image?: string; 
   isActive?: boolean;
+  rating?: number;
 }
 
 export interface ServiceFiltersDTO {

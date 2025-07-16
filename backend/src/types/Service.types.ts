@@ -8,11 +8,11 @@ export interface Service {
   name: string;
   description: string;
   price: number;
-  durationHoure: number;
+  durationHour: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  image?: File;
+  image?: string;
   rating:Number;
 }
 

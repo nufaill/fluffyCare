@@ -10,7 +10,7 @@ const serviceSchema = new Schema<ServiceDocument>(
     description: { type: String, required: true },
     price: { type: Number, required: true },
     image: { type: String, required: false },
-    durationHoure: { type: Number, required: true },
+    durationHour: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
     rating: { type: Number, min: 0, max: 5 },
   },

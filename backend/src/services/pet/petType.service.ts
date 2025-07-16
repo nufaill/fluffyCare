@@ -1,25 +1,18 @@
 import { PetTypeRepository } from '../../repositories/petType.repository';
 import { PetTypeDocument } from '../../types/PetType.type';
-import { CreatePetData, PetDocument } from '../../types/Pet.types';
 import { CustomError } from '../../util/CustomerError';
+import { CreatePetTypeDTO, UpdatePetTypeDTO } from '../../dtos/petType.dto';
 
 export class PetTypeService {
-  getPetById(petId: string) {
-    throw new Error('Method not implemented.');
-  }
-  updatePet(petId: string, userId: string, updateData: any) {
-    throw new Error('Method not implemented.');
-  }
   private petRepository: PetTypeRepository;
 
   constructor(petRepository: PetTypeRepository) {
     this.petRepository = petRepository;
   }
 
-  async createPetType(petTypeData: { name: string }): Promise<PetTypeDocument> {
+  async createPetType(petTypeData: CreatePetTypeDTO): Promise<PetTypeDocument> {
     const { name } = petTypeData;
 
-    // Check if pet type already exists
     const exists = await this.petRepository.checkPetTypeExists(name);
     if (exists) {
       throw new CustomError('Pet type already exists', 400);
@@ -47,7 +40,7 @@ export class PetTypeService {
     return petType;
   }
 
-  async updatePetType(id: string, updateData: { name: string }): Promise<PetTypeDocument> {
+  async updatePetType(id: string, updateData: UpdatePetTypeDTO): Promise<PetTypeDocument> {
     const { name } = updateData;
 
     const existingPetType = await this.petRepository.getPetTypeById(id);
@@ -86,5 +79,13 @@ export class PetTypeService {
     }
 
     return updatedPetType;
+  }
+
+  getPetById(petId: string) {
+    throw new Error('Method not implemented.');
+  }
+
+  updatePet(petId: string, userId: string, updateData: any) {
+    throw new Error('Method not implemented.');
   }
 }

@@ -26,7 +26,7 @@ export interface Service {
   description: string;
   price: number;
   image?: string; 
-  durationHoure: number;
+  durationHour: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -39,7 +39,7 @@ export interface CreateServiceData {
   petTypeIds: string[]; 
   price: number;
   image?: string;
-  durationHoure: number;
+  durationHour: number;
   isActive?: boolean;
 }
 
@@ -49,7 +49,7 @@ export interface UpdateServiceData {
   serviceTypeId?: string;
   petTypeIds?: string[]; 
   price?: number;
-  durationHoure?: number;
+  durationHour?: number;
   image?: string;
   isActive?: boolean;
 }

@@ -2,7 +2,7 @@ import { AdminAuthController } from "../controllers/admin/admin.controller";
 import { ShopController } from "../controllers/shop/shop.controller";
 import { UserController } from "../controllers/user/user.controller";
 import { PetTypeController } from "../controllers/pet/petType.controller";
-import { ServiceController } from "@controllers/service/serviceType.controller";
+import { ServiceTypeController } from "@controllers/service/serviceType.controller";
 import { AuthService as AdminAuthService } from "../services/admin/admin.service";
 import { ShopRepository } from "../repositories/shop.repository";
 import { UserRepository } from "../repositories/user.repository";
@@ -36,7 +36,7 @@ const injectedAdminAuthController = new AdminAuthController(adminAuthService);
 const injectedShopController = new ShopController(shopRepository);
 const injectedUserController = new UserController(userRepository);
 const injectedPetTypeController = new PetTypeController(petTypeService);
-const injectedServiceController = new ServiceController(serviceService);
+const injectedServiceController = new ServiceTypeController(serviceService);
 
 // Export for route usage
 export const adminDependencies = {
