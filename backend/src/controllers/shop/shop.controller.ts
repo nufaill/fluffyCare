@@ -1,16 +1,16 @@
 // backend/src/controllers/shop/shop.controller.ts 
 import { Request, Response } from 'express';
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
-import { ShopRepository } from '../../repositories/shop.repository';
+import { ShopService } from "../../services/shop/shop.service";
 import { CustomError } from '../../util/CustomerError';
 import { CreateShopData } from 'types/Shop.types';
 
 export class ShopController {
-  constructor(private shopRepository: ShopRepository) { }
+  constructor(private shopService: ShopService) { }
   
   getAllShops = async (req: Request, res: Response): Promise<void> => {
     try {
-      const shops = await this.shopRepository.getAllShops();
+      const shops = await this.shopService.getAllShops();
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: shops,
@@ -55,15 +55,7 @@ export class ShopController {
         return;
       }
 
-      const updatedShop = await this.shopRepository.updateShopStatus(shopId, isActive);
-
-      if (!updatedShop) {
-        res.status(HTTP_STATUS.NOT_FOUND || 404).json({
-          success: false,
-          message: 'Shop not found'
-        });
-        return;
-      }
+      const updatedShop = await this.shopService.updateShopStatus(shopId, isActive);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -90,7 +82,7 @@ export class ShopController {
 
   getUnverifiedShops = async (req: Request, res: Response): Promise<void> => {
     try {
-      const unverifiedShops = await this.shopRepository.getUnverifiedShops();
+      const unverifiedShops = await this.shopService.getUnverifiedShops();
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: unverifiedShops,
@@ -126,15 +118,7 @@ export class ShopController {
         return;
       }
 
-      const approvedShop = await this.shopRepository.updateShopVerification(shopId, true);
-
-      if (!approvedShop) {
-        res.status(HTTP_STATUS.NOT_FOUND || 404).json({
-          success: false,
-          message: 'Shop not found'
-        });
-        return;
-      }
+      const approvedShop = await this.shopService.approveShop(shopId);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -172,23 +156,7 @@ export class ShopController {
         return;
       }
 
-      const shop = await this.shopRepository.findById(shopId);
-
-      if (!shop) {
-        res.status(HTTP_STATUS.NOT_FOUND || 404).json({
-          success: false,
-          message: 'Shop not found'
-        });
-        return;
-      }
-
-      if (shop.isVerified) {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'Shop is already verified'
-        });
-        return;
-      }
+      const shop = await this.shopService.rejectShop(shopId);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -228,14 +196,7 @@ export class ShopController {
         return;
       }
 
-      const shop = await this.shopRepository.findById(shopId);
-      if (!shop) {
-        res.status(HTTP_STATUS.NOT_FOUND || 404).json({
-          success: false,
-          message: ERROR_MESSAGES.USER_NOT_FOUND
-        });
-        return;
-      }
+      const shop = await this.shopService.getShopById(shopId);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -295,71 +256,6 @@ export class ShopController {
 
       const { name, phone, logo, location, city, streetAddress, description } = req.body;
 
-      if (!name && !phone && !logo && !location && !city && !streetAddress && !description) {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'At least one field must be provided for update'
-        });
-        return;
-      }
-      if (location) {
-        if (!location.type || location.type !== 'Point' || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
-          res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-            success: false,
-            message: 'Location must be a valid GeoJSON Point'
-          });
-          return;
-        }
-        const [lng, lat] = location.coordinates;
-        if (typeof lng !== 'number' || typeof lat !== 'number' || lng < -180 || lng > 180 || lat < -90 || lat > 90) {
-          res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-            success: false,
-            message: 'Invalid longitude or latitude values'
-          });
-          return;
-        }
-      }
-
-      if (name && (name.length < 3 || name.length > 100)) {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'Shop name must be between 3 and 100 characters'
-        });
-        return;
-      }
-
-      if (phone && !/^\+?[\d\s-]{10,}$/.test(phone)) {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'Please enter a valid phone number'
-        });
-        return;
-      }
-
-      if (city && (city.length < 2 || city.length > 100)) {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'City must be between 2 and 100 characters'
-        });
-        return;
-      }
-
-      if (streetAddress && (streetAddress.length < 5 || streetAddress.length > 200)) {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'Street address must be between 5 and 200 characters'
-        });
-        return;
-      }
-
-      if (description && description.length > 1000) {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'Description must be less than 1000 characters'
-        });
-        return;
-      }
-
       const updateData: Partial<CreateShopData> = {};
       if (name) updateData.name = name;
       if (phone) updateData.phone = phone;
@@ -369,15 +265,7 @@ export class ShopController {
       if (streetAddress) updateData.streetAddress = streetAddress;
       if (description) updateData.description = description;
 
-      const updatedShop = await this.shopRepository.updateShop(shopId, updateData);
-
-      if (!updatedShop) {
-        res.status(HTTP_STATUS.NOT_FOUND || 404).json({
-          success: false,
-          message: 'Shop not found'
-        });
-        return;
-      }
+      const updatedShop = await this.shopService.updateShopProfile(shopId, updateData);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,

@@ -4,14 +4,15 @@ import { UserController } from "../controllers/user/user.controller";
 import { PetTypeController } from "../controllers/pet/petType.controller";
 import { ServiceTypeController } from "@controllers/service/serviceType.controller";
 import { AuthService as AdminAuthService } from "../services/admin/admin.service";
+import { ShopService } from "../services/shop/shop.service"; 
 import { ShopRepository } from "../repositories/shop.repository";
 import { UserRepository } from "../repositories/user.repository";
+import { AdminRepository } from "../repositories/admin.repository";
 import { PetTypeRepository } from "../repositories/petType.repository";
-import { PetTypeService } from "../services/pet/petType.service";
 import { ServiceTypeRepository } from "repositories/serviceType.repository";
+import { PetTypeService } from "../services/pet/petType.service";
 import { ServiceTypeService } from "services/service/serviceType.service";
 import { JwtService } from "../services/jwt/jwt.service";
-import { AdminRepository } from "../repositories/admin.repository";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
 import { IAdminService } from "../interfaces/serviceInterfaces/admin.interface";
 
@@ -24,7 +25,8 @@ const serviceTypeRepository = new ServiceTypeRepository();
 
 // Initialize services
 const jwtService = new JwtService();
-const adminAuthService: IAdminService = new AdminAuthService(adminRepository, jwtService); 
+const adminAuthService: IAdminService = new AdminAuthService(adminRepository, jwtService);
+const shopService = new ShopService(shopRepository); 
 const petTypeService = new PetTypeService(petTypeRepository);
 const serviceService = new ServiceTypeService(serviceTypeRepository);
 
@@ -33,7 +35,7 @@ const authMiddleware = authMiddlewareInstance;
 
 // Initialize controllers with dependencies
 const injectedAdminAuthController = new AdminAuthController(adminAuthService);
-const injectedShopController = new ShopController(shopRepository);
+const injectedShopController = new ShopController(shopService); 
 const injectedUserController = new UserController(userRepository);
 const injectedPetTypeController = new PetTypeController(petTypeService);
 const injectedServiceController = new ServiceTypeController(serviceService);
