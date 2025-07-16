@@ -1,11 +1,11 @@
 import { OtpModel, IOtp } from '../models/otpModel';
-import { CreateUserDTO } from '../dtos/auth.dto';
+import { CreateUserDTO,CreateShopDTO } from '../dtos/auth.dto';
 import bcrypt from 'bcrypt';
 import { CustomError } from '../util/CustomerError';
 import { HTTP_STATUS } from '../shared/constant';
 
 export class OtpRepository {
-  async createOtp(email: string, otp: string, userData: CreateUserDTO): Promise<IOtp> {
+  async createOtp(email: string, otp: string, userData: CreateUserDTO | CreateShopDTO): Promise<IOtp> {
     const saltRounds = 10;
     const otpHash = await bcrypt.hash(otp, saltRounds);
 

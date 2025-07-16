@@ -12,6 +12,25 @@ export interface RegisterUserDTO {
     coordinates: [number, number];
   };
 }
+export interface CreateShopDTO {
+  logo: string;
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  city: string;
+  streetAddress: string;
+  description?: string;
+  certificateUrl: string;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  isActive: boolean;
+  isVerified: boolean;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+}
 
 export type CreateUserDTO = CreateUserData; 
 

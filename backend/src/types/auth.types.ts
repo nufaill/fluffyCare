@@ -1,4 +1,3 @@
-import { GeoLocation } from '../dtos/user.dto';
 
 export interface JwtPayload {
   id: string;
@@ -11,7 +10,10 @@ export interface AuthUser {
   email: string;
   fullName: string;
   profileImage?: string;
-  location?: GeoLocation;
+   location?: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
 }
 
 export interface AuthResponse {

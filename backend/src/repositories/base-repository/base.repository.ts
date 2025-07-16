@@ -1,5 +1,4 @@
-// base.repository.ts
-import { Model, Document } from 'mongoose';
+import { Model, Document, Query } from 'mongoose';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 
@@ -29,9 +28,43 @@ export abstract class BaseRepository<T extends Document> {
     }
   }
 
-  async update(id: string, updateData: Partial<T>): Promise<T | null> {
+  async update(id: string, updateData: Partial<T>, options: { new?: boolean; runValidators?: boolean } = { new: true }): Promise<Query<T | null, T>> {
     try {
-      return await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
+      return this.model.findByIdAndUpdate(id, { $set: updateData }, options);
+    } catch (error) {
+      throw new CustomError(
+        ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async findOne(query: any): Promise<Query<T | null, T>> {
+    try {
+      return this.model.findOne(query);
+    } catch (error) {
+      throw new CustomError(
+        ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async find(query: any = {}): Promise<Query<T[], T>> {
+    try {
+      return this.model.find(query);
+    } catch (error) {
+      throw new CustomError(
+        ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async exists(query: any): Promise<boolean> {
+    try {
+      const document = await this.model.findOne(query).exec();
+      return !!document;
     } catch (error) {
       throw new CustomError(
         ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
