@@ -1,5 +1,5 @@
 import { ShopRepository } from '../../repositories/shop.repository';
-import { CreateShopData, ShopDocument } from '../../types/Shop.types';
+import {  ShopDocument } from '../../types/Shop.types';
 import { UpdateShopDTO } from '../../dtos/shop.dto';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
@@ -7,49 +7,6 @@ import { IShopService } from '../../interfaces/serviceInterfaces/shop.interface'
 
 export class ShopService implements IShopService {
   constructor(private readonly shopRepository: ShopRepository) {}
-
-  async createShop(shopData: Partial<CreateShopData>): Promise<ShopDocument> {
-    if (!shopData.email || !shopData.name || !shopData.phone || !shopData.city || !shopData.streetAddress || !shopData.certificateUrl || !shopData.location) {
-      throw new CustomError('All required fields must be provided', HTTP_STATUS.BAD_REQUEST);
-    }
-
-    if (shopData.location) {
-      if (shopData.location.type !== 'Point' || !Array.isArray(shopData.location.coordinates) || shopData.location.coordinates.length !== 2) {
-        throw new CustomError('Location must be a valid GeoJSON Point', HTTP_STATUS.BAD_REQUEST);
-      }
-      const [lng, lat] = shopData.location.coordinates;
-      if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
-        throw new CustomError('Invalid longitude or latitude values', HTTP_STATUS.BAD_REQUEST);
-      }
-    }
-
-    const existingShop = await this.shopRepository.findByEmail(shopData.email);
-    if (existingShop) {
-      throw new CustomError('Shop with this email already exists', HTTP_STATUS.CONFLICT);
-    }
-
-    const completeShopData: CreateShopData = {
-      email: shopData.email,
-      name: shopData.name,
-      phone: shopData.phone,
-      city: shopData.city,
-      streetAddress: shopData.streetAddress,
-      certificateUrl: shopData.certificateUrl,
-      location: shopData.location,
-      password: shopData.password || '',
-      logo: shopData.logo || '',
-      description: shopData.description || '',
-      isActive: shopData.isActive ?? true,
-      isVerified: shopData.isVerified ?? false,
-    };
-
-    const shop = await this.shopRepository.createShop(completeShopData);
-    if (!shop) {
-      throw new CustomError('Failed to create shop', HTTP_STATUS.INTERNAL_SERVER_ERROR);
-    }
-    return shop;
-  }
-
   async getShopById(shopId: string): Promise<ShopDocument | null> {
     const shop = await this.shopRepository.findById(shopId);
     if (!shop) {

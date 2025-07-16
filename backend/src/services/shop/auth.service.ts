@@ -1,4 +1,3 @@
-// backend/src/services/shop/authService.ts
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { ShopRepository } from '../../repositories/shop.repository';
@@ -8,11 +7,8 @@ import { OtpRepository } from '../../repositories/otp.repository';
 import { 
   CreateShopData, 
   ShopDocument, 
-  ShopLoginData, 
-  ShopRegisterData, 
   ShopAuthResponse,
   TokenPair,
-  ShopProfile,
   GeoLocation
 } from '../../types/Shop.types';
 import { JwtPayload } from '../../types/auth.types';
@@ -20,6 +16,7 @@ import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import { generateOtp, sendOtpEmail } from '../../util/sendOtp';
 import PASSWORD_RESET_MAIL_CONTENT from '../../shared/mailTemplate';
+import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from '../../dtos/auth.dto';
 
 export class AuthService {
   private readonly saltRounds = 12;
@@ -32,7 +29,7 @@ export class AuthService {
   ) {}
 
   // VALIDATE GEOJSON POINT
-  private validateGeoLocation(location: any): location is GeoLocation {
+  private validateGeoLocation(location: GeoLocation): location is GeoLocation {
     if (!location || typeof location !== 'object') {
       throw new CustomError('Location is required', HTTP_STATUS.BAD_REQUEST);
     }
@@ -66,14 +63,19 @@ export class AuthService {
     return this.jwtService.generateTokens({
       id,
       email,
-      role:"shop"
+      role: "shop"
     });
   }
 
-  // REGISTER SHOP WITH OTP
-  async register(shopData: ShopRegisterData): Promise<{ email: string }> {
+  async register(shopData: CreateShopDTO): Promise<{ email: string }> {
     const { email, password, location, ...otherData } = shopData;
+    
+    // Validate location (required)
+    if (!location) {
+      throw new CustomError('Location is required', HTTP_STATUS.BAD_REQUEST);
+    }
     this.validateGeoLocation(location);
+
     const existingShop = await this.shopRepository.findByEmail(email);
     if (existingShop) {
       console.log(`❌ [ShopAuthService] Shop already exists: ${email}`);
@@ -104,7 +106,8 @@ export class AuthService {
   }
 
   // VERIFY OTP AND COMPLETE REGISTRATION
-  async verifyOtpAndCompleteRegistration(email: string, otp: string): Promise<ShopAuthResponse> {
+  async verifyOtpAndCompleteRegistration(data: VerifyOtpDTO): Promise<ShopAuthResponse> {
+    const { email, otp } = data;
     console.log(`🔍 [ShopAuthService] Verifying OTP for email: ${email}`);
 
     // Verify OTP
@@ -173,7 +176,8 @@ export class AuthService {
   }
 
   // RESEND OTP
-  async resendOtp(email: string): Promise<void> {
+  async resendOtp(data: ResendOtpDTO): Promise<void> {
+    const { email } = data;
     console.log(`🔄 [ShopAuthService] Resending OTP for email: ${email}`);
 
     const existingOtp = await this.otpRepository.findByEmail(email);
@@ -186,9 +190,10 @@ export class AuthService {
 
     // Validate existing location data
     const userData = existingOtp.userData as unknown as CreateShopData;
-    if (userData.location) {
-      this.validateGeoLocation(userData.location);
+    if (!userData.location) {
+      throw new CustomError('Location data missing in OTP record', HTTP_STATUS.BAD_REQUEST);
     }
+    this.validateGeoLocation(userData.location);
 
     // Generate new OTP
     const otp = generateOtp();
@@ -204,7 +209,7 @@ export class AuthService {
   }
 
   // LOGIN
-  async login(data: ShopLoginData): Promise<ShopAuthResponse> {
+  async login(data: LoginUserDTO): Promise<ShopAuthResponse> {
     try {
       console.log("🔧 [ShopAuthService] Starting login process...");
 
@@ -282,7 +287,7 @@ export class AuthService {
       const newAccessToken = this.jwtService.generateAccessToken({
         id: shop._id.toString(),
         email: shop.email,
-        role:"shop"
+        role: "shop"
       });
 
       console.log("✅ [ShopAuthService] Token refreshed successfully");
@@ -297,8 +302,9 @@ export class AuthService {
   }
 
   // SEND RESET LINK
-  async sendResetLink(email: string): Promise<void> {
+  async sendResetLink(data: SendResetLinkDTO): Promise<void> {
     try {
+      const { email } = data;
       console.log("🔧 [ShopAuthService] Sending reset link for email:", email);
 
       const shop = await this.shopRepository.findByEmail(email);
@@ -324,15 +330,16 @@ export class AuthService {
   }
 
   // RESET PASSWORD
-  async resetPassword(token: string, newPassword: string, confirmPassword: string): Promise<void> {
+  async resetPassword(data: ResetPasswordDTO): Promise<void> {
     try {
+      const { token, password, confirmPassword } = data;
       console.log("🔧 [ShopAuthService] Processing password reset with token");
 
-      if (newPassword !== confirmPassword) {
+      if (password !== confirmPassword) {
         throw new CustomError('Passwords do not match', HTTP_STATUS.BAD_REQUEST);
       }
 
-      if (newPassword.length < 8) {
+      if (password.length < 8) {
         throw new CustomError('Password must be at least 8 characters long', HTTP_STATUS.BAD_REQUEST);
       }
 
@@ -343,7 +350,7 @@ export class AuthService {
         throw new CustomError('Invalid or expired reset token', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const hashedPassword = await bcrypt.hash(newPassword, this.saltRounds);
+      const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
       await this.shopRepository.updatePasswordAndClearToken(shop._id, hashedPassword);
 

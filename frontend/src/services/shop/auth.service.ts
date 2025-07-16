@@ -42,15 +42,6 @@ export const registerShop = async (data: ShopRegisterData): Promise<ShopAuthResp
 
     console.log('[registerShop] Registration successful:', response.data);
     toast.dismiss(loadingToast);
-    toast.success('Account created successfully! Welcome aboard! ', {
-      position: 'top-right',
-      duration: 5000,
-      style: {
-        background: '#DCFCE7',
-        color: '#16A34A',
-        border: '1px solid #BBF7D0',
-      },
-    });
 
     return response.data;
   } catch (error) {

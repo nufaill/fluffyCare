@@ -1,4 +1,3 @@
-// auth.dto.ts
 import { CreateUserData } from '../types/User.types';
 
 export interface RegisterUserDTO {
@@ -12,6 +11,7 @@ export interface RegisterUserDTO {
     coordinates: [number, number];
   };
 }
+
 export interface CreateShopDTO {
   logo: string;
   name: string;
@@ -22,14 +22,12 @@ export interface CreateShopDTO {
   streetAddress: string;
   description?: string;
   certificateUrl: string;
-  location?: {
+  location: {
     type: 'Point';
     coordinates: [number, number];
   };
   isActive: boolean;
   isVerified: boolean;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
 }
 
 export type CreateUserDTO = CreateUserData; 

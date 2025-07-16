@@ -1,21 +1,9 @@
-// backend/src/controllers/shop/auth.controller.ts
 import { Request, Response, NextFunction } from "express";
 import { AuthService } from "../../services/shop/auth.service";
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../../shared/constant";
 import { CustomError } from "../../util/CustomerError";
 import { setAuthCookies } from "util/cookie-helper";
-
-const validateGeoJSONPoint = (location: any): boolean => {
-  if (!location || typeof location !== 'object') return false;
-  if (location.type !== 'Point') return false;
-  if (!Array.isArray(location.coordinates) || location.coordinates.length !== 2) return false;
-
-  const [lng, lat] = location.coordinates;
-  if (typeof lng !== 'number' || typeof lat !== 'number') return false;
-  if (lng < -180 || lng > 180 || lat < -90 || lat > 90) return false;
-
-  return true;
-};
+import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from "../../dtos/auth.dto";
 
 export class ShopAuthController {
   constructor(private readonly authService: AuthService) { }
@@ -23,24 +11,36 @@ export class ShopAuthController {
   // Register shop 
   public register = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { location, email, password, name, phone, city, streetAddress, certificateUrl } = req.body;
+      const shopData: CreateShopDTO = req.body;
 
-      if (!email || !password || !name || !phone || !city || !streetAddress || !certificateUrl) {
+      // Validate required fields
+      const { email, password, name, phone, city, streetAddress, certificateUrl, location } = shopData;
+      if (!email || !password || !name || !phone || !city || !streetAddress || !certificateUrl || !location) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'All required fields must be provided'
+          message: 'All required fields (email, password, name, phone, city, streetAddress, certificateUrl, location) must be provided'
         });
         return;
       }
-      if (!validateGeoJSONPoint(location)) {
+
+      // Validate GeoJSON Point
+      if (location.type !== 'Point' || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Invalid location format. Expected GeoJSON Point with coordinates [longitude, latitude]'
         });
         return;
       }
+      const [lng, lat] = location.coordinates;
+      if (typeof lng !== 'number' || typeof lat !== 'number' || lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Invalid location coordinates. Must be numbers with longitude between -180 and 180, latitude between -90 and 90'
+        });
+        return;
+      }
 
-      const result = await this.authService.register(req.body);
+      const result = await this.authService.register(shopData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -68,9 +68,9 @@ export class ShopAuthController {
 
   public verifyOtp = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, otp } = req.body;
+      const verifyData: VerifyOtpDTO = req.body;
 
-      if (!email || !otp) {
+      if (!verifyData.email || !verifyData.otp) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Email and OTP are required',
@@ -78,7 +78,7 @@ export class ShopAuthController {
         return;
       }
 
-      const result = await this.authService.verifyOtpAndCompleteRegistration(email, otp);
+      const result = await this.authService.verifyOtpAndCompleteRegistration(verifyData);
 
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
@@ -109,9 +109,9 @@ export class ShopAuthController {
 
   public resendOtp = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email } = req.body;
+      const resendData: ResendOtpDTO = req.body;
 
-      if (!email) {
+      if (!resendData.email) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Email is required',
@@ -119,7 +119,7 @@ export class ShopAuthController {
         return;
       }
 
-      await this.authService.resendOtp(email);
+      await this.authService.resendOtp(resendData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -146,18 +146,17 @@ export class ShopAuthController {
   // Shop login
   public login = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, password } = req.body;
+      const loginData: LoginUserDTO = req.body;
 
-      if (!email || !password) {
+      if (!loginData.email || !loginData.password) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: "Email and password are required",
         });
         return;
       }
-      
 
-      const result = await this.authService.login({ email, password });
+      const result = await this.authService.login(loginData);
 
       if (!result.shop.isVerified) {
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
@@ -167,9 +166,7 @@ export class ShopAuthController {
         return;
       }
 
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken,'shop')
-
-      
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, 'shop');
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -209,6 +206,7 @@ export class ShopAuthController {
       });
     }
   };
+
   // Refresh token
   public refreshToken = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -247,12 +245,11 @@ export class ShopAuthController {
     }
   };
 
-  public sendResetLink = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public sendResetLink = async (req: Request, res: Response): Promise<void> => {
     try {
+      const resetLinkData: SendResetLinkDTO = req.body;
 
-      const { email } = req.body;
-
-      if (!email) {
+      if (!resetLinkData.email) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Email is required',
@@ -260,7 +257,7 @@ export class ShopAuthController {
         return;
       }
 
-      await this.authService.sendResetLink(email);
+      await this.authService.sendResetLink(resetLinkData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -285,12 +282,11 @@ export class ShopAuthController {
   };
 
   // Reset password
-  public resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
+      const resetData: ResetPasswordDTO = req.body;
 
-      const { token, password, confirmPassword } = req.body;
-
-      if (!token || !password || !confirmPassword) {
+      if (!resetData.token || !resetData.password || !resetData.confirmPassword) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Token, password, and confirm password are required',
@@ -298,7 +294,7 @@ export class ShopAuthController {
         return;
       }
 
-      await this.authService.resetPassword(token, password, confirmPassword);
+      await this.authService.resetPassword(resetData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
