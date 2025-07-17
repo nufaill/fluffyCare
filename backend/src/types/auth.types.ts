@@ -24,3 +24,11 @@ export interface AuthResponse {
     refreshToken: string;
   };
 }
+
+export interface GoogleUserInfo {
+  id: string;
+  email: string;
+  name: string;
+  picture: string | null;
+  verified_email: boolean;
+}

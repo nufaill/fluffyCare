@@ -5,7 +5,7 @@ import { JwtService } from '../jwt/jwt.service';
 import { GoogleAuthService } from '../googleAuth/google.service';
 import { AuthResponse, JwtPayload } from '../../types/auth.types';
 import { CreateUserDTO, RegisterUserDTO, LoginUserDTO } from '../../dto/auth.dto';
-import { IAuthService } from '../../interfaces/serviceInterfaces/authService';
+import { IAuthService } from '../../interfaces/serviceInterfaces/IAuthService';
 import { User } from '../../types/User.types';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';

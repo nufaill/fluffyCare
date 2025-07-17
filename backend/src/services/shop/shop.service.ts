@@ -3,7 +3,7 @@ import { ShopDocument } from '../../types/Shop.types';
 import { UpdateShopDTO } from '../../dto/shop.dto';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
-import { IShopService } from '../../interfaces/serviceInterfaces/shop.interface';
+import { IShopService } from '../../interfaces/serviceInterfaces/IShopService';
 import { CreateShopData } from '../../types/Shop.types';
 import { Types } from 'mongoose';
 

@@ -1,6 +1,7 @@
 // authService.ts
 import { RegisterUserDTO, LoginUserDTO } from '../../dto/auth.dto';
 import { CreateUserData } from '../../types/User.types';
+import { CreateShopData } from '../../types/Shop.types';
 import { AuthResponse } from '../../types/auth.types';
 
 export interface IAuthService {

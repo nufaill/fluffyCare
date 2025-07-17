@@ -16,7 +16,7 @@ import { PetTypeService } from "../services/pet/petType.service";
 import { ServiceTypeService } from "services/service/serviceType.service";
 import { JwtService } from "../services/jwt/jwt.service";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
-import { IAdminService } from "../interfaces/serviceInterfaces/admin.interface";
+import { IAdminService } from "../interfaces/serviceInterfaces/IAdminService";
 
 // Initialize repositories
 const shopRepository = new ShopRepository();
