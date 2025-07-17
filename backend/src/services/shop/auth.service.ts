@@ -4,21 +4,16 @@ import { ShopRepository } from '../../repositories/shop.repository';
 import { JwtService } from '../jwt/jwt.service';
 import { EmailService } from '../emailService/email.service';
 import { OtpRepository } from '../../repositories/otp.repository';
-import { 
-  CreateShopData, 
-  ShopDocument, 
-  ShopAuthResponse,
-  TokenPair,
-  GeoLocation
-} from '../../types/Shop.types';
+import {CreateShopData,ShopDocument, ShopAuthResponse,TokenPair,GeoLocation} from '../../types/Shop.types';
 import { JwtPayload } from '../../types/auth.types';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import { generateOtp, sendOtpEmail } from '../../util/sendOtp';
 import PASSWORD_RESET_MAIL_CONTENT from '../../shared/mailTemplate';
 import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from '../../dto/auth.dto';
+import { IShopAuthService } from '../../interfaces/serviceInterfaces/IAuthService';
 
-export class AuthService {
+export class AuthService implements IShopAuthService {
   private readonly saltRounds = 12;
 
   constructor(
@@ -26,35 +21,35 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly otpRepository: OtpRepository
-  ) {}
+  ) { }
 
   // VALIDATE GEOJSON POINT
   private validateGeoLocation(location: GeoLocation): location is GeoLocation {
     if (!location || typeof location !== 'object') {
       throw new CustomError('Location is required', HTTP_STATUS.BAD_REQUEST);
     }
-    
+
     if (location.type !== 'Point') {
       throw new CustomError('Location must be a GeoJSON Point', HTTP_STATUS.BAD_REQUEST);
     }
-    
+
     if (!Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
       throw new CustomError('Location coordinates must be an array of [longitude, latitude]', HTTP_STATUS.BAD_REQUEST);
     }
-    
+
     const [lng, lat] = location.coordinates;
     if (typeof lng !== 'number' || typeof lat !== 'number') {
       throw new CustomError('Location coordinates must be numbers', HTTP_STATUS.BAD_REQUEST);
     }
-    
+
     if (lng < -180 || lng > 180) {
       throw new CustomError('Longitude must be between -180 and 180', HTTP_STATUS.BAD_REQUEST);
     }
-    
+
     if (lat < -90 || lat > 90) {
       throw new CustomError('Latitude must be between -90 and 90', HTTP_STATUS.BAD_REQUEST);
     }
-    
+
     return true;
   }
 
@@ -69,7 +64,7 @@ export class AuthService {
 
   async register(shopData: CreateShopDTO): Promise<{ email: string }> {
     const { email, password, location, ...otherData } = shopData;
-    
+
     // Validate location (required)
     if (!location) {
       throw new CustomError('Location is required', HTTP_STATUS.BAD_REQUEST);
@@ -128,11 +123,11 @@ export class AuthService {
 
     console.log(`✅ [ShopAuthService] OTP verified successfully for ${email}`);
     const shopData = verificationResult.userData as unknown as CreateShopData;
-    
+
     if (shopData.location) {
       this.validateGeoLocation(shopData.location);
     }
-    
+
     console.log(`🏪 [ShopAuthService] Creating shop with data:`, {
       email: shopData.email,
       name: shopData.name,

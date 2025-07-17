@@ -1,10 +1,10 @@
-// backend/src/repositories/adminRepository.ts
 import { BaseRepository } from './base-repository/base.repository';
 import { Admin, AdminDocument } from '../models/adminModel';
 import { CustomError } from '../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../shared/constant';
+import { IAdminRepository } from '../interfaces/repositoryInterfaces/IAdminRepository';
 
-export class AdminRepository extends BaseRepository<AdminDocument> {
+export class AdminRepository extends BaseRepository<AdminDocument> implements IAdminRepository {
   constructor() {
     super(Admin);
   }

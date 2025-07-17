@@ -3,8 +3,9 @@ import { PetRepository } from '../../repositories/pet.repository';
 import { CreatePetData, PetDocument } from '../../types/Pet.types';
 import { CustomError } from '../../util/CustomerError';
 import { CreatePetDTO, UpdatePetDTO } from '../../dto/pet.dto';
+import { IPetService } from '../../interfaces/serviceInterfaces/IPetService';
 
-export class PetService {
+export class PetService implements IPetService {
   private petRepository: PetRepository;
 
   constructor(petRepository: PetRepository) {

@@ -1,14 +1,14 @@
-// user.controller.ts
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { IUserController } from '../../interfaces/controllerInterfaces/IUserController';
 import { UserService } from '../../services/user/user.service';
 import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
-import { UpdateUserStatusDTO, UpdateUserDTO, NearbyUsersDTO, UsersWithinRadiusDTO } from '../../dto/user.dto';
+import { UpdateUserStatusDTO, UpdateUserDTO } from '../../dto/user.dto';
 
-export class UserController {
+export class UserController implements IUserController {
   constructor(private userService: UserService) {}
 
-  getAllUsers = async (req: Request, res: Response): Promise<void> => {
+  getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const users = await this.userService.getAllUsers();
       res.status(HTTP_STATUS.OK || 200).json({
@@ -24,10 +24,11 @@ export class UserController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  updateUserStatus = async (req: Request, res: Response): Promise<void> => {
+  updateUserStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { userId } = req.params;
       const updateStatusDTO: UpdateUserStatusDTO = req.body;
@@ -47,10 +48,11 @@ export class UserController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  getProfile = async (req: Request, res: Response): Promise<void> => {
+  getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { userId } = req.params;
       const user = await this.userService.getProfile(userId);
@@ -78,83 +80,41 @@ export class UserController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  updateProfile = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { userId } = req.params;
-      const updateUserDTO: UpdateUserDTO = req.body;
+updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const updateUserDTO: UpdateUserDTO = req.body;
 
-      const updatedUser = await this.userService.updateProfile(userId, updateUserDTO);
-      
-      res.status(HTTP_STATUS.OK || 200).json({
-        success: true,
-        data: {
-          id: updatedUser._id,
-          email: updatedUser.email,
-          fullName: updatedUser.fullName,
-          phone: updatedUser.phone,
-          profileImage: updatedUser.profileImage,
-          location: updatedUser.location,
-          createdAt: updatedUser.createdAt,
-          updatedAt: updatedUser.updatedAt,
-          isActive: updatedUser.isActive,
-        },
-        message: SUCCESS_MESSAGES.PROFILE_UPDATED_SUCCESS || 'Profile updated successfully',
-      });
-    } catch (error) {
-      console.error(`❌ [UserController] Error:`, error);
-      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-      const message = error instanceof Error ? error.message : ERROR_MESSAGES.PROFILE_UPDATE_FAILED || 'Failed to update profile';
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
-    }
-  };
-
-  findNearbyUsers = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const nearbyUsersDTO: NearbyUsersDTO = req.body;
-
-      const users = await this.userService.findNearbyUsers(nearbyUsersDTO);
-
-      res.status(HTTP_STATUS.OK || 200).json({
-        success: true,
-        data: users,
-        message: 'Nearby users fetched successfully',
-      });
-    } catch (error) {
-      console.error(`❌ [UserController] Error:`, error);
-      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-      const message = error instanceof Error ? error.message : 'Failed to fetch nearby users';
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
-    }
-  };
-
-  findUsersWithinRadius = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const usersWithinRadiusDTO: UsersWithinRadiusDTO = req.body;
-
-      const users = await this.userService.findUsersWithinRadius(usersWithinRadiusDTO);
-
-      res.status(HTTP_STATUS.OK || 200).json({
-        success: true,
-        data: users,
-        message: 'Users within radius fetched successfully',
-      });
-    } catch (error) {
-      console.error(`❌ [UserController] Error:`, error);
-      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-      const message = error instanceof Error ? error.message : 'Failed to fetch users within radius';
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
-    }
-  };
+    const updatedUser = await this.userService.updateUser(userId, updateUserDTO);
+    
+    res.status(HTTP_STATUS.OK || 200).json({
+      success: true,
+      data: {
+        id: updatedUser!._id,
+        email: updatedUser!.email,
+        fullName: updatedUser!.fullName,
+        phone: updatedUser!.phone,
+        profileImage: updatedUser!.profileImage,
+        location: updatedUser!.location,
+        createdAt: updatedUser!.createdAt,
+        updatedAt: updatedUser!.updatedAt,
+        isActive: updatedUser!.isActive,
+      },
+      message: SUCCESS_MESSAGES.PROFILE_UPDATED_SUCCESS || 'Profile updated successfully',
+    });
+  } catch (error) {
+    console.error(`❌ [UserController] Error:`, error);
+    const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    const message = error instanceof Error ? error.message : ERROR_MESSAGES.PROFILE_UPDATE_FAILED || 'Failed to update profile';
+    res.status(statusCode).json({
+      success: false,
+      message,
+    });
+    next(error);
+  }
+};
 }

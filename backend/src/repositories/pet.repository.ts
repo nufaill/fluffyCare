@@ -3,8 +3,9 @@ import { Pet } from '../models/petModel';
 import { CreatePetData, PetDocument } from '../types/Pet.types';
 import { PetTypeDocument } from '../types/PetType.type';
 import { PetType } from '../models/petTypeModel';
+import { IPetRepository } from '../interfaces/repositoryInterfaces/IPetRepository';
 
-export class PetRepository {
+export class PetRepository implements IPetRepository {
 
   async createPet(petData: CreatePetData): Promise<PetDocument> {
     const pet = new Pet(petData);
@@ -18,7 +19,6 @@ export class PetRepository {
   }
 
   async getPetById(petId: string): Promise<PetDocument | null> {
-    console.log("pet id", petId)
     return await Pet.findById(petId)
       .populate('petTypeId', 'name')
       .populate('userId', 'name email');

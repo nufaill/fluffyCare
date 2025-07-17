@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
+import { IAdminController } from '../../interfaces/controllerInterfaces/IAdminController';
 import { IAdminService } from '../../interfaces/serviceInterfaces/IAdminService';
-import {  LoginDto, AuthResponseDto } from '../../dto/admin.dto';
+import { LoginDto, AuthResponseDto } from '../../dto/admin.dto';
 import { setAuthCookies, clearAuthCookies } from '../../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 
-export class AdminAuthController {
+export class AdminAuthController implements IAdminController {
   constructor(private _adminService: IAdminService) {} 
 
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -24,6 +25,7 @@ export class AdminAuthController {
       next(error);
     }
   };
+
   logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       clearAuthCookies(res);

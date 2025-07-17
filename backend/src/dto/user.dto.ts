@@ -25,14 +25,14 @@ export interface CreateUserDTO {
   googleId?: string;
 }
 
-export interface NearbyUsersDTO {
-  longitude: number;
-  latitude: number;
-  maxDistance?: number; 
-}
+// export interface NearbyUsersDTO {
+//   longitude: number;
+//   latitude: number;
+//   maxDistance?: number; 
+// }
 
-export interface UsersWithinRadiusDTO {
-  longitude: number;
-  latitude: number;
-  radiusInKm: number;
-}
+// export interface UsersWithinRadiusDTO {
+//   longitude: number;
+//   latitude: number;
+//   radiusInKm: number;
+// }

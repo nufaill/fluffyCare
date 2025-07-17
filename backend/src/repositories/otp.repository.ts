@@ -1,15 +1,16 @@
 import { OtpModel, IOtp } from '../models/otpModel';
-import { CreateUserDTO,CreateShopDTO } from '../dto/auth.dto';
+import { CreateUserDTO, CreateShopDTO } from '../dto/auth.dto';
 import bcrypt from 'bcrypt';
 import { CustomError } from '../util/CustomerError';
 import { HTTP_STATUS } from '../shared/constant';
+import { IOtpRepository } from '../interfaces/repositoryInterfaces/IOtpRepository';
 
-export class OtpRepository {
+export class OtpRepository implements IOtpRepository {
   async createOtp(email: string, otp: string, userData: CreateUserDTO | CreateShopDTO): Promise<IOtp> {
     const saltRounds = 10;
     const otpHash = await bcrypt.hash(otp, saltRounds);
 
-    await OtpModel.deleteMany({ email: email.toLowerCase().trim() });
+    await OtpModel.deleteMany ({ email: email.toLowerCase().trim() });
     const otpDoc = new OtpModel({
       email: email.toLowerCase().trim(),
       otpHash,
@@ -52,7 +53,7 @@ export class OtpRepository {
     }
 
     if (otpDoc.attempts >= 3) {
-      console.log(`🚫 [OtpRepository] Max attempts (${otpDoc.attempts}) reached for ${normalizedEmail}`);
+      console.log(`�keyboard_arrow_up🚫 [OtpRepository] Max attempts (${otpDoc.attempts}) reached for ${normalizedEmail}`);
       await OtpModel.deleteOne({ email: normalizedEmail });
       return { isValid: false, maxAttemptsReached: true };
     }

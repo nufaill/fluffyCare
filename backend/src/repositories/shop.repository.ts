@@ -1,14 +1,18 @@
 import { Shop } from '../models/shopModel';
 import { CreateShopData, ShopDocument } from '../types/Shop.types';
 import { Types } from 'mongoose';
-export class ShopRepository {
+import IShopRepository from '../interfaces/repositoryInterfaces/IShopRepository';
+
+export class ShopRepository implements IShopRepository {
   async findByEmail(email: string): Promise<ShopDocument | null> {
     const shop = await Shop.findOne({ email });
     return shop;
   }
+
   async findById(id: string): Promise<ShopDocument | null> {
     return await Shop.findById(id);
   }
+
   async createShop(data: CreateShopData): Promise<ShopDocument> {
     const shop = new Shop(data);
     return await shop.save();
@@ -26,6 +30,7 @@ export class ShopRepository {
     const shop = await Shop.findOne({ email });
     return !!shop;
   }
+
   async setResetToken(email: string, token: string, expires: Date): Promise<ShopDocument | null> {
     return await Shop.findOneAndUpdate(
       { email },
@@ -55,6 +60,7 @@ export class ShopRepository {
       { new: true }
     );
   }
+
   async getAllShops(): Promise<ShopDocument[]> {
     return await Shop.find({})
       .select('-password -resetPasswordToken -resetPasswordExpires')
@@ -69,13 +75,12 @@ export class ShopRepository {
     ).select('-password -resetPasswordToken -resetPasswordExpires');
   }
 
-    async getUnverifiedShops(): Promise<ShopDocument[]> {
+  async getUnverifiedShops(): Promise<ShopDocument[]> {
     return await Shop.find({ isVerified: false })
       .select('-password -resetPasswordToken -resetPasswordExpires')
       .sort({ createdAt: -1 });
   }
 
-  
   async updateShopVerification(shopId: string, isVerified: boolean): Promise<ShopDocument | null> {
     return await Shop.findByIdAndUpdate(
       shopId,
@@ -83,5 +88,12 @@ export class ShopRepository {
       { new: true, runValidators: true }
     ).select('-password -resetPasswordToken -resetPasswordExpires');
   }
-  
+
+  async checkShopNameExists(name: string, excludeShopId?: string): Promise<boolean> {
+    const query = excludeShopId
+      ? { name: { $regex: `^${name}$`, $options: 'i' }, _id: { $ne: excludeShopId } }
+      : { name: { $regex: `^${name}$`, $options: 'i' } };
+    const shop = await Shop.findOne(query);
+    return !!shop;
+  }
 }

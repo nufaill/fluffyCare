@@ -1,12 +1,13 @@
 import bcrypt from 'bcrypt';
 import { AdminRepository } from '../../repositories/admin.repository';
 import { JwtService } from '../jwt/jwt.service';
-import {  LoginDto, AuthResponseDto, AdminResponseDto } from '../../dto/admin.dto';
+import { LoginDto, AuthResponseDto, AdminResponseDto } from '../../dto/admin.dto';
 import { AdminDocument } from '../../models/adminModel';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
+import { IAdminService } from '../../interfaces/serviceInterfaces/IAdminService';
 
-export class AuthService {
+export class AuthService implements IAdminService {
   constructor(
     private adminRepository: AdminRepository,
     private jwtService: JwtService
@@ -21,7 +22,7 @@ export class AuthService {
     }
 
     const isPasswordValid = await bcrypt.compare(password, admin.password);
-    if (!isPasswordValid) {
+    if (!admin) {
       throw new CustomError(ERROR_MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
     }
 

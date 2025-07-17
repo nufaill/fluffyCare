@@ -1,4 +1,3 @@
-// user.repository.ts
 import { User } from '../models/userModel';
 import { UpdateUserDTO } from '../dto/user.dto';
 import { CreateUserDTO } from '../dto/auth.dto';
@@ -7,8 +6,9 @@ import { Types } from 'mongoose';
 import { CustomError } from '../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../shared/constant';
 import { validateGeoLocation } from '../validations/geo.validation';
+import IUserRepository from '../interfaces/repositoryInterfaces/IUserRepository';
 
-export class UserRepository {
+export class UserRepository implements IUserRepository {
   async findByEmail(email: string): Promise<UserType | null> {
     const user = await User.findOne({ email });
     if (user) {
@@ -121,31 +121,5 @@ export class UserRepository {
       return { ...user.toObject(), _id: user._id.toString() } as UserType;
     }
     return null;
-  }
-
-  async findNearbyUsers(longitude: number, latitude: number, maxDistance: number = 5000): Promise<UserType[]> {
-    const users = await User.find({
-      isActive: true,
-      location: {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [longitude, latitude] },
-          $maxDistance: maxDistance,
-        },
-      },
-    }).select('-password -resetPasswordToken -resetPasswordExpires');
-    return users.map((user) => ({ ...user.toObject(), _id: user._id.toString() } as UserType));
-  }
-
-  async findUsersWithinRadius(longitude: number, latitude: number, radiusInKm: number): Promise<UserType[]> {
-    const radiusInMeters = radiusInKm * 1000;
-    const users = await User.find({
-      isActive: true,
-      location: {
-        $geoWithin: {
-          $centerSphere: [[longitude, latitude], radiusInMeters / 6378100],
-        },
-      },
-    }).select('-password -resetPasswordToken -resetPasswordExpires');
-    return users.map((user) => ({ ...user.toObject(), _id: user._id.toString() } as UserType));
   }
 }

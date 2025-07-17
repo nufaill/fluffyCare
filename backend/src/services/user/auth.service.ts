@@ -1,11 +1,10 @@
-// auth.service.ts
 import bcrypt from 'bcrypt';
 import { UserRepository } from '../../repositories/user.repository';
 import { JwtService } from '../jwt/jwt.service';
 import { GoogleAuthService } from '../googleAuth/google.service';
 import { AuthResponse, JwtPayload } from '../../types/auth.types';
-import { CreateUserDTO, RegisterUserDTO, LoginUserDTO } from '../../dto/auth.dto';
-import { IAuthService } from '../../interfaces/serviceInterfaces/IAuthService';
+import { CreateUserDTO, RegisterUserDTO, LoginUserDTO, ResetPasswordDTO } from '../../dto/auth.dto';
+import { IUserAuthService } from '../../interfaces/serviceInterfaces/IAuthService';
 import { User } from '../../types/User.types';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
@@ -17,7 +16,7 @@ import crypto from 'crypto';
 import { Types } from 'mongoose';
 import { validateGeoLocation } from '../../validations/geo.validation';
 
-export class AuthService implements IAuthService {
+export class AuthService implements IUserAuthService {
   private readonly saltRounds = 12;
 
   constructor(
@@ -26,7 +25,7 @@ export class AuthService implements IAuthService {
     private googleService: GoogleAuthService,
     private emailService: EmailService,
     private otpRepository: OtpRepository
-  ) {}
+  ) { }
 
   generateTokens(id: string, email: string) {
     return this.jwtService.generateTokens({ id, email, role: 'user' });
@@ -59,7 +58,8 @@ export class AuthService implements IAuthService {
     return { email: userData.email };
   }
 
-  async verifyOtpAndCompleteRegistration(email: string, otp: string): Promise<{ user: User; tokens: any }> {
+  async verifyOtpAndCompleteRegistration(data: { email: string; otp: string }): Promise<AuthResponse> {
+    const { email, otp } = data;
     console.log(`🔍 [AuthService] Verifying OTP for ${email}`);
     const verificationResult = await this.otpRepository.verifyOtp(email, otp);
     if (!verificationResult.isValid) {
@@ -79,10 +79,21 @@ export class AuthService implements IAuthService {
     const user = await this.userRepository.createUser(userData);
     const tokens = this.generateTokens(user._id, user.email);
     console.log(`🎟️ [AuthService] Tokens generated for ${user.email}`);
-    return { user, tokens };
+    return {
+      success: true,
+      user: {
+        id: user._id,
+        email: user.email,
+        fullName: user.fullName,
+        profileImage: user.profileImage,
+        location: user.location,
+      },
+      tokens,
+    };
   }
 
-  async resendOtp(email: string): Promise<void> {
+  async resendOtp(data: { email: string }): Promise<void> {
+    const { email } = data;
     console.log(`🔄 [AuthService] Resending OTP for ${email}`);
     const existingOtp = await this.otpRepository.findByEmail(email);
     if (!existingOtp) {
@@ -140,8 +151,8 @@ export class AuthService implements IAuthService {
         email: normalizedEmail,
         phone: '',
         password: '',
-        profileImage: googleUser.picture,
-        googleId: googleUser.id,
+        profileImage: googleUser.picture || 'https://i.pinimg.com/1200x/ef/0c/19/ef0c19df86ebd3fd36df90f8d664ead6.jpg',
+         googleId: googleUser.id,
         isActive: true,
         isGoogleUser: true,
         location: { type: 'Point', coordinates: [0, 0] },
@@ -188,7 +199,8 @@ export class AuthService implements IAuthService {
     return newAccessToken;
   }
 
-  async sendResetLink(email: string) {
+  async sendResetLink(data: { email: string }): Promise<void> {
+    const { email } = data;
     console.log(`🔧 [AuthService] Sending reset link for ${email}`);
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
@@ -204,7 +216,8 @@ export class AuthService implements IAuthService {
     console.log(`✅ [AuthService] Reset link sent to ${email}`);
   }
 
-  async resetPassword(token: string, newPassword: string, confirmPassword: string) {
+  async resetPassword(data: ResetPasswordDTO): Promise<void> {
+    const { token, password: newPassword, confirmPassword } = data;
     console.log(`🔧 [AuthService] Processing password reset`);
     if (newPassword !== confirmPassword) {
       console.log(`❌ [AuthService] Passwords do not match`);

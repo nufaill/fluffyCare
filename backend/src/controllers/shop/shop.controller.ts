@@ -1,14 +1,15 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { ShopService } from "../../services/shop/shop.service";
 import { CustomError } from '../../util/CustomerError';
 import { CreateShopData } from 'types/Shop.types';
 import { UpdateShopStatusDTO, UpdateShopDTO, RejectShopDTO } from '../../dto/shop.dto';
+import { IShopController } from '../../interfaces/controllerInterfaces/IShopController';
 
-export class ShopController {
+export class ShopController implements IShopController {
   constructor(private shopService: ShopService) { }
 
-  getAllShops = async (req: Request, res: Response): Promise<void> => {
+  getAllShops = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const shops = await this.shopService.getAllShops();
       res.status(HTTP_STATUS.OK || 200).json({
@@ -34,7 +35,7 @@ export class ShopController {
     }
   };
 
-  updateShopStatus = async (req: Request, res: Response): Promise<void> => {
+  updateShopStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { shopId } = req.params;
       const body: UpdateShopStatusDTO = req.body;
@@ -80,7 +81,7 @@ export class ShopController {
     }
   };
 
-  getUnverifiedShops = async (req: Request, res: Response): Promise<void> => {
+  getUnverifiedShops = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const unverifiedShops = await this.shopService.getUnverifiedShops();
       res.status(HTTP_STATUS.OK || 200).json({
@@ -106,7 +107,7 @@ export class ShopController {
     }
   };
 
-  approveShop = async (req: Request, res: Response): Promise<void> => {
+  approveShop = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { shopId } = req.params;
 
@@ -143,7 +144,7 @@ export class ShopController {
     }
   };
 
-  rejectShop = async (req: Request, res: Response): Promise<void> => {
+  rejectShop = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { shopId } = req.params;
       const body: RejectShopDTO = req.body;
@@ -193,7 +194,7 @@ export class ShopController {
     }
   };
 
-  getShopProfile = async (req: Request, res: Response): Promise<void> => {
+  getShopProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { shopId } = req.params;
       if (!shopId) {
@@ -242,9 +243,8 @@ export class ShopController {
     }
   };
 
-  updateShopProfile = async (req: Request, res: Response): Promise<void> => {
+  updateShopProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Check if shop is authenticated
       if (!req.shop) {
         res.status(HTTP_STATUS.UNAUTHORIZED || 401).json({
           success: false,

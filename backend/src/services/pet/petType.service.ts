@@ -2,15 +2,17 @@ import { PetTypeRepository } from '../../repositories/petType.repository';
 import { PetTypeDocument } from '../../types/PetType.type';
 import { CustomError } from '../../util/CustomerError';
 import { CreatePetTypeDTO, UpdatePetTypeDTO } from '../../dto/petType.dto';
+import { IPetTypeService } from '../../interfaces/serviceInterfaces/IPetTypeService';
+import { PetType } from '../../types/PetType.type';
 
-export class PetTypeService {
+export class PetTypeService implements IPetTypeService {
   private petRepository: PetTypeRepository;
 
   constructor(petRepository: PetTypeRepository) {
     this.petRepository = petRepository;
   }
 
-  async createPetType(petTypeData: CreatePetTypeDTO): Promise<PetTypeDocument> {
+  async createPetType(petTypeData: CreatePetTypeDTO): Promise<PetType> {
     const { name } = petTypeData;
 
     const exists = await this.petRepository.checkPetTypeExists(name);
@@ -32,7 +34,7 @@ export class PetTypeService {
     return await this.petRepository.getAllPetTypes();
   }
 
-  async getPetTypeById(id: string): Promise<PetTypeDocument> {
+  async getPetTypeById(id: string): Promise<PetType | null> {
     const petType = await this.petRepository.getPetTypeById(id);
     if (!petType) {
       throw new CustomError('Pet type not found', 404);
@@ -40,7 +42,7 @@ export class PetTypeService {
     return petType;
   }
 
-  async updatePetType(id: string, updateData: UpdatePetTypeDTO): Promise<PetTypeDocument> {
+  async updatePetType(id: string, updateData: UpdatePetTypeDTO): Promise<PetType | null> {
     const { name } = updateData;
 
     const existingPetType = await this.petRepository.getPetTypeById(id);

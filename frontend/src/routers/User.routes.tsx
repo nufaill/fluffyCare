@@ -60,7 +60,7 @@ const UserRoutes = () => {
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
       <Route path="/services" element={<Services />} />
       <Route path="/services/:id" element={<ServiceDetails />} />
-            {/* Protected routes - require authentication */}
+      {/* Protected routes - require authentication */}
       <Route
         path="/profile"
         element={

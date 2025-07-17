@@ -2,8 +2,9 @@ import { ServiceTypeRepository } from '../../repositories/serviceType.repository
 import { CreateServiceTypeDTO, UpdateServiceTypeDTO, UpdateServiceTypeStatusDTO } from '../../dto/serviceType.dto';
 import { ServiceTypeDocument } from '../../types/serviceType.type';
 import { CustomError } from '../../util/CustomerError';
+import { IServiceTypeService } from '../../interfaces/serviceInterfaces/IServiceTypeService';
 
-export class ServiceTypeService {
+export class ServiceTypeService implements IServiceTypeService {
   private serviceTypeRepository: ServiceTypeRepository;
 
   constructor(serviceTypeRepository: ServiceTypeRepository) {
@@ -43,7 +44,6 @@ export class ServiceTypeService {
   async updateServiceType(id: string, updateData: UpdateServiceTypeDTO): Promise<ServiceTypeDocument> {
     const { name } = updateData;
 
-    // Check if Service type exists
     const existingServiceType = await this.serviceTypeRepository.getServiceTypeById(id);
     if (!existingServiceType) {
       throw new CustomError('Service type not found', 404);

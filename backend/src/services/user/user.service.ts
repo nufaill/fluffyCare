@@ -1,11 +1,11 @@
-// user.service.ts
 import { UserRepository } from '../../repositories/user.repository';
 import { User, CreateUserData } from '../../types/User.types';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
-import { UpdateUserDTO, NearbyUsersDTO, UsersWithinRadiusDTO } from '../../dto/user.dto';
+import { UpdateUserDTO } from '../../dto/user.dto';
+import { IUserService } from '../../interfaces/serviceInterfaces/IUserService';
 
-export class UserService {
+export class UserService implements IUserService {
   constructor(private userRepository: UserRepository) {}
 
   async getAllUsers(): Promise<User[]> {
@@ -80,7 +80,7 @@ export class UserService {
     }
   }
 
-  async updateProfile(userId: string, updateData: UpdateUserDTO): Promise<User> {
+  async updateUser(userId: string, updateData: Partial<CreateUserData>): Promise<User | null> {
     try {
       if (!userId) {
         throw new CustomError(
@@ -89,7 +89,7 @@ export class UserService {
         );
       }
 
-      const { fullName, phone, profileImage, location } = updateData;
+      const { fullName, phone, profileImage, location } = updateData as UpdateUserDTO;
       
       if (!fullName && !phone && !profileImage && !location) {
         throw new CustomError(
@@ -117,7 +117,7 @@ export class UserService {
     }
   }
 
-  async findUserById(userId: string): Promise<User | null> {
+  async findById(userId: string): Promise<User | null> {
     try {
       return await this.userRepository.findById(userId);
     } catch (error) {
@@ -134,28 +134,6 @@ export class UserService {
     } catch (error) {
       throw error instanceof CustomError ? error : new CustomError(
         'Failed to find user by email',
-        HTTP_STATUS.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-
-  async findNearbyUsers(dto: NearbyUsersDTO): Promise<User[]> {
-    try {
-      return await this.userRepository.findNearbyUsers(dto.longitude, dto.latitude, dto.maxDistance ?? 5000);
-    } catch (error) {
-      throw error instanceof CustomError ? error : new CustomError(
-        'Failed to find nearby users',
-        HTTP_STATUS.INTERNAL_SERVER_ERROR
-      );
-    }
-  }
-
-  async findUsersWithinRadius(dto: UsersWithinRadiusDTO): Promise<User[]> {
-    try {
-      return await this.userRepository.findUsersWithinRadius(dto.longitude, dto.latitude, dto.radiusInKm);
-    } catch (error) {
-      throw error instanceof CustomError ? error : new CustomError(
-        'Failed to find users within radius',
         HTTP_STATUS.INTERNAL_SERVER_ERROR
       );
     }

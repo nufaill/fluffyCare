@@ -1,14 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
+import { IAuthController } from '../../interfaces/controllerInterfaces/IAuthController';
 import { AuthService } from '../../services/user/auth.service';
 import { setAuthCookies, clearAuthCookies, updateAccessTokenCookie } from '../../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import { RegisterUserDTO, LoginUserDTO } from '../../dto/auth.dto';
 
-export class AuthController {
+export class AuthController implements IAuthController {
   constructor(private authService: AuthService) {}
 
-  register = async (req: Request, res: Response): Promise<void> => {
+  register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: RegisterUserDTO = req.body;
       const result = await this.authService.register(userData);
@@ -26,10 +27,11 @@ export class AuthController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  verifyOtp = async (req: Request, res: Response): Promise<void> => {
+  verifyOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email, otp } = req.body;
       if (!email || !otp) {
@@ -54,10 +56,11 @@ export class AuthController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  resendOtp = async (req: Request, res: Response): Promise<void> => {
+  resendOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email } = req.body;
       if (!email) {
@@ -80,10 +83,11 @@ export class AuthController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  login = async (req: Request, res: Response): Promise<void> => {
+  login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const loginData: LoginUserDTO = req.body;
       const result = await this.authService.login(loginData);
@@ -101,10 +105,11 @@ export class AuthController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  googleAuth = async (req: Request, res: Response): Promise<void> => {
+  googleAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { credential } = req.body;
       if (!credential) {
@@ -129,10 +134,11 @@ export class AuthController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  refreshToken = async (req: Request, res: Response): Promise<void> => {
+  refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const refreshToken = req.cookies?.refreshToken;
       if (!refreshToken) {
@@ -156,10 +162,11 @@ export class AuthController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  sendResetLink = async (req: Request, res: Response): Promise<void> => {
+  sendResetLink = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email } = req.body;
       if (!email) {
@@ -182,10 +189,11 @@ export class AuthController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  resetPassword = async (req: Request, res: Response): Promise<void> => {
+  resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { token, password, confirmPassword } = req.body;
       if (!token || !password || !confirmPassword) {
@@ -208,10 +216,11 @@ export class AuthController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 
-  logout = async (req: Request, res: Response): Promise<void> => {
+  logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       clearAuthCookies(res);
       res.status(HTTP_STATUS.OK || 200).json({
@@ -226,6 +235,7 @@ export class AuthController {
         success: false,
         message,
       });
+      next(error);
     }
   };
 }

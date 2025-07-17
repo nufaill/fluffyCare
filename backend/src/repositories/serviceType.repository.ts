@@ -1,7 +1,8 @@
 import { ServiceType } from '../models/serviceTypeModel';
 import { CreateServiceType, ServiceTypeDocument } from '../types/serviceType.type';
+import { IServiceTypeRepository } from '../interfaces/repositoryInterfaces/IServiceTypeRepository';
 
-export class ServiceTypeRepository {
+export class ServiceTypeRepository implements IServiceTypeRepository {
 
     async createServiceType(serviceTypeData: Partial<CreateServiceType>): Promise<ServiceTypeDocument> {
         const serviceType = new ServiceType(serviceTypeData);

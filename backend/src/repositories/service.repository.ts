@@ -5,8 +5,9 @@ import { PetType } from '../models/petTypeModel';
 import { ServiceTypeDocument } from '../types/serviceType.type';
 import { PetTypeDocument } from '../types/PetType.type';
 import { Types } from "mongoose";
+import { IServiceRepository } from '../interfaces/repositoryInterfaces/IServiceRepository';
 
-export class ServiceRepository {
+export class ServiceRepository implements IServiceRepository {
   async createService(serviceData: CreateServiceData): Promise<ServiceDocument> {
     const service = new Service(serviceData);
     return await service.save();
@@ -62,7 +63,6 @@ export class ServiceRepository {
   }
 
   async getAllServiceTypes(): Promise<ServiceTypeDocument[]> {
-
     return await ServiceType.find({ isActive: true }).sort({ createdAt: -1 });
   }
 
@@ -146,7 +146,6 @@ export class ServiceRepository {
       throw error;
     }
   }
-
 
   async getServicesNearLocation(lat: number, lng: number, maxDistance: number = 10000): Promise<ServiceDocument[]> {
     return await Service.find({

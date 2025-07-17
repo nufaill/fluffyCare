@@ -1,27 +1,28 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { PetService } from '../../services/pet/pet.service';
-import { NextFunction } from 'express-serve-static-core';
 import { CreatePetDTO, UpdatePetDTO } from '../../dto/pet.dto';
+import { IPetController } from '../../interfaces/controllerInterfaces/IPetController';
 
-export class PetController {
+export class PetController implements IPetController {
   private petService: PetService;
 
   constructor(petService: PetService) {
     this.petService = petService;
   }
 
-  createPet = async (req: Request, res: Response, next: NextFunction) => {
+  createPet = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user?.userId || req.params.userId;
       const petData: CreatePetDTO = req.body;
 
       // Validation
       if (!userId) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'User ID is required'
         });
+        return;
       }
 
       if (
@@ -33,26 +34,29 @@ export class PetController {
         !petData.gender ||
         !petData.weight
       ) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Pet type, profile image, name, breed, age, gender, and weight are required'
         });
+        return;
       }
 
       try {
         new URL(petData.profileImage);
       } catch {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Profile image must be a valid URL'
         });
+        return;
       }
 
       if (!['Male', 'Female'].includes(petData.gender)) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Gender must be either Male or Female'
         });
+        return;
       }
 
       const newPet = await this.petService.createPet(userId, {
@@ -81,7 +85,7 @@ export class PetController {
     }
   };
 
-  getAllPetTypes = async (req: Request, res: Response, next: NextFunction) => {
+  getAllPetTypes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const petTypes = await this.petService.getAllPetTypes();
 
@@ -95,15 +99,16 @@ export class PetController {
     }
   };
 
-  getPetsByUserId = async (req: Request, res: Response, next: NextFunction) => {
+  getPetsByUserId = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = req.user?.userId || req.params.userId;
 
       if (!userId) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'User ID is required'
         });
+        return;
       }
 
       const pets = await this.petService.getPetsByUserId(userId);
@@ -118,15 +123,16 @@ export class PetController {
     }
   };
 
-  getPetById = async (req: Request, res: Response, next: NextFunction) => {
+  getPetById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { petId } = req.params;
 
       if (!petId) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Pet ID is required'
         });
+        return;
       }
 
       const pet = await this.petService.getPetById(petId);
@@ -141,31 +147,34 @@ export class PetController {
     }
   };
 
-  updatePet = async (req: Request, res: Response, next: NextFunction) => {
+  updatePet = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { petId } = req.params;
       const userId = req.user?.userId;
       const updateData: UpdatePetDTO = req.body;
 
       if (!userId) {
-        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        res.status(HTTP_STATUS.UNAUTHORIZED).json({
           success: false,
           message: 'Authentication required'
         });
+        return;
       }
 
       if (!petId) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Pet ID is required'
         });
+        return;
       }
 
       if (updateData.gender && !['Male', 'Female'].includes(updateData.gender)) {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Gender must be either Male or Female'
         });
+        return;
       }
 
       const updatedPet = await this.petService.updatePet(petId, userId, updateData);

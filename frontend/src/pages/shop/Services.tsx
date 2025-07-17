@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react";
 import { useState, useEffect } from "react";
 import { PawPrint, Search, Edit2, Save, X, Plus, Clock, DollarSign, AlertCircle, CheckCircle2, Trash2 } from "lucide-react";
@@ -352,6 +350,7 @@ function ServiceForm({
       let imageUrl: string | undefined = formData.image;
       if (selectedFile) {
         imageUrl = await handleImageUpload(selectedFile);
+        
         if (!imageUrl) {
           setErrors((prev) => ({ ...prev, image: "Failed to upload image" }));
           setIsSubmitting(false);

@@ -5,8 +5,9 @@ import { ServiceTypeDocument } from '../../types/serviceType.type';
 import { PetTypeDocument } from '../../types/PetType.type';
 import { CustomError } from '../../util/CustomerError';
 import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from 'shared/constant';
+import { IServiceService } from '../../interfaces/serviceInterfaces/IServiceService';
 
-export class ServiceService {
+export class ServiceService implements IServiceService {
     private serviceRepository: ServiceRepository;
 
     constructor(serviceRepository: ServiceRepository) {
@@ -15,8 +16,6 @@ export class ServiceService {
 
     async createService(shopId: string, serviceData: CreateServiceDTO): Promise<ServiceDocument> {
         const { name, serviceTypeId, petTypeIds, description, price, durationHour, isActive = true, rating = 0, image } = serviceData;
-
-        console.log(serviceData)
 
         // Validate required fields
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
