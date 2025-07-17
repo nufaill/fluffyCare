@@ -1,5 +1,5 @@
 // authService.ts
-import { RegisterUserDTO, LoginUserDTO } from '../../dtos/auth.dto';
+import { RegisterUserDTO, LoginUserDTO } from '../../dto/auth.dto';
 import { CreateUserData } from '../../types/User.types';
 import { AuthResponse } from '../../types/auth.types';
 

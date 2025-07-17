@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { IAdminService } from '../../interfaces/serviceInterfaces/admin.interface';
-import {  LoginDto, AuthResponseDto } from '../../dtos/admin.dto';
+import {  LoginDto, AuthResponseDto } from '../../dto/admin.dto';
 import { setAuthCookies, clearAuthCookies } from '../../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 

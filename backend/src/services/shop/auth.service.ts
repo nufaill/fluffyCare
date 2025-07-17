@@ -16,7 +16,7 @@ import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import { generateOtp, sendOtpEmail } from '../../util/sendOtp';
 import PASSWORD_RESET_MAIL_CONTENT from '../../shared/mailTemplate';
-import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from '../../dtos/auth.dto';
+import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from '../../dto/auth.dto';
 
 export class AuthService {
   private readonly saltRounds = 12;

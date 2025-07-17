@@ -1,13 +1,13 @@
-// backend/src/controllers/shop/shop.controller.ts 
 import { Request, Response } from 'express';
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { ShopService } from "../../services/shop/shop.service";
 import { CustomError } from '../../util/CustomerError';
 import { CreateShopData } from 'types/Shop.types';
+import { UpdateShopStatusDTO, UpdateShopDTO, RejectShopDTO } from '../../dto/shop.dto';
 
 export class ShopController {
   constructor(private shopService: ShopService) { }
-  
+
   getAllShops = async (req: Request, res: Response): Promise<void> => {
     try {
       const shops = await this.shopService.getAllShops();
@@ -17,15 +17,15 @@ export class ShopController {
         message: 'shops fetched successfully'
       });
     } catch (error) {
-      console.error("❌ [AdminShopController] Get all shops error:", error);
+      console.error("❌ [ShopController] Get all shops error:", error);
 
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+      const statusCode = error instanceof CustomError
+        ? error.statusCode
+        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
 
-      const message = error instanceof Error ?
-        error.message :
-        'Failed to fetch shops';
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to fetch shops';
 
       res.status(statusCode).json({
         success: false,
@@ -37,7 +37,7 @@ export class ShopController {
   updateShopStatus = async (req: Request, res: Response): Promise<void> => {
     try {
       const { shopId } = req.params;
-      const { isActive } = req.body;
+      const body: UpdateShopStatusDTO = req.body;
 
       if (!shopId) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -47,7 +47,7 @@ export class ShopController {
         return;
       }
 
-      if (typeof isActive !== 'boolean') {
+      if (typeof body.isActive !== 'boolean') {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
           success: false,
           message: 'isActive must be a boolean value'
@@ -55,23 +55,23 @@ export class ShopController {
         return;
       }
 
-      const updatedShop = await this.shopService.updateShopStatus(shopId, isActive);
+      const updatedShop = await this.shopService.updateShopStatus(shopId, body.isActive);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: updatedShop,
-        message: `Shop ${isActive ? 'activated' : 'blocked'} successfully`
+        message: `Shop ${body.isActive ? 'activated' : 'blocked'} successfully`
       });
     } catch (error) {
-      console.error("❌ [AdminShopController] Update shop status error:", error);
+      console.error("❌ [ShopController] Update shop status error:", error);
 
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+      const statusCode = error instanceof CustomError
+        ? error.statusCode
+        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
 
-      const message = error instanceof Error ?
-        error.message :
-        'Failed to update shop status';
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to update shop status';
 
       res.status(statusCode).json({
         success: false,
@@ -89,15 +89,15 @@ export class ShopController {
         message: 'Unverified shops fetched successfully'
       });
     } catch (error) {
-      console.error("❌ [AdminShopController] Get unverified shops error:", error);
+      console.error("❌ [ShopController] Get unverified shops error:", error);
 
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+      const statusCode = error instanceof CustomError
+        ? error.statusCode
+        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
 
-      const message = error instanceof Error ?
-        error.message :
-        'Failed to fetch unverified shops';
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to fetch unverified shops';
 
       res.status(statusCode).json({
         success: false,
@@ -126,15 +126,15 @@ export class ShopController {
         message: 'Shop approved successfully'
       });
     } catch (error) {
-      console.error("❌ [AdminShopController] Approve shop error:", error);
+      console.error("❌ [ShopController] Approve shop error:", error);
 
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+      const statusCode = error instanceof CustomError
+        ? error.statusCode
+        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
 
-      const message = error instanceof Error ?
-        error.message :
-        'Failed to approve shop';
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to approve shop';
 
       res.status(statusCode).json({
         success: false,
@@ -146,12 +146,20 @@ export class ShopController {
   rejectShop = async (req: Request, res: Response): Promise<void> => {
     try {
       const { shopId } = req.params;
-      const { rejectionReason } = req.body;
+      const body: RejectShopDTO = req.body;
 
       if (!shopId) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
           success: false,
           message: 'Shop ID is required'
+        });
+        return;
+      }
+
+      if (body.rejectionReason && typeof body.rejectionReason !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'rejectionReason must be a string'
         });
         return;
       }
@@ -164,19 +172,19 @@ export class ShopController {
         data: {
           shopId,
           action: 'rejected',
-          rejectionReason: rejectionReason || 'No reason provided'
+          rejectionReason: body.rejectionReason || 'No reason provided'
         }
       });
     } catch (error) {
-      console.error("❌ [AdminShopController] Reject shop error:", error);
+      console.error("❌ [ShopController] Reject shop error:", error);
 
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+      const statusCode = error instanceof CustomError
+        ? error.statusCode
+        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
 
-      const message = error instanceof Error ?
-        error.message :
-        'Failed to process shop rejection';
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to process shop rejection';
 
       res.status(statusCode).json({
         success: false,
@@ -254,16 +262,80 @@ export class ShopController {
         return;
       }
 
-      const { name, phone, logo, location, city, streetAddress, description } = req.body;
+      const body: UpdateShopDTO = req.body;
+
+      // Manual validation for UpdateShopDTO
+      const validFields = ['name', 'phone', 'logo', 'city', 'streetAddress', 'description', 'location'];
+      const invalidFields = Object.keys(body).filter(key => !validFields.includes(key));
+      if (invalidFields.length > 0) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: `Invalid fields provided: ${invalidFields.join(', ')}`
+        });
+        return;
+      }
+
+      // Validate types for provided fields
+      if (body.name && typeof body.name !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'name must be a string'
+        });
+        return;
+      }
+      if (body.phone && typeof body.phone !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'phone must be a string'
+        });
+        return;
+      }
+      if (body.logo && typeof body.logo !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'logo must be a string'
+        });
+        return;
+      }
+      if (body.city && typeof body.city !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'city must be a string'
+        });
+        return;
+      }
+      if (body.streetAddress && typeof body.streetAddress !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'streetAddress must be a string'
+        });
+        return;
+      }
+      if (body.description && typeof body.description !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'description must be a string'
+        });
+        return;
+      }
+      if (body.location) {
+        if (body.location.type !== 'Point' || !Array.isArray(body.location.coordinates) || body.location.coordinates.length !== 2 || !body.location.coordinates.every((coord: any) => typeof coord === 'number')) {
+          res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+            success: false,
+            message: 'location must be a valid Point object with [number, number] coordinates'
+          });
+          return;
+        }
+      }
 
       const updateData: Partial<CreateShopData> = {};
-      if (name) updateData.name = name;
-      if (phone) updateData.phone = phone;
-      if (logo) updateData.logo = logo;
-      if (location) updateData.location = location;
-      if (city) updateData.city = city;
-      if (streetAddress) updateData.streetAddress = streetAddress;
-      if (description) updateData.description = description;
+      if (body.name) updateData.name = body.name;
+      if (body.phone) updateData.phone = body.phone;
+      if (body.logo) updateData.logo = body.logo;
+      if (body.location) updateData.location = body.location;
+      if (body.city) updateData.city = body.city;
+      if (body.streetAddress) updateData.streetAddress = body.streetAddress;
+      if (body.description) updateData.description = body.description;
 
       const updatedShop = await this.shopService.updateShopProfile(shopId, updateData);
 

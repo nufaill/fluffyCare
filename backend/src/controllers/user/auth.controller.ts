@@ -1,21 +1,9 @@
-// auth.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../../services/user/auth.service';
 import { setAuthCookies, clearAuthCookies, updateAccessTokenCookie } from '../../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
-import { RegisterUserDTO, LoginUserDTO } from '../../dtos/auth.dto';
-
-// Centralized error handler
-const handleError = (error: unknown, res: Response, defaultMessage: string, defaultStatus: number = HTTP_STATUS.BAD_REQUEST) => {
-  console.error(`❌ [AuthController] Error:`, error);
-  const statusCode = error instanceof CustomError ? error.statusCode : defaultStatus;
-  const message = error instanceof Error ? error.message : defaultMessage;
-  res.status(statusCode).json({
-    success: false,
-    message,
-  });
-};
+import { RegisterUserDTO, LoginUserDTO } from '../../dto/auth.dto';
 
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -31,7 +19,13 @@ export class AuthController {
         otpSent: true,
       });
     } catch (error) {
-      handleError(error, res, 'Failed to send verification email');
+      console.error(`❌ [AuthController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.BAD_REQUEST;
+      const message = error instanceof Error ? error.message : 'Failed to send verification email';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
@@ -53,7 +47,13 @@ export class AuthController {
         user: result.user,
       });
     } catch (error) {
-      handleError(error, res, 'OTP verification failed');
+      console.error(`❌ [AuthController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.BAD_REQUEST;
+      const message = error instanceof Error ? error.message : 'OTP verification failed';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
@@ -73,7 +73,13 @@ export class AuthController {
         message: 'New OTP sent to your email',
       });
     } catch (error) {
-      handleError(error, res, 'Failed to resend OTP');
+      console.error(`❌ [AuthController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.BAD_REQUEST;
+      const message = error instanceof Error ? error.message : 'Failed to resend OTP';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
@@ -88,7 +94,13 @@ export class AuthController {
         user: result.user,
       });
     } catch (error) {
-      handleError(error, res, 'Login failed');
+      console.error(`❌ [AuthController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.BAD_REQUEST;
+      const message = error instanceof Error ? error.message : 'Login failed';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
@@ -110,7 +122,13 @@ export class AuthController {
         user: result.user,
       });
     } catch (error) {
-      handleError(error, res, 'Google authentication failed');
+      console.error(`❌ [AuthController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.BAD_REQUEST;
+      const message = error instanceof Error ? error.message : 'Google authentication failed';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
@@ -131,7 +149,13 @@ export class AuthController {
         message: 'Token refreshed successfully',
       });
     } catch (error) {
-      handleError(error, res, 'Token refresh failed', HTTP_STATUS.UNAUTHORIZED || 401);
+      console.error(`❌ [AuthController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.UNAUTHORIZED;
+      const message = error instanceof Error ? error.message : 'Token refresh failed';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
@@ -151,7 +175,13 @@ export class AuthController {
         message: SUCCESS_MESSAGES.OTP_SEND_SUCCESS || 'Reset link sent successfully',
       });
     } catch (error) {
-      handleError(error, res, 'Failed to send reset link');
+      console.error(`❌ [AuthController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.BAD_REQUEST;
+      const message = error instanceof Error ? error.message : 'Failed to send reset link';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
@@ -171,7 +201,13 @@ export class AuthController {
         message: SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS || 'Password reset successful',
       });
     } catch (error) {
-      handleError(error, res, 'Password reset failed');
+      console.error(`❌ [AuthController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.BAD_REQUEST;
+      const message = error instanceof Error ? error.message : 'Password reset failed';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
@@ -183,7 +219,13 @@ export class AuthController {
         message: 'Logged out successfully',
       });
     } catch (error) {
-      handleError(error, res, 'Logout failed', HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+      console.error(`❌ [AuthController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : 'Logout failed';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 }

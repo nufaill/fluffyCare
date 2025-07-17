@@ -1,3 +1,4 @@
+// adminInjection.ts
 import { AdminAuthController } from "../controllers/admin/admin.controller";
 import { ShopController } from "../controllers/shop/shop.controller";
 import { UserController } from "../controllers/user/user.controller";
@@ -5,6 +6,7 @@ import { PetTypeController } from "../controllers/pet/petType.controller";
 import { ServiceTypeController } from "@controllers/service/serviceType.controller";
 import { AuthService as AdminAuthService } from "../services/admin/admin.service";
 import { ShopService } from "../services/shop/shop.service"; 
+import { UserService } from "../services/user/user.service"; 
 import { ShopRepository } from "../repositories/shop.repository";
 import { UserRepository } from "../repositories/user.repository";
 import { AdminRepository } from "../repositories/admin.repository";
@@ -27,6 +29,7 @@ const serviceTypeRepository = new ServiceTypeRepository();
 const jwtService = new JwtService();
 const adminAuthService: IAdminService = new AdminAuthService(adminRepository, jwtService);
 const shopService = new ShopService(shopRepository); 
+const userService = new UserService(userRepository); 
 const petTypeService = new PetTypeService(petTypeRepository);
 const serviceService = new ServiceTypeService(serviceTypeRepository);
 
@@ -36,7 +39,7 @@ const authMiddleware = authMiddlewareInstance;
 // Initialize controllers with dependencies
 const injectedAdminAuthController = new AdminAuthController(adminAuthService);
 const injectedShopController = new ShopController(shopService); 
-const injectedUserController = new UserController(userRepository);
+const injectedUserController = new UserController(userService); 
 const injectedPetTypeController = new PetTypeController(petTypeService);
 const injectedServiceController = new ServiceTypeController(serviceService);
 
@@ -47,5 +50,7 @@ export const adminDependencies = {
   userController: injectedUserController,
   petTypeController: injectedPetTypeController,
   serviceController: injectedServiceController,
-  authMiddleware
+  authMiddleware,
+  userService,
+  userRepository 
 };

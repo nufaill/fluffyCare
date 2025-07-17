@@ -1,91 +1,60 @@
 // user.controller.ts
 import { Request, Response } from 'express';
-import { UserRepository } from '../../repositories/user.repository';
+import { UserService } from '../../services/user/user.service';
 import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
-import { CreateUserData, User } from '../../types/User.types';
-
-// Centralized error handler
-const handleError = (error: unknown, res: Response, defaultMessage: string, defaultStatus: number = HTTP_STATUS.INTERNAL_SERVER_ERROR) => {
-  console.error(`❌ [UserController] Error:`, error);
-  const statusCode = error instanceof CustomError ? error.statusCode : defaultStatus;
-  const message = error instanceof Error ? error.message : defaultMessage;
-  res.status(statusCode).json({
-    success: false,
-    message,
-  });
-};
+import { UpdateUserStatusDTO, UpdateUserDTO, NearbyUsersDTO, UsersWithinRadiusDTO } from '../../dto/user.dto';
 
 export class UserController {
-  constructor(private userRepository: UserRepository) {}
+  constructor(private userService: UserService) {}
 
   getAllUsers = async (req: Request, res: Response): Promise<void> => {
     try {
-      const users = await this.userRepository.getAllUsers();
+      const users = await this.userService.getAllUsers();
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: users,
         message: SUCCESS_MESSAGES.USERS_FETCHED_SUCESS || 'Users fetched successfully',
       });
     } catch (error) {
-      handleError(error, res, ERROR_MESSAGES.USERS_FETCHED_FAILED || 'Failed to fetch users');
+      console.error(`❌ [UserController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : ERROR_MESSAGES.USERS_FETCHED_FAILED || 'Failed to fetch users';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
   updateUserStatus = async (req: Request, res: Response): Promise<void> => {
     try {
       const { userId } = req.params;
-      const { isActive } = req.body;
-      if (!userId) {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: ERROR_MESSAGES.ID_REQUIRED || 'User ID is required',
-        });
-        return;
-      }
-      if (typeof isActive !== 'boolean') {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: ERROR_MESSAGES.IS_ACTIVE_ERROR || 'isActive must be a boolean',
-        });
-        return;
-      }
-      const updatedUser = await this.userRepository.updateUserStatus(userId, isActive);
-      if (!updatedUser) {
-        res.status(HTTP_STATUS.NOT_FOUND || 404).json({
-          success: false,
-          message: ERROR_MESSAGES.USER_NOT_FOUND || 'User not found',
-        });
-        return;
-      }
+      const updateStatusDTO: UpdateUserStatusDTO = req.body;
+
+      const updatedUser = await this.userService.updateUserStatus(userId, updateStatusDTO.isActive);
+      
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: updatedUser,
-        message: `User ${isActive ? 'activated' : 'blocked'} successfully`,
+        message: `User ${updateStatusDTO.isActive ? 'activated' : 'blocked'} successfully`,
       });
     } catch (error) {
-      handleError(error, res, 'Failed to update user status');
+      console.error(`❌ [UserController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : 'Failed to update user status';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
   getProfile = async (req: Request, res: Response): Promise<void> => {
     try {
       const { userId } = req.params;
-      if (!userId) {
-        res.status(HTTP_STATUS.UNAUTHORIZED || 401).json({
-          success: false,
-          message: ERROR_MESSAGES.UNAUTH_NO_USER_FOUND || 'User ID required',
-        });
-        return;
-      }
-      const user = await this.userRepository.findById(userId);
-      if (!user) {
-        res.status(HTTP_STATUS.NOT_FOUND || 404).json({
-          success: false,
-          message: ERROR_MESSAGES.USER_NOT_FOUND || 'User not found',
-        });
-        return;
-      }
+      const user = await this.userService.getProfile(userId);
+      
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: {
@@ -102,37 +71,23 @@ export class UserController {
         message: SUCCESS_MESSAGES.PROFILE_FETCHED_SUCCESS || 'Profile fetched successfully',
       });
     } catch (error) {
-      handleError(error, res, ERROR_MESSAGES.PROFILE_FETCHED_FAILED || 'Failed to fetch profile');
+      console.error(`❌ [UserController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : ERROR_MESSAGES.PROFILE_FETCHED_FAILED || 'Failed to fetch profile';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 
   updateProfile = async (req: Request, res: Response): Promise<void> => {
     try {
       const { userId } = req.params;
-      if (!userId) {
-        res.status(HTTP_STATUS.UNAUTHORIZED || 401).json({
-          success: false,
-          message: ERROR_MESSAGES.UNAUTH_NO_USER_FOUND || 'User ID required',
-        });
-        return;
-      }
-      const { fullName, phone, profileImage, location } = req.body;
-      if (!fullName && !phone && !profileImage && !location) {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: ERROR_MESSAGES.INVALID_INPUT || 'At least one field must be provided for update',
-        });
-        return;
-      }
-      const updateData: Partial<CreateUserData> = { fullName, phone, profileImage, location };
-      const updatedUser = await this.userRepository.updateUser(userId, updateData);
-      if (!updatedUser) {
-        res.status(HTTP_STATUS.NOT_FOUND || 404).json({
-          success: false,
-          message: ERROR_MESSAGES.USER_NOT_FOUND || 'User not found',
-        });
-        return;
-      }
+      const updateUserDTO: UpdateUserDTO = req.body;
+
+      const updatedUser = await this.userService.updateProfile(userId, updateUserDTO);
+      
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: {
@@ -149,7 +104,57 @@ export class UserController {
         message: SUCCESS_MESSAGES.PROFILE_UPDATED_SUCCESS || 'Profile updated successfully',
       });
     } catch (error) {
-      handleError(error, res, ERROR_MESSAGES.PROFILE_UPDATE_FAILED || 'Failed to update profile');
+      console.error(`❌ [UserController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : ERROR_MESSAGES.PROFILE_UPDATE_FAILED || 'Failed to update profile';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
+    }
+  };
+
+  findNearbyUsers = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const nearbyUsersDTO: NearbyUsersDTO = req.body;
+
+      const users = await this.userService.findNearbyUsers(nearbyUsersDTO);
+
+      res.status(HTTP_STATUS.OK || 200).json({
+        success: true,
+        data: users,
+        message: 'Nearby users fetched successfully',
+      });
+    } catch (error) {
+      console.error(`❌ [UserController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : 'Failed to fetch nearby users';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
+    }
+  };
+
+  findUsersWithinRadius = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const usersWithinRadiusDTO: UsersWithinRadiusDTO = req.body;
+
+      const users = await this.userService.findUsersWithinRadius(usersWithinRadiusDTO);
+
+      res.status(HTTP_STATUS.OK || 200).json({
+        success: true,
+        data: users,
+        message: 'Users within radius fetched successfully',
+      });
+    } catch (error) {
+      console.error(`❌ [UserController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : 'Failed to fetch users within radius';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
     }
   };
 }

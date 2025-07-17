@@ -1,5 +1,5 @@
 import { ServiceRepository } from '../../repositories/service.repository';
-import { CreateServiceDTO, UpdateServiceDTO, ServiceFiltersDTO } from '../../dtos/service.dto';
+import { CreateServiceDTO, UpdateServiceDTO, ServiceFiltersDTO } from '../../dto/service.dto';
 import { ServiceDocument } from '../../types/Service.types';
 import { ServiceTypeDocument } from '../../types/serviceType.type';
 import { PetTypeDocument } from '../../types/PetType.type';

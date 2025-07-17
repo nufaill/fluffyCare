@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { PetTypeService } from '../../services/pet/petType.service';
 import { NextFunction } from 'express-serve-static-core';
-import { CreatePetTypeDTO, UpdatePetTypeDTO, UpdatePetTypeStatusDTO } from '../../dtos/petType.dto';
+import { CreatePetTypeDTO, UpdatePetTypeDTO, UpdatePetTypeStatusDTO } from '../../dto/petType.dto';
 
 export class PetTypeController {
   private petService: PetTypeService;

@@ -4,7 +4,7 @@ import { UserRepository } from '../../repositories/user.repository';
 import { JwtService } from '../jwt/jwt.service';
 import { GoogleAuthService } from '../googleAuth/google.service';
 import { AuthResponse, JwtPayload } from '../../types/auth.types';
-import { CreateUserDTO, RegisterUserDTO, LoginUserDTO } from '../../dtos/auth.dto';
+import { CreateUserDTO, RegisterUserDTO, LoginUserDTO } from '../../dto/auth.dto';
 import { IAuthService } from '../../interfaces/serviceInterfaces/authService';
 import { User } from '../../types/User.types';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';

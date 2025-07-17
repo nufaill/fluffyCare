@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { AuthService } from "../../services/shop/auth.service";
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../../shared/constant";
 import { CustomError } from "../../util/CustomerError";
 import { setAuthCookies } from "util/cookie-helper";
-import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from "../../dtos/auth.dto";
+import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from "../../dto/auth.dto";
 
 export class ShopAuthController {
   constructor(private readonly authService: AuthService) { }

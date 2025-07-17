@@ -1,7 +1,7 @@
 import { PetTypeRepository } from '../../repositories/petType.repository';
 import { PetTypeDocument } from '../../types/PetType.type';
 import { CustomError } from '../../util/CustomerError';
-import { CreatePetTypeDTO, UpdatePetTypeDTO } from '../../dtos/petType.dto';
+import { CreatePetTypeDTO, UpdatePetTypeDTO } from '../../dto/petType.dto';
 
 export class PetTypeService {
   private petRepository: PetTypeRepository;

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { NextFunction } from 'express-serve-static-core';
 import { ServiceTypeService } from '../../services/service/serviceType.service';
-import { CreateServiceTypeDTO, UpdateServiceTypeDTO, UpdateServiceTypeStatusDTO } from '../../dtos/serviceType.dto';
+import { CreateServiceTypeDTO, UpdateServiceTypeDTO, UpdateServiceTypeStatusDTO } from '../../dto/serviceType.dto';
 
 export class ServiceTypeController {
   private serviceTypeService: ServiceTypeService;

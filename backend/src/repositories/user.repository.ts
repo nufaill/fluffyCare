@@ -1,7 +1,7 @@
 // user.repository.ts
 import { User } from '../models/userModel';
-import { UpdateUserDTO } from '../dtos/user.dto';
-import { CreateUserDTO } from '../dtos/auth.dto';
+import { UpdateUserDTO } from '../dto/user.dto';
+import { CreateUserDTO } from '../dto/auth.dto';
 import { User as UserType } from '../types/User.types';
 import { Types } from 'mongoose';
 import { CustomError } from '../util/CustomerError';

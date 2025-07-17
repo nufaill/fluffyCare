@@ -1,5 +1,5 @@
 import { ServiceTypeRepository } from '../../repositories/serviceType.repository';
-import { CreateServiceTypeDTO, UpdateServiceTypeDTO, UpdateServiceTypeStatusDTO } from '../../dtos/serviceType.dto';
+import { CreateServiceTypeDTO, UpdateServiceTypeDTO, UpdateServiceTypeStatusDTO } from '../../dto/serviceType.dto';
 import { ServiceTypeDocument } from '../../types/serviceType.type';
 import { CustomError } from '../../util/CustomerError';
 

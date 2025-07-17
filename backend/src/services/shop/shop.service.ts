@@ -1,6 +1,6 @@
 import { ShopRepository } from '../../repositories/shop.repository';
 import { ShopDocument } from '../../types/Shop.types';
-import { UpdateShopDTO } from '../../dtos/shop.dto';
+import { UpdateShopDTO } from '../../dto/shop.dto';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { IShopService } from '../../interfaces/serviceInterfaces/shop.interface';
