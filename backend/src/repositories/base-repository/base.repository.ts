@@ -1,12 +1,44 @@
-import { Model, Document, Query } from 'mongoose';
+import { Model, FilterQuery, UpdateQuery, Types, Query } from 'mongoose';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
+import { IBaseRepository } from '../../interfaces/repositoryInterfaces/IBaseRepository';
 
-export abstract class BaseRepository<T extends Document> {
-  constructor(protected model: Model<T>) {}
+type MongooseDoc = Document;
+
+export class BaseRepository<T extends MongooseDoc> implements IBaseRepository<T> {
+ protected model: Model<T>;
+
+  constructor(model: Model<T>) {
+    this.model = model;
+  }
+
+  find(filter: FilterQuery<T> = {}): Query<T[], T> {
+    try {
+      return this.model.find(filter);
+    } catch (error) {
+      throw new CustomError(
+        ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  findOne(filter: FilterQuery<T>): Query<T | null, T> {
+    try {
+      return this.model.findOne(filter);
+    } catch (error) {
+      throw new CustomError(
+        ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
 
   async findById(id: string): Promise<T | null> {
     try {
+      if (!Types.ObjectId.isValid(id)) {
+        return null;
+      }
       return await this.model.findById(id).exec();
     } catch (error) {
       throw new CustomError(
@@ -16,10 +48,10 @@ export abstract class BaseRepository<T extends Document> {
     }
   }
 
-  async create(entity: Partial<T>): Promise<T> {
+  async create(payload: Partial<T>): Promise<T> {
     try {
-      const document = new this.model(entity);
-      return await document.save();
+      const doc = new this.model(payload);
+      return await doc.save();
     } catch (error) {
       throw new CustomError(
         ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
@@ -28,9 +60,9 @@ export abstract class BaseRepository<T extends Document> {
     }
   }
 
-  async update(id: string, updateData: Partial<T>, options: { new?: boolean; runValidators?: boolean } = { new: true }): Promise<Query<T | null, T>> {
+  update(filter: FilterQuery<T>, update: UpdateQuery<T>): Query<T | null, T> {
     try {
-      return this.model.findByIdAndUpdate(id, { $set: updateData }, options);
+      return this.model.findOneAndUpdate(filter, update, { new: true, runValidators: true });
     } catch (error) {
       throw new CustomError(
         ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
@@ -39,9 +71,12 @@ export abstract class BaseRepository<T extends Document> {
     }
   }
 
-  async findOne(query: any): Promise<Query<T | null, T>> {
+  updateById(id: string, update: UpdateQuery<T>): Query<T | null, T> {
     try {
-      return this.model.findOne(query);
+      if (!Types.ObjectId.isValid(id)) {
+        return this.model.findOne({ _id: id } as FilterQuery<T>);
+      }
+      return this.model.findByIdAndUpdate(id, update, { new: true, runValidators: true });
     } catch (error) {
       throw new CustomError(
         ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
@@ -50,9 +85,10 @@ export abstract class BaseRepository<T extends Document> {
     }
   }
 
-  async find(query: any = {}): Promise<Query<T[], T>> {
+  async exists(filter: FilterQuery<T>): Promise<boolean> {
     try {
-      return this.model.find(query);
+      const doc = await this.model.findOne(filter).select('_id').exec();
+      return !!doc;
     } catch (error) {
       throw new CustomError(
         ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
@@ -61,10 +97,9 @@ export abstract class BaseRepository<T extends Document> {
     }
   }
 
-  async exists(query: any): Promise<boolean> {
+  async count(filter: FilterQuery<T> = {}): Promise<number> {
     try {
-      const document = await this.model.findOne(query).exec();
-      return !!document;
+      return await this.model.countDocuments(filter).exec();
     } catch (error) {
       throw new CustomError(
         ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
