@@ -5,7 +5,6 @@ export class PetServiceService {
   async getAllServices(filters: FilterOptions): Promise<{ services: PetService[]; total: number }> {
     const params = new URLSearchParams();
 
-    // Map pet type names to IDs
     if (filters?.petType?.length) {
       const petTypes = await this.getPetTypes();
       const petTypeIds = petTypes
@@ -16,7 +15,6 @@ export class PetServiceService {
       }
     }
 
-    // Map service type names to IDs
     if (filters?.serviceType?.length) {
       const serviceTypes = await this.getServiceTypes();
       const serviceTypeIds = serviceTypes
@@ -27,7 +25,6 @@ export class PetServiceService {
       }
     }
 
-    // Price range
     if (filters?.priceRange && filters.priceRange.length === 2) {
       if (filters.priceRange[0] > 0) {
         params.append('minPrice', filters.priceRange[0].toString());
@@ -37,7 +34,6 @@ export class PetServiceService {
       }
     }
 
-    // Duration range
     if (filters?.duration && filters.duration.length === 2) {
       if (filters.duration[0] > 0) {
         params.append('minDuration', filters.duration[0].toString());
@@ -47,7 +43,6 @@ export class PetServiceService {
       }
     }
 
-    // Rating filter
     if (filters?.rating && filters.rating > 0) {
       params.append('minRating', filters.rating.toString());
     }
@@ -64,19 +59,23 @@ export class PetServiceService {
         params.append('lat', position.coords.latitude.toString());
         params.append('lng', position.coords.longitude.toString());
         params.append('nearMe', 'true');
+        const userService = (await import('@/services/user/user.service')).userService;
+        userService.setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          timestamp: position.timestamp
+        }, true);
       } catch (error) {
         console.error('Geolocation error:', error);
-        // Still set nearMe to true but without coordinates
         params.append('nearMe', 'true');
       }
     }
 
-    // Search filter
     if (filters?.search && filters.search.trim()) {
       params.append('search', filters.search.trim());
     }
 
-    // Pagination
     if (filters?.page) {
       params.append('page', filters.page.toString());
     }
@@ -90,7 +89,6 @@ export class PetServiceService {
       total: response.data.total || 0,
     };
   }
-
 
   async getServiceById(serviceId: string): Promise<PetService> {
     const response = await Useraxios.get(`/services/${serviceId}`);

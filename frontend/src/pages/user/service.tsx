@@ -1,4 +1,3 @@
-// service.tsx
 import { useState, useEffect } from 'react';
 import { ServiceCard } from '@/components/user/ServiceCard';
 import { FilterBar } from '@/components/user/FilterBar';
@@ -18,7 +17,10 @@ export const Services = () => {
   const [mapServices, setMapServices] = useState<ServiceLocation[]>([]);
   const [mapStyle, setMapStyle] = useState<'default' | 'satellite' | 'terrain'>('default');
 
-  const { services, loading, error, filters, updateFilters, refreshServices } = useServices();
+  const { services, loading, error, filters, updateFilters, refreshServices, total } = useServices({
+    page: currentPage,
+    pageSize,
+  });
 
   const handleToggleMap = () => {
     setShowMap(!showMap);
@@ -44,17 +46,10 @@ export const Services = () => {
     }
   }, [showMap]);
 
-  const totalServices = services.length;
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const currentServices = services.slice(startIndex, endIndex);
-
   const handlePageChange = (page: number, newPageSize?: number) => {
     if (newPageSize && newPageSize !== pageSize) {
       setPageSize(newPageSize);
-      const currentItemIndex = (currentPage - 1) * pageSize;
-      const newPage = Math.floor(currentItemIndex / newPageSize) + 1;
-      setCurrentPage(newPage);
+      setCurrentPage(1); // Reset to first page when page size changes
     } else {
       setCurrentPage(page);
     }
@@ -74,6 +69,7 @@ export const Services = () => {
       duration: [0, 24],
       rating: 0,
       nearMe: false,
+      search: '',
     });
   };
 
@@ -148,7 +144,7 @@ export const Services = () => {
         )}
 
         <div>
-          {loading && services.length > 0 && (
+          {loading && (
             <div className="flex justify-center mb-4">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
@@ -164,13 +160,13 @@ export const Services = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                {currentServices.map((service) => (
+                {services.map((service) => (
                   <ServiceCard key={service._id} service={service} />
                 ))}
               </div>
               <Pagination
                 current={currentPage}
-                total={totalServices}
+                total={total}
                 pageSize={pageSize}
                 onChange={handlePageChange}
                 showSizeChanger

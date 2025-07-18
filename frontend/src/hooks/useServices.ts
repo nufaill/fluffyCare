@@ -25,16 +25,16 @@ export const useServices = ({ page = 1, pageSize = 9, initialFilters }: UseServi
 
   const petServiceService = new PetServiceService();
 
-  const fetchServices = async (currentFilters: FilterOptions, currentPage: number, currentPageSize: number) => {
+  const fetchServices = async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await petServiceService.getAllServices({
-        ...currentFilters,
-        page: currentPage,
-        pageSize: currentPageSize,
+        ...filters,
+        page,
+        pageSize,
       });
-      setServices((response.services || []) as PetService[]);
+      setServices(response.services || []);
       setTotal(response.total || 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch services');
@@ -44,7 +44,7 @@ export const useServices = ({ page = 1, pageSize = 9, initialFilters }: UseServi
   };
 
   useEffect(() => {
-    fetchServices(filters, page, pageSize);
+    fetchServices();
   }, [filters, page, pageSize]);
 
   const updateFilters = (newFilters: Partial<FilterOptions>) => {
@@ -52,7 +52,7 @@ export const useServices = ({ page = 1, pageSize = 9, initialFilters }: UseServi
   };
 
   const refreshServices = () => {
-    fetchServices(filters, page, pageSize);
+    fetchServices();
   };
 
   return {

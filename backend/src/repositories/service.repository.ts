@@ -31,7 +31,7 @@ export class ServiceRepository implements IServiceRepository {
         console.log(`ServiceRepository: No service found for ID: ${serviceId}`);
       }
       return service;
-    } catch (error:any) {
+    } catch (error: any) {
       console.error(`Error in getServiceById [Repository]: ${error.message}`, error);
       throw error;
     }
@@ -105,10 +105,10 @@ export class ServiceRepository implements IServiceRepository {
         query.rating = { $gte: filters.minRating };
       }
 
-      if (filters.search) {
+      if (filters.searchTerm) {
         query.$or = [
-          { name: { $regex: filters.search, $options: 'i' } },
-          { description: { $regex: filters.search, $options: 'i' } }
+          { name: { $regex: filters.searchTerm, $options: 'i' } },
+          { description: { $regex: filters.searchTerm, $options: 'i' } }
         ];
       }
 

@@ -188,7 +188,8 @@ export class ServiceController implements IServiceController {
     try {
       const filters: ServiceFiltersDTO = {
         page: parseInt(req.query.page as string) || 1,
-        pageSize: parseInt(req.query.pageSize as string) || 9
+        pageSize: parseInt(req.query.pageSize as string) || 9,
+        search: typeof req.query.search === 'string' && req.query.search.trim() ? req.query.search.trim() : undefined,
       };
 
       if (req.query.petTypeIds && typeof req.query.petTypeIds === 'string') {
@@ -213,10 +214,6 @@ export class ServiceController implements IServiceController {
           filters.lat = parseFloat(req.query.lat as string);
           filters.lng = parseFloat(req.query.lng as string);
         }
-      }
-
-      if (req.query.search && typeof req.query.search === 'string') {
-        filters.search = req.query.search.trim();
       }
 
       const services = await this.serviceService.getAllServices(filters);
