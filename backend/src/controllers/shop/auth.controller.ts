@@ -13,7 +13,6 @@ export class ShopAuthController {
     try {
       const shopData: CreateShopDTO = req.body;
 
-      // Validate required fields
       const { email, password, name, phone, city, streetAddress, certificateUrl, location } = shopData;
       if (!email || !password || !name || !phone || !city || !streetAddress || !certificateUrl || !location) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -23,7 +22,6 @@ export class ShopAuthController {
         return;
       }
 
-      // Validate GeoJSON Point
       if (location.type !== 'Point' || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,

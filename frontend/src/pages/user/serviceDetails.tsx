@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, MapPin, Phone, Mail, Star, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { PetService } from '@/types/service';
+import { cloudinaryUtils } from '@/utils/cloudinary/cloudinary';
 
 export const ServiceDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -147,7 +148,7 @@ export const ServiceDetails = () => {
               <CardContent className="p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <img
-                    src={service.shopId?.logo || '/api/placeholder/64/64'}
+                    src={cloudinaryUtils.getFullUrl(service.shopId.logo)}
                     alt={`${service.shopId?.name || 'Shop'} logo`}
                     className="w-16 h-16 rounded-full object-cover border border-border"
                     onError={(e) => {

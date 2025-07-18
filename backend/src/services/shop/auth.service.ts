@@ -6,7 +6,7 @@ import { EmailService } from '../emailService/email.service';
 import { OtpRepository } from '../../repositories/otp.repository';
 import {CreateShopData,ShopDocument, ShopAuthResponse,TokenPair,GeoLocation} from '../../types/Shop.types';
 import { JwtPayload } from '../../types/auth.types';
-import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
+import { HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import { generateOtp, sendOtpEmail } from '../../util/sendOtp';
 import PASSWORD_RESET_MAIL_CONTENT from '../../shared/mailTemplate';
@@ -65,7 +65,6 @@ export class AuthService implements IShopAuthService {
   async register(shopData: CreateShopDTO): Promise<{ email: string }> {
     const { email, password, location, ...otherData } = shopData;
 
-    // Validate location (required)
     if (!location) {
       throw new CustomError('Location is required', HTTP_STATUS.BAD_REQUEST);
     }
@@ -105,7 +104,6 @@ export class AuthService implements IShopAuthService {
     const { email, otp } = data;
     console.log(`🔍 [ShopAuthService] Verifying OTP for email: ${email}`);
 
-    // Verify OTP
     const verificationResult = await this.otpRepository.verifyOtp(email, otp);
 
     if (!verificationResult.isValid) {

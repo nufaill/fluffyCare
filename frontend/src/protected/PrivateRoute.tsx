@@ -18,12 +18,10 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const location = useLocation();
   
   const userAuth = useSelector((state: RootState) => ({
-    isAuthenticated: state.user.isAuthenticated,
     userData: state.user.userDatas
   }));
   
   const shopAuth = useSelector((state: RootState) => ({
-    isAuthenticated: state.shop.isAuthenticated,
     shopData: state.shop.shopData,
   }));
   
@@ -34,9 +32,9 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
   const checkAuthentication = () => {
     switch (userType) {
       case 'user':
-        return userAuth.isAuthenticated && userAuth.userData;
+        return userAuth && userAuth.userData;
       case 'shop':
-        return shopAuth.isAuthenticated && shopAuth.shopData ;
+        return shopAuth && shopAuth.shopData ;
       case 'admin':
         return adminAuth.adminData !== null;
       default:

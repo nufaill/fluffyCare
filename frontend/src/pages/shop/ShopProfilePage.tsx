@@ -1,3 +1,4 @@
+// src/pages/shop/ShopProfilePage.tsx
 import { useState, useEffect } from 'react';
 import { PetCareLayout } from '@/components/layout/PetCareLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +31,7 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { cloudinaryUtils } from '@/utils/cloudinary/cloudinary';
 import type { RootState } from '@/redux/store';
 
 // Define validation schema using Zod
@@ -39,7 +41,7 @@ const shopSchema = z.object({
     city: z.string().min(2, 'City must be at least 2 characters').max(100, 'City must be less than 100 characters'),
     streetAddress: z.string().min(5, 'Street address must be at least 5 characters').max(200, 'Street address must be less than 200 characters'),
     description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
-    logo: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    logo: z.string().optional(), // Changed to optional string (relative path)
     location: z.object({
         type: z.literal('Point'),
         coordinates: z.tuple([z.number(), z.number()])
@@ -70,7 +72,7 @@ export default function ShopProfilePage() {
 
     useEffect(() => {
         if (shop) {
-            console.log('Certificate URL:', shop.certificateUrl); // Debug certificateUrl
+            console.log('Certificate URL:', shop.certificateUrl); 
             reset({
                 name: shop.name,
                 phone: shop.phone,
@@ -91,7 +93,7 @@ export default function ShopProfilePage() {
 
         setLoading(true);
         try {
-            await shopService.editShop(data); // Fixed: Removed shop._id argument
+            await shopService.editShop(data);
             setIsEditing(false);
             toast.success('Profile updated successfully');
             navigate(0);
@@ -145,7 +147,7 @@ export default function ShopProfilePage() {
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="relative">
                                             <Avatar className="h-32 w-32 border-4 border-gray-100 shadow-lg">
-                                                <AvatarImage src={shop.logo} alt={shop.name} />
+                                                <AvatarImage src={cloudinaryUtils.getFullUrl(shop.logo)} alt={shop.name} />
                                                 <AvatarFallback className="bg-black text-white text-3xl font-bold">
                                                     {shop.name.charAt(0)}
                                                 </AvatarFallback>
@@ -160,7 +162,6 @@ export default function ShopProfilePage() {
                                                 </Button>
                                             )}
                                         </div>
-
                                         <div className="flex items-center gap-2">
                                             {shop.isVerified && (
                                                 <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -191,7 +192,6 @@ export default function ShopProfilePage() {
                                                     <h1 className="text-3xl font-bold text-foreground">{shop.name}</h1>
                                                 )}
                                             </div>
-
                                             <div className="flex items-center gap-2">
                                                 {isEditing ? (
                                                     <>
@@ -216,14 +216,11 @@ export default function ShopProfilePage() {
                                                 )}
                                             </div>
                                         </div>
-
-                                        {/* Contact Information */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="flex items-center gap-3 text-muted-foreground">
                                                 <Mail className="h-4 w-4" />
                                                 <span>{shop.email}</span>
                                             </div>
-
                                             <div className="flex items-center gap-3 text-muted-foreground">
                                                 <Phone className="h-4 w-4" />
                                                 {isEditing ? (
@@ -241,8 +238,6 @@ export default function ShopProfilePage() {
                                                 )}
                                             </div>
                                         </div>
-
-                                        {/* Location */}
                                         <div className="flex items-start gap-3 text-muted-foreground">
                                             <MapPin className="h-4 w-4 mt-1" />
                                             <div className="space-y-2 flex-1">
@@ -281,9 +276,7 @@ export default function ShopProfilePage() {
                         </CardContent>
                     </Card>
                 </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Description Section */}
                     <div className="lg:col-span-2 fade-slide-in" style={{ animationDelay: '0.1s' }}>
                         <Card className="bg-white border-0 shadow-lg h-full">
                             <CardHeader>
@@ -312,10 +305,7 @@ export default function ShopProfilePage() {
                             </CardContent>
                         </Card>
                     </div>
-
-                    {/* Side Information */}
                     <div className="space-y-6">
-                        {/* Verification Status */}
                         <div className="fade-slide-in" style={{ animationDelay: '0.2s' }}>
                             <Card className="bg-white border-0 shadow-lg">
                                 <CardHeader>
@@ -332,9 +322,7 @@ export default function ShopProfilePage() {
                                                 {shop.isVerified ? "Verified" : "Pending"}
                                             </Badge>
                                         </div>
-
                                         <Separator />
-
                                         <div className="flex items-center gap-3">
                                             <FileText className="h-4 w-4 text-muted-foreground" />
                                             <div className="flex-1">
@@ -345,7 +333,7 @@ export default function ShopProfilePage() {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => window.open(shop.certificateUrl, '_blank')}
+                                                    onClick={() => window.open(cloudinaryUtils.getFullUrl(shop.certificateUrl), '_blank')}
                                                 >
                                                     View
                                                 </Button>
@@ -357,8 +345,6 @@ export default function ShopProfilePage() {
                                 </CardContent>
                             </Card>
                         </div>
-
-                        {/* Account Information */}
                         <div className="fade-slide-in" style={{ animationDelay: '0.3s' }}>
                             <Card className="bg-white border-0 shadow-lg">
                                 <CardHeader>
@@ -375,18 +361,14 @@ export default function ShopProfilePage() {
                                                 {shop.createdAt ? formatDate(shop.createdAt) : 'N/A'}
                                             </p>
                                         </div>
-
                                         <Separator />
-
                                         <div>
                                             <p className="text-sm font-medium text-foreground">Last Updated</p>
                                             <p className="text-sm text-muted-foreground">
                                                 {shop.updatedAt ? formatDate(shop.updatedAt) : 'N/A'}
                                             </p>
                                         </div>
-
                                         <Separator />
-
                                         <div>
                                             <p className="text-sm font-medium text-foreground">Shop ID</p>
                                             <p className="text-xs text-muted-foreground font-mono">{shop._id}</p>
@@ -395,8 +377,6 @@ export default function ShopProfilePage() {
                                 </CardContent>
                             </Card>
                         </div>
-
-                        {/* Location Coordinates */}
                         <div className="fade-slide-in" style={{ animationDelay: '0.4s' }}>
                             <Card className="bg-gray-50 border-0 shadow-sm">
                                 <CardHeader>

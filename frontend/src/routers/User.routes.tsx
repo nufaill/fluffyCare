@@ -7,13 +7,13 @@ import Signup from "@/pages/user/Signup";
 import VerifyOtpPage from "@/pages/user/VerifyOtp";
 import ForgotPassword from '@/pages/user/ForgotPasswordForm';
 import ResetPassword from '@/pages/user/ResetPasswordForm';
-import UserDetails from '@/pages/user/user-profile';
-import UserEdit from '@/pages/user/user-profile-edit';
-import PetDetails from '@/pages/user/pet-details';
-import Addpets from '@/pages/user/add-pet';
-import { Services } from "@/pages/user/service";
-import EditPetPage from "@/pages/user/edit pet"
-import { ServiceDetails } from "@/pages/user/serviceDetails";
+import UserDetails from '@/pages/user/User-profile';
+import UserEdit from '@/pages/user/User-profile-edit';
+import PetDetails from '@/pages/user/Pet-details';
+import Addpets from '@/pages/user/Add-pet';
+import { Services } from "@/pages/user/Service";
+import EditPetPage from "@/pages/user/Edit pet"
+import { ServiceDetails } from "@/pages/user/ServiceDetails";
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 
 const UserRoutes = () => {

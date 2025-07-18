@@ -11,6 +11,7 @@ import { userService, } from "@/services/user/user.service"
 import type { UserDocument } from "@/types/user.type"
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from "react-redux"
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 import type { RootState } from "@/redux/store"
 import axios from "axios"
 
@@ -99,7 +100,7 @@ export default function ProfilePage() {
                       <div className="flex items-end gap-4">
                         <div className="relative">
                           <Avatar className="h-24 w-24 border-4 border-white dark:border-black shadow-xl">
-                            <AvatarImage src={user.profileImage || "/placeholder.svg"} alt={user.fullName} />
+                            <AvatarImage src={cloudinaryUtils.getFullUrl(user.profileImage)} alt={user.fullName} />
                             <AvatarFallback className="bg-white dark:bg-black text-gray-900 dark:text-white text-2xl font-bold">
                               {user.fullName}
                             </AvatarFallback>

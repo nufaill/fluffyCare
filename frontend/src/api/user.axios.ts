@@ -3,6 +3,7 @@ import { logoutUser } from "@/redux/slices/user.slice";
 import { store } from "@/redux/store";
 import axios from "axios";
 import toast from "react-hot-toast";
+import Authaxios from "./auth.axios";
 
 const Useraxios = axios.create({
   baseURL: import.meta.env.VITE_SERVER_URL + '/user',
@@ -32,7 +33,7 @@ Useraxios.interceptors.response.use(
 			if (!isRefreshing) {
 				isRefreshing = true;
 				try {
-					await Useraxios.post("/refresh-token");
+					await Authaxios.post("/refresh-token");
 					isRefreshing = false;
 					return Useraxios(originalRequest);
 				} catch (refreshError) {

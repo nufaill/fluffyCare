@@ -1,8 +1,6 @@
 import { OtpModel, IOtp } from '../models/otpModel';
 import { CreateUserDTO, CreateShopDTO } from '../dto/auth.dto';
 import bcrypt from 'bcrypt';
-import { CustomError } from '../util/CustomerError';
-import { HTTP_STATUS } from '../shared/constant';
 import { IOtpRepository } from '../interfaces/repositoryInterfaces/IOtpRepository';
 
 export class OtpRepository implements IOtpRepository {

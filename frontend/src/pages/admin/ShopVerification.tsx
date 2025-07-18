@@ -37,6 +37,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { getUnverifiedShops, approveShop, rejectShop } from "@/services/admin/admin.service";
 import toast from "react-hot-toast";
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 
 type VerificationStatus = "approved" | "rejected" | "pending";
 
@@ -255,7 +256,7 @@ const ShopVerification: React.FC = () => {
       render: (_value: string, record: Shop) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 ring-2 ring-gray-200 dark:ring-gray-600">
-            <AvatarImage src={record.logo || "/placeholder.svg?height=48&width=48"} />
+            <AvatarImage src={cloudinaryUtils.getFullUrl(record?.logo)} />
             <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300">
               {record.name
                 .split(" ")

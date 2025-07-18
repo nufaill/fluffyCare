@@ -8,6 +8,7 @@ import type { RootState } from "@/redux/store"
 import DefaultAvatar from "@/assets/user/default-avatar.jpeg"
 import { removeUser } from "@/redux/slices/user.slice"
 import { logoutUser } from "@/services/user/auth.service"
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -69,7 +70,7 @@ const Header = () => {
     if (user?.profileImage && !imageError) {
       return (
         <img
-          src={user?.profileImage || "/placeholder.svg"}
+          src={cloudinaryUtils.getFullUrl(user?.profileImage|| "/placeholder.svg")}
           alt="profile"
           className={`${sizeClasses[size]} rounded-full object-cover border group-hover:border-gray-400 transition-colors ${className}`}
           onError={() => setImageError(true)}

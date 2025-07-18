@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/Badge';
 import { MapPin, Clock, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { cloudinaryUtils } from '@/utils/cloudinary/cloudinary';
 
 interface ServiceCardProps {
   service: PetService;
@@ -114,7 +115,7 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
       <CardContent className="p-4">
         <div className="flex items-center gap-3 mb-3">
           <img
-            src={getShopLogo()}
+            src={cloudinaryUtils.getFullUrl(service.shopId.logo)}
             alt={`${getShopName()} logo`}
             className="w-10 h-10 rounded-full object-cover border border-border"
             onError={(e) => {

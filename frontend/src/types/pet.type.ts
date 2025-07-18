@@ -1,7 +1,8 @@
+// pet.type.ts
 export interface Pet {
   _id: string;
-  userId: string;
-  petTypeId: string;
+  userId: string | { _id: string };
+  petTypeId: string | { _id: string };
   profileImage: string;
   name: string;
   breed: string;

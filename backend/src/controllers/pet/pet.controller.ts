@@ -41,15 +41,15 @@ export class PetController implements IPetController {
         return;
       }
 
-      try {
-        new URL(petData.profileImage);
-      } catch {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          message: 'Profile image must be a valid URL'
-        });
-        return;
-      }
+      // try {
+      //   new URL(petData.profileImage);
+      // } catch {
+      //   res.status(HTTP_STATUS.BAD_REQUEST).json({
+      //     success: false,
+      //     message: 'Profile image must be a valid URL'
+      //   });
+      //   return;
+      // }
 
       if (!['Male', 'Female'].includes(petData.gender)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({

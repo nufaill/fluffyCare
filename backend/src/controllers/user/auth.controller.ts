@@ -7,7 +7,7 @@ import { CustomError } from '../../util/CustomerError';
 import { RegisterUserDTO, LoginUserDTO } from '../../dto/auth.dto';
 
 export class AuthController implements IAuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -41,7 +41,7 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-      const result = await this.authService.verifyOtpAndCompleteRegistration(email, otp);
+      const result = await this.authService.verifyOtpAndCompleteRegistration({ email, otp }); // Pass as object
       setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, "user");
       res.status(HTTP_STATUS.CREATED || 201).json({
         success: true,
@@ -62,6 +62,7 @@ export class AuthController implements IAuthController {
 
   resendOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      console.log(`🔍 [AuthController] Request body:`, req.body);
       const { email } = req.body;
       if (!email) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -70,7 +71,7 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-      await this.authService.resendOtp(email);
+      await this.authService.resendOtp({ email });
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: 'New OTP sent to your email',
@@ -168,6 +169,7 @@ export class AuthController implements IAuthController {
 
   sendResetLink = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+      console.log(`🔍 [AuthController] Request body:`, req.body);
       const { email } = req.body;
       if (!email) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -176,7 +178,7 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-      await this.authService.sendResetLink(email);
+     await this.authService.sendResetLink({email});
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: SUCCESS_MESSAGES.OTP_SEND_SUCCESS || 'Reset link sent successfully',
@@ -203,7 +205,7 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-      await this.authService.resetPassword(token, password, confirmPassword);
+      await this.authService.resetPassword({token, password, confirmPassword});
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS || 'Password reset successful',

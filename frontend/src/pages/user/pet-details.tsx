@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { useNavigate } from "react-router-dom"
-import { userService, type PetType } from "@/services/user/user.service"
+import { userService,  } from "@/services/user/user.service"
+import type { PetType } from "@/types/pet.type"
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 
 export default function PetsPage() {
   const [searchTerm, setSearchTerm] = React.useState("")
@@ -41,7 +43,8 @@ export default function PetsPage() {
         // Transform API data to match Pet interface
         const transformedPets: Pet[] = petsResponse.map(pet => ({
           ...pet,
-          id: pet.id ,
+          id: pet._id,
+          profileImage: pet.profileImage ? cloudinaryUtils.getRelativePath(pet.profileImage) : "",
           createdAt: new Date(pet.createdAt),
           updatedAt: new Date(pet.updatedAt)
         }))
@@ -318,7 +321,7 @@ export default function PetsPage() {
               {filteredPets.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {filteredPets.map((pet) => (
-                    <PetCard key={pet.id} pet={pet} />
+                    <PetCard key={pet._id} pet={{ ...pet, profileImage: cloudinaryUtils.getFullUrl(pet.profileImage) }} />
                   ))}
                 </div>
               ) : (

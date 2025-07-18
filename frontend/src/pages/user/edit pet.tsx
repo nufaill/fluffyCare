@@ -14,6 +14,7 @@ import Footer from "@/components/user/Footer"
 import { Upload, Save, X, Heart, Camera, Loader2, AlertCircle } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 import { userService } from "@/services/user/user.service"
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import type { CreatePetData, FormErrors, Pet, PetType } from "@/types/pet.type";
 
 export default function EditPetPage() {
@@ -60,7 +61,6 @@ export default function EditPetPage() {
                 console.log('Fetched pet types:', petTypesData);
                 setPetTypes(petTypesData);
 
-                // Explicitly type petData as Pet
                 const petData: Pet = await userService.getPetById(petId);
                 console.log('Fetched pet data:', petData);
 
@@ -69,8 +69,8 @@ export default function EditPetPage() {
                 }
 
                 setFormData({
-                    petTypeId: typeof petData.petTypeId === 'object' ? petData.petTypeId._id.toString() : petData.petTypeId?.toString() || "",
-                    profileImage: petData.profileImage || "",
+                    petTypeId: typeof petData.petTypeId === 'object' ? petData.petTypeId._id : petData.petTypeId || "",
+                    profileImage: petData.profileImage ? cloudinaryUtils.getRelativePath(petData.profileImage) : "",
                     name: petData.name || "",
                     breed: petData.breed || "",
                     age: typeof petData.age === 'number' ? petData.age : 0,
@@ -82,7 +82,7 @@ export default function EditPetPage() {
                     trainedBefore: Boolean(petData.trainedBefore),
                     vaccinationStatus: Boolean(petData.vaccinationStatus),
                     medication: petData.medication || "",
-                    userId: typeof petData.userId === 'object' && petData.userId._id.toString()
+                    userId: typeof petData.userId === 'object' ? petData.userId._id : petData.userId || ""
                 });
 
                 console.log('Form data set successfully');
@@ -149,22 +149,9 @@ export default function EditPetPage() {
         }
 
         try {
-            const formDataUpload = new FormData()
-            formDataUpload.append('file', file)
-            formDataUpload.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET)
-
-            const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
-                method: 'POST',
-                body: formDataUpload,
-            })
-
-            const data = await response.json()
-            if (data.secure_url) {
-                handleInputChange("profileImage", data.secure_url)
-                setErrors((prev) => ({ ...prev, profileImage: undefined }))
-            } else {
-                setErrors((prev) => ({ ...prev, profileImage: "Failed to upload image to Cloudinary" }))
-            }
+            const relativePath = await cloudinaryUtils.uploadImage(file)
+            handleInputChange("profileImage", relativePath)
+            setErrors((prev) => ({ ...prev, profileImage: undefined }))
         } catch (error) {
             console.error('Error uploading image:', error)
             setErrors((prev) => ({ ...prev, profileImage: "Error uploading image" }))
@@ -193,11 +180,8 @@ export default function EditPetPage() {
         } catch (error: any) {
             console.error("Error updating pet:", error);
 
-            let errorMessage = 'Failed to update pet. Please try again.';
             if (error.response?.data?.message) {
-                errorMessage = error.response.data.message;
             } else if (error.message) {
-                errorMessage = error.message;
             }
         } finally {
             setIsSubmitting(false);
@@ -300,7 +284,7 @@ export default function EditPetPage() {
                                                     <div className="h-20 w-20 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden">
                                                         {formData.profileImage ? (
                                                             <img
-                                                                src={formData.profileImage}
+                                                                src={cloudinaryUtils.getFullUrl(formData.profileImage)}
                                                                 alt="Pet preview"
                                                                 className="h-full w-full object-cover rounded-full"
                                                             />

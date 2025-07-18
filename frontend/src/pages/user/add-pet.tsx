@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,7 +13,8 @@ import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { Upload, Save, X, Heart, Camera } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { userService} from "@/services/user/user.service"
+import { userService } from "@/services/user/user.service"
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import type { CreatePetData, PetType } from "@/types/pet.type"
 
 interface FormErrors {
@@ -106,24 +105,10 @@ export default function AddPetPage() {
             return
         }
 
-        // Upload to Cloudinary
         try {
-            const formData = new FormData()
-            formData.append('file', file)
-            formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET)
-
-            const response = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
-                method: 'POST',
-                body: formData,
-            })
-
-            const data = await response.json()
-            if (data.secure_url) {
-                handleInputChange("profileImage", data.secure_url)
-                setErrors((prev) => ({ ...prev, profileImage: undefined }))
-            } else {
-                setErrors((prev) => ({ ...prev, profileImage: "Failed to upload image to Cloudinary" }))
-            }
+            const relativePath = await cloudinaryUtils.uploadImage(file)
+            handleInputChange("profileImage", relativePath)
+            setErrors((prev) => ({ ...prev, profileImage: undefined }))
         } catch (error) {
             console.error('Error uploading image:', error)
             setErrors((prev) => ({ ...prev, profileImage: "Error uploading image" }))
@@ -190,7 +175,7 @@ export default function AddPetPage() {
                                                     <div className="h-20 w-20 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden">
                                                         {formData.profileImage ? (
                                                             <img
-                                                                src={formData.profileImage}
+                                                                src={cloudinaryUtils.getFullUrl(formData.profileImage)}
                                                                 alt="Pet preview"
                                                                 className="h-full w-full object-cover rounded-full"
                                                             />

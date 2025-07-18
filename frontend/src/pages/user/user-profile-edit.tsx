@@ -15,6 +15,7 @@ import type { UserDocument, UserUpdatePayload } from "@/types/user.type"
 import type { RootState } from "@/redux/store"
 import { useSelector } from "react-redux"
 import { userService } from "@/services/user/user.service"
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
@@ -28,7 +29,7 @@ interface FormData {
   email: string;
   phone: string;
   location: GeoPoint;
-  profileImage: string;
+  profileImage: string | File;
 }
 
 export default function ProfileEditPage() {
@@ -67,7 +68,7 @@ export default function ProfileEditPage() {
           location: data.location || { type: 'Point', coordinates: [0, 0] },
           profileImage: data.profileImage || ''
         })
-        setImagePreview(data.profileImage || "/placeholder.svg")
+        setImagePreview(cloudinaryUtils.getFullUrl(data.profileImage || "/placeholder.svg"))
       } catch (err) {
         console.error("Failed to fetch user:", err)
         toast.error("Failed to load user profile")
@@ -77,14 +78,14 @@ export default function ProfileEditPage() {
     fetchUser()
   }, [userState?.id, navigate])
 
-  const handleInputChange = (field: keyof Omit<FormData, 'location'>, value: string) => {
+  const handleInputChange = (field: keyof Omit<FormData, 'location' | 'profileImage'>, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
@@ -93,7 +94,7 @@ export default function ProfileEditPage() {
         setImagePreview(result)
         setFormData(prev => ({
           ...prev,
-          profileImage: result
+          profileImage: file
         }))
       }
       reader.readAsDataURL(file)
@@ -162,10 +163,15 @@ export default function ProfileEditPage() {
     setLoading(true)
     
     try {
+      let profileImageUrl: string | undefined = typeof formData.profileImage === 'string' ? formData.profileImage : undefined;
+      if (formData.profileImage instanceof File) {
+        profileImageUrl = await cloudinaryUtils.uploadImage(formData.profileImage);
+      }
+
       const updatePayload: UserUpdatePayload = {
         fullName: formData.fullName,
         phone: formData.phone,
-        profileImage: formData.profileImage,
+        profileImage: profileImageUrl,
         location: formData.location
       }
 
@@ -174,6 +180,7 @@ export default function ProfileEditPage() {
       navigate('/profile')
     } catch (error) {
       console.error("Failed to update profile:", error)
+      navigate('/profile')
     } finally {
       setLoading(false)
     }
@@ -193,16 +200,11 @@ export default function ProfileEditPage() {
   return (
     <>
       <div className="flex flex-col h-screen bg-white dark:bg-black">
-        {/* Header spans full width at top */}
         <Header />
-
-        {/* Sidebar and main content below header */}
         <div className="flex flex-1 overflow-hidden">
           <ModernSidebar isCollapsed={sidebarCollapsed} />
-
           <main className="flex-1 overflow-y-auto">
             <div className="container mx-auto p-6 space-y-6">
-              {/* Page Header */}
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Edit Profile</h1>
@@ -219,9 +221,7 @@ export default function ProfileEditPage() {
                   Cancel
                 </Button>
               </div>
-
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Profile Image Section */}
                 <Card className="overflow-hidden bg-white dark:bg-black border-0 shadow-xl">
                   <CardContent className="p-0">
                     <div className="relative h-32 bg-gradient-to-r from-gray-800 to-black dark:from-gray-200 dark:to-white">
@@ -269,9 +269,7 @@ export default function ProfileEditPage() {
                     </div>
                   </CardContent>
                 </Card>
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Personal Information */}
                   <Card className="shadow-lg border-0 bg-white dark:bg-black">
                     <CardHeader className="pb-4">
                       <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
@@ -296,7 +294,6 @@ export default function ProfileEditPage() {
                             required
                           />
                         </div>
-
                         <div className="space-y-2">
                           <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Email Address
@@ -311,7 +308,6 @@ export default function ProfileEditPage() {
                           />
                           <p className="text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
                         </div>
-
                         <div className="space-y-2">
                           <Label htmlFor="phone" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Phone Number
@@ -325,7 +321,6 @@ export default function ProfileEditPage() {
                             placeholder="Enter your phone number"
                           />
                         </div>
-
                         <div className="space-y-2">
                           <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Location
@@ -355,8 +350,6 @@ export default function ProfileEditPage() {
                     </CardContent>
                   </Card>
                 </div>
-
-                {/* Security Settings */}
                 <Card className="shadow-lg border-0 bg-white dark:bg-black">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
@@ -387,8 +380,6 @@ export default function ProfileEditPage() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Action Buttons */}
                 <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-800">
                   <Button
                     type="button"

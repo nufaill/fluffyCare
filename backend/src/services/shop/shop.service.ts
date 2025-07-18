@@ -1,10 +1,9 @@
 import { ShopRepository } from '../../repositories/shop.repository';
-import { ShopDocument, CreateShopData } from '../../types/Shop.types';
+import { ShopDocument } from '../../types/Shop.types';
 import { UpdateShopDTO } from '../../dto/shop.dto';
 import { CustomError } from '../../util/CustomerError';
-import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
+import { HTTP_STATUS } from '../../shared/constant';
 import { IShopService } from '../../interfaces/serviceInterfaces/IShopService';
-import { Types } from 'mongoose';
 
 export class ShopService implements IShopService {
   constructor(private readonly shopRepository: ShopRepository) {}

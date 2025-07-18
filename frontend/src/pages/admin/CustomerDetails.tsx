@@ -15,8 +15,8 @@ import { Switch } from "@/components/ui/switch"
 import { Search, Filter, Download, Phone, Mail, User } from 'lucide-react'
 import { useNavigate } from "react-router-dom"
 import { getAllUsers, updateUserStatus } from "@/services/admin/admin.service"
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary" ;
 
-// Define the User interface based on your API response
 interface User {
   _id: string
   fullName: string
@@ -192,7 +192,7 @@ const CustomerDetails: React.FC = () => {
       render: (_value: unknown, record: User) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 ring-2 ring-gray-200 dark:ring-gray-600">
-            <AvatarImage src={record.profileImage || "/placeholder.svg?height=40&width=40"} />
+            <AvatarImage src={record.profileImage ? cloudinaryUtils.getFullUrl(record.profileImage) : "/placeholder.svg?height=40&width=40"} />
             <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300">
               {record.fullName
                 .split(" ")

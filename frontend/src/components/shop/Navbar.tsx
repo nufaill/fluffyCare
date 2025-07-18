@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -16,6 +14,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/Badge"
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 import { useSelector } from "react-redux"
 import type { RootState } from "@/redux/store"
 import { removeShop } from "@/redux/slices/shop.slice"
@@ -124,7 +123,7 @@ export function Navbar({
               >
                 <div className="relative">
                   <Avatar className="h-9 w-9 ring-2 ring-blue-100 dark:ring-blue-900">
-                    <AvatarImage src={shop?.logo || userAvatar || "/placeholder.svg?height=36&width=36"} />
+                    <AvatarImage src={cloudinaryUtils.getFullUrl(shop?.logo || userAvatar || "/placeholder.svg?height=40&width=40")} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold">
                       {displayName.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
@@ -144,7 +143,7 @@ export function Navbar({
             >
               <div className="flex items-center gap-3 p-2 mb-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={shop?.logo || userAvatar || "/placeholder.svg?height=40&width=40"} />
+                  <AvatarImage src={cloudinaryUtils.getFullUrl(shop?.logo || userAvatar || "/placeholder.svg?height=40&width=40")} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
                     {displayName.slice(0, 2).toUpperCase()}
                   </AvatarFallback>

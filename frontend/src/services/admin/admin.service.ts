@@ -6,10 +6,6 @@ import toast from 'react-hot-toast';
 export const loginAdmin = async (data: { email: string; password: string }) => {
   try {
     const response = await AdminAxios.post('/login', data);
-    if (response.data.success) {
-      localStorage.setItem('adminToken', response.data.token);
-      localStorage.setItem('adminDatas', JSON.stringify(response.data.admin));
-    }
     return response.data;
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';

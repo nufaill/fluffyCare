@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
 import Navbar from "@/components/admin/Navbar"
@@ -29,6 +27,7 @@ import {
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { getAllShops, updateShopStatus } from "@/services/admin/admin.service"
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 import toast from 'react-hot-toast'
 
 interface Shop {
@@ -216,7 +215,7 @@ const ShopDetails: React.FC = () => {
       render: (_value: string, record: Shop) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 ring-2 ring-gray-200 dark:ring-gray-600">
-            <AvatarImage src={record.logo || "/placeholder.svg?height=48&width=48"} />
+            <AvatarImage src={cloudinaryUtils.getFullUrl(record?.logo || "/placeholder.svg?height=40&width=40")} />
             <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300">
               {record.name
                 .split(" ")
@@ -491,7 +490,7 @@ const ShopDetails: React.FC = () => {
                 <div className="space-y-6 p-6 text-black dark:text-white">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 ring-2 ring-gray-300 dark:ring-gray-700">
-                      <AvatarImage src={selectedShop.logo || "/placeholder.svg?height=64&width=64"} />
+                      <AvatarImage src={cloudinaryUtils.getFullUrl(selectedShop?.logo || "/placeholder.svg?height=40&width=40")} />
                       <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                         {selectedShop.name
                           .split(" ")
@@ -544,7 +543,7 @@ const ShopDetails: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Certificate</p>
                       <a
-                        href={selectedShop.certificateUrl}
+                        href={cloudinaryUtils.getFullUrl(selectedShop.certificateUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 dark:text-blue-400 hover:underline"

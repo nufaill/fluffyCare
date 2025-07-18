@@ -7,7 +7,7 @@ import Dashboard from "@/pages/shop/Dashboard";
 import VerifyOtpPage from "@/pages/shop/VerifyOtp";
 import ForgotPassword from "@/pages/shop/ForgotPasswordForm";
 import ResetPassword from "@/pages/shop/ResetPasswordForm";
-import VerifyShop from "@/pages/shop/thank-you-page";
+import VerifyShop from "@/pages/shop/Thank-you-page";
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 import ShopProfilePage from './../pages/shop/ShopProfilePage';
 import ShopProfilePageEdit from './../pages/shop/ShopProfilePageEdit'

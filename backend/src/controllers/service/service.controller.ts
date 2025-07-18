@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
+import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { ServiceService } from '../../services/service/service.service';
 import { CustomError } from '../../util/CustomerError';
 import { CreateServiceDTO, UpdateServiceDTO, ServiceFiltersDTO } from '../../dto/service.dto';

@@ -4,7 +4,7 @@ import { CreateUserDTO } from '../dto/auth.dto';
 import { User as UserType } from '../types/User.types';
 import { Types } from 'mongoose';
 import { CustomError } from '../util/CustomerError';
-import { ERROR_MESSAGES, HTTP_STATUS } from '../shared/constant';
+import { HTTP_STATUS } from '../shared/constant';
 import { validateGeoLocation } from '../validations/geo.validation';
 import IUserRepository from '../interfaces/repositoryInterfaces/IUserRepository';
 

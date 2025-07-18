@@ -10,8 +10,6 @@ import Header from "@/components/user/Header";
 import Footer from "@/components/user/Footer";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { userService } from "@/services/user/user.service";
-import { useSelector } from 'react-redux';
-import type { RootState } from '@/redux/store';
 
 export const Services = () => {
   const [showMap, setShowMap] = useState(false);

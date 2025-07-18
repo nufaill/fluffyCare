@@ -1,6 +1,6 @@
 import { PetTypeDocument } from 'types/PetType.type';
 import { PetRepository } from '../../repositories/pet.repository';
-import { CreatePetData, PetDocument } from '../../types/Pet.types';
+import { PetDocument } from '../../types/Pet.types';
 import { CustomError } from '../../util/CustomerError';
 import { CreatePetDTO, UpdatePetDTO } from '../../dto/pet.dto';
 import { IPetService } from '../../interfaces/serviceInterfaces/IPetService';
@@ -53,12 +53,10 @@ export class PetService implements IPetService {
       throw new CustomError('Pet not found', 404);
     }
 
-    // Verify ownership
     if (existingPet.userId._id.toString() !== userId) {
       throw new CustomError('Not authorized to update this pet', 403);
     }
 
-    // Check if pet name is being updated and if it already exists
     if (updateData.name && updateData.name.trim() !== existingPet.name) {
       const nameExists = await this.petRepository.checkPetNameExists(userId, updateData.name, petId);
       if (nameExists) {
@@ -66,7 +64,6 @@ export class PetService implements IPetService {
       }
     }
 
-    // Validate pet type if being updated and is different from current
     if (updateData.petTypeId && updateData.petTypeId !== existingPet.petTypeId.toString()) {
       const petTypes = await this.petRepository.getAllPetTypes();
       const petTypeExists = petTypes.some(type => type._id.toString() === updateData.petTypeId);

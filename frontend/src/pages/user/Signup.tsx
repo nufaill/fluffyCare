@@ -3,6 +3,7 @@ import signupImage from '@/assets/authImages/signup-image.png';
 import { useNavigate } from 'react-router-dom';
 import { registerUser } from "@/services/user/auth.service";
 import type { SignupForm } from "@/types/auth.type";
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -15,24 +16,8 @@ const Signup: React.FC = () => {
 
       let profileImageUrl = "";
 
-      if (formData.profileImage instanceof File) {
-        const uploadData = new FormData();
-        uploadData.append('file', formData.profileImage);
-        uploadData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-
-        const response = await fetch(
-          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
-          {
-            method: 'POST',
-            body: uploadData,
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) throw new Error(data.error?.message || "Image upload failed");
-
-        profileImageUrl = data.secure_url;
+       if (formData.profileImage instanceof File) {
+        profileImageUrl = await cloudinaryUtils.uploadImage(formData.profileImage);
       }
 
       const userData = {

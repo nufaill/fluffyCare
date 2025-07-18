@@ -1,6 +1,5 @@
 import { injectable } from 'tsyringe';
 import nodemailer from 'nodemailer';
-import { config } from '../../config/env';
 import  PASSWORD_RESET_MAIL_CONTENT  from '../../shared/mailTemplate';
 
 @injectable()

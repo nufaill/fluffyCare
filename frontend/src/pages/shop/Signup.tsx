@@ -7,43 +7,17 @@ import { useNavigate } from 'react-router-dom';
 import { registerShop } from "@/services/shop/auth.service";
 import { StorageUtils } from '@/types/shop.type';
 import type { SignupForm } from "@/types/auth.type";
-
-interface CloudinaryUploadResponse {
-  secure_url: string;
-  error?: {
-    message: string;
-  };
-}
-
-interface CloudinaryErrorResponse {
-  error?: {
-    message: string;
-  };
-}
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 
 const ShopSignup: React.FC = () => {
   const navigate = useNavigate();
 
-  const uploadToCloudinary = async (file: File, type: 'logo' | 'certificate'): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
-      }
-    );
-
-    if (!response.ok) {
-      const errorData: CloudinaryErrorResponse = await response.json();
-      throw new Error(errorData.error?.message || `${type} upload failed`);
+ const uploadToCloudinary = async (file: File, type: 'logo' | 'certificate'): Promise<string> => {
+    try {
+      return await cloudinaryUtils.uploadImage(file);
+    } catch (error) {
+      throw new Error(`${type} upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    const data: CloudinaryUploadResponse = await response.json();
-    return data.secure_url;
   };
 
   const handleSubmit = async (formData: SignupForm): Promise<void> => {
@@ -52,15 +26,13 @@ const ShopSignup: React.FC = () => {
         throw new Error('Invalid form mode for shop signup');
       }
 
-      let logoUrl = "";
+     let logoUrl = "";
       let certificateUrl = "";
 
-      // Upload shop logo to Cloudinary
       if (formData.logo instanceof File) {
         logoUrl = await uploadToCloudinary(formData.logo, 'logo');
       }
 
-      // Upload shop certificate to Cloudinary
       if (formData.certificateUrl instanceof File) {
         certificateUrl = await uploadToCloudinary(formData.certificateUrl, 'certificate');
       }

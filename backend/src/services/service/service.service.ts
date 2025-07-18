@@ -4,7 +4,6 @@ import { ServiceDocument } from '../../types/Service.types';
 import { ServiceTypeDocument } from '../../types/serviceType.type';
 import { PetTypeDocument } from '../../types/PetType.type';
 import { CustomError } from '../../util/CustomerError';
-import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from 'shared/constant';
 import { IServiceService } from '../../interfaces/serviceInterfaces/IServiceService';
 
 export class ServiceService implements IServiceService {

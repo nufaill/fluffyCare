@@ -70,18 +70,6 @@ export const loginShop = async (data: ShopLoginData): Promise<ShopAuthResponse> 
     const response: AxiosResponse<ShopAuthResponse> = await ShopAxios.post('/login', data);
 
     console.log('[loginShop] Login successful, response:', response.data);
-
-    // Store shop-specific token and data using type-safe utilities
-    if (response.data.token) {
-      StorageUtils.setShopToken(response.data.token);
-      console.log('[loginShop] Shop token stored in localStorage');
-    }
-
-    if (response.data.shop) {
-      StorageUtils.setShopData(response.data.shop);
-      console.log('[loginShop] Shop data stored in localStorage');
-    }
-
     return response.data;
   } catch (error) {
     const errorMessage = ErrorHandler.extractMessage(error);
