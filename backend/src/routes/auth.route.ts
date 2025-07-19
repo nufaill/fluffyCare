@@ -15,12 +15,30 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *           example:
- *               email: user@example.com
- *               password: string
- *               fulltName: string
- *               phone: number
- *               city: string
+ *             required:
+ *               - email
+ *               - password
+ *               - fullName
+ *               - phone
+ *               - city
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: mypassword123
+ *               fullName:
+ *                 type: string
+ *                 example: John Doe
+ *               phone:
+ *                 type: string
+ *                 example: "+1234567890"
+ *               city:
+ *                 type: string
+ *                 example: New York
  *     responses:
  *       200:
  *         description: User registered successfully
@@ -31,10 +49,19 @@ const router = Router();
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: User registered successfully
  *                 user:
- *                   type: object
+ *                   $ref: '#/components/schemas/User'
  *       400:
  *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Email already exists
  */
 router.post('/signup', authDependencies.authController.register as RequestHandler);
 
@@ -50,11 +77,17 @@ router.post('/signup', authDependencies.authController.register as RequestHandle
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - password
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
+ *                 example: user@example.com
  *               password:
  *                 type: string
+ *                 example: mypassword123
  *     responses:
  *       200:
  *         description: User logged in successfully
@@ -65,10 +98,22 @@ router.post('/signup', authDependencies.authController.register as RequestHandle
  *               properties:
  *                 accessToken:
  *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *                 refreshToken:
  *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
  *       401:
  *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid email or password
  */
 router.post('/login', authDependencies.authController.login as RequestHandler);
 
@@ -84,14 +129,37 @@ router.post('/login', authDependencies.authController.login as RequestHandler);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - token
  *             properties:
  *               token:
  *                 type: string
+ *                 description: Google OAuth token
+ *                 example: ya29.a0AfH6SMC...
  *     responses:
  *       200:
  *         description: Google login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
  *       401:
  *         description: Invalid Google token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid Google token
  */
 router.post('/google-login', authDependencies.authController.googleAuth as RequestHandler);
 
@@ -107,12 +175,17 @@ router.post('/google-login', authDependencies.authController.googleAuth as Reque
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - otp
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
+ *                 example: user@example.com
  *               otp:
  *                 type: string
- *             required: ['email', 'otp']
+ *                 example: "123456"
  *     responses:
  *       200:
  *         description: OTP verified successfully
@@ -123,12 +196,29 @@ router.post('/google-login', authDependencies.authController.googleAuth as Reque
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: OTP verified successfully
  *                 user:
  *                   $ref: '#/components/schemas/User'
  *       400:
  *         description: Invalid OTP or email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid OTP
  *       429:
  *         description: Too many attempts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Too many attempts, please try again later
  */
 router.post('/verify-otp', authDependencies.authController.verifyOtp as RequestHandler);
 
@@ -144,10 +234,13 @@ router.post('/verify-otp', authDependencies.authController.verifyOtp as RequestH
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
  *             properties:
  *               email:
  *                 type: string
- *             required: ['email']
+ *                 format: email
+ *                 example: user@example.com
  *     responses:
  *       200:
  *         description: OTP resent successfully
@@ -158,10 +251,27 @@ router.post('/verify-otp', authDependencies.authController.verifyOtp as RequestH
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: OTP sent successfully
  *       400:
  *         description: Invalid email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid email address
  *       429:
  *         description: Too many requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Too many requests, please try again later
  */
 router.post('/resend-otp', authDependencies.authController.resendOtp as RequestHandler);
 
@@ -177,10 +287,12 @@ router.post('/resend-otp', authDependencies.authController.resendOtp as RequestH
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - refreshToken
  *             properties:
  *               refreshToken:
  *                 type: string
- *             required: ['refreshToken']
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *     responses:
  *       200:
  *         description: Token refreshed successfully
@@ -191,8 +303,17 @@ router.post('/resend-otp', authDependencies.authController.resendOtp as RequestH
  *               properties:
  *                 accessToken:
  *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *       401:
  *         description: Invalid refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid refresh token
  */
 router.post('/refresh-token', authDependencies.authController.refreshToken as RequestHandler);
 
@@ -208,10 +329,13 @@ router.post('/refresh-token', authDependencies.authController.refreshToken as Re
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
  *             properties:
  *               email:
  *                 type: string
- *             required: ['email']
+ *                 format: email
+ *                 example: user@example.com
  *     responses:
  *       200:
  *         description: Password reset link sent successfully
@@ -222,8 +346,17 @@ router.post('/refresh-token', authDependencies.authController.refreshToken as Re
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: Password reset link sent to your email
  *       400:
  *         description: Invalid email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Email not found
  */
 router.post('/forgot-password', authDependencies.authController.sendResetLink as RequestHandler);
 
@@ -239,12 +372,18 @@ router.post('/forgot-password', authDependencies.authController.sendResetLink as
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - token
+ *               - newPassword
  *             properties:
  *               token:
  *                 type: string
+ *                 description: Password reset token
+ *                 example: abc123def456...
  *               newPassword:
  *                 type: string
- *             required: ['token', 'newPassword']
+ *                 minLength: 6
+ *                 example: mynewpassword123
  *     responses:
  *       200:
  *         description: Password reset successfully
@@ -255,10 +394,27 @@ router.post('/forgot-password', authDependencies.authController.sendResetLink as
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: Password reset successfully
  *       400:
  *         description: Invalid token or password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Password must be at least 6 characters
  *       401:
  *         description: Expired or invalid token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Reset token expired or invalid
  */
 router.post('/reset-password', authDependencies.authController.resetPassword as RequestHandler);
 
@@ -280,8 +436,17 @@ router.post('/reset-password', authDependencies.authController.resetPassword as 
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: Logged out successfully
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Unauthorized access
  */
 router.post('/logout', authDependencies.authController.logout as RequestHandler);
 

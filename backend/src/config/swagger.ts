@@ -1,6 +1,6 @@
-// config/swagger.ts
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import path from 'path';
 
 const options = {
   definition: {
@@ -156,7 +156,10 @@ const options = {
       { name: 'Admin', description: 'Admin-related endpoints' },
     ],
   },
-  apis: ['../routes/*.ts'],
+  apis: [
+    path.join(__dirname, '../routes/*.ts'),
+    path.join(__dirname, '../routes/*.js'),  
+  ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

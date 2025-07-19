@@ -25,8 +25,6 @@ async function startApp(): Promise<void> {
 
   app.use(express.json());
   app.use(cookieParser());
-
-
   app.use(morganLogger);
 
   if (process.env.NODE_ENV !== "production") {
@@ -34,18 +32,25 @@ async function startApp(): Promise<void> {
     app.use(morgan.default("dev"));
   }
 
-
   // Routes
   app.use("/auth", authRoutes);
   app.use("/user", userRoutes);
   app.use("/shop", shopRoutes);
   app.use("/admin", adminRoutes);
 
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  console.log("Swagger Spec paths:", Object.keys((swaggerSpec as any).paths || {}));
+  
+  // Swagger documentation route
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: "FluffyCare API Documentation"
+  }));
 
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📚 Swagger docs available at http://localhost:${PORT}/api-docs`);
   });
 }
 
