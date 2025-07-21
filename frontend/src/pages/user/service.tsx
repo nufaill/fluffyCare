@@ -66,7 +66,7 @@ export const Services = () => {
       petType: [],
       serviceType: [],
       priceRange: [0, 20000],
-      duration: [0, 24],
+      duration: [0, 12],
       rating: 0,
       nearMe: false,
       search: '',

@@ -49,6 +49,13 @@ interface ValidationErrors {
   image?: string;
 }
 
+// Enum-like options for duration
+const durationOptions = [
+  { value: "0.5", label: "30 minutes" },
+  { value: "1", label: "1 hour" },
+  { value: "2", label: "2 hours" }
+];
+
 const handleImageUpload = async (file: File): Promise<string | undefined> => {
   try {
     const formData = new FormData();
@@ -108,14 +115,20 @@ const validateForm = (data: ServiceFormData): ValidationErrors => {
     errors.price = "Price must be greater than or equal to 0";
   }
 
-  const duration = parseFloat(data.durationHour);
-  if (isNaN(duration)) {
-    errors.durationHour = "Duration must be a number";
-  } else if (duration < 0.25) {
-    errors.durationHour = "Duration must be at least 0.25 hours";
-  }
+  // const duration = parseFloat(data.durationHour);
+  // if (!durationOptions.some(opt => opt.value === data.durationHour)) {
+  //   errors.durationHour = "Please select a valid duration (30 minutes, 1 hour, or 2 hours)";
+  // }
 
   return errors;
+};
+
+// Helper function to format duration in hh:mm
+const formatDuration = (hours: number): string => {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 };
 
 function PetTypeMultiSelect({
@@ -244,7 +257,7 @@ function StatusToggle({
               : "bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300"
           }
         >
-          {isActive ? "Active" : "Inactive"}
+          {isActive? "Active" : "Inactive"}
         </Badge>
       </div>
     </div>
@@ -468,18 +481,20 @@ function ServiceForm({
             <div className="space-y-2">
               <Label htmlFor="duration" className="flex items-center gap-1 text-gray-700 dark:text-gray-300">
                 <Clock className="h-4 w-4" />
-                Duration (hours) *
+                Duration *
               </Label>
-              <Input
-                id="duration"
-                type="number"
-                value={formData.durationHour}
-                onChange={(e) => handleInputChange("durationHour", e.target.value)}
-                placeholder="0.5"
-                min="0"
-                step="0.25"
-                className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.durationHour ? "border-destructive" : ""}`}
-              />
+              <Select value={formData.durationHour} onValueChange={(value) => handleInputChange("durationHour", value)}>
+                <SelectTrigger className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.durationHour ? "border-destructive" : ""}`}>
+                  <SelectValue placeholder="Select duration" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50">
+                  {durationOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.durationHour && (
                 <p className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" />
@@ -911,7 +926,7 @@ export default function Services() {
                             </div>
                             <div className="flex items-center gap-1 text-muted-foreground">
                               <Clock className="h-4 w-4" />
-                              <span>{service.durationHour}h</span>
+                              <span>{formatDuration(service.durationHour)}</span>
                             </div>
                           </div>
                         </div>
