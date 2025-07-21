@@ -21,7 +21,8 @@ import {
     Building,
     Camera,
     FileText,
-    CheckCircle
+    CheckCircle,
+    Users
 } from 'lucide-react';
 import { Navbar } from '@/components/shop/Navbar';
 import { useSelector } from 'react-redux';
@@ -41,7 +42,8 @@ const shopSchema = z.object({
     city: z.string().min(2, 'City must be at least 2 characters').max(100, 'City must be less than 100 characters'),
     streetAddress: z.string().min(5, 'Street address must be at least 5 characters').max(200, 'Street address must be less than 200 characters'),
     description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
-    logo: z.string().optional(), // Changed to optional string (relative path)
+    logo: z.string().optional(),
+    staffCount: z.number().optional(),
     location: z.object({
         type: z.literal('Point'),
         coordinates: z.tuple([z.number(), z.number()])
@@ -53,6 +55,7 @@ type ShopFormData = z.infer<typeof shopSchema>;
 export default function ShopProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [locationAddress, setLocationAddress] = useState<string>('');
 
     const { shopData: shop } = useSelector((state: RootState) => state.shop);
     const navigate = useNavigate();
@@ -66,13 +69,30 @@ export default function ShopProfilePage() {
             streetAddress: '',
             description: '',
             logo: '',
+            staffCount: 1,
             location: { type: 'Point', coordinates: [0, 0] }
         }
     });
-
+    const getAddressFromCoordinates = async (lat: number, lng: number) => {
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+            );
+            const data = await response.json();
+            return data.display_name || `${lat}, ${lng}`;
+        } catch (error) {
+            console.error('Error getting address:', error);
+            return `${lat}, ${lng}`;
+        }
+    };
+    useEffect(() => {
+        if (shop?.location?.coordinates) {
+            const [lng, lat] = shop.location.coordinates;
+            getAddressFromCoordinates(lat, lng).then(setLocationAddress);
+        }
+    }, [shop]);
     useEffect(() => {
         if (shop) {
-            console.log('Certificate URL:', shop.certificateUrl); 
             reset({
                 name: shop.name,
                 phone: shop.phone,
@@ -80,6 +100,7 @@ export default function ShopProfilePage() {
                 streetAddress: shop.streetAddress,
                 description: shop.description,
                 logo: shop.logo,
+                staffCount: shop.staffCount,
                 location: shop.location
             });
         }
@@ -147,7 +168,7 @@ export default function ShopProfilePage() {
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="relative">
                                             <Avatar className="h-32 w-32 border-4 border-gray-100 shadow-lg">
-                                                <AvatarImage src={cloudinaryUtils.getFullUrl(shop.logo)} alt={shop.name} />
+                                                <AvatarImage src={shop.logo ? cloudinaryUtils.getFullUrl(shop.logo) : ''} alt={shop.name} />
                                                 <AvatarFallback className="bg-black text-white text-3xl font-bold">
                                                     {shop.name.charAt(0)}
                                                 </AvatarFallback>
@@ -172,8 +193,8 @@ export default function ShopProfilePage() {
                                         </div>
                                     </div>
 
-                                    {/* Basic Info Section */}
-                                    <div className="flex-1 space-y-4">
+                                    <div className="flex-1 space-y-6">
+                                        {/* Top Row: Shop Name + Actions */}
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 {isEditing ? (
@@ -216,6 +237,8 @@ export default function ShopProfilePage() {
                                                 )}
                                             </div>
                                         </div>
+
+                                        {/* Contact Info */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="flex items-center gap-3 text-muted-foreground">
                                                 <Mail className="h-4 w-4" />
@@ -225,10 +248,7 @@ export default function ShopProfilePage() {
                                                 <Phone className="h-4 w-4" />
                                                 {isEditing ? (
                                                     <div className="space-y-2 w-full">
-                                                        <Input
-                                                            {...register('phone')}
-                                                            type="tel"
-                                                        />
+                                                        <Input type="tel" {...register('phone')} />
                                                         {errors.phone && (
                                                             <p className="text-red-500 text-sm">{errors.phone.message}</p>
                                                         )}
@@ -238,39 +258,60 @@ export default function ShopProfilePage() {
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex items-start gap-3 text-muted-foreground">
-                                            <MapPin className="h-4 w-4 mt-1" />
-                                            <div className="space-y-2 flex-1">
+
+                                        {/* Address + Staff Count */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="flex items-start gap-3 text-muted-foreground">
+                                                <MapPin className="h-4 w-4 mt-1" />
+                                                <div className="space-y-2 flex-1">
+                                                    {isEditing ? (
+                                                        <>
+                                                            <div className="space-y-2">
+                                                                <Input {...register('streetAddress')} placeholder="Street Address" />
+                                                                {errors.streetAddress && (
+                                                                    <p className="text-red-500 text-sm">{errors.streetAddress.message}</p>
+                                                                )}
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <Input {...register('city')} placeholder="City" />
+                                                                {errors.city && (
+                                                                    <p className="text-red-500 text-sm">{errors.city.message}</p>
+                                                                )}
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <div>
+                                                            <p>{shop.streetAddress}</p>
+                                                            <p>{shop.city}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3 text-muted-foreground">
+                                                <Users className="h-4 w-4" />
                                                 {isEditing ? (
-                                                    <>
-                                                        <div className="space-y-2">
-                                                            <Input
-                                                                {...register('streetAddress')}
-                                                                placeholder="Street Address"
-                                                            />
-                                                            {errors.streetAddress && (
-                                                                <p className="text-red-500 text-sm">{errors.streetAddress.message}</p>
-                                                            )}
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Input
-                                                                {...register('city')}
-                                                                placeholder="City"
-                                                            />
-                                                            {errors.city && (
-                                                                <p className="text-red-500 text-sm">{errors.city.message}</p>
-                                                            )}
-                                                        </div>
-                                                    </>
+                                                    <div className="w-full space-y-2">
+                                                        <Label htmlFor="staffCount">Staff Count</Label>
+                                                        <Input
+                                                            type="number"
+                                                            id="staffCount"
+                                                            {...register('staffCount', { valueAsNumber: true })}
+                                                        />
+                                                        {errors.staffCount && (
+                                                            <p className="text-red-500 text-sm">{errors.staffCount.message}</p>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <div>
-                                                        <p>{shop.streetAddress}</p>
-                                                        <p>{shop.city}</p>
+                                                        <span className="text-sm">Staff Count: </span>
+                                                        <span className="font-medium">{shop.staffCount ?? 1}</span>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
                             </form>
                         </CardContent>
@@ -333,7 +374,7 @@ export default function ShopProfilePage() {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => window.open(cloudinaryUtils.getFullUrl(shop.certificateUrl), '_blank')}
+                                                    onClick={() => window.open(cloudinaryUtils.getFullUrl(shop.certificateUrl!), '_blank')}
                                                 >
                                                     View
                                                 </Button>
@@ -380,19 +421,14 @@ export default function ShopProfilePage() {
                         <div className="fade-slide-in" style={{ animationDelay: '0.4s' }}>
                             <Card className="bg-gray-50 border-0 shadow-sm">
                                 <CardHeader>
-                                    <CardTitle className="text-sm">Location Coordinates</CardTitle>
+                                    <CardTitle className="text-sm">Location Information</CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-2">
                                         {shop.location?.coordinates ? (
                                             <>
-                                                <div className="flex justify-between text-xs">
-                                                    <span className="text-muted-foreground">Longitude:</span>
-                                                    <span className="font-mono">{shop.location.coordinates[0]}</span>
-                                                </div>
-                                                <div className="flex justify-between text-xs">
-                                                    <span className="text-muted-foreground">Latitude:</span>
-                                                    <span className="font-mono">{shop.location.coordinates[1]}</span>
+                                                <div className="text-xs text-muted-foreground mb-2">
+                                                    {locationAddress || 'Loading address...'}
                                                 </div>
                                             </>
                                         ) : (

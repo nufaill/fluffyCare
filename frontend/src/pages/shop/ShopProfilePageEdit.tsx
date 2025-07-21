@@ -28,6 +28,11 @@ const shopSchema = z.object({
   streetAddress: z.string().min(5, 'Street address must be at least 5 characters').max(200, 'Street address must be less than 200 characters'),
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
   logo: z.string().optional(),
+  staffCount: z.number().min(1, 'Staff count must be at least 1').max(5, 'Staff count must be less than 5'),
+  location: z.object({
+    type: z.literal('Point'),
+    coordinates: z.tuple([z.number(), z.number()])
+  }).optional()
 });
 
 type ShopFormData = z.infer<typeof shopSchema>;
@@ -39,6 +44,9 @@ export default function ShopEditPage() {
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number, lng: number } | null>(null);
+  const [locationAddress, setLocationAddress] = useState<string>('');
+  const [loadingLocation, setLoadingLocation] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<ShopFormData>({
     resolver: zodResolver(shopSchema),
@@ -61,11 +69,17 @@ export default function ShopEditPage() {
         streetAddress: shop.streetAddress,
         description: shop.description,
         logo: shop.logo || '',
+        staffCount: shop.staffCount || 1,
       });
       setPreviewLogo(shop.logo ? cloudinaryUtils.getFullUrl(shop.logo) : null);
-    } else {
-      toast.error('Shop data not found. Please try again.');
-      navigate('/shop/profile');
+
+      // Set current location if available
+      if (shop.location?.coordinates) {
+        setCurrentLocation({
+          lat: shop.location.coordinates[1],
+          lng: shop.location.coordinates[0]
+        });
+      }
     }
   }, [shop, reset, navigate]);
 
@@ -99,6 +113,50 @@ export default function ShopEditPage() {
       console.error('Image upload error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+  const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+      );
+      const data = await response.json();
+      return data.display_name || `${lat}, ${lng}`;
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      return `${lat}, ${lng}`;
+    }
+  };
+  const getCurrentLocation = () => {
+    setLoadingLocation(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+          setValue('location', {
+            type: 'Point',
+            coordinates: [longitude, latitude]
+          });
+
+          // Get address from coordinates
+          try {
+            const address = await reverseGeocode(latitude, longitude);
+            setLocationAddress(address);
+          } catch (error) {
+            console.error('Error getting address:', error);
+          }
+          setLoadingLocation(false);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          toast.error('Unable to get current location');
+          setLoadingLocation(false);
+        }
+      );
+    } else {
+      toast.error('Geolocation is not supported by this browser');
+      setLoadingLocation(false);
     }
   };
 
@@ -219,6 +277,46 @@ export default function ShopEditPage() {
                 {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="staffCount">Staff Count</Label>
+                <Input
+                  id="staffCount"
+                  {...register('staffCount', { valueAsNumber: true })}
+                  type="number"
+                  min="1"
+                  max="5"
+                  className="h-10"
+                />
+                {errors.staffCount && <p className="text-red-500 text-sm">{errors.staffCount.message}</p>}
+              </div>
+
+              <div className="space-y-4">
+                <Label>Location</Label>
+                <div className="space-y-3">
+                  <Button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={loadingLocation}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {loadingLocation ? 'Getting Location...' : 'Get Current Location'}
+                  </Button>
+
+                  {currentLocation && (
+                    <div className="p-3 bg-gray-50 rounded-md">
+                      <p className="text-sm font-medium">Current Location:</p>
+                      <p className="text-xs text-gray-600">
+                        Lat: {currentLocation.lat.toFixed(6)},
+                        Lng: {currentLocation.lng.toFixed(6)}
+                      </p>
+                      {locationAddress && (
+                        <p className="text-xs text-gray-600 mt-1">{locationAddress}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
               {/* Form Actions */}
               <div className="flex items-center gap-2">
                 <Button

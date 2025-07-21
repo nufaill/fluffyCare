@@ -14,6 +14,7 @@ const shopSchema = new Schema<ShopDocument>(
     certificateUrl: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
+    staffCount: { type: Number, default: 1 },
     location: {
       type: {
         type: String,

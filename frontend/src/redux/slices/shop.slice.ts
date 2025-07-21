@@ -7,7 +7,6 @@ export interface GeoLocation {
   coordinates: [number, number]; // [longitude, latitude]
 }
 
-// the ShopData interface
 interface ShopData {
   _id: string;
   name: string;
@@ -18,6 +17,7 @@ interface ShopData {
   streetAddress?: string;
   description?: string;
   certificateUrl?: string;
+  staffCount?:number;
   location?: GeoLocation;
   isActive?: boolean;
   isVerified?: boolean;
@@ -121,8 +121,8 @@ export const {
   logoutShop, 
   updateShop, 
   setShopLoading,
-  addShop, // deprecated
-  removeShop // deprecated
+  addShop, 
+  removeShop 
 } = shopSlice.actions;
 
 export default shopSlice.reducer;

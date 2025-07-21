@@ -63,13 +63,6 @@ export class ShopService implements IShopService {
     this.validateShopId(shopId);
     this.validateShopData(updateData);
 
-    if (updateData.name) {
-      const nameExists = await this.shopRepository.checkShopNameExists(updateData.name, shopId);
-      if (nameExists) {
-        throw new CustomError('Shop name already exists', HTTP_STATUS.BAD_REQUEST);
-      }
-    }
-
     const shop = await this.shopRepository.updateShop(shopId, updateData);
     if (!shop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
@@ -122,13 +115,6 @@ export class ShopService implements IShopService {
   async updateShopProfile(shopId: string, updateData: UpdateShopDTO): Promise<ShopDocument> {
     this.validateShopId(shopId);
     this.validateShopData(updateData);
-
-    if (updateData.name) {
-      const nameExists = await this.shopRepository.checkShopNameExists(updateData.name, shopId);
-      if (nameExists) {
-        throw new CustomError('Shop name already exists', HTTP_STATUS.BAD_REQUEST);
-      }
-    }
 
     const updatedShop = await this.shopRepository.updateShop(shopId, updateData);
     if (!updatedShop) {

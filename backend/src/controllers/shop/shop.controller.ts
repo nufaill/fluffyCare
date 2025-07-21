@@ -217,6 +217,7 @@ export class ShopController implements IShopController {
           phone: shop.phone,
           city: shop.city,
           streetAddress: shop.streetAddress,
+          staffCount:shop.staffCount,
           description: shop.description,
           certificateUrl: shop.certificateUrl,
           location: shop.location,
@@ -265,7 +266,7 @@ export class ShopController implements IShopController {
       const body: UpdateShopDTO = req.body;
 
       // Manual validation for UpdateShopDTO
-      const validFields = ['name', 'phone', 'logo', 'city', 'streetAddress', 'description', 'location'];
+      const validFields = ['name', 'phone', 'logo', 'city', 'streetAddress', 'description', 'location','staffCount'];
       const invalidFields = Object.keys(body).filter(key => !validFields.includes(key));
       if (invalidFields.length > 0) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -335,6 +336,7 @@ export class ShopController implements IShopController {
       if (body.location) updateData.location = body.location;
       if (body.city) updateData.city = body.city;
       if (body.streetAddress) updateData.streetAddress = body.streetAddress;
+      if (body.staffCount) updateData.staffCount = body.staffCount;
       if (body.description) updateData.description = body.description;
 
       const updatedShop = await this.shopService.updateShopProfile(shopId, updateData);
@@ -349,6 +351,7 @@ export class ShopController implements IShopController {
           phone: updatedShop.phone,
           city: updatedShop.city,
           streetAddress: updatedShop.streetAddress,
+          staffCount:updatedShop.staffCount,
           description: updatedShop.description,
           certificateUrl: updatedShop.certificateUrl,
           location: updatedShop.location,

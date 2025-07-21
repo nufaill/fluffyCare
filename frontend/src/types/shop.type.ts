@@ -15,6 +15,7 @@ export interface Shop {
   description: string;
   logo: string;
   certificateUrl: string;
+  staffCount?: number;
   location: GeoLocation;
   isVerified: boolean;
   createdAt: string;
@@ -36,6 +37,7 @@ export interface shopUpdatePayload {
   streetAddress?: string;
   description?: string;
   logo?: string;
+  staffCount?: number;
   location?: GeoLocation;
 }
 
@@ -70,6 +72,7 @@ export interface ShopUpdatePayload {
   streetAddress?: string;
   description?: string;
   logo?: string;
+  staffCount?: number;
   location?: {
     type: 'Point';
     coordinates: [number, number];
@@ -88,6 +91,7 @@ export interface ShopApiResponse {
     description: string;
     logo: string;
     certificateUrl: string;
+    staffCount:number;
     location: {
       type: 'Point';
       coordinates: [number, number];
