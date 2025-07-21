@@ -1,7 +1,7 @@
-import { Service } from "../models/Service.model";
+import { Service } from "../models/service.model";
 import { CreateServiceData, ServiceDocument } from "../types/Service.types";
-import { ServiceType } from '../models/serviceTypeModel';
-import { PetType } from '../models/petTypeModel';
+import { ServiceType } from '../models/serviceType.model';
+import { PetType } from '../models/petType.model';
 import { ServiceTypeDocument } from '../types/serviceType.type';
 import { PetTypeDocument } from '../types/PetType.type';
 import { Types } from "mongoose";

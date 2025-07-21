@@ -1,5 +1,5 @@
 import { BaseRepository } from './base-repository/base.repository';
-import { Admin, AdminDocument } from '../models/adminModel';
+import { Admin, AdminDocument } from '../models/admin.model';
 import { CustomError } from '../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../shared/constant';
 import { IAdminRepository } from '../interfaces/repositoryInterfaces/IAdminRepository';

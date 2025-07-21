@@ -1,4 +1,4 @@
-import { OtpModel, IOtp } from '../models/otpModel';
+import { OtpModel, IOtp } from '../models/otp.model';
 import { CreateUserDTO, CreateShopDTO } from '../dto/auth.dto';
 import bcrypt from 'bcrypt';
 import { IOtpRepository } from '../interfaces/repositoryInterfaces/IOtpRepository';

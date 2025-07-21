@@ -1,4 +1,4 @@
-import { User } from '../models/userModel';
+import { User } from '../models/user.model';
 import { UpdateUserDTO } from '../dto/user.dto';
 import { CreateUserDTO } from '../dto/auth.dto';
 import { User as UserType } from '../types/User.types';

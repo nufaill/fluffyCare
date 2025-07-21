@@ -1,4 +1,4 @@
-import { ServiceType } from '../models/serviceTypeModel';
+import { ServiceType } from '../models/serviceType.model';
 import { CreateServiceType, ServiceTypeDocument } from '../types/serviceType.type';
 import { IServiceTypeRepository } from '../interfaces/repositoryInterfaces/IServiceTypeRepository';
 

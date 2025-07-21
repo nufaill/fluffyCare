@@ -1,4 +1,4 @@
-import { IOtp } from '../../models/otpModel';
+import { IOtp } from '../../models/otp.model';
 import { CreateUserDTO, CreateShopDTO } from '../../dto/auth.dto';
 
 export interface IOtpRepository {

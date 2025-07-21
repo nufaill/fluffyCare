@@ -1,4 +1,4 @@
-import { PetType } from '../models/petTypeModel';
+import { PetType } from '../models/petType.model';
 import { CreatePetType, PetTypeDocument } from '../types/PetType.type';
 import { IPetTypeRepository } from '../interfaces/repositoryInterfaces/IPetTypeRepository';
 

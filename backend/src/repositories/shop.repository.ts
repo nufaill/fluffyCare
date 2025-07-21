@@ -1,4 +1,4 @@
-import { Shop } from '../models/shopModel';
+import { Shop } from '../models/shop.model';
 import { CreateShopData, ShopDocument } from '../types/Shop.types';
 import { Types } from 'mongoose';
 import IShopRepository from '../interfaces/repositoryInterfaces/IShopRepository';
