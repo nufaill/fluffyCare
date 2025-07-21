@@ -187,9 +187,8 @@ export const ServiceDetails = () => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`w-5 h-5 ${
-          i < Math.floor(validRating) ? "fill-current text-yellow-400" : "text-gray-300 dark:text-gray-600"
-        }`}
+        className={`w-5 h-5 ${i < Math.floor(validRating) ? "fill-current text-yellow-400" : "text-gray-300 dark:text-gray-600"
+          }`}
       />
     ))
   }
@@ -283,8 +282,7 @@ export const ServiceDetails = () => {
                     <Clock className="w-8 h-8 mx-auto mb-2 text-green-600" />
                     <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">Duration</p>
                     <p className="font-bold text-black dark:text-white font-mono">
-                      {service.durationHour} {service.durationHour === 1 ? "hour" : "hours"}
-                    </p>
+                      {`${String(Math.floor((service.durationHour || 0))).padStart(2, '0')}:${String(Math.round(((service.durationHour || 0) % 1) * 60)).padStart(2, '0')}`}                    </p>
                   </div>
 
                   <div className="text-center p-4 border-2 border-black dark:border-white rounded-xl">
@@ -315,7 +313,6 @@ export const ServiceDetails = () => {
                         return (
                           <Badge
                             key={index}
-                            variant="outline"
                             className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all duration-200 font-mono font-semibold text-lg px-4 py-2"
                           >
                             <IconComponent className={`w-5 h-5 mr-2 ${colorClass}`} />
@@ -341,11 +338,10 @@ export const ServiceDetails = () => {
                 <div>
                   <h3 className="font-bold text-xl text-black dark:text-white font-mono mb-4">Status</h3>
                   <Badge
-                    className={`font-mono font-bold text-lg px-4 py-2 ${
-                      service.isActive
-                        ? "bg-green-500 text-white border-green-600"
-                        : "bg-red-500 text-white border-red-600"
-                    }`}
+                    className={`font-mono font-bold text-lg px-4 py-2 ${service.isActive
+                      ? "bg-green-500 text-white border-green-600"
+                      : "bg-red-500 text-white border-red-600"
+                      }`}
                   >
                     {service.isActive ? (
                       <>
@@ -451,11 +447,10 @@ export const ServiceDetails = () => {
             <Card className="border-2 border-black dark:border-white bg-white dark:bg-black shadow-xl">
               <CardContent className="p-6">
                 <Button
-                  className={`w-full font-mono font-bold text-lg py-4 transition-all duration-200 ${
-                    service.isActive
-                      ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                      : "bg-gray-400 text-gray-600 cursor-not-allowed"
-                  }`}
+                  className={`w-full font-mono font-bold text-lg py-4 transition-all duration-200 ${service.isActive
+                    ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                    : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    }`}
                   size="lg"
                   disabled={!service.isActive}
                 >
@@ -472,7 +467,7 @@ export const ServiceDetails = () => {
                   )}
                 </Button>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-3 text-center font-mono">
-                  Duration: {service.durationHour} {service.durationHour === 1 ? "hour" : "hours"}
+                  Duration: {`${String(Math.floor((service.durationHour || 0))).padStart(2, '0')}:${String(Math.round(((service.durationHour || 0) % 1) * 60)).padStart(2, '0')}`}
                 </p>
               </CardContent>
             </Card>
