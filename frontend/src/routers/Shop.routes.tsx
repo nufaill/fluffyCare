@@ -12,7 +12,7 @@ import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 import ShopProfilePage from './../pages/shop/ShopProfilePage';
 import ShopProfilePageEdit from './../pages/shop/ShopProfilePageEdit'
 import ServicesPage from "@/pages/shop/Services";
-import ShopSchedulePage from "@/pages/shop/Schedule";
+import ShopSchedulePage from "@/pages/shop/Shop-slot";
 
 const ShopRoutes = () => {
   return (

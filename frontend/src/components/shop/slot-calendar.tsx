@@ -3,25 +3,22 @@
 import { useState } from "react"
 import { Calendar, ChevronLeft, ChevronRight, Clock, Plus, Trash2, Settings, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/Badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 
 interface TimeSlot {
   id: string
-  time: string
-  duration: number
-  service: string
-  status: "available" | "booked" | "blocked"
-  period: "morning" | "afternoon" | "evening"
+  startTime: string
+  endTime: string
+  isBooked: boolean
 }
 
 interface DaySchedule {
-  date: string
+  slotDate: string
   slots: TimeSlot[]
   isHoliday: boolean
 }
@@ -33,13 +30,6 @@ export function ScheduleCalendar() {
   const [isCreateSlotOpen, setIsCreateSlotOpen] = useState(false)
   const [isHolidaySettingsOpen, setIsHolidaySettingsOpen] = useState(false)
   const [autoScheduleEnabled, setAutoScheduleEnabled] = useState(false)
-
-  const services = ["Grooming", "Puppy Training", "Bath & Brush", "Nail Trimming"]
-  const durations = [
-    { value: 1, label: "1 Hour" },
-    { value: 1.5, label: "1.5 Hours" },
-    { value: 2, label: "2 Hours" },
-  ]
 
   const getDateKey = (date: Date) => {
     return date.toISOString().split("T")[0]
@@ -55,12 +45,10 @@ export function ScheduleCalendar() {
 
     const days = []
 
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null)
     }
 
-    // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day))
     }
@@ -68,38 +56,36 @@ export function ScheduleCalendar() {
     return days
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "available":
-        return "bg-green-100 text-green-800 border-green-200"
-      case "booked":
-        return "bg-blue-100 text-blue-800 border-blue-200"
-      case "blocked":
-        return "bg-red-100 text-red-800 border-red-200"
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
-    }
+  const getStatusColor = (isBooked: boolean) => {
+    return isBooked
+      ? "bg-blue-100 text-blue-800 border-blue-200"
+      : "bg-green-100 text-green-800 border-green-200"
+  }
+
+  const getPeriod = (startTime: string) => {
+    const hour = parseInt(startTime.split(":")[0], 10)
+    if (hour < 12) return "morning"
+    if (hour < 17) return "afternoon"
+    return "evening"
   }
 
   const getPeriodSlots = (slots: TimeSlot[], period: string) => {
-    return slots.filter((slot) => slot.period === period)
+    return slots.filter((slot) => getPeriod(slot.startTime) === period)
   }
 
   const createTimeSlot = (slotData: any) => {
     const dateKey = getDateKey(selectedDate)
     const newSlot: TimeSlot = {
       id: Date.now().toString(),
-      time: slotData.time,
-      duration: Number.parseFloat(slotData.duration),
-      service: slotData.service,
-      status: "available",
-      period: slotData.period,
+      startTime: slotData.startTime,
+      endTime: slotData.endTime,
+      isBooked: false,
     }
 
     setSchedules((prev) => ({
       ...prev,
       [dateKey]: {
-        date: dateKey,
+        slotDate: dateKey,
         slots: [...(prev[dateKey]?.slots || []), newSlot],
         isHoliday: prev[dateKey]?.isHoliday || false,
       },
@@ -123,7 +109,7 @@ export function ScheduleCalendar() {
     setSchedules((prev) => ({
       ...prev,
       [dateKey]: {
-        date: dateKey,
+        slotDate: dateKey,
         slots: prev[dateKey]?.slots || [],
         isHoliday: !prev[dateKey]?.isHoliday,
       },
@@ -133,63 +119,48 @@ export function ScheduleCalendar() {
   const autoScheduleDay = () => {
     const dateKey = getDateKey(selectedDate)
     const defaultSlots: TimeSlot[] = [
-      // Morning slots
       {
         id: `${Date.now()}-1`,
-        time: "09:00",
-        duration: 1,
-        service: "Grooming",
-        status: "available",
-        period: "morning",
+        startTime: "09:00",
+        endTime: "10:00",
+        isBooked: false,
       },
       {
         id: `${Date.now()}-2`,
-        time: "10:30",
-        duration: 1.5,
-        service: "Puppy Training",
-        status: "available",
-        period: "morning",
+        startTime: "10:30",
+        endTime: "12:00",
+        isBooked: false,
       },
-      // Afternoon slots
       {
         id: `${Date.now()}-3`,
-        time: "13:00",
-        duration: 1,
-        service: "Bath & Brush",
-        status: "available",
-        period: "afternoon",
+        startTime: "13:00",
+        endTime: "14:00",
+        isBooked: false,
       },
       {
         id: `${Date.now()}-4`,
-        time: "14:30",
-        duration: 2,
-        service: "Grooming",
-        status: "available",
-        period: "afternoon",
+        startTime: "14:30",
+        endTime: "16:30",
+        isBooked: false,
       },
-      // Evening slots
       {
         id: `${Date.now()}-5`,
-        time: "17:00",
-        duration: 1,
-        service: "Nail Trimming",
-        status: "available",
-        period: "evening",
+        startTime: "17:00",
+        endTime: "18:00",
+        isBooked: false,
       },
       {
         id: `${Date.now()}-6`,
-        time: "18:30",
-        duration: 1.5,
-        service: "Puppy Training",
-        status: "available",
-        period: "evening",
+        startTime: "18:30",
+        endTime: "20:00",
+        isBooked: false,
       },
     ]
 
     setSchedules((prev) => ({
       ...prev,
       [dateKey]: {
-        date: dateKey,
+        slotDate: dateKey,
         slots: defaultSlots,
         isHoliday: false,
       },
@@ -201,11 +172,10 @@ export function ScheduleCalendar() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-black">Schedule Management</h1>
-          <p className="text-gray-600">Manage your service appointments and availability</p>
+          <p className="text-gray-600">Manage your time slot availability</p>
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={isHolidaySettingsOpen} onOpenChange={setIsHolidaySettingsOpen}>
@@ -242,7 +212,6 @@ export function ScheduleCalendar() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -312,7 +281,6 @@ export function ScheduleCalendar() {
           </CardContent>
         </Card>
 
-        {/* Day Schedule */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -340,60 +308,19 @@ export function ScheduleCalendar() {
                       e.preventDefault()
                       const formData = new FormData(e.currentTarget)
                       createTimeSlot({
-                        time: formData.get("time"),
-                        duration: formData.get("duration"),
-                        service: formData.get("service"),
-                        period: formData.get("period"),
+                        startTime: formData.get("startTime"),
+                        endTime: formData.get("endTime"),
                       })
                     }}
                     className="space-y-4"
                   >
                     <div>
-                      <Label htmlFor="time">Time</Label>
-                      <Input type="time" name="time" required />
+                      <Label htmlFor="startTime">Start Time</Label>
+                      <Input type="time" name="startTime" required />
                     </div>
                     <div>
-                      <Label htmlFor="duration">Duration</Label>
-                      <Select name="duration" required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select duration" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {durations.map((duration) => (
-                            <SelectItem key={duration.value} value={duration.value.toString()}>
-                              {duration.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="service">Service</Label>
-                      <Select name="service" required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select service" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {services.map((service) => (
-                            <SelectItem key={service} value={service}>
-                              {service}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="period">Period</Label>
-                      <Select name="period" required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="morning">Morning</SelectItem>
-                          <SelectItem value="afternoon">Afternoon</SelectItem>
-                          <SelectItem value="evening">Evening</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input type="time" name="endTime" required />
                     </div>
                     <Button type="submit" className="w-full">
                       Create Slot
@@ -425,13 +352,10 @@ export function ScheduleCalendar() {
                             <div key={slot.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium">{slot.time}</span>
-                                  <Badge  className={getStatusColor(slot.status)}>
-                                    {slot.status}
+                                  <span className="font-medium">{slot.startTime} - {slot.endTime}</span>
+                                  <Badge className={getStatusColor(slot.isBooked)}>
+                                    {slot.isBooked ? "Booked" : "Available"}
                                   </Badge>
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {slot.service} • {slot.duration}h
                                 </div>
                               </div>
                               <Button
