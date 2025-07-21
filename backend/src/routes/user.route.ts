@@ -105,8 +105,106 @@ router.get('/services', serviceDependencies.serviceController.getAllServices.bin
  */
 router.get('/services/:serviceId', serviceDependencies.serviceController.getServiceByIdPublic.bind(serviceDependencies.serviceController) as RequestHandler);
 
-// Protected routes
 router.use(userDependencies.authMiddleware.authenticate("user") as RequestHandler);
+
+
+/**
+ * @swagger
+ * /user/nearby-shops:
+ *   get:
+ *     summary: Get nearby shops based on user location
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: latitude
+ *         required: true
+ *         schema:
+ *           type: number
+ *           minimum: -90
+ *           maximum: 90
+ *         description: User's latitude
+ *         example: 10.0261
+ *       - in: query
+ *         name: longitude
+ *         required: true
+ *         schema:
+ *           type: number
+ *           minimum: -180
+ *           maximum: 180
+ *         description: User's longitude  
+ *         example: 76.3105
+ *       - in: query
+ *         name: maxDistance
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 100
+ *           maximum: 50000
+ *         description: Maximum distance in meters (default 5000m)
+ *         example: 5000
+ *     responses:
+ *       200:
+ *         description: List of nearby shops with distances
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       phone:
+ *                         type: string
+ *                       address:
+ *                         type: string
+ *                       location:
+ *                         type: object
+ *                         properties:
+ *                           type:
+ *                             type: string
+ *                           coordinates:
+ *                             type: array
+ *                             items:
+ *                               type: number
+ *                       distance:
+ *                         type: number
+ *                         description: Distance in meters
+ *                       isActive:
+ *                         type: boolean
+ *                       isVerified:
+ *                         type: boolean
+ *                 message:
+ *                   type: string
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                     searchRadius:
+ *                       type: integer
+ *                     userLocation:
+ *                       type: object
+ *       400:
+ *         description: Invalid parameters
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.get('/nearby-shops', userDependencies.userController.getNearbyShops as RequestHandler);
+
 
 /**
  * @swagger

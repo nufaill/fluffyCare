@@ -44,6 +44,36 @@ export interface PetService {
   reviews: string;
 }
 
+
+export interface UserLocation {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  timestamp: number;
+}
+
+export interface ServiceLocation {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address: string; // Maps to streetAddress from backend
+  location: {
+    lat: number;
+    lng: number;
+  };
+  isActive: boolean;
+  isVerified: boolean;
+  distance: number; // In meters
+  profileImage?: string; // Maps to logo from backend
+  description?: string;
+  serviceType?: string; // Optional, for compatibility with existing ServiceMap
+  rating?: number; // Optional, for compatibility
+  price?: number; // Optional, for compatibility
+}
+
+
+
 export interface FilterOptions {
   petType: string[];
   serviceType: string[];
@@ -51,7 +81,17 @@ export interface FilterOptions {
   duration: [number, number];
   rating: number;
   nearMe: boolean;
-  search?: string;
+  search: string;
   page?: number;
   pageSize?: number;
+}
+
+export interface ServiceType {
+  _id: string;
+  name: string;
+}
+
+export interface PetType {
+  _id: string;
+  name: string;
 }

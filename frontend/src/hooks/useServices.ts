@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PetServiceService } from '@/services/user/petservice.service';
+import { userServiceService } from '@/services/user/userService.service';
 import type { PetService, FilterOptions } from '@/types/service';
 
 interface UseServicesProps {
@@ -23,7 +23,7 @@ export const useServices = ({ page = 1, pageSize = 9, initialFilters }: UseServi
     search: initialFilters?.search || '',
   });
 
-  const petServiceService = new PetServiceService();
+  const petServiceService = new userServiceService();
 
   const fetchServices = async () => {
     setLoading(true);

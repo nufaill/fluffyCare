@@ -6,15 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/Badge";
+import {Navbar} from '@/components/shop/Navbar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { Layout } from "@/components/shop/Layout";
+import { PetCareLayout } from "@/components/layout/PetCareLayout"; 
 import { serviceService } from "@/services/shop/service.service";
 import type { PetType, ServiceType, CreateServiceData, UpdateServiceData } from "@/types/service.type";
-
 
 interface Service {
   _id: string;
@@ -36,7 +36,7 @@ interface ServiceFormData {
   petTypeIds: string[];
   price: string;
   durationHour: string;
-  image?: string; 
+  image?: string;
 }
 
 interface ValidationErrors {
@@ -142,7 +142,7 @@ function PetTypeMultiSelect({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3"> 
       <div className="flex items-center justify-between">
         <Label className="text-sm font-medium">Pet Types *</Label>
         {selectedIds.length > 0 && (
@@ -357,7 +357,7 @@ function ServiceForm({
           return;
         }
       }
-        console.log("Frontend sending durationHour:", formData.durationHour, "Parsed:", Number.parseFloat(formData.durationHour));
+      console.log("Frontend sending durationHour:", formData.durationHour, "Parsed:", Number.parseFloat(formData.durationHour));
       await onSubmit({ ...formData, image: imageUrl });
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -610,80 +610,79 @@ export default function Services() {
     return matchesSearch && matchesPetType && matchesServiceType;
   });
 
- const handleAddService = async (data: ServiceFormData) => {
-  try {
-    
-    const durationValue = Number.parseFloat(data.durationHour);
-    const priceValue = Number.parseFloat(data.price);
-    
-    if (isNaN(durationValue) || durationValue <= 0) {
-      console.error("Invalid duration value:", data.durationHour);
-      return;
-    }
-    
-    if (isNaN(priceValue) || priceValue < 0) {
-      console.error("Invalid price value:", data.price);
-      return;
-    }
+  const handleAddService = async (data: ServiceFormData) => {
+    try {
+      const durationValue = Number.parseFloat(data.durationHour);
+      const priceValue = Number.parseFloat(data.price);
 
-    const serviceData: CreateServiceData = {
-      name: data.name,
-      description: data.description,
-      serviceTypeId: data.serviceTypeId,
-      petTypeIds: data.petTypeIds,
-      price: priceValue,
-      durationHour: durationValue, 
-      image: data.image,
-    };
-    
-    console.log("Sending service data:", serviceData); 
-    
-    const newService = await serviceService.createService(serviceData);
-    setServices((prev) => [...prev, newService]);
-    setShowAddForm(false);
-    showSuccess("Service added successfully!");
-  } catch (error) {
-    console.error("Error adding service:", error);
-  }
-};
+      if (isNaN(durationValue) || durationValue <= 0) {
+        console.error("Invalid duration value:", data.durationHour);
+        return;
+      }
 
- const handleEditService = async (data: ServiceFormData) => {
-  if (!editingService) return;
+      if (isNaN(priceValue) || priceValue < 0) {
+        console.error("Invalid price value:", data.price);
+        return;
+      }
 
-  try {
-    const durationValue = Number.parseFloat(data.durationHour);
-    const priceValue = Number.parseFloat(data.price);
-    
-    if (isNaN(durationValue) || durationValue <= 0) {
-      console.error("Invalid duration value:", data.durationHour);
-      return;
+      const serviceData: CreateServiceData = {
+        name: data.name,
+        description: data.description,
+        serviceTypeId: data.serviceTypeId,
+        petTypeIds: data.petTypeIds,
+        price: priceValue,
+        durationHour: durationValue,
+        image: data.image,
+      };
+
+      console.log("Sending service data:", serviceData);
+
+      const newService = await serviceService.createService(serviceData);
+      setServices((prev) => [...prev, newService]);
+      setShowAddForm(false);
+      showSuccess("Service added successfully!");
+    } catch (error) {
+      console.error("Error adding service:", error);
     }
-    
-    if (isNaN(priceValue) || priceValue < 0) {
-      console.error("Invalid price value:", data.price);
-      return;
-    }
+  };
 
-    const updateData: UpdateServiceData = {
-      name: data.name,
-      description: data.description,
-      serviceTypeId: data.serviceTypeId,
-      petTypeIds: data.petTypeIds,
-      price: priceValue,
-      durationHour: durationValue,
-      image: data.image,
-    };
-    
-    console.log("Updating service data:", updateData); 
-    
-    const updatedService = await serviceService.updateService(editingService._id, updateData);
-    setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));
-    setEditingService(null);
-    showSuccess("Service updated successfully!");
-  } catch (error) {
-    console.error("Error updating service:", error);
-  }
-};
+  const handleEditService = async (data: ServiceFormData) => {
+    if (!editingService) return;
+
+    try {
+      const durationValue = Number.parseFloat(data.durationHour);
+      const priceValue = Number.parseFloat(data.price);
+
+      if (isNaN(durationValue) || durationValue <= 0) {
+        console.error("Invalid duration value:", data.durationHour);
+        return;
+      }
+
+      if (isNaN(priceValue) || priceValue < 0) {
+        console.error("Invalid price value:", data.price);
+        return;
+      }
+
+      const updateData: UpdateServiceData = {
+        name: data.name,
+        description: data.description,
+        serviceTypeId: data.serviceTypeId,
+        petTypeIds: data.petTypeIds,
+        price: priceValue,
+        durationHour: durationValue,
+        image: data.image,
+      };
+
+      console.log("Updating service data:", updateData);
+
+      const updatedService = await serviceService.updateService(editingService._id, updateData);
+      setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));
+      setEditingService(null);
+      showSuccess("Service updated successfully!");
+    } catch (error) {
+      console.error("Error updating service:", error);
+    }
+  };
 
   const handleToggleStatus = async (serviceId: string) => {
     try {
@@ -698,25 +697,19 @@ export default function Services() {
   const activeServices = services.filter((s) => s.isActive).length;
   const totalRevenue = services.reduce((sum, s) => sum + (s.isActive ? s.price : 0), 0);
 
-  const sidebarItems = [
-    { title: "Dashboard", icon: PawPrint, url: "/shop/dashboard" },
-    { title: "Services", icon: PawPrint, url: "/shop/services" },
-    { title: "Appointments", icon: PawPrint, url: "/shop/appointments" },
-    { title: "Settings", icon: PawPrint, url: "/shop/settings" },
-  ];
-
   if (isLoading) {
     return (
-      <Layout sidebarItems={sidebarItems}>
+      <PetCareLayout>
         <div className="container mx-auto p-6">
           <p className="text-gray-900 dark:text-gray-100">Loading...</p>
         </div>
-      </Layout>
+      </PetCareLayout>
     );
   }
 
   return (
-    <Layout sidebarItems={sidebarItems}>
+    <PetCareLayout>
+      <Navbar/>
       <div className="container mx-auto p-6 space-y-6 max-w-full overflow-x-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -906,7 +899,7 @@ export default function Services() {
                             <StatusToggle isActive={service.isActive} onToggle={() => handleToggleStatus(service._id)} />
                           </div>
                           <Badge className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                            { service.serviceTypeId.name}
+                            {serviceTypes.find((st) => st._id === service.serviceTypeId)?.name || "Unknown"}
                           </Badge>
                         </div>
                         <div className="space-y-2 text-sm">
@@ -934,7 +927,7 @@ export default function Services() {
                                     variant="secondary"
                                     className="bg-primary/10 text-primary hover:bg-primary/20"
                                   >
-                                    { petTypeId.name }
+                                    {petType?.name || "Unknown"}
                                   </Badge>
                                 );
                               })
@@ -966,6 +959,6 @@ export default function Services() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </PetCareLayout>
   );
 }

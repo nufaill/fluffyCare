@@ -12,6 +12,7 @@ import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 import ShopProfilePage from './../pages/shop/ShopProfilePage';
 import ShopProfilePageEdit from './../pages/shop/ShopProfilePageEdit'
 import ServicesPage from "@/pages/shop/Services";
+import ShopSchedulePage from "@/pages/shop/Schedule";
 
 const ShopRoutes = () => {
   return (
@@ -92,6 +93,14 @@ const ShopRoutes = () => {
         element={
           <PrivateRoute userType="shop">
             <ServicesPage/>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/shop/schedule"
+        element={
+          <PrivateRoute userType="shop">
+            <ShopSchedulePage/>
           </PrivateRoute>
         }
       />

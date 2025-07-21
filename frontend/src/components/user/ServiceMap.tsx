@@ -23,15 +23,21 @@ const createCustomIcon = (color: string) => {
 };
 
 const serviceTypeColors: { [key: string]: string } = {
-  'veterinary': 'red',
-  'grooming': 'blue',
-  'boarding': 'green',
-  'training': 'orange',
-  'walking': 'yellow',
-  'sitting': 'violet',
-  'default': 'grey'
+  veterinary: 'red',
+  grooming: 'blue',
+  boarding: 'green',
+  training: 'orange',
+  walking: 'yellow',
+  sitting: 'violet',
+  default: 'grey',
 };
 
+const getServiceIcon = (serviceType: string) => {
+  if (!serviceTypeColors[serviceType]) {
+    console.warn(`Unknown service type: ${serviceType}, using default icon`);
+  }
+  return createCustomIcon(serviceTypeColors[serviceType] || serviceTypeColors.default);
+};
 export interface UserLocation {
   lat: number;
   lng: number;
@@ -70,119 +76,79 @@ const MapController: React.FC<{
   enableLocationTracking: boolean;
   setLocationError: (error: string | null) => void;
   setLocationLoading: (loading: boolean) => void;
-}> = ({ 
-  userLocation, 
-  showUserLocation, 
-  onLocationUpdate, 
-  enableLocationTracking, 
-  setLocationError, 
-  setLocationLoading 
+}> = ({
+  userLocation,
+  showUserLocation,
+  onLocationUpdate,
+  enableLocationTracking,
+  setLocationError,
+  setLocationLoading,
 }) => {
-  const map = useMap();
-  const [watchId, setWatchId] = useState<number | null>(null);
+    const map = useMap();
 
-  useEffect(() => {
-    if (enableLocationTracking && onLocationUpdate) {
-      setLocationLoading(true);
-      setLocationError(null);
-      
-      const getCurrentLocation = () => {
+    useEffect(() => {
+      if (userLocation && showUserLocation) {
+        map.setView([userLocation.lat, userLocation.lng], 13);
+      }
+    }, [userLocation, showUserLocation, map]);
+
+    useEffect(() => {
+      if (enableLocationTracking && onLocationUpdate) {
+        setLocationLoading(true);
+        setLocationError(null);
+
         if (!navigator.geolocation) {
-          console.error('Geolocation is not supported by this browser');
           setLocationError('Geolocation is not supported by this browser');
           setLocationLoading(false);
-          
           return;
         }
 
         const options = {
           enableHighAccuracy: true,
-          timeout: 15000, 
-          maximumAge: 300000
+          timeout: 15000,
+          maximumAge: 300000,
         };
-        
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const location: UserLocation = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              accuracy: position.coords.accuracy,
-              timestamp: Date.now()
-            };
-            console.log('📍 User location obtained:', location);
-            onLocationUpdate(location);
-            setLocationLoading(false);
-            setLocationError(null);
-            
-            // Center map on user location
-            map.setView([location.lat, location.lng], 13);
-          },
-          (error) => {
-            console.error('Error getting location:', error);
-            let errorMessage = 'Unable to get your location';
-            
-            switch (error.code) {
-              case error.PERMISSION_DENIED:
-                errorMessage = 'Location access denied. Please enable location services.';
-                break;
-              case error.POSITION_UNAVAILABLE:
-                errorMessage = 'Location information is unavailable.';
-                break;
-              case error.TIMEOUT:
-                errorMessage = 'Location request timed out.';
-                break;
-            }
-            
-            setLocationError(errorMessage);
-            setLocationLoading(false);
-            
-            // Use default location
-            const defaultLocation: UserLocation = {
-              lat: 40.7128,
-              lng: -74.0060,
-              timestamp: Date.now()
-            };
-            onLocationUpdate(defaultLocation);
-            map.setView([defaultLocation.lat, defaultLocation.lng], 10);
-          },
-          options
-        );
 
-        // Watch position for real-time updates
-        const id = navigator.geolocation.watchPosition(
-          (position) => {
-            const location: UserLocation = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              accuracy: position.coords.accuracy,
-              timestamp: Date.now()
-            };
-            console.log('📍 User location updated:', location);
-            onLocationUpdate(location);
-          },
-          (error) => {
-            console.error('Error watching location:', error);
-            // Don't set error for watch position failures to avoid spam
-          },
-          options
-        );
+        const success = (position: GeolocationPosition) => {
+          const location: UserLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: Date.now(),
+          };
+          onLocationUpdate(location);
+          setLocationLoading(false);
+          setLocationError(null);
+        };
 
-        setWatchId(id);
-      };
+        const error = (err: GeolocationPositionError) => {
+          let errorMessage = 'Unable to get your location';
+          switch (err.code) {
+            case err.PERMISSION_DENIED:
+              errorMessage = 'Location access denied. Please enable location services.';
+              break;
+            case err.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information is unavailable.';
+              break;
+            case err.TIMEOUT:
+              errorMessage = 'Location request timed out.';
+              break;
+          }
+          setLocationError(errorMessage);
+          setLocationLoading(false);
+        };
 
-      getCurrentLocation();
-    }
+        navigator.geolocation.getCurrentPosition(success, error, options);
 
-    return () => {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        setWatchId(null);
+        const watchId = navigator.geolocation.watchPosition(success, error, options);
+        return () => {
+          if (watchId) navigator.geolocation.clearWatch(watchId);
+        };
       }
-    };
-  }, [enableLocationTracking, onLocationUpdate, map, setLocationError, setLocationLoading]);
+    }, [enableLocationTracking, onLocationUpdate, map, setLocationError, setLocationLoading]);
 
-  return null;
-};
+    return null;
+  };
 
 export const ServiceMap: React.FC<ServiceMapProps> = ({
   services,
@@ -210,15 +176,15 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
     try {
       setLocationLoading(true);
       setLocationError(null);
-      
+
       const result = await navigator.permissions.query({ name: 'geolocation' });
-      
+
       if (result.state === 'denied') {
         setLocationError('Location access denied. Please enable location in your browser settings.');
         setLocationLoading(false);
         return;
       }
-      
+
       // Trigger location update
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -304,14 +270,16 @@ export const ServiceMap: React.FC<ServiceMapProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="text-red-600">⚠️</div>
-              <span className="text-sm text-red-700">{locationError}</span>
+              <span className="text-sm text-red-700">
+                {locationError} <a href="https://support.google.com/chrome/answer/142065" target="_blank" className="underline">Learn how to enable location</a>
+              </span>
             </div>
             <button
               onClick={requestLocationPermission}
               disabled={locationLoading}
               className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50"
             >
-              {locationLoading ? 'Getting...' : 'Try Again'}
+              {locationLoading ? 'Getting...' : 'Retry'}
             </button>
           </div>
         </div>

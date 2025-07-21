@@ -34,7 +34,7 @@ const About: React.FC = () => {
       role: "Pet Owner",
       rating: 5,
       text: "Exceptional service! My dog has never been happier. The staff truly cares about every pet.",
-      image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face",
+      image: "https://static.wixstatic.com/media/ce85db_554531f59c0e439f9e7c6150212de208~mv2.jpeg/v1/fill/w_522,h_510,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Irina.jpeg",
     },
     {
       name: "Mike Chen",
@@ -365,7 +365,7 @@ const About: React.FC = () => {
                     <div className="relative mb-6">
                       <div className="w-32 h-32 mx-auto rounded-full overflow-hidden ring-4 ring-black/20 group-hover:ring-white/20 transition-all duration-500 group-hover:scale-110">
                         <img
-                          src={`https://images.unsplash.com/photo-${1500000000000 + index}?w=160&h=160&fit=crop&crop=face`}
+                          src={`https://static.wixstatic.com/media/ce85db_9f5cd764cafa49be97bfe5e649f71486~mv2.jpg/v1/crop/x_0,y_64,w_1536,h_1920/fill/w_512,h_640,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/nuria%20web%20buena.jpg`}
                           alt={member.name}
                           className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700"
                         />
@@ -596,8 +596,8 @@ const About: React.FC = () => {
                 <div className="relative inline-block mb-6">
                   <div className="w-48 h-48 mx-auto lg:mx-0 rounded-3xl overflow-hidden border-4 border-black/10">
                     <img
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face"
-                      alt="Philip Adam"
+                      src="https://media.istockphoto.com/id/1463645732/photo/female-professional-groomer-combing-dog-fur-at-pet-spa-grooming-salon.jpg?s=2048x2048&w=is&k=20&c=iXTdpAyHVrjEZnGATQx2bH2mNICUKo3ITSpnM-h_T-w="
+                      alt="Sophia"
                       className="object-cover w-full h-full"
                     />
                   </div>
@@ -606,7 +606,7 @@ const About: React.FC = () => {
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-bold mb-2">Philip Adam</h3>
+                <h3 className="text-2xl font-bold mb-2">Sophia</h3>
                 <p className="text-gray-600 mb-4 flex items-center justify-center lg:justify-start gap-2">
                   <Shield className="w-4 h-4" />
                   HR Manager & Pet Care Specialist

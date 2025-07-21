@@ -507,25 +507,25 @@ export default function VendorLandingPage() {
 
                     <div className="grid md:grid-cols-4 gap-6">
                         <TestimonialCard
-                            image="/placeholder.svg?height=500&width=350"
+                            image="https://www.travenix.com/wp-content/uploads/2023/12/Dogzadda.jpg"
                             quote="Since joining FluffyCare, my dog walking business has grown by 70%. The platform makes scheduling and payments seamless."
                             name="Sarah Johnson"
                             role="Happy Paws Dog Walking, Chicago"
                         />
                         <TestimonialCard
-                            image="/placeholder.svg?height=500&width=350"
+                            image="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQox4RG8HdecP349IfMgG2dQZg7gvzyY7JL75H1q0FPiwZE_lwlyuzeEIo59k3ccaL8Kmo&usqp=CAU"
                             quote="FluffyCare transformed my small grooming salon into a thriving business. The exposure to new clients has been game-changing."
                             name="Marcus Chen"
                             role="Pristine Pets Grooming, San Francisco"
                         />
                         <TestimonialCard
-                            image="/placeholder.svg?height=500&width=350"
+                            image="https://t4.ftcdn.net/jpg/05/84/45/67/240_F_584456742_A7CPueb91bV08wOwRkKKrxNUagaYOHXU.jpg"
                             quote="As a pet sitter, I've doubled my client base in just 3 months. The platform handles all the admin work I used to struggle with."
                             name="Jessica Williams"
                             role="Cozy Pet Sitting, Austin"
                         />
                         <TestimonialCard
-                            image="/placeholder.svg?height=500&width=350"
+                            image="https://t3.ftcdn.net/jpg/06/33/49/50/240_F_633495027_t3vBhGC6moxs6LUodwt0rIMt160ztHdX.jpg"
                             quote="The business analytics tools helped me understand which services were most profitable. I've increased revenue by 45%."
                             name="David Rodriguez"
                             role="Elite Pet Training, Miami"

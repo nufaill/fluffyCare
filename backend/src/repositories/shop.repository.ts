@@ -89,4 +89,60 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
       : { name: { $regex: `^${name}$`, $options: 'i' } };
     return await this.exists(query);
   }
+
+  async findNearbyShops(longitude: number,latitude: number, maxDistance: number,filters: { serviceType?: string; petType?: string } = {}
+  ): Promise<ShopDocument[]> {
+    const query: any = {
+      isActive: true,
+      isVerified: true,
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude],
+          },
+          $maxDistance: maxDistance,
+        },
+      },
+    };
+
+    if (filters.serviceType) {
+      query.serviceType = filters.serviceType;
+    }
+    if (filters.petType) {
+      query.petType = filters.petType;
+    }
+
+    return await this.model
+      .find(query)
+      .select('-password -resetPasswordToken -resetPasswordExpires')
+      .exec();
+  }
+
+  async findShopsWithinRadius(longitude: number, latitude: number, radiusInMeters: number): Promise<ShopDocument[]> {
+    return await this.model.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [longitude, latitude]
+          },
+          distanceField: 'distance',
+          maxDistance: radiusInMeters,
+          spherical: true,
+          query: {
+            isActive: true,
+            isVerified: true
+          }
+        }
+      },
+      {
+        $project: {
+          password: 0,
+          resetPasswordToken: 0,
+          resetPasswordExpires: 0
+        }
+      }
+    ]);
+  }
 }

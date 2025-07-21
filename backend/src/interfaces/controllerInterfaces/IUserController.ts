@@ -5,4 +5,5 @@ export interface IUserController {
   updateUserStatus(req: Request, res: Response, next: NextFunction): Promise<void>;
   getProfile(req: Request, res: Response, next: NextFunction): Promise<void>;
   updateProfile(req: Request, res: Response, next: NextFunction): Promise<void>;
+  getNearbyShops(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

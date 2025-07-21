@@ -4,6 +4,7 @@ import { ServiceService } from '../../services/service/service.service';
 import { CustomError } from '../../util/CustomerError';
 import { CreateServiceDTO, UpdateServiceDTO, ServiceFiltersDTO } from '../../dto/service.dto';
 import { IServiceController } from '../../interfaces/controllerInterfaces/IServiceController';
+import { Types } from 'mongoose';
 
 export class ServiceController implements IServiceController {
   private serviceService: ServiceService;
@@ -82,12 +83,18 @@ export class ServiceController implements IServiceController {
     }
   };
 
-  getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { serviceId } = req.params;
       if (!serviceId) {
         throw new CustomError('Service ID is required', HTTP_STATUS.BAD_REQUEST);
       }
+
+      // Validate if serviceId is a valid ObjectId
+      if (!Types.ObjectId.isValid(serviceId)) {
+        throw new CustomError('Invalid Service ID format', HTTP_STATUS.BAD_REQUEST);
+      }
+
       console.log(`Fetching service with ID: ${serviceId}`);
       const service = await this.serviceService.getServiceByIdPublic(serviceId);
       res.status(HTTP_STATUS.OK).json({

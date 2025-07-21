@@ -1,7 +1,7 @@
 import Useraxios from "@/api/user.axios";
 import type { FilterOptions, PetService, ServiceType, PetType } from "@/types/service";
 
-export class PetServiceService {
+export class userServiceService {
   async getAllServices(filters: FilterOptions): Promise<{ services: PetService[]; total: number }> {
     const params = new URLSearchParams();
 

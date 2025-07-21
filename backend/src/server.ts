@@ -37,10 +37,7 @@ async function startApp(): Promise<void> {
   app.use("/user", userRoutes);
   app.use("/shop", shopRoutes);
   app.use("/admin", adminRoutes);
-
-  console.log("Swagger Spec paths:", Object.keys((swaggerSpec as any).paths || {}));
   
-  // Swagger documentation route
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',

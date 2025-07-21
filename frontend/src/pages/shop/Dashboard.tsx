@@ -12,7 +12,6 @@ import {
   Calendar,
   Dog,
   Cat,
-  // Star,
   Award,
   MessageCircle,
   Plus,
