@@ -17,7 +17,6 @@ interface ShopData {
   streetAddress?: string;
   description?: string;
   certificateUrl?: string;
-  staffCount?:number;
   location?: GeoLocation;
   isActive?: boolean;
   isVerified?: boolean;

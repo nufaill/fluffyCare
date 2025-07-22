@@ -22,7 +22,6 @@ import {
     Camera,
     FileText,
     CheckCircle,
-    Users
 } from 'lucide-react';
 import { Navbar } from '@/components/shop/Navbar';
 import { useSelector } from 'react-redux';
@@ -43,7 +42,6 @@ const shopSchema = z.object({
     streetAddress: z.string().min(5, 'Street address must be at least 5 characters').max(200, 'Street address must be less than 200 characters'),
     description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
     logo: z.string().optional(),
-    staffCount: z.number().optional(),
     location: z.object({
         type: z.literal('Point'),
         coordinates: z.tuple([z.number(), z.number()])
@@ -69,7 +67,6 @@ export default function ShopProfilePage() {
             streetAddress: '',
             description: '',
             logo: '',
-            staffCount: 1,
             location: { type: 'Point', coordinates: [0, 0] }
         }
     });
@@ -100,7 +97,6 @@ export default function ShopProfilePage() {
                 streetAddress: shop.streetAddress,
                 description: shop.description,
                 logo: shop.logo,
-                staffCount: shop.staffCount,
                 location: shop.location
             });
         }
@@ -286,28 +282,6 @@ export default function ShopProfilePage() {
                                                         </div>
                                                     )}
                                                 </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-3 text-muted-foreground">
-                                                <Users className="h-4 w-4" />
-                                                {isEditing ? (
-                                                    <div className="w-full space-y-2">
-                                                        <Label htmlFor="staffCount">Staff Count</Label>
-                                                        <Input
-                                                            type="number"
-                                                            id="staffCount"
-                                                            {...register('staffCount', { valueAsNumber: true })}
-                                                        />
-                                                        {errors.staffCount && (
-                                                            <p className="text-red-500 text-sm">{errors.staffCount.message}</p>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <div>
-                                                        <span className="text-sm">Staff Count: </span>
-                                                        <span className="font-medium">{shop.staffCount ?? 1}</span>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </div>

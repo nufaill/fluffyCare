@@ -20,7 +20,6 @@ export interface CreateShopData {
   location: GeoLocation;
   isActive: boolean;
   isVerified: boolean;
-  staffCount: Number;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
 }
@@ -40,7 +39,6 @@ export interface ShopDocument extends Document {
   location: GeoLocation;
   isActive: boolean;
   isVerified: boolean;
-  staffCount :Number;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   createdAt: Date;

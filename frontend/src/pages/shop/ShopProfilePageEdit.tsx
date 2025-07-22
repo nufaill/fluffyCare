@@ -28,7 +28,6 @@ const shopSchema = z.object({
   streetAddress: z.string().min(5, 'Street address must be at least 5 characters').max(200, 'Street address must be less than 200 characters'),
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
   logo: z.string().optional(),
-  staffCount: z.number().min(1, 'Staff count must be at least 1').max(5, 'Staff count must be less than 5'),
   location: z.object({
     type: z.literal('Point'),
     coordinates: z.tuple([z.number(), z.number()])
@@ -41,7 +40,7 @@ export default function ShopEditPage() {
   const { shopData: shop } = useSelector((state: RootState) => state.shop);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [previewLogo, setPreviewLogo] = useState<string | null>(null);
+  const [, setPreviewLogo] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number, lng: number } | null>(null);
@@ -69,7 +68,6 @@ export default function ShopEditPage() {
         streetAddress: shop.streetAddress,
         description: shop.description,
         logo: shop.logo || '',
-        staffCount: shop.staffCount || 1,
       });
       setPreviewLogo(shop.logo ? cloudinaryUtils.getFullUrl(shop.logo) : null);
 
@@ -216,7 +214,7 @@ export default function ShopEditPage() {
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <Avatar className="h-24 w-24 border-4 border-gray-100 shadow-lg">
-                      <AvatarImage src={previewLogo || cloudinaryUtils.getFullUrl(shop.logo)} alt={shop.name} />
+                      <AvatarImage src={cloudinaryUtils.getFullUrl(shop.logo ?? "")} alt={shop.name} />
                       <AvatarFallback className="bg-black text-white text-2xl font-bold">
                         {shop.name.charAt(0)}
                       </AvatarFallback>
@@ -275,19 +273,6 @@ export default function ShopEditPage() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea id="description" {...register('description')} rows={6} className="resize-none" />
                 {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="staffCount">Staff Count</Label>
-                <Input
-                  id="staffCount"
-                  {...register('staffCount', { valueAsNumber: true })}
-                  type="number"
-                  min="1"
-                  max="5"
-                  className="h-10"
-                />
-                {errors.staffCount && <p className="text-red-500 text-sm">{errors.staffCount.message}</p>}
               </div>
 
               <div className="space-y-4">

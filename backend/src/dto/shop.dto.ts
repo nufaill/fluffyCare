@@ -13,7 +13,6 @@ export interface UpdateShopDTO {
   };
   city?: string;
   streetAddress?: string;
-  staffCount?:Number;
   description?: string;
 }
 
