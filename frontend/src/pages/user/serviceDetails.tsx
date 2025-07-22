@@ -241,7 +241,7 @@ export const ServiceDetails = () => {
                 <div className="flex items-start gap-6 mb-8">
                   <div className="relative">
                     <img
-                      src={cloudinaryUtils.getFullUrl(service.shopId.logo) || "/placeholder.svg"}
+                      src={cloudinaryUtils.getFullUrl(service.shopId.logo ?? "") || "/placeholder.svg"}
                       alt={`${service.shopId?.name || "Shop"} logo`}
                       className="w-20 h-20 rounded-full object-cover border-2 border-black dark:border-white shadow-lg"
                       onError={(e) => {
