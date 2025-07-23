@@ -97,6 +97,11 @@ const defaultMenuItems: SidebarItem[] = [
     url: "/shop/earnings",
   },
   {
+    title: "Workers",
+    icon: Users,
+    url: "/shop/workers",
+  },
+  {
     title: "Schedule",
     icon: Clock,
     url: "/shop/schedule",

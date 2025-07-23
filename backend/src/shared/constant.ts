@@ -14,7 +14,7 @@ export enum HTTP_STATUS {
 export const SUCCESS_MESSAGES = {
   OPERATION_SUCCESS: "Opearation Succesfull",
   CREATED: "Created successfully.",
- LOGIN_SUCCESS: 'Login successful',
+  LOGIN_SUCCESS: 'Login successful',
   LOGOUT_SUCCESS: 'Logout successful',
   ADMIN_CREATED: 'Admin created successfully',
   ADMIN_UPDATED: 'Admin updated successfully',
@@ -32,7 +32,7 @@ export const SUCCESS_MESSAGES = {
   FETCHED_SUCESS: "fetched successfully",
   PROFILE_FETCHED_SUCCESS: 'Profile fetched successfully',
   PROFILE_UPDATED_SUCCESS: 'Profile updated successfully',
-    SERVICE_CREATED: 'Service created successfully',
+  SERVICE_CREATED: 'Service created successfully',
   SERVICE_UPDATED: 'Service updated successfully',
   SERVICE_STATUS_UPDATED: 'Service status updated successfully',
   DATA_RETRIEVED: 'Data retrieved successfully',
@@ -81,4 +81,6 @@ export const ERROR_MESSAGES = {
   INVALID_INPUT: 'At least one field must be provided for update',
   SERVICE_NOT_FOUND: 'Service not found',
   SERVICE_NAME_EXISTS: 'Service name already exists for this shop',
+  MISSING_REQUIRED_FIELD: 'Missing required field:',
+  NOT_FOUND: 'Resource not found:',
 }

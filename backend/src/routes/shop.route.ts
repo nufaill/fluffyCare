@@ -2,8 +2,26 @@
 import { RequestHandler, Router } from 'express';
 import { shopDependencies } from '../di/shopInjection';
 import { validateCreateService } from '../validations/service.validator';
-
+import { validateCreateStaff } from '../validations/staff.validator';
+import { ValidationChain } from 'express-validator';
 const router = Router();
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Error:
+ *       type: object
+ *       properties:
+ *         error:
+ *           type: string
+ *         message:
+ *           type: string
+ *       required:
+ *         - error
+ *         - message
+ */
+
 /**
  * @swagger
  * /shop/signup:
@@ -29,7 +47,11 @@ const router = Router();
  *                 shop:
  *                   $ref: '#/components/schemas/Shop'
  *       400:
- *         description: Invalid input
+ *         description: Invalid input data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/signup', shopDependencies.shopAuthController.register as RequestHandler);
 
@@ -45,16 +67,31 @@ router.post('/signup', shopDependencies.shopAuthController.register as RequestHa
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - otp
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *               otp:
  *                 type: string
  *     responses:
  *       200:
  *         description: OTP verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       400:
- *         description: Invalid OTP
+ *         description: Invalid OTP or email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/verify-otp', shopDependencies.shopAuthController.verifyOtp as RequestHandler);
 
@@ -70,14 +107,28 @@ router.post('/verify-otp', shopDependencies.shopAuthController.verifyOtp as Requ
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *     responses:
  *       200:
  *         description: OTP resent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       400:
- *         description: Invalid request
+ *         description: Invalid email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/resend-otp', shopDependencies.shopAuthController.resendOtp as RequestHandler);
 
@@ -93,11 +144,16 @@ router.post('/resend-otp', shopDependencies.shopAuthController.resendOtp as Requ
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - password
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *               password:
  *                 type: string
+ *                 minLength: 8
  *     responses:
  *       200:
  *         description: Shop logged in successfully
@@ -112,6 +168,10 @@ router.post('/resend-otp', shopDependencies.shopAuthController.resendOtp as Requ
  *                   type: string
  *       401:
  *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/login', shopDependencies.shopAuthController.login as RequestHandler);
 
@@ -126,8 +186,19 @@ router.post('/login', shopDependencies.shopAuthController.login as RequestHandle
  *     responses:
  *       200:
  *         description: Shop logged out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/logout', shopDependencies.shopAuthController.logout as RequestHandler);
 
@@ -143,6 +214,8 @@ router.post('/logout', shopDependencies.shopAuthController.logout as RequestHand
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - refreshToken
  *             properties:
  *               refreshToken:
  *                 type: string
@@ -158,6 +231,10 @@ router.post('/logout', shopDependencies.shopAuthController.logout as RequestHand
  *                   type: string
  *       401:
  *         description: Invalid refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/refresh-token', shopDependencies.shopAuthController.refreshToken as RequestHandler);
 
@@ -173,14 +250,28 @@ router.post('/refresh-token', shopDependencies.shopAuthController.refreshToken a
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *     responses:
  *       200:
  *         description: Reset link sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       400:
  *         description: Invalid email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/forgot-password', shopDependencies.shopAuthController.sendResetLink as RequestHandler);
 
@@ -196,16 +287,31 @@ router.post('/forgot-password', shopDependencies.shopAuthController.sendResetLin
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - token
+ *               - newPassword
  *             properties:
  *               token:
  *                 type: string
  *               newPassword:
  *                 type: string
+ *                 minLength: 8
  *     responses:
  *       200:
  *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  *       400:
- *         description: Invalid token
+ *         description: Invalid token or password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/reset-password', shopDependencies.shopAuthController.resetPassword as RequestHandler);
 
@@ -226,6 +332,10 @@ router.post('/reset-password', shopDependencies.shopAuthController.resetPassword
  *                 $ref: '#/components/schemas/ServiceType'
  *       500:
  *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/service-types', shopDependencies.serviceController.getServiceTypes as RequestHandler);
 
@@ -246,11 +356,15 @@ router.get('/service-types', shopDependencies.serviceController.getServiceTypes 
  *                 $ref: '#/components/schemas/PetType'
  *       500:
  *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/pet-types', shopDependencies.serviceController.getPetTypes as RequestHandler);
 
 // Protected routes
-router.use(shopDependencies.authMiddleware.authenticate("shop") as RequestHandler);
+router.use(shopDependencies.authMiddleware.authenticate('shop') as RequestHandler);
 
 /**
  * @swagger
@@ -269,15 +383,23 @@ router.use(shopDependencies.authMiddleware.authenticate("shop") as RequestHandle
  *         description: ID of the shop
  *     responses:
  *       200:
- *         description: Shop profile
+ *         description: Shop profile retrieved successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Shop'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Shop not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/profile/:shopId', shopDependencies.shopController.getShopProfile as RequestHandler);
 
@@ -304,8 +426,16 @@ router.get('/profile/:shopId', shopDependencies.shopController.getShopProfile as
  *               $ref: '#/components/schemas/Shop'
  *       400:
  *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.patch('/profile/update', shopDependencies.shopController.updateShopProfile as RequestHandler);
 
@@ -332,8 +462,16 @@ router.patch('/profile/update', shopDependencies.shopController.updateShopProfil
  *               $ref: '#/components/schemas/Service'
  *       400:
  *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/service-create', validateCreateService, shopDependencies.serviceController.createService as RequestHandler);
 
@@ -356,8 +494,38 @@ router.post('/service-create', validateCreateService, shopDependencies.serviceCo
  *                 $ref: '#/components/schemas/Service'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/service-list', shopDependencies.serviceController.getServicesByShop as RequestHandler);
+
+/**
+ * @swagger
+ * /shop/staff-list:
+ *   get:
+ *     summary: Get staff list by shop
+ *     tags: [Shop]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of staff members
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Staff'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/staff-list', shopDependencies.staffController.findByShopId as RequestHandler);
 
 /**
  * @swagger
@@ -383,8 +551,16 @@ router.get('/service-list', shopDependencies.serviceController.getServicesByShop
  *               $ref: '#/components/schemas/Service'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Service not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/:serviceId', shopDependencies.serviceController.getServiceById as RequestHandler);
 
@@ -418,10 +594,22 @@ router.get('/:serviceId', shopDependencies.serviceController.getServiceById as R
  *               $ref: '#/components/schemas/Service'
  *       400:
  *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Service not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.patch('/:serviceId', validateCreateService, shopDependencies.serviceController.updateService as RequestHandler);
 
@@ -449,9 +637,210 @@ router.patch('/:serviceId', validateCreateService, shopDependencies.serviceContr
  *               $ref: '#/components/schemas/Service'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Service not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.patch('/:serviceId/toggle-status', shopDependencies.serviceController.toggleServiceStatus as RequestHandler);
+
+/**
+ * @swagger
+ * /shop/staff-create:
+ *   post:
+ *     summary: Create a new staff member
+ *     tags: [Shop]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Staff'
+ *     responses:
+ *       201:
+ *         description: Staff created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Staff'
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post(
+  '/staff-create',
+  validateCreateStaff as (ValidationChain | RequestHandler)[],
+  shopDependencies.staffController.create as RequestHandler
+);
+
+/**
+ * @swagger
+ * /shop/staff/{staffId}:
+ *   patch:
+ *     summary: Update a staff member
+ *     tags: [Shop]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: staffId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the staff member
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Staff'
+ *     responses:
+ *       200:
+ *         description: Staff updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Staff'
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Staff not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.patch(
+  '/staff/:staffId',
+  validateCreateStaff as (ValidationChain | RequestHandler)[],
+  shopDependencies.staffController.update as RequestHandler
+);
+
+/**
+ * @swagger
+ * /shop/staff/{staffId}/toggle-status:
+ *   patch:
+ *     summary: Toggle staff status (block/unblock)
+ *     tags: [Shop]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: staffId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the staff member
+ *     responses:
+ *       200:
+ *         description: Staff status toggled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Staff'
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Staff not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.patch('/staff/:staffId/toggle-status', shopDependencies.staffController.toggleStatus as RequestHandler);
+
+/**
+ * @swagger
+ * /shop/staff/{staffId}:
+ *   delete:
+ *     summary: Delete a staff member
+ *     tags: [Shop]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: staffId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the staff member
+ *     responses:
+ *       200:
+ *         description: Staff deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Staff not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.delete('/staff/:staffId', shopDependencies.staffController.delete as RequestHandler);
 
 export default router;

@@ -13,6 +13,7 @@ import ShopProfilePage from './../pages/shop/ShopProfilePage';
 import ShopProfilePageEdit from './../pages/shop/ShopProfilePageEdit'
 import ServicesPage from "@/pages/shop/Services";
 import ShopSchedulePage from "@/pages/shop/Shop-slot";
+import StaffManagement from "@/pages/shop/Staff";
 
 const ShopRoutes = () => {
   return (
@@ -101,6 +102,14 @@ const ShopRoutes = () => {
         element={
           <PrivateRoute userType="shop">
             <ShopSchedulePage/>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/shop/workers"
+        element={
+          <PrivateRoute userType="shop">
+            <StaffManagement/>
           </PrivateRoute>
         }
       />
