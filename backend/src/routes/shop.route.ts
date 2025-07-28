@@ -691,11 +691,7 @@ router.patch('/:serviceId/toggle-status', shopDependencies.serviceController.tog
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post(
-  '/staff-create',
-  validateCreateStaff as (ValidationChain | RequestHandler)[],
-  shopDependencies.staffController.create as RequestHandler
-);
+router.post('/staff-create',validateCreateStaff as (ValidationChain | RequestHandler)[],shopDependencies.staffController.create as RequestHandler);
 
 /**
  * @swagger
@@ -751,11 +747,7 @@ router.post(
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch(
-  '/staff/:staffId',
-  validateCreateStaff as (ValidationChain | RequestHandler)[],
-  shopDependencies.staffController.update as RequestHandler
-);
+router.patch('/staff/:staffId',validateCreateStaff as (ValidationChain | RequestHandler)[], shopDependencies.staffController.update as RequestHandler);
 
 /**
  * @swagger
@@ -842,5 +834,22 @@ router.patch('/staff/:staffId/toggle-status', shopDependencies.staffController.t
  *               $ref: '#/components/schemas/Error'
  */
 router.delete('/staff/:staffId', shopDependencies.staffController.delete as RequestHandler);
+
+
+
+
+
+
+router.post('/slot/create', shopDependencies.slotController.create as RequestHandler);
+router.get('/slot/:slotId', shopDependencies.slotController.findById as RequestHandler);
+router.get('/slot/shop/:shopId/range', shopDependencies.slotController.findByShopAndDateRange as RequestHandler);
+router.get('/slot/shop/:shopId', shopDependencies.slotController.findByShop as RequestHandler);
+router.patch('/slot/:slotId', shopDependencies.slotController.update as RequestHandler);
+router.delete('/slot/:slotId', shopDependencies.slotController.delete as RequestHandler);
+router.patch('/slot/:slotId/cancel', shopDependencies.slotController.cancel as RequestHandler);
+router.get('/slot/date/:slotDate', shopDependencies.slotController.findByDate as RequestHandler);
+router.get('/slot/:shopId/staffCount', shopDependencies.slotController.getStaffByShop as RequestHandler);
+router.get('/slot/shop/:shopId/booked', shopDependencies.slotController.findBookedByShop as RequestHandler);
+
 
 export default router;

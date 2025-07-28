@@ -9,6 +9,7 @@ export interface GeoLocation {
 
 interface ShopData {
   _id: string;
+  id: string;
   name: string;
   email: string;
   phone?: string;
@@ -37,7 +38,7 @@ const getInitialState = (): ShopState => {
   try {
     const storedShopData = localStorage.getItem('shopData');
     const storedToken = localStorage.getItem('shopToken');
-    
+
     return {
       shopData: storedShopData ? JSON.parse(storedShopData) : null,
       token: storedToken,
@@ -70,41 +71,41 @@ const shopSlice = createSlice({
       state.token = action.payload.token;
       state.isAuthenticated = true;
       state.isLoading = false;
-      
+
       // Sync with localStorage
       localStorage.setItem('shopData', JSON.stringify(action.payload.shop));
       localStorage.setItem('shopToken', action.payload.token);
     },
-    
+
     logoutShop: (state) => {
       state.shopData = null;
       state.token = null;
       state.isAuthenticated = false;
       state.isLoading = false;
-      
+
       // Clear localStorage
       localStorage.removeItem('shopData');
       localStorage.removeItem('shopToken');
     },
-    
+
     updateShop: (state, action: PayloadAction<Partial<ShopData>>) => {
       if (state.shopData) {
         state.shopData = { ...state.shopData, ...action.payload };
         localStorage.setItem('shopData', JSON.stringify(state.shopData));
       }
     },
-    
+
     setShopLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
-    
+
     // Deprecated: keeping for backward compatibility
     addShop: (state, action: PayloadAction<ShopData>) => {
       state.shopData = action.payload;
       state.isAuthenticated = true;
       localStorage.setItem('shopData', JSON.stringify(action.payload));
     },
-    
+
     removeShop: (state) => {
       state.shopData = null;
       state.token = null;
@@ -115,13 +116,13 @@ const shopSlice = createSlice({
   },
 });
 
-export const { 
-  loginShop, 
-  logoutShop, 
-  updateShop, 
+export const {
+  loginShop,
+  logoutShop,
+  updateShop,
   setShopLoading,
-  addShop, 
-  removeShop 
+  addShop,
+  removeShop
 } = shopSlice.actions;
 
 export default shopSlice.reducer;

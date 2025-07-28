@@ -12,7 +12,7 @@ import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 import ShopProfilePage from './../pages/shop/ShopProfilePage';
 import ShopProfilePageEdit from './../pages/shop/ShopProfilePageEdit'
 import ServicesPage from "@/pages/shop/Services";
-import ShopSchedulePage from "@/pages/shop/Shop-slot";
+import {SlotCalendar} from "@/pages/shop/Shop-slot";
 import StaffManagement from "@/pages/shop/Staff";
 
 const ShopRoutes = () => {
@@ -101,7 +101,7 @@ const ShopRoutes = () => {
         path="/shop/schedule"
         element={
           <PrivateRoute userType="shop">
-            <ShopSchedulePage/>
+            <SlotCalendar/>
           </PrivateRoute>
         }
       />

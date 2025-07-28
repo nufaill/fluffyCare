@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
-import { ModernSidebar } from "@/components/user/app-sidebar"
+import { ModernSidebar } from "@/components/user/App-sidebar"
 import { Edit, Mail, Phone, MapPin, Calendar, Activity, Globe, Clock, Shield, Camera } from 'lucide-react'
 import { userService, } from "@/services/user/user.service"
 import type { UserDocument } from "@/types/user.type"

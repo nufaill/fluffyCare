@@ -105,6 +105,10 @@ router.get('/services', serviceDependencies.serviceController.getAllServices.bin
  */
 router.get('/services/:serviceId', serviceDependencies.serviceController.getServiceByIdPublic.bind(serviceDependencies.serviceController) as RequestHandler);
 
+router.get('/available-slot/:shopId',userDependencies.slotController.getslotByShopId as RequestHandler)
+router.get('/slot/shop/:shopId/range', userDependencies.slotController.findByShopAndDateRange as RequestHandler);
+
+
 router.use(userDependencies.authMiddleware.authenticate("user") as RequestHandler);
 
 

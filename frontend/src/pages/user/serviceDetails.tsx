@@ -447,9 +447,10 @@ export const ServiceDetails = () => {
             <Card className="border-2 border-black dark:border-white bg-white dark:bg-black shadow-xl">
               <CardContent className="p-6">
                 <Button
+                  onClick={() => navigate(`/available-slot/${service.shopId._id}/${id}`)}
                   className={`w-full font-mono font-bold text-lg py-4 transition-all duration-200 ${service.isActive
-                    ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                    : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                      ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                      : "bg-gray-400 text-gray-600 cursor-not-allowed"
                     }`}
                   size="lg"
                   disabled={!service.isActive}
@@ -457,7 +458,7 @@ export const ServiceDetails = () => {
                   {service.isActive ? (
                     <>
                       <Calendar className="w-5 h-5 mr-2" />
-                      Book Service
+                      View Available Slots
                     </>
                   ) : (
                     <>

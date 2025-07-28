@@ -1,4 +1,5 @@
 import Useraxios from "@/api/user.axios";
+import type { Pet } from "@/types/pet.type";
 import type { FilterOptions, PetService, ServiceType, PetType } from "@/types/service";
 
 export class userServiceService {
@@ -104,4 +105,8 @@ export class userServiceService {
     const response = await Useraxios.get('/pet-types');
     return response.data.data;
   }
+  async getUserPets(): Promise<Pet[]> {
+  const response = await Useraxios.get('/pets'); 
+  return response.data.data || [];
+}
 }
