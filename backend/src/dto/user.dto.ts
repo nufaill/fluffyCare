@@ -25,6 +25,21 @@ export interface CreateUserDTO {
   googleId?: string;
 }
 
+export interface UserResponseDTO {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  profileImage?: string;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number];
+  }; // Added to match UserProfile
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // export interface NearbyUsersDTO {
 //   longitude: number;
 //   latitude: number;

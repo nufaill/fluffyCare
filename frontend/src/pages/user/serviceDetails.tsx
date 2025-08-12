@@ -282,8 +282,16 @@ export const ServiceDetails = () => {
                     <Clock className="w-8 h-8 mx-auto mb-2 text-green-600" />
                     <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">Duration</p>
                     <p className="font-bold text-black dark:text-white font-mono">
-                      {`${String(Math.floor((service.durationHour || 0))).padStart(2, '0')}:${String(Math.round(((service.durationHour || 0) % 1) * 60)).padStart(2, '0')}`}                    </p>
+                      {(() => {
+                        const totalSeconds = Math.round((service.durationHour || 0) * 3600);
+                        const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+                        const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+                        const s = String(totalSeconds % 60).padStart(2, '0');
+                        return `${h}:${m}:${s}`;
+                      })()}
+                    </p>
                   </div>
+
 
                   <div className="text-center p-4 border-2 border-black dark:border-white rounded-xl">
                     <Shield className="w-8 h-8 mx-auto mb-2 text-purple-600" />
@@ -449,8 +457,8 @@ export const ServiceDetails = () => {
                 <Button
                   onClick={() => navigate(`/available-slot/${service.shopId._id}/${id}`)}
                   className={`w-full font-mono font-bold text-lg py-4 transition-all duration-200 ${service.isActive
-                      ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
-                      : "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    ? "bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                    : "bg-gray-400 text-gray-600 cursor-not-allowed"
                     }`}
                   size="lg"
                   disabled={!service.isActive}
@@ -468,7 +476,13 @@ export const ServiceDetails = () => {
                   )}
                 </Button>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-3 text-center font-mono">
-                  Duration: {`${String(Math.floor((service.durationHour || 0))).padStart(2, '0')}:${String(Math.round(((service.durationHour || 0) % 1) * 60)).padStart(2, '0')}`}
+                  Duration: {(() => {
+                    const totalSeconds = Math.round((service.durationHour || 0) * 3600);
+                    const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+                    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+                    const s = String(totalSeconds % 60).padStart(2, '0');
+                    return `${h}:${m}:${s}`;
+                  })()}
                 </p>
               </CardContent>
             </Card>

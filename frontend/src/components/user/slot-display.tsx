@@ -1,311 +1,441 @@
-import { useState } from "react"
-import { Clock, Sun, Sunset, Moon, Users, AlertCircle, Calendar, ChevronDown, ChevronUp, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/Badge"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { X, Clock, User, AlertTriangle, CheckCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/Badge";
+import { Separator } from "@/components/ui/separator";
 
-interface TimeSlot {
-  _id: string
-  shopId: string
-  staffId: { _id: string; name: string; phone: string } | string
-  slotDate: string
-  startTime: string
-  endTime: string
-  durationInMinutes: number
-  isBooked: boolean
-  isActive: boolean
-  staffName?: string
+interface Staff {
+  name: string;
+  id: number;
 }
 
-interface DaySchedule {
-  date: string
-  timeSlots: TimeSlot[]
-  isHoliday?: boolean
+interface ShopAvailability {
+  workingDays: string[];
+  openingTime: string;
+  closingTime: string;
+  lunchBreak: { start: string; end: string };
+  teaBreak: { start: string; end: string };
+  customHolidays: string[];
 }
 
-interface Holiday {
-  name: string
-  description: string
-  date: {
-    iso: string
-    datetime: {
-      year: number
-      month: number
-      day: number
+interface Service {
+  id: string;
+  name: string;
+  duration: number;
+  color: string;
+}
+
+interface SelectedSlot {
+  staffId: string | number;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  serviceDuration: number;
+  serviceId: string;
+}
+
+interface SlotCreationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSlotCreate: (slotData: any) => void;
+  staff: Staff[];
+  selectedStaff: number | null;
+  selectedTimeSlot: string | null;
+  shopAvailability: ShopAvailability;
+  services: Service[];
+}
+
+export function SlotCreationModal({
+  isOpen,
+  onClose,
+  onSlotCreate,
+  staff,
+  selectedStaff,
+  selectedTimeSlot,
+  shopAvailability,
+  services,
+}: SlotCreationModalProps) {
+  const [formData, setFormData] = useState<SelectedSlot>({
+    staffId: selectedStaff || "",
+    startTime: selectedTimeSlot || "",
+    endTime: "",
+    duration: services.length > 0 ? services[0].duration : 60,
+    serviceDuration: services.length > 0 ? services[0].duration : 60,
+    serviceId: "",
+  });
+  const [errors, setErrors] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    if (selectedStaff) {
+      setFormData((prev) => ({ ...prev, staffId: selectedStaff }));
     }
-  }
-  type: string
-  primary_type: string
-}
-
-interface SlotDisplayProps {
-  selectedDate: Date
-  schedules: DaySchedule[]
-  holidays: Holiday[]
-  onSlotSelect: (slot: TimeSlot) => void
-  selectedSlots: TimeSlot[]
-  onCancelSelection: () => void
-  isLoading: boolean
-}
-
-export function SlotDisplay({
-  selectedDate,
-  schedules,
-  holidays,
-  onSlotSelect,
-  selectedSlots,
-  onCancelSelection,
-  isLoading,
-}: SlotDisplayProps) {
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    morning: true,
-    afternoon: true,
-    evening: true,
-  })
-
-  const selectedDateKey = selectedDate.toISOString().split("T")[0]
-  const selectedDateSchedule = schedules.find((s) => s.date === selectedDateKey)
-  console.log("Selected Date:", selectedDateKey)
-  console.log("Selected Schedule:", selectedDateSchedule)
-  console.log("All Schedules:", schedules)
-  const holidayInfo = holidays.find((h) => h.date.iso === selectedDateKey)
-  const hasNoSlots = !selectedDateSchedule || selectedDateSchedule.timeSlots.length === 0
-  const showHolidayClosure = holidayInfo && hasNoSlots
-
-  const toggleSection = (section: string) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }))
-  }
-
-  const getPeriodIcon = (period: string) => {
-    switch (period) {
-      case "morning":
-        return Sun
-      case "afternoon":
-        return Sunset
-      case "evening":
-        return Moon
-      default:
-        return Clock
+    if (selectedTimeSlot) {
+      setFormData((prev) => ({ ...prev, startTime: selectedTimeSlot }));
     }
-  }
+  }, [selectedStaff, selectedTimeSlot]);
 
-  const getPeriodColor = (period: string) => {
-    switch (period) {
-      case "morning":
-        return "bg-yellow-500"
-      case "afternoon":
-        return "bg-orange-500"
-      case "evening":
-        return "bg-purple-500"
-      default:
-        return "bg-gray-500"
+  useEffect(() => {
+    if (formData.startTime && formData.duration) {
+      const start = new Date(`2000-01-01T${formData.startTime}:00`);
+      start.setMinutes(start.getMinutes() + formData.duration);
+      const endTime = start.toTimeString().slice(0, 5);
+      setFormData((prev) => ({ ...prev, endTime }));
     }
-  }
+  }, [formData.startTime, formData.duration]);
 
-  const getPeriodSlots = (slots: TimeSlot[], period: string) => {
-    return slots.filter((slot) => {
-      const hour = parseInt(slot.startTime.split(":")[0], 10)
-      console.log("Slot startTime:", slot.startTime, "Hour:", hour, "Period:", period)
-      if (period === "morning") return hour < 12
-      if (period === "afternoon") return hour >= 12 && hour < 17
-      return hour >= 17
-    })
-  }
+  const validateSlot = () => {
+    const newErrors: string[] = [];
 
-  const groupSlotsByTime = (slots: TimeSlot[]) => {
-    const grouped = new Map<string, TimeSlot[]>()
-    slots.forEach((slot) => {
-      const key = `${slot.startTime}-${slot.endTime}`
-      if (!grouped.has(key)) {
-        grouped.set(key, [])
+    if (!formData.staffId) {
+      newErrors.push("Please select a staff member");
+    }
+
+    if (!formData.serviceId) {
+      newErrors.push("Please select a service");
+    }
+
+    if (!formData.startTime) {
+      newErrors.push("Please provide a start time");
+    }
+
+    if (formData.startTime < shopAvailability.openingTime || formData.endTime > shopAvailability.closingTime) {
+      newErrors.push("Slot must be within shop hours");
+    }
+
+    const lunchStart = shopAvailability.lunchBreak.start;
+    const lunchEnd = shopAvailability.lunchBreak.end;
+    const teaStart = shopAvailability.teaBreak.start;
+    const teaEnd = shopAvailability.teaBreak.end;
+
+    if (
+      (formData.startTime >= lunchStart && formData.startTime < lunchEnd) ||
+      (formData.endTime > lunchStart && formData.endTime <= lunchEnd) ||
+      (formData.startTime >= teaStart && formData.startTime < teaEnd) ||
+      (formData.endTime > teaStart && formData.endTime <= teaEnd)
+    ) {
+      newErrors.push("Slot overlaps with break time");
+    }
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateSlot()) {
+      return;
+    }
+
+    const selectedService = services.find((s) => s.id === formData.serviceId);
+
+    onSlotCreate({
+      staffId: Number(formData.staffId),
+      startTime: formData.startTime,
+      endTime: formData.endTime,
+      duration: formData.duration,
+      serviceId: formData.serviceId,
+      serviceName: selectedService?.name,
+      serviceColor: selectedService?.color,
+    });
+
+    setFormData({
+      staffId: "",
+      startTime: "",
+      endTime: "",
+      duration: services.length > 0 ? services[0].duration : 60,
+      serviceDuration: services.length > 0 ? services[0].duration : 60,
+      serviceId: "",
+    });
+    setErrors([]);
+  };
+
+  const generateSlots = () => {
+    setIsGenerating(true);
+
+    setTimeout(() => {
+      const slots = [];
+      const selectedService = services.find((s) => s.id === formData.serviceId);
+      if (!selectedService) {
+        setIsGenerating(false);
+        setErrors(["Please select a service"]);
+        return;
       }
-      grouped.get(key)!.push(slot)
-    })
+      const serviceDuration = selectedService.duration;
+      const start = new Date(`2000-01-01T${shopAvailability.openingTime}:00`);
+      const end = new Date(`2000-01-01T${shopAvailability.closingTime}:00`);
 
-    return Array.from(grouped.entries())
-      .map(([timeRange, staffSlots]) => {
-        const [startTime, endTime] = timeRange.split("-")
-        const availableSlots = staffSlots.filter((slot) => !slot.isBooked && slot.isActive)
-        return {
-          startTime,
-          endTime,
-          totalSlots: staffSlots.length,
-          availableSlots,
-          allSlots: staffSlots,
+      while (start < end) {
+        const startTime = start.toTimeString().slice(0, 5);
+        const slotEnd = new Date(start);
+        slotEnd.setMinutes(slotEnd.getMinutes() + serviceDuration);
+        const endTime = slotEnd.toTimeString().slice(0, 5);
+
+        const lunchStart = shopAvailability.lunchBreak.start;
+        const lunchEnd = shopAvailability.lunchBreak.end;
+        const teaStart = shopAvailability.teaBreak.start;
+        const teaEnd = shopAvailability.teaBreak.end;
+
+        const overlapsLunch =
+          (startTime >= lunchStart && startTime < lunchEnd) || (endTime > lunchStart && endTime <= lunchEnd);
+        const overlapsTea = (startTime >= teaStart && startTime < teaEnd) || (endTime > teaStart && endTime <= teaEnd);
+
+        if (!overlapsLunch && !overlapsTea && slotEnd <= end) {
+          slots.push({
+            startTime,
+            endTime,
+            duration: serviceDuration,
+          });
         }
-      })
-      .sort((a, b) => a.startTime.localeCompare(b.startTime))
-  }
+
+        start.setMinutes(start.getMinutes() + serviceDuration); // Increment by service duration
+      }
+
+      setIsGenerating(false);
+
+      slots.forEach((slot) => {
+        onSlotCreate({
+          staffId: Number(formData.staffId),
+          ...slot,
+          serviceId: formData.serviceId,
+          serviceName: selectedService.name,
+          serviceColor: selectedService.color,
+        });
+      });
+
+      onClose();
+    }, 1500);
+  };
+
+  const selectedStaffName = staff.find((s) => s.id === Number(formData.staffId))?.name;
 
   return (
-    <Card className="border-2 border-black shadow-xl">
-      <CardHeader className="bg-black text-white">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Calendar className="w-7 h-7" />
-            <div>
-              <div className="text-2xl font-bold">
-                {selectedDate.toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </div>
-              <div className="text-gray-300 text-sm">
-                {showHolidayClosure ? "No appointments available" : "Select your preferred time slot"}
-              </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] border-2 border-black">
+        <DialogHeader className="bg-black text-white p-4 -m-6 mb-6">
+          <DialogTitle className="flex items-center justify-between text-xl">
+            <div className="flex items-center gap-3">
+              <Clock className="w-6 h-6" />
+              Create Time Slot
             </div>
-          </div>
-          {showHolidayClosure && (
-            <Badge className="text-sm px-3 py-1 bg-yellow-500 text-yellow-900">
-              {holidayInfo?.name.toUpperCase()}
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        {showHolidayClosure ? (
-          <div className="text-center py-20 bg-gray-50">
-            <AlertCircle className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-            <div className="text-2xl font-bold text-gray-700 mb-3">{`${holidayInfo?.name} Holiday`}</div>
-            <div className="text-gray-500 text-lg">
-              {holidayInfo?.description || "Please select another date"}
-            </div>
-            <div className="text-sm text-gray-400">We'll be back with regular hours soon!</div>
-          </div>
-        ) : !selectedDateSchedule || selectedDateSchedule.timeSlots.length === 0 ? (
-          <div className="text-center py-20 bg-gray-50">
-            <Clock className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-            <div className="text-2xl font-bold text-gray-700 mb-3">No Slots Available</div>
-            <div className="text-gray-500 text-lg">
-              Looks like the shop’s taking a little break today, try picking another day that’s ready to roll!
-            </div>
-          </div>
-        ) : (
-          <div className="divide-y-2 divide-gray-100">
-            {["morning", "afternoon", "evening"].map((period) => {
-              const periodSlots = getPeriodSlots(selectedDateSchedule.timeSlots, period)
-              console.log(`Period ${period} slots for ${selectedDateKey}:`, periodSlots)
-              const PeriodIcon = getPeriodIcon(period)
-              const periodColor = getPeriodColor(period)
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-gray-800">
+              <X className="w-4 h-4" />
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
 
-              if (periodSlots.length === 0) return null
-
-              const groupedSlots = groupSlotsByTime(periodSlots)
-              const availableCount = groupedSlots.reduce((acc, group) => acc + group.availableSlots.length, 0)
-              const isExpanded = expandedSections[period]
-
-              return (
-                <Collapsible key={period} open={isExpanded} onOpenChange={() => toggleSection(period)}>
-                  <CollapsibleTrigger asChild>
-                    <div className="p-6 hover:bg-gray-50 cursor-pointer transition-all duration-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className={`p-3 ${periodColor} rounded-xl shadow-lg`}>
-                            <PeriodIcon className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-black capitalize">{period}</h3>
-                            <p className="text-gray-600">
-                              {availableCount} of {groupedSlots.reduce((acc, group) => acc + group.totalSlots, 0)}{" "}
-                              slots available
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge
-                            className={`${availableCount > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"} px-3 py-1`}
-                          >
-                            {availableCount > 0 ? "Available" : "Full"}
-                          </Badge>
-                          {isExpanded ? (
-                            <ChevronUp className="w-6 h-6 text-gray-400" />
-                          ) : (
-                            <ChevronDown className="w-6 h-6 text-gray-400" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="px-6 pb-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {groupedSlots.map((group, index) => (
-                          <div key={index} className="space-y-4">
-                            <div className="text-center p-4 bg-black text-white rounded-xl">
-                              <div className="text-xl font-bold">
-                                {group.startTime} - {group.endTime}
-                              </div>
-                              <div className="text-gray-300 text-sm mt-1">
-                                {group.availableSlots.length} of {group.totalSlots} available
-                              </div>
-                            </div>
-                            {group.availableSlots.length > 0 ? (
-                              <div className="space-y-3">
-                                {group.allSlots.map((slot) => {
-                                  const isSelected = selectedSlots.some((s) => s._id === slot._id)
-                                  return (
-                                    <Button
-                                      key={slot._id}
-                                      variant="outline"
-                                      className={`w-full h-14 border-2 border-black font-semibold shadow-md hover:shadow-lg transition-all duration-300 ${
-                                        isSelected
-                                          ? "bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
-                                          : slot.isBooked || !slot.isActive
-                                            ? "bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed"
-                                            : "bg-white text-black hover:bg-black hover:text-white"
-                                      }`}
-                                      onClick={() => !isSelected && !slot.isBooked && slot.isActive && onSlotSelect(slot)}
-                                      disabled={isLoading || slot.isBooked || !slot.isActive}
-                                    >
-                                      <Users className="w-5 h-5 mr-3" />
-                                      <div className="text-left">
-                                        <div>{slot.staffName || "Professional Staff"}</div>
-                                        <div className="text-xs opacity-70">{slot.durationInMinutes} minutes</div>
-                                      </div>
-                                      {isSelected && (
-                                        <span className="ml-auto text-xs font-bold">Selected</span>
-                                      )}
-                                    </Button>
-                                  )
-                                })}
-                              </div>
-                            ) : (
-                              <div className="text-center py-6">
-                                <div className="text-gray-500 bg-gray-100 rounded-xl p-4 border-2 border-dashed border-gray-300">
-                                  <Clock className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                  <div className="font-medium">All slots booked</div>
-                                  <div className="text-sm">Try another time</div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )
-            })}
-          </div>
-        )}
-        {selectedSlots.length > 0 && (
-          <div className="p-4 flex justify-end">
-            <Button
-              variant="outline"
-              className="border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-semibold h-10"
-              onClick={onCancelSelection}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Staff Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="staff" className="text-sm font-semibold">
+              Select Staff Member
+            </Label>
+            <Select
+              value={formData.staffId.toString()}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, staffId: Number(value) }))}
             >
-              <X className="w-5 h-5 mr-2" />
-              Cancel Selection
+              <SelectTrigger className="border-2 border-gray-300 focus:border-black">
+                <SelectValue placeholder="Choose staff member" />
+              </SelectTrigger>
+              <SelectContent>
+                {staff.map((member) => (
+                  <SelectItem key={member.id} value={member.id.toString()}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        {member.name.charAt(0)}
+                      </div>
+                      {member.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Service Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="service" className="text-sm font-semibold">
+              Select Service
+            </Label>
+            <Select
+              value={formData.serviceId}
+              onValueChange={(value) => {
+                const service = services.find((s) => s.id === value);
+                setFormData((prev) => ({
+                  ...prev,
+                  serviceId: value,
+                  duration: service?.duration || 60,
+                  serviceDuration: service?.duration || 60,
+                }));
+              }}
+            >
+              <SelectTrigger className="border-2 border-gray-300 focus:border-black">
+                <SelectValue placeholder="Choose service type" />
+              </SelectTrigger>
+              <SelectContent>
+                {services.map((service) => (
+                  <SelectItem key={service.id} value={service.id}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 ${service.color} rounded`}></div>
+                      <span>
+                        {service.name} ({service.duration} min)
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Time Selection */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="startTime" className="text-sm font-semibold">
+                Start Time
+              </Label>
+              <Input
+                id="startTime"
+                type="time"
+                value={formData.startTime}
+                onChange={(e) => setFormData((prev) => ({ ...prev, startTime: e.target.value }))}
+                className="border-2 border-gray-300 focus:border-black"
+                min={shopAvailability.openingTime}
+                max={shopAvailability.closingTime}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="endTime" className="text-sm font-semibold">
+                End Time (Auto-calculated)
+              </Label>
+              <Input
+                id="endTime"
+                type="time"
+                value={formData.endTime}
+                readOnly
+                className="border-2 border-gray-200 bg-gray-50"
+              />
+            </div>
+          </div>
+
+          {/* Duration Display */}
+          <div className="space-y-2">
+            <Label htmlFor="duration" className="text-sm font-semibold">
+              Slot Duration (minutes)
+            </Label>
+            <Input
+              id="duration"
+              type="text"
+              value={formData.duration + " minutes"}
+              readOnly
+              className="border-2 border-gray-200 bg-gray-50"
+            />
+          </div>
+
+          <Separator className="bg-gray-200" />
+
+          {/* Generate Slots Section */}
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <h3 className="font-semibold">Auto-Generate Slots</h3>
+            </div>
+            <p className="text-sm text-gray-600">
+              Generate all possible slots for the selected staff member based on service duration
+            </p>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Service Duration for Generation</Label>
+              <Select
+                value={formData.serviceDuration.toString()}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, serviceDuration: Number(value) }))}
+                disabled={!formData.serviceId}
+              >
+                <SelectTrigger className="border-2 border-gray-300 focus:border-black">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {formData.serviceId && (
+                    <SelectItem value={services.find((s) => s.id === formData.serviceId)?.duration.toString() || "60"}>
+                      {services.find((s) => s.id === formData.serviceId)?.name} - {services.find((s) => s.id === formData.serviceId)?.duration} minutes
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              type="button"
+              onClick={generateSlots}
+              disabled={!formData.staffId || !formData.serviceId || isGenerating}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isGenerating ? "Generating Slots..." : "Generate All Slots"}
             </Button>
           </div>
-        )}
-      </CardContent>
-    </Card>
-  )
+
+          {/* Error Display */}
+          {errors.length > 0 && (
+            <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <h4 className="font-semibold text-red-800">Validation Errors</h4>
+              </div>
+              <ul className="list-disc list-inside space-y-1">
+                {errors.map((error, index) => (
+                  <li key={index} className="text-sm text-red-700">
+                    {error}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Slot Preview */}
+          {formData.staffId && formData.startTime && formData.endTime && (
+            <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <User className="w-5 h-5 text-blue-600" />
+                <h4 className="font-semibold text-blue-800">Slot Preview</h4>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Staff:</span>
+                  <Badge className="bg-black text-white">{selectedStaffName}</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Time:</span>
+                  <span className="font-semibold">
+                    {formData.startTime} - {formData.endTime}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Duration:</span>
+                  <span className="font-semibold">{formData.duration} minutes</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-black text-white hover:bg-gray-800" disabled={errors.length > 0}>
+              Create Slot
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }

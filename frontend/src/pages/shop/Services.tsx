@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/Badge";
-import {Navbar} from '@/components/shop/Navbar';
+import { Navbar } from '@/components/shop/Navbar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { PetCareLayout } from "@/components/layout/PetCareLayout"; 
+import { PetCareLayout } from "@/components/layout/PetCareLayout";
 import { serviceService } from "@/services/shop/service.service";
 import type { PetType, ServiceType, CreateServiceData, UpdateServiceData } from "@/types/service.type";
 
@@ -20,8 +20,8 @@ interface Service {
   _id: string;
   name: string;
   description: string;
-  serviceTypeId: string;
-  petTypeIds: string[];
+  serviceTypeId: { _id: string; name: string } | string;
+  petTypeIds: Array<{ _id: string; name: string } | string>;
   price: number;
   durationHour: number;
   image?: string;
@@ -49,11 +49,11 @@ interface ValidationErrors {
   image?: string;
 }
 
-// Enum-like options for duration
+// Updated duration options with numeric values
 const durationOptions = [
   { value: "0.5", label: "30 minutes" },
   { value: "1", label: "1 hour" },
-  { value: "2", label: "2 hours" }
+  { value: "2", label: "2 hours" },
 ];
 
 const handleImageUpload = async (file: File): Promise<string | undefined> => {
@@ -115,20 +115,29 @@ const validateForm = (data: ServiceFormData): ValidationErrors => {
     errors.price = "Price must be greater than or equal to 0";
   }
 
-  // const duration = parseFloat(data.durationHour);
-  // if (!durationOptions.some(opt => opt.value === data.durationHour)) {
-  //   errors.durationHour = "Please select a valid duration (30 minutes, 1 hour, or 2 hours)";
-  // }
+  if (!data.durationHour) {
+    errors.durationHour = "Duration is required";
+  } else if (!durationOptions.some(opt => opt.value === data.durationHour)) {
+    errors.durationHour = "Please select a valid duration (30 minutes, 1 hour, or 2 hours)";
+  }
 
   return errors;
 };
 
-// Helper function to format duration in hh:mm
 const formatDuration = (hours: number): string => {
-  const totalMinutes = Math.round(hours * 60);
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  const totalSeconds = Math.round(hours * 3600);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
+// New function for user-friendly duration display
+const formatDurationDisplay = (hours: number): string => {
+  if (hours === 0.5) return "30 minutes";
+  if (hours === 1) return "1 hour";
+  if (hours === 2) return "2 hours";
+  return formatDuration(hours); // Fallback to HH:MM:SS
 };
 
 function PetTypeMultiSelect({
@@ -155,7 +164,7 @@ function PetTypeMultiSelect({
   };
 
   return (
-    <div className="space-y-3"> 
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label className="text-sm font-medium">Pet Types *</Label>
         {selectedIds.length > 0 && (
@@ -257,7 +266,7 @@ function StatusToggle({
               : "bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300"
           }
         >
-          {isActive? "Active" : "Inactive"}
+          {isActive ? "Active" : "Inactive"}
         </Badge>
       </div>
     </div>
@@ -281,7 +290,7 @@ function ServiceForm({
     serviceTypeId: initialData?.serviceTypeId || "",
     petTypeIds: initialData?.petTypeIds || [],
     price: initialData?.price || "",
-    durationHour: initialData?.durationHour || "",
+    durationHour: initialData?.durationHour ? initialData.durationHour.toString() : "",
     image: initialData?.image || undefined,
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -326,7 +335,7 @@ function ServiceForm({
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, image: "Image size must be less than 5MB"}));
+        setErrors((prev) => ({ ...prev, image: "Image size must be less than 5MB" }));
         return;
       }
       if (!file.type.startsWith("image/")) {
@@ -363,7 +372,7 @@ function ServiceForm({
       let imageUrl: string | undefined = formData.image;
       if (selectedFile) {
         imageUrl = await handleImageUpload(selectedFile);
-        
+
         if (!imageUrl) {
           setErrors((prev) => ({ ...prev, image: "Failed to upload image" }));
           setIsSubmitting(false);
@@ -474,7 +483,7 @@ function ServiceForm({
                 <p className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" />
                   {errors.price}
-                </p>
+              </p>
               )}
             </div>
 
@@ -620,8 +629,13 @@ export default function Services() {
     const matchesSearch =
       service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       service.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPetType = selectedPetTypeFilter === "all" || service.petTypeIds.includes(selectedPetTypeFilter);
-    const matchesServiceType = selectedServiceTypeFilter === "all" || service.serviceTypeId === selectedServiceTypeFilter;
+    const matchesPetType = selectedPetTypeFilter === "all" || 
+      (Array.isArray(service.petTypeIds) && service.petTypeIds.some(pt => 
+        typeof pt === 'object' ? pt._id === selectedPetTypeFilter : pt === selectedPetTypeFilter));
+    const matchesServiceType = selectedServiceTypeFilter === "all" || 
+      (typeof service.serviceTypeId === 'object' 
+        ? service.serviceTypeId._id === selectedServiceTypeFilter 
+        : service.serviceTypeId === selectedServiceTypeFilter);
     return matchesSearch && matchesPetType && matchesServiceType;
   });
 
@@ -724,7 +738,7 @@ export default function Services() {
 
   return (
     <PetCareLayout>
-      <Navbar/>
+      <Navbar />
       <div className="container mx-auto p-6 space-y-6 max-w-full overflow-x-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -801,8 +815,8 @@ export default function Services() {
                 ? {
                     name: editingService.name,
                     description: editingService.description,
-                    serviceTypeId: editingService.serviceTypeId,
-                    petTypeIds: editingService.petTypeIds,
+                    serviceTypeId: typeof editingService.serviceTypeId === 'object' ? editingService.serviceTypeId._id : editingService.serviceTypeId,
+                    petTypeIds: editingService.petTypeIds.map(pt => typeof pt === 'object' ? pt._id : pt),
                     price: editingService.price.toString(),
                     durationHour: editingService.durationHour.toString(),
                     image: editingService.image,
@@ -914,7 +928,9 @@ export default function Services() {
                             <StatusToggle isActive={service.isActive} onToggle={() => handleToggleStatus(service._id)} />
                           </div>
                           <Badge className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                            {serviceTypes.find((st) => st._id === service.serviceTypeId)?.name || "Unknown"}
+                            {typeof service.serviceTypeId === 'object' && service.serviceTypeId?.name
+                              ? service.serviceTypeId.name
+                              : 'Unknown'}
                           </Badge>
                         </div>
                         <div className="space-y-2 text-sm">
@@ -926,7 +942,7 @@ export default function Services() {
                             </div>
                             <div className="flex items-center gap-1 text-muted-foreground">
                               <Clock className="h-4 w-4" />
-                              <span>{formatDuration(service.durationHour)}</span>
+                              <span>{formatDurationDisplay(service.durationHour)}</span>
                             </div>
                           </div>
                         </div>
@@ -934,15 +950,15 @@ export default function Services() {
                           <p className="text-xs font-medium text-muted-foreground">Pet Types:</p>
                           <div className="flex flex-wrap gap-1">
                             {service.petTypeIds.length > 0 ? (
-                              service.petTypeIds.map((petTypeId) => {
-                                const petType = petTypes.find((pt) => pt._id === petTypeId);
+                              service.petTypeIds.map((petType) => {
+                                const petTypeName = typeof petType === 'object' && petType?.name ? petType.name : 'Unknown';
                                 return (
                                   <Badge
-                                    key={petTypeId}
+                                    key={typeof petType === 'object' ? petType._id : petType}
                                     variant="secondary"
                                     className="bg-primary/10 text-primary hover:bg-primary/20"
                                   >
-                                    {petType?.name || "Unknown"}
+                                    {petTypeName}
                                   </Badge>
                                 );
                               })

@@ -503,32 +503,6 @@ router.get('/service-list', shopDependencies.serviceController.getServicesByShop
 
 /**
  * @swagger
- * /shop/staff-list:
- *   get:
- *     summary: Get staff list by shop
- *     tags: [Shop]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of staff members
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Staff'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.get('/staff-list', shopDependencies.staffController.findByShopId as RequestHandler);
-
-/**
- * @swagger
  * /shop/{serviceId}:
  *   get:
  *     summary: Get service by ID
@@ -562,7 +536,7 @@ router.get('/staff-list', shopDependencies.staffController.findByShopId as Reque
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:serviceId', shopDependencies.serviceController.getServiceById as RequestHandler);
+router.get('/service/:serviceId', shopDependencies.serviceController.getServiceById as RequestHandler);
 
 /**
  * @swagger
@@ -611,7 +585,7 @@ router.get('/:serviceId', shopDependencies.serviceController.getServiceById as R
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/:serviceId', validateCreateService, shopDependencies.serviceController.updateService as RequestHandler);
+router.patch('/service/:serviceId', validateCreateService, shopDependencies.serviceController.updateService as RequestHandler);
 
 /**
  * @swagger
@@ -648,7 +622,33 @@ router.patch('/:serviceId', validateCreateService, shopDependencies.serviceContr
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/:serviceId/toggle-status', shopDependencies.serviceController.toggleServiceStatus as RequestHandler);
+router.patch('/service/:serviceId/toggle-status', shopDependencies.serviceController.toggleServiceStatus as RequestHandler);
+
+/**
+ * @swagger
+ * /shop/staff-list:
+ *   get:
+ *     summary: Get staff list by shop
+ *     tags: [Shop]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of staff members
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Staff'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/staff', shopDependencies.staffController.getAllStaff as RequestHandler);
 
 /**
  * @swagger
@@ -792,50 +792,11 @@ router.patch('/staff/:staffId',validateCreateStaff as (ValidationChain | Request
  *               $ref: '#/components/schemas/Error'
  */
 router.patch('/staff/:staffId/toggle-status', shopDependencies.staffController.toggleStatus as RequestHandler);
-
-/**
- * @swagger
- * /shop/staff/{staffId}:
- *   delete:
- *     summary: Delete a staff member
- *     tags: [Shop]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: staffId
- *         required: true
- *         schema:
- *           type: string
- *         description: ID of the staff member
- *     responses:
- *       200:
- *         description: Staff deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       404:
- *         description: Staff not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.delete('/staff/:staffId', shopDependencies.staffController.delete as RequestHandler);
+router.get('/staff/:id', shopDependencies.staffController.findById as RequestHandler);
 
 
+router.get('/:shopId/availability', shopDependencies.shopController.getShopAvailability as RequestHandler)
+router.put('/:shopId/availability', shopDependencies.shopController.updateShopAvailability as RequestHandler)
 
 
 

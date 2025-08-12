@@ -56,9 +56,9 @@ export const logoutAdmin = async () => {
   }
 };
 
-export const getAllUsers = async () => {
+export const getAllUsers = async (page: number = 1, pageSize: number = 10) => {
   try {
-    const response = await AdminAxios.get(`/users`);
+    const response = await AdminAxios.get(`/users?page=${page}&limit=${pageSize}`);
 
     if (response.status !== 200) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -82,44 +82,40 @@ export const updateUserStatus = async (userId: string, isActive: boolean) => {
     const response = await AdminAxios.patch(`/users/${userId}/status`, {
       isActive
     });
-
     if (response.status !== 200) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
     return await response.data;
   } catch (error) {
     console.error('Failed to update user status:', error);
     if (axios.isAxiosError(error)) {
       const message = error.response?.data?.message || "Failed to update status users";
-      console.error(message)
+      console.error(message);
       throw new Error(message);
     } else {
       throw new Error("An unexpected error occurred.");
     }
   }
-}
+};
 
-export const getAllShops = async () => {
+export const getAllShops = async (page: number = 1, pageSize: number = 10, isVerified: boolean = true) => {
   try {
-    const response = await AdminAxios.get(`/shops`);
-
+    const response = await AdminAxios.get(`/shops?page=${page}&limit=${pageSize}&isVerified=${isVerified}`);
     if (response.status !== 200) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
     return await response.data;
   } catch (error) {
     console.error('Failed to fetch Shop:', error);
     if (axios.isAxiosError(error)) {
       const message = error.response?.data?.message || "Failed to fetch shops.";
-      console.error(message)
+      console.error(message);
       throw new Error(message);
     } else {
       throw new Error("An unexpected error occurred.");
     }
   }
-}
+};
 
 export const updateShopStatus = async (shopId: string, isActive: boolean) => {
   try {

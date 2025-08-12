@@ -19,7 +19,7 @@ interface SidebarProps {
 const menuItems = [
   { title: "Profile", icon: User, href: "/profile", badge: null },
   { title: "My Pets", icon: Heart, href: "/pets", badge: "3" },
-  { title: "Bookings", icon: Calendar, href: "/bookings", badge: "2" },
+  { title: "Bookings", icon: Calendar, href: "/appointments", badge: "2" },
   { title: "Messages", icon: MessageCircle, href: "/messages", badge: "5" },
   { title: "Search", icon: Search, href: "/search", badge: null },
   { title: "Settings", icon: Settings, href: "/settings", badge: null },

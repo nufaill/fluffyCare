@@ -1,16 +1,17 @@
 import { UserRepository } from '../../repositories/user.repository';
-import { User, CreateUserData } from '../../types/User.types';
+import { UserResponseDTO, UpdateUserDTO } from '../../dto/user.dto';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
-import { UpdateUserDTO } from '../../dto/user.dto';
 import { IUserService } from '../../interfaces/serviceInterfaces/IUserService';
 
 export class UserService implements IUserService {
-  constructor(private userRepository: UserRepository) {}
+  constructor(private userRepository: UserRepository) { }
 
-  async getAllUsers(): Promise<User[]> {
+  async getAllUsers(page: number = 1, limit: number = 10): Promise<{ users: UserResponseDTO[], total: number, totalPages: number }> {
     try {
-      return await this.userRepository.getAllUsers();
+      const { users, total } = await this.userRepository.getAllUsers(page, limit);
+      const totalPages = Math.ceil(total / limit);
+      return { users, total, totalPages };
     } catch (error) {
       throw error instanceof CustomError ? error : new CustomError(
         ERROR_MESSAGES.USERS_FETCHED_FAILED || 'Failed to fetch users',
@@ -19,7 +20,7 @@ export class UserService implements IUserService {
     }
   }
 
-  async updateUserStatus(userId: string, isActive: boolean): Promise<User | null> {
+  async updateUserStatus(userId: string, isActive: boolean): Promise<UserResponseDTO | null> {
     try {
       if (!userId) {
         throw new CustomError(
@@ -36,7 +37,7 @@ export class UserService implements IUserService {
       }
 
       const updatedUser = await this.userRepository.updateUserStatus(userId, isActive);
-      
+
       if (!updatedUser) {
         throw new CustomError(
           ERROR_MESSAGES.USER_NOT_FOUND || 'User not found',
@@ -46,6 +47,7 @@ export class UserService implements IUserService {
 
       return updatedUser;
     } catch (error) {
+      console.error(`Error in updateUserStatus:`, error);
       throw error instanceof CustomError ? error : new CustomError(
         'Failed to update user status',
         HTTP_STATUS.INTERNAL_SERVER_ERROR
@@ -53,7 +55,7 @@ export class UserService implements IUserService {
     }
   }
 
-  async getProfile(userId: string): Promise<User> {
+  async getProfile(userId: string): Promise<UserResponseDTO> {
     try {
       if (!userId) {
         throw new CustomError(
@@ -63,7 +65,7 @@ export class UserService implements IUserService {
       }
 
       const user = await this.userRepository.findById(userId);
-      
+
       if (!user) {
         throw new CustomError(
           ERROR_MESSAGES.USER_NOT_FOUND || 'User not found',
@@ -80,7 +82,7 @@ export class UserService implements IUserService {
     }
   }
 
-  async updateUser(userId: string, updateData: Partial<CreateUserData>): Promise<User | null> {
+  async updateUser(userId: string, updateData: UpdateUserDTO): Promise<UserResponseDTO | null> {
     try {
       if (!userId) {
         throw new CustomError(
@@ -89,8 +91,8 @@ export class UserService implements IUserService {
         );
       }
 
-      const { fullName, phone, profileImage, location } = updateData as UpdateUserDTO;
-      
+      const { fullName, phone, profileImage, location } = updateData;
+
       if (!fullName && !phone && !profileImage && !location) {
         throw new CustomError(
           ERROR_MESSAGES.INVALID_INPUT || 'At least one field must be provided for update',
@@ -98,9 +100,8 @@ export class UserService implements IUserService {
         );
       }
 
-      const updatePayload: Partial<CreateUserData> = { fullName, phone, profileImage, location };
-      const updatedUser = await this.userRepository.updateUser(userId, updatePayload);
-      
+      const updatedUser = await this.userRepository.updateUser(userId, updateData);
+
       if (!updatedUser) {
         throw new CustomError(
           ERROR_MESSAGES.USER_NOT_FOUND || 'User not found',
@@ -117,7 +118,7 @@ export class UserService implements IUserService {
     }
   }
 
-  async findById(userId: string): Promise<User | null> {
+  async findById(userId: string): Promise<UserResponseDTO | null> {
     try {
       return await this.userRepository.findById(userId);
     } catch (error) {
@@ -128,7 +129,7 @@ export class UserService implements IUserService {
     }
   }
 
-  async findUserByEmail(email: string): Promise<User | null> {
+  async findUserByEmail(email: string): Promise<UserResponseDTO | null> {
     try {
       return await this.userRepository.findByEmail(email);
     } catch (error) {

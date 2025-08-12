@@ -135,13 +135,14 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
   }
 
   const getDuration = () => {
-    const totalMinutes = Math.round((service.durationHour || 0) * 60)
-    const hours = Math.floor(totalMinutes / 60)
-    const minutes = totalMinutes % 60
+    const totalSeconds = Math.round((service.durationHour || 0) * 3600)
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = totalSeconds % 60
 
-    const formatted = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-    return formatted
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
   }
+
 
 
   const getRating = () => {

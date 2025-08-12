@@ -1,3 +1,5 @@
+// shop side calendar
+
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -77,15 +79,13 @@ export function Calendar({
 
     const days = [];
     
-    // Empty cells for days before the first day of the month
     for (let i = 0; i < startDay; i++) {
       days.push(<div key={`empty-${i}`} className="w-full h-24"></div>);
     }
 
-    // Days of the month
     for (let i = 1; i <= numDays; i++) {
       const date = new Date(year, month, i);
-      const formattedDate = date.toISOString().split("T")[0];
+      const formattedDate = date.toLocaleDateString("en-CA"); // yyyy-mm-dd
       const daySchedule = schedules.find((s) => s.date === formattedDate);
       const isToday = date.toDateString() === new Date().toDateString();
       const isPast = isPastDate(date);

@@ -1,41 +1,55 @@
-import { Schema } from 'mongoose';
-import { Staff } from '../../types/staff.types';
+import mongoose, { Schema } from 'mongoose';
+import { Staff,ApiResponse } from '../../types/staff.types';
 import { IStaffService } from '../../interfaces/serviceInterfaces/IStaffService';
 import { StaffRepository } from '../../repositories/staff.repository';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
+import { createStaffDTO, updatesStaffDTO, UpdateStaffStatusDTO, StaffResponseDTO } from '../../dto/staff.dto';
+
+
 
 export class StaffService implements IStaffService {
-constructor(private staffRepository: StaffRepository) {}
-  async create(staff: Partial<Staff>): Promise<Staff> {
-    if (!staff.name) {
-      throw new CustomError(
-        `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: name`,
-        HTTP_STATUS.BAD_REQUEST
-      );
-    }
+  constructor(private staffRepository: StaffRepository) { }
 
-    if (!staff.shopId) {
-      throw new CustomError(
-        `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: shopId`,
-        HTTP_STATUS.BAD_REQUEST
-      );
-    }
 
-    if (staff.email) {
-      const existingStaff = await this.staffRepository.findByEmail(staff.email);
-      if (existingStaff) {
-        throw new CustomError(
-          ERROR_MESSAGES.EMAIL_ALREADY_EXISTS,
-          HTTP_STATUS.BAD_REQUEST
-        );
-      }
-    }
-
-    return await this.staffRepository.create(staff);
+async create(
+  staffDTO: createStaffDTO & { shopId: string | mongoose.Types.ObjectId }
+): Promise<StaffResponseDTO> {
+  if (!staffDTO.name) {
+    throw new CustomError(
+      `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: name`,
+      HTTP_STATUS.BAD_REQUEST
+    );
   }
 
-  async findById(id: string | Schema.Types.ObjectId): Promise<Staff | null> {
+  if (!staffDTO.shopId) {
+    throw new CustomError(
+      `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: shopId`,
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
+
+  if (staffDTO.email) {
+    const existingStaff = await this.staffRepository.findByEmail(staffDTO.email);
+    if (existingStaff) {
+      throw new CustomError(
+        ERROR_MESSAGES.EMAIL_ALREADY_EXISTS,
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+  }
+
+  // Always cast shopId to real ObjectId before passing to repository
+  const payload = {
+    ...staffDTO,
+    shopId: new mongoose.Types.ObjectId(staffDTO.shopId)
+  };
+
+  const staff = await this.staffRepository.create(payload);
+  return this.mapToResponseDTO(staff);
+}
+
+  async findById(id: string | Schema.Types.ObjectId): Promise<StaffResponseDTO | null> {
     if (!id) {
       throw new CustomError(
         `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: id`,
@@ -50,20 +64,31 @@ constructor(private staffRepository: StaffRepository) {}
         HTTP_STATUS.NOT_FOUND
       );
     }
-    return staff;
+    return this.mapToResponseDTO(staff);
   }
 
-  async findByShopId(shopId: string | Schema.Types.ObjectId): Promise<Staff[]> {
+  async findByShopId(shopId: string | Schema.Types.ObjectId): Promise<StaffResponseDTO[]> {
     if (!shopId) {
       throw new CustomError(
         `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: shopId`,
         HTTP_STATUS.BAD_REQUEST
       );
     }
-    return await this.staffRepository.findByShopId(shopId);
+    const staffList = await this.staffRepository.findByShopId(shopId);
+    return staffList.map(this.mapToResponseDTO);
   }
 
-  async update(id: string | Schema.Types.ObjectId, staff: Partial<Staff>): Promise<Staff | null> {
+  async getAllStaff(page: number = 1, limit: number = 10, shopId: string | Schema.Types.ObjectId): Promise<{ staff: StaffResponseDTO[]; total: number }> {
+    if (!shopId) {
+      throw new CustomError(
+        `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: shopId`,
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+    return await this.staffRepository.getAllStaff(page, limit, shopId);
+  }
+
+  async update(id: string | Schema.Types.ObjectId, staffDTO: updatesStaffDTO): Promise<StaffResponseDTO | null> {
     if (!id) {
       throw new CustomError(
         `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: id`,
@@ -71,7 +96,6 @@ constructor(private staffRepository: StaffRepository) {}
       );
     }
 
-    // Check if staff exists
     const existingStaff = await this.staffRepository.findById(id);
     if (!existingStaff) {
       throw new CustomError(
@@ -80,8 +104,8 @@ constructor(private staffRepository: StaffRepository) {}
       );
     }
 
-    if (staff.email) {
-      const staffWithEmail = await this.staffRepository.findByEmail(staff.email);
+    if (staffDTO.email) {
+      const staffWithEmail = await this.staffRepository.findByEmail(staffDTO.email);
       if (staffWithEmail && staffWithEmail._id.toString() !== id.toString()) {
         throw new CustomError(
           ERROR_MESSAGES.EMAIL_ALREADY_EXISTS,
@@ -90,60 +114,53 @@ constructor(private staffRepository: StaffRepository) {}
       }
     }
 
-    const updatedStaff = await this.staffRepository.update(id, staff);
-    return updatedStaff;
+    const updatedStaff = await this.staffRepository.update(id, staffDTO);
+    return updatedStaff ? this.mapToResponseDTO(updatedStaff) : null;
   }
 
-  async delete(id: string | Schema.Types.ObjectId): Promise<boolean> {
-    if (!id) {
-      throw new CustomError(
-        `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: id`,
-        HTTP_STATUS.BAD_REQUEST
-      );
-    }
-
-    const exists = await this.staffRepository.findById(id);
-    if (!exists) {
-      throw new CustomError(
-        `${ERROR_MESSAGES.NOT_FOUND}: Staff`,
-        HTTP_STATUS.NOT_FOUND
-      );
-    }
-    
-    return await this.staffRepository.delete(id);
-  }
-
-  async findByEmail(email: string): Promise<Staff | null> {
+  async findByEmail(email: string): Promise<StaffResponseDTO | null> {
     if (!email) {
       throw new CustomError(
         `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: email`,
         HTTP_STATUS.BAD_REQUEST
       );
     }
-    
-    return await this.staffRepository.findByEmail(email);
+
+    const staff = await this.staffRepository.findByEmail(email);
+    return staff ? this.mapToResponseDTO(staff) : null;
   }
 
-  async toggleStatus(id: string | Schema.Types.ObjectId): Promise<Staff | null> {
-    if (!id) {
-      throw new CustomError(
-        `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: id`,
-        HTTP_STATUS.BAD_REQUEST
-      );
-    }
+ // staff.service.ts
+async toggleStatus(id: string | Schema.Types.ObjectId, statusDTO: UpdateStaffStatusDTO): Promise<StaffResponseDTO | null> {
+  if (!id) {
+    throw new CustomError(
+      `${ERROR_MESSAGES.MISSING_REQUIRED_FIELD}: id`,
+      HTTP_STATUS.BAD_REQUEST
+    );
+  }
 
-    const staff = await this.staffRepository.findById(id);
-    if (!staff) {
-      throw new CustomError(
-        `${ERROR_MESSAGES.NOT_FOUND}: Staff`,
-        HTTP_STATUS.NOT_FOUND
-      );
-    }
-    
-    const updatedStaff = await this.staffRepository.update(id, {
-      isActive: !staff.isActive,
-    });
-    
-    return updatedStaff;
+  const staff = await this.staffRepository.findById(id);
+  if (!staff) {
+    throw new CustomError(
+      `${ERROR_MESSAGES.NOT_FOUND}: Staff`,
+      HTTP_STATUS.NOT_FOUND
+    );
+  }
+  
+  const updatedStaff = await this.staffRepository.update(id, {
+    isActive: statusDTO.isActive 
+  });
+  
+  return updatedStaff ? this.mapToResponseDTO(updatedStaff) : null;
+}
+
+  private mapToResponseDTO(staff: Staff): StaffResponseDTO {
+    return {
+      _id: staff._id.toString(),
+      name: staff.name,
+      email: staff.email,
+      phone: staff.phone,
+      isActive: staff.isActive
+    };
   }
 }

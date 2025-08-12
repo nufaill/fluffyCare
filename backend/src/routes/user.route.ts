@@ -1,6 +1,7 @@
 import { RequestHandler, Router } from 'express';
 import { serviceDependencies } from '../di/serviceInjection';
 import { userDependencies } from '../di/userInjection';
+import { appointmentDependencies } from '../di/appointmentInjection';
 
 const router = Router();
 
@@ -105,9 +106,7 @@ router.get('/services', serviceDependencies.serviceController.getAllServices.bin
  */
 router.get('/services/:serviceId', serviceDependencies.serviceController.getServiceByIdPublic.bind(serviceDependencies.serviceController) as RequestHandler);
 
-router.get('/available-slot/:shopId',userDependencies.slotController.getslotByShopId as RequestHandler)
-router.get('/slot/shop/:shopId/range', userDependencies.slotController.findByShopAndDateRange as RequestHandler);
-
+// router.post('/payment/webhook', appointmentDependencies.paymentController.handleWebhook as RequestHandler);
 
 router.use(userDependencies.authMiddleware.authenticate("user") as RequestHandler);
 
@@ -417,5 +416,30 @@ router.get('/pets/:petId', userDependencies.petController.getPetById as RequestH
  *         description: Pet not found
  */
 router.put('/pets/:petId', userDependencies.petController.updatePet as RequestHandler);
+
+
+
+
+
+
+router.get('/:shopId/availability', userDependencies.shopController.getShopAvailability as RequestHandler);
+router.get('/staff', userDependencies.staffController.getAllStaff as RequestHandler);
+
+
+
+router.post("/payment/create-payment-intent", appointmentDependencies.paymentController.createPaymentIntent as RequestHandler);
+router.post('/confirm-payment', appointmentDependencies.paymentController.confirmPayment.bind(appointmentDependencies.paymentController) as RequestHandler);
+router.get('/appointments/stats/:shopId',appointmentDependencies.appointmentController.getAppointmentStats.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/slots/availability',appointmentDependencies.appointmentController.checkSlotAvailability.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.put('/appointments/:appointmentId', appointmentDependencies.appointmentController.updateAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.patch('/appointments/:appointmentId/cancel', appointmentDependencies.appointmentController.cancelAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/:appointmentId', appointmentDependencies.appointmentController.getAppointmentById.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/user/:userId',appointmentDependencies.appointmentController.getAppointmentsByUserId.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/shop/:shopId',appointmentDependencies.appointmentController.getAppointmentsByShopId.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/staff/:staffId', appointmentDependencies.appointmentController.getAppointmentsByStaffId.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.patch('/appointments/:appointmentId/confirm',appointmentDependencies.appointmentController.confirmAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.patch('/appointments/:appointmentId/complete', appointmentDependencies.appointmentController.completeAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/status/:status', appointmentDependencies.appointmentController.getAppointmentsByStatus.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
 
 export default router;

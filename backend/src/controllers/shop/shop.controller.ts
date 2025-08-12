@@ -1,21 +1,43 @@
 import { Request, Response, NextFunction } from 'express';
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { ShopService } from "../../services/shop/shop.service";
+import { ShopAvailabilityService } from "../../services/shop/shopAvailability.service";
 import { CustomError } from '../../util/CustomerError';
 import { CreateShopData } from 'types/Shop.types';
-import { UpdateShopStatusDTO, UpdateShopDTO, RejectShopDTO } from '../../dto/shop.dto';
+import { UpdateShopStatusDTO, UpdateShopDTO, RejectShopDTO, ShopResponseDTO, ShopAvailabilityDTO } from '../../dto/shop.dto';
 import { IShopController } from '../../interfaces/controllerInterfaces/IShopController';
 
 export class ShopController implements IShopController {
-  constructor(private shopService: ShopService) { }
+  constructor(
+    private shopService: ShopService,
+    private shopAvailabilityService: ShopAvailabilityService
+  ) { }
 
   getAllShops = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const shops = await this.shopService.getAllShops();
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      if (page < 1 || limit < 1) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'Page and limit must be positive integers'
+        });
+        return;
+      }
+
+      const { shops, total, page: currentPage, limit: currentLimit } = await this.shopService.getAllShops(page, limit);
+
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: shops,
-        message: 'shops fetched successfully'
+        pagination: {
+          total,
+          page: currentPage,
+          limit: currentLimit,
+          totalPages: Math.ceil(total / currentLimit)
+        },
+        message: 'Shops fetched successfully'
       });
     } catch (error) {
       console.error("❌ [ShopController] Get all shops error:", error);
@@ -83,10 +105,28 @@ export class ShopController implements IShopController {
 
   getUnverifiedShops = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const unverifiedShops = await this.shopService.getUnverifiedShops();
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      if (page < 1 || limit < 1) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'Page and limit must be positive integers'
+        });
+        return;
+      }
+
+      const { shops, total, page: currentPage, limit: currentLimit } = await this.shopService.getUnverifiedShops(page, limit);
+
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
-        data: unverifiedShops,
+        data: shops,
+        pagination: {
+          total,
+          page: currentPage,
+          limit: currentLimit,
+          totalPages: Math.ceil(total / currentLimit)
+        },
         message: 'Unverified shops fetched successfully'
       });
     } catch (error) {
@@ -171,7 +211,7 @@ export class ShopController implements IShopController {
         success: true,
         message: 'Shop rejection processed successfully',
         data: {
-          shopId,
+          shop,
           action: 'rejected',
           rejectionReason: body.rejectionReason || 'No reason provided'
         }
@@ -209,20 +249,7 @@ export class ShopController implements IShopController {
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
-        data: {
-          id: shop._id.toString(),
-          logo: shop.logo,
-          name: shop.name,
-          email: shop.email,
-          phone: shop.phone,
-          city: shop.city,
-          streetAddress: shop.streetAddress,
-          description: shop.description,
-          certificateUrl: shop.certificateUrl,
-          location: shop.location,
-          isActive: shop.isActive,
-          isVerified: shop.isVerified
-        },
+        data: shop,
         message: SUCCESS_MESSAGES.PROFILE_FETCHED_SUCCESS || 'Profile fetched successfully'
       });
     } catch (error) {
@@ -341,20 +368,7 @@ export class ShopController implements IShopController {
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
-        data: {
-          id: updatedShop._id.toString(),
-          logo: updatedShop.logo,
-          name: updatedShop.name,
-          email: updatedShop.email,
-          phone: updatedShop.phone,
-          city: updatedShop.city,
-          streetAddress: updatedShop.streetAddress,
-          description: updatedShop.description,
-          certificateUrl: updatedShop.certificateUrl,
-          location: updatedShop.location,
-          isActive: updatedShop.isActive,
-          isVerified: updatedShop.isVerified
-        },
+        data: updatedShop,
         message: SUCCESS_MESSAGES.PROFILE_UPDATED_SUCCESS || 'Profile updated successfully'
       });
     } catch (error) {
@@ -374,4 +388,43 @@ export class ShopController implements IShopController {
       });
     }
   };
+
+  public getShopAvailability= async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { shopId } = req.params;
+            const availability = await this.shopAvailabilityService.getShopAvailability(shopId);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                data: availability,
+            });
+        } catch (error) {
+            console.error('❌ [ShopController] Get availability error:', error);
+            const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+            const message = error instanceof Error ? error.message : 'Failed to get shop availability';
+            res.status(statusCode).json({
+                success: false,
+                message,
+            });
+        }
+    };
+
+    public updateShopAvailability= async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { shopId } = req.params;
+            const availabilityData = req.body;
+            const updatedShop = await this.shopAvailabilityService.updateShopAvailability(shopId, availabilityData);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                data: updatedShop,
+            });
+        } catch (error) {
+            console.error('❌ [ShopController] Update availability error:', error);
+            const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+            const message = error instanceof Error ? error.message : 'Failed to update shop availability';
+            res.status(statusCode).json({
+                success: false,
+                message,
+            });
+        }
+    };
 }

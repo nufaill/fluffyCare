@@ -2,9 +2,37 @@ import { Schema } from 'mongoose';
 import StaffModel from '../models/staff.model';
 import { Staff } from '../types/staff.types';
 import { IStaffRepository } from '../interfaces/repositoryInterfaces/IStaffRepository';
+import { StaffResponseDTO } from '../dto/staff.dto';
 
 export class StaffRepository implements IStaffRepository {
   private model = StaffModel;
+  
+  async getAllStaff(page: number = 1, limit: number = 10, shopId: string | Schema.Types.ObjectId): Promise<{ staff: StaffResponseDTO[]; total: number }> {
+  try {
+    const skip = (page - 1) * limit;
+    const [staff, total] = await Promise.all([
+      this.model
+        .find({ shopId }) 
+        .skip(skip)
+        .limit(limit)
+        .lean<Staff[]>(),
+      this.model.countDocuments({ shopId }) 
+    ]);
+    
+    return {
+      staff: staff.map(staff => ({
+        _id: staff._id.toString(), 
+        name: staff.name,
+        email: staff.email,
+        phone: staff.phone,
+        isActive: staff.isActive
+      })),
+      total
+    };
+  } catch (error) {
+    throw error;
+  }
+}
 
   async create(staff: Partial<Staff>): Promise<Staff> {
     try {
@@ -55,18 +83,6 @@ export class StaffRepository implements IStaffRepository {
     } catch (error) {
       if (error instanceof Error && error.name === 'CastError') {
         return null;
-      }
-      throw error;
-    }
-  }
-
-  async delete(id: string | Schema.Types.ObjectId): Promise<boolean> {
-    try {
-      const result = await this.model.findByIdAndDelete(id);
-      return !!result;
-    } catch (error) {
-      if (error instanceof Error && error.name === 'CastError') {
-        return false;
       }
       throw error;
     }

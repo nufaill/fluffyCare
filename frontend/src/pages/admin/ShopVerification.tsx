@@ -28,7 +28,6 @@ import {
   Clock,
   MapPin,
   Star,
-  Users,
   Mail,
   Calendar,
   FileText,
@@ -79,14 +78,12 @@ const ShopVerification: React.FC = () => {
       setLoading(true);
       try {
         const response = await getUnverifiedShops();
-        console.log("API Response:", response.data); // Debug: Log API response
 
         if (!response.success || !Array.isArray(response.data)) {
           throw new Error("Invalid API response structure");
         }
 
         const transformedShops: Shop[] = response.data.map((shop: any) => {
-          // Handle cases where certificateUrl might be a single string, array, or undefined
           let documents: string[] = [];
           if (Array.isArray(shop.certificateUrl)) {
             documents = shop.certificateUrl;
@@ -97,7 +94,7 @@ const ShopVerification: React.FC = () => {
           }
 
           return {
-            id: shop._id,
+            id: shop.id,
             name: shop.name,
             logo: shop.logo || "/placeholder.svg?height=48&width=48",
             email: shop.email,
@@ -110,13 +107,11 @@ const ShopVerification: React.FC = () => {
             lastActive: shop.updatedAt,
             totalRevenue: shop.totalRevenue || 0,
             description: shop.description || "",
-            documents, // Updated to use processed documents array
+            documents,
             verificationNotes: shop.verificationNotes || "",
             submittedDate: shop.createdAt,
           };
         });
-
-        console.log("Transformed Shops:", transformedShops); // Debug: Log transformed shops
         setShops(transformedShops);
       } catch (error: any) {
         console.error("Error fetching shops:", error);
@@ -256,7 +251,7 @@ const ShopVerification: React.FC = () => {
       render: (_value: string, record: Shop) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 ring-2 ring-gray-200 dark:ring-gray-600">
-            <AvatarImage src={cloudinaryUtils.getFullUrl(record?.logo)} />
+          <AvatarImage src={cloudinaryUtils.getFullUrl(record?.logo ?? "")} />
             <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300">
               {record.name
                 .split(" ")

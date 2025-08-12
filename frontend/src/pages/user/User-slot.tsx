@@ -1,348 +1,495 @@
 import { useState, useEffect } from "react"
-import { AlertCircle } from "lucide-react"
-import { SlotCalendar } from "@/components/user/slot-calendar"
-import { SlotDisplay } from "@/components/user/slot-display"
+import { CalendarIcon, X, Sparkles, AlertCircle, User } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
+import { PaymentForm } from "@/components/user/PaymentForm"
 import SelectedServiceDetails from "@/components/user/Selected-serviceDetails"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import Useraxios from "@/api/user.axios"
 import { toast } from "react-hot-toast"
+import { loadStripe } from "@stripe/stripe-js"
+import { Elements } from "@stripe/react-stripe-js"
+import { useSelector } from "react-redux"
+import type { RootState } from "@/redux/store"
+import { SlotCalendar } from "@/components/user/slot-calendar"
+import { EnhancedTimeSlotGenerator } from "@/components/user/TimeSlotGenerator"
+import { Badge } from "@/components/ui/Badge"
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+
+interface TimeSlotCategory {
+  label: string
+  startHour: number
+  endHour: number
+}
+
+interface Staff {
+  id: string
+  name: string
+  email?: string
+  phone?: string
+  isActive: boolean
+  role?: string
+  avatar?: string
+}
+
+interface ShopAvailability {
+  workingDays: string[]
+  openingTime: string
+  closingTime: string
+  lunchBreak: { start: string; end: string }
+  teaBreak: { start: string; end: string }
+  customHolidays: string[]
+}
+
+interface Service {
+  id: string
+  name: string
+  duration: number
+  price: number
+  color: string
+}
 
 interface TimeSlot {
-  _id: string
   shopId: string
-  staffId: { _id: string; name: string; phone: string } | string
+  staffId: string
   slotDate: string
   startTime: string
   endTime: string
   durationInMinutes: number
-  isBooked: boolean
-  isActive: boolean
-  staffName?: string
-  deletedAt?: Date | null
-}
-
-interface DaySchedule {
-  date: string
-  timeSlots: TimeSlot[]
-  isHoliday?: boolean
+  status: "available" | "booked" | "break" | "lunch" | "unavailable"
+  staffName: string
+  slotIndex: number
 }
 
 interface Holiday {
   name: string
   description: string
-  date: {
-    iso: string
-    datetime: {
-      year: number
-      month: number
-      day: number
-    }
-  }
+  date: { iso: string; datetime: { year: number; month: number; day: number } }
   type: string
   primary_type: string
 }
 
-// --- New Interface for Service ---
-interface Service {
-  durationHour: number
-  name: string
-  price: number
-  petTypeIds: string[]
+interface UserState {
+  id?: string
+  _id?: string
+  [key: string]: any
 }
 
-export default function SlotsPage() {
+const TIME_CATEGORIES: TimeSlotCategory[] = [
+  { label: "Morning", startHour: 6, endHour: 12 },
+  { label: "Afternoon", startHour: 12, endHour: 17 },
+  { label: "Evening", startHour: 17, endHour: 22 },
+]
+
+export default function UserSlot() {
+  const { shopId, serviceId } = useParams<{ shopId: string | undefined; serviceId: string | undefined }>()
+  const navigate = useNavigate()
+  const user = useSelector((state: RootState) => state.user.userDatas as UserState)
+
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [schedules, setSchedules] = useState<DaySchedule[]>([])
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false)
+  const [selectedPetId, setSelectedPetId] = useState<string>("")
+  const [activeCategory, setActiveCategory] = useState<string>("Morning")
   const [holidays, setHolidays] = useState<Holiday[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([])
-  const { shopId, serviceId } = useParams<{ shopId: string; serviceId: string }>()
-  // --- New State for Service ---
+  const [isLoading, setIsLoading] = useState(true)
+  const [staff, setStaff] = useState<Staff[]>([])
+  const [shopAvailability, setShopAvailability] = useState<ShopAvailability | null>(null)
   const [service, setService] = useState<Service | null>(null)
+  const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([])
 
-  // --- Fetch Service Details ---
-  useEffect(() => {
-    const fetchServiceDetails = async () => {
-      if (!serviceId) {
-        setError("Service ID is missing")
-        return
-      }
-      try {
-        const response = await Useraxios.get(`/services/${serviceId}`)
-        setService(response.data.data || response.data)
-        console.log("Service Details:", response.data.data)
-      } catch (err: any) {
-        console.error("Error fetching service details", err)
-        setError("Failed to fetch service details")
-      }
-    }
+  const getUserId = (): string => {
+    const userId = user?._id || user?.id || ""
+    return userId.trim()
+  }
 
-    fetchServiceDetails()
-  }, [serviceId])
+  const isUserLoggedIn = (): boolean => {
+    const userId = getUserId()
+    return userId !== "" && userId !== null && userId !== undefined
+  }
 
   useEffect(() => {
-    console.log("SlotsPage: shopId =", shopId, "serviceId =", serviceId) // Debug log
-
-    const fetchSlots = async () => {
+    const fetchData = async () => {
       if (!shopId) {
-        setError("Shop ID is missing")
-        console.error("SlotsPage: Missing shopId")
+        toast.error("Shop ID is missing")
         return
       }
 
       setIsLoading(true)
-      setError(null)
-
       try {
-        const response = await Useraxios.get(`/slot/shop/${shopId}/range`, {
-          params: {
-            startDate: new Date().toISOString().split("T")[0],
-            endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split("T")[0],
-          },
-        })
-        console.log("SlotsPage API Response:", response.data)
-        const slots: TimeSlot[] = response.data.data
-        console.log("Slots for July 27:", slots.filter(slot => slot.slotDate.startsWith("2025-07-27")))
+        const availabilityResponse = await Useraxios.get(`/${shopId}/availability`)
+        setShopAvailability(availabilityResponse.data.data)
 
-        const slotMap = new Map<string, TimeSlot[]>()
-        slots.forEach((slot) => {
-          if (slot.deletedAt || !slot.isActive) {
-            console.log(`Skipping slot for ${slot.slotDate}: deletedAt=${slot.deletedAt}, isActive=${slot.isActive}`)
-            return
-          }
-          const date = slot.slotDate.split("T")[0]
-          if (!slotMap.has(date)) {
-            slotMap.set(date, [])
-          }
-          slotMap.get(date)!.push({
-            ...slot,
-            staffName: typeof slot.staffId === "object" ? slot.staffId.name : undefined,
-          })
-        })
-        console.log("Slot Map for July 27:", slotMap.get("2025-07-27"))
+        const staffResponse = await Useraxios.get(`/staff?shopId=${shopId}`)
+        const staffData = staffResponse.data.data.staff
 
-        const today = new Date()
-        const mockSchedules: DaySchedule[] = []
-        for (let i = 0; i < 30; i++) {
-          const date = new Date(today)
-          date.setDate(today.getDate() + i)
-          const dateKey = date.toISOString().split("T")[0]
-          const hasSlots = slotMap.has(dateKey) && slotMap.get(dateKey)!.length > 0
-          mockSchedules.push({
-            date: dateKey,
-            timeSlots: slotMap.get(dateKey) || [],
-            isHoliday: !hasSlots && holidays.some((h) => h.date.iso === dateKey),
-          })
+        const enhancedStaff = staffData.map((member: any, index: number) => {
+          const staffId = member._id || member.id || `staff-${index + 1}`
+          return {
+            ...member,
+            id: staffId,
+            role: member.role || `Staff Member ${index + 1}`,
+            avatar: member.avatar || null,
+            isActive: member.isActive !== false,
+          }
+        })
+
+        setStaff(enhancedStaff)
+
+        try {
+          const holidaysResponse = await Useraxios.get(`/holidays?shopId=${shopId}`)
+          setHolidays(holidaysResponse.data.data || [])
+        } catch {
+          setHolidays([])
         }
-        console.log("Schedule for July 27:", mockSchedules.find(s => s.date === "2025-07-27"))
-        setSchedules(mockSchedules)
 
-        const mockHolidays: Holiday[] = []
-        setHolidays(mockHolidays)
-      } catch (err: any) {
-        console.error("Fetch Error:", err)
-        setError(err.response?.data?.message || "Failed to fetch slots")
+        if (serviceId) {
+          const serviceResponse = await Useraxios.get(`/services/${serviceId}`)
+          const serviceData = serviceResponse.data.data
+          setService({
+            ...serviceData,
+            id: serviceData._id || serviceData.id,
+            color: serviceData.color || "bg-blue-500",
+          })
+        } else {
+          toast.error("Service ID is missing")
+        }
+      } catch {
+        toast.error("Failed to load shop data")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchSlots()
-  }, [shopId])
+    fetchData()
+  }, [shopId, serviceId])
 
-  const getTimeBlock = (startTime: string): string => {
-    const hour = parseInt(startTime.split(":")[0], 10)
-    if (hour < 12) return "morning"
-    if (hour < 17) return "afternoon"
-    return "evening"
+  const validateBookingData = (): { isValid: boolean; error?: string } => {
+    if (!isUserLoggedIn()) {
+      return { isValid: false, error: "Please log in to book an appointment" }
+    }
+
+    if (!selectedPetId || selectedPetId.trim() === "") {
+      return { isValid: false, error: "Please select a pet" }
+    }
+
+    if (selectedSlots.length !== 1) {
+      return { isValid: false, error: "Please select exactly one time slot" }
+    }
+
+    const slot = selectedSlots[0]
+    if (!slot.slotDate || !slot.startTime || !slot.endTime || !slot.staffId) {
+      return { isValid: false, error: "Selected time slot is incomplete" }
+    }
+
+    if (!serviceId || !shopId) {
+      return { isValid: false, error: "Service or shop information is missing" }
+    }
+
+    return { isValid: true }
   }
 
-  const handleSlotSelect = (slot?: TimeSlot) => {
-    if (!slot || slot.isBooked || !slot.isActive) return
-    if (!service) {
-      toast.error("Service details not loaded yet.")
-      return
-    }
-
-    // --- Calculate Service Duration in Minutes ---
-    const serviceDuration = service.durationHour * 60 
-
-    // --- Calculate Total Duration of Selected Slots ---
-    const currentTotalDuration = selectedSlots.reduce((sum, s) => sum + s.durationInMinutes, 0)
-    const newTotalDuration = currentTotalDuration + slot.durationInMinutes
-
-    // --- Check if Adding Slot Exceeds Limit or Duration ---
-    if (selectedSlots.length >= 2) {
-      toast("You can only select up to two slots.", {
-        icon: "⚠️",
-        style: {
-          background: "#fef3c7",
-          color: "#92400e",
-        },
-      })
-      return
-    }
-
-    // --- Check for Overlapping Slots ---
-    const slotStart = new Date(`${slot.slotDate}T${slot.startTime}`)
-    const slotEnd = new Date(`${slot.slotDate}T${slot.endTime}`)
-    const hasOverlap = selectedSlots.some((selected) => {
-      const selectedStart = new Date(`${selected.slotDate}T${selected.startTime}`)
-      const selectedEnd = new Date(`${selected.slotDate}T${selected.endTime}`)
-      return slotStart < selectedEnd && slotEnd > selectedStart
-    })
-
-    if (hasOverlap) {
-      toast("You cannot select overlapping time slots.", {
-        icon: "⚠️",
-        style: {
-          background: "#fef3c7",
-          color: "#92400e",
-        },
-      })
-      return
-    }
-
-    // --- Check if New Total Duration Matches or Exceeds Service Duration ---
-    if (newTotalDuration > serviceDuration) {
-      toast("Not possible to add extra slot: Total duration exceeds service duration.", {
-        icon: "⚠️",
-        style: {
-          background: "#fef3c7",
-          color: "#92400e",
-        },
-      })
-      return
-    }
-
-    setSelectedSlots([...selectedSlots, slot])
-
-    // --- Warn if Duration is Still Less Than Service Duration ---
-    if (newTotalDuration < serviceDuration) {
-      toast(`Select one more slot to match the service duration of ${serviceDuration} minutes.`, {
-        icon: "⚠️",
-        style: {
-          background: "#fef3c7",
-          color: "#92400e",
-        },
-      })
-    }
-  }
-
-  const handleCancelSelection = () => {
-    setSelectedSlots([])
-    setError(null)
-  }
-
-  // --- New Function to Validate Before Booking ---
   const handleBookNow = () => {
-    if (!service) {
-      toast.error("Service details not loaded yet.")
+    const validation = validateBookingData()
+    
+    if (!validation.isValid) {
+      if (validation.error?.includes("log in")) {
+        setIsLoginPromptOpen(true)
+      } else {
+        toast.error(validation.error || "Please complete all required fields")
+      }
       return
     }
 
-    const serviceDuration = service.durationHour * 60
-    const totalSlotDuration = selectedSlots.reduce((sum, s) => sum + s.durationInMinutes, 0)
+    setIsPaymentModalOpen(true)
+  }
 
-    if (selectedSlots.length === 0) {
-      toast("Please select at least one slot.", {
-        icon: "⚠️",
-        style: {
-          background: "#fef3c7",
-          color: "#92400e",
-        },
-      })
-      return
+  const handleLoginRedirect = () => {
+    // Save current booking state to localStorage before redirecting
+    const bookingState = {
+      shopId,
+      serviceId,
+      selectedDate: selectedDate.toISOString(),
+      selectedSlots,
+      selectedPetId,
+      returnUrl: window.location.pathname
     }
+    localStorage.setItem('pendingBooking', JSON.stringify(bookingState))
+    
+    // Redirect to login page
+    navigate('/login')
+  }
 
-    if (totalSlotDuration !== serviceDuration) {
-      toast(`Selected slots duration (${totalSlotDuration} minutes) does not match service duration (${serviceDuration} minutes).`, {
-        icon: "⚠️",
-        style: {
-          background: "#fef3c7",
-          color: "#92400e",
-        },
-      })
-      return
-    }
+  const handlePetSelect = (petId: string) => {
+    setSelectedPetId(petId)
+  }
 
-    // Proceed with booking logic
-    console.log("Proceeding with booking:", { selectedSlots, service })
-    // Add actual booking API call here
+  const handlePaymentSuccess = () => {
+    toast.success("Payment successful!")
+    setIsPaymentModalOpen(false)
+    
+    // Clear any pending booking state
+    localStorage.removeItem('pendingBooking')
+    
+    navigate("/appointments")
+  }
+
+  const handlePaymentCancel = () => {
+    setIsPaymentModalOpen(false)
+    toast.error("Payment cancelled")
+  }
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date)
+    setSelectedSlots([])
+    setIsCalendarModalOpen(false)
+  }
+
+  const handleSlotSelect = (slot: TimeSlot) => {
+    setSelectedSlots((prev) => {
+      const exists = prev.find(
+        (s) => s.slotDate === slot.slotDate && s.startTime === slot.startTime && s.staffId === slot.staffId,
+      )
+
+      if (exists) {
+        return []
+      }
+
+      return [slot]
+    })
+  }
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-xl font-semibold text-gray-700">Loading your booking experience...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait while we prepare everything for you</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!shopAvailability || staff.length === 0 || !service) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <X className="w-10 h-10 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Oops! Something went wrong</h2>
+          <p className="text-gray-600 mb-6">
+            We couldn't load the shop data, staff information, or service details. Please try again.
+          </p>
+          <Button
+            onClick={() => navigate("/")}
+            className="bg-black text-white hover:bg-gray-800 px-8 py-3 rounded-xl font-semibold"
+          >
+            Return to Home
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      <div className="bg-black text-white">
-        <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="text-center">
-            <h1 className="text-5xl font-bold mb-4 tracking-tight">Select Your Appointment</h1>
-            <p className="text-gray-300 text-xl max-w-2xl mx-auto">
-              Choose your preferred time slots (up to two from different time periods)
-            </p>
-            <div className="mt-6 flex justify-center">
-              <div className="h-1 w-24 bg-white"></div>
+    <Elements stripe={stripePromise}>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <Header />
+        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+          <Card className="border-2 border-black shadow-2xl mb-8 rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-black to-gray-800 text-white">
+              <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center shadow-lg">
+                    <CalendarIcon className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold">Book Your Appointment</h1>
+                    <p className="text-gray-300 text-lg font-medium">{formatDate(selectedDate)}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setIsCalendarModalOpen(true)}
+                  className="border-2 border-white text-black bg-white hover:bg-gray-100 hover:text-black font-bold px-6 py-3 rounded-xl shadow-lg"
+                >
+                  <CalendarIcon className="w-5 h-5 mr-2" />
+                  Change Date
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex flex-wrap gap-3">
+                {TIME_CATEGORIES.map((category) => (
+                  <Button
+                    key={category.label}
+                    variant={activeCategory === category.label ? "default" : "outline"}
+                    size="lg"
+                    className={`${activeCategory === category.label
+                      ? "bg-black text-white hover:bg-gray-800 shadow-lg"
+                      : "border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-black"} font-bold px-6 py-3 rounded-xl transition-all duration-200`}
+                    onClick={() => setActiveCategory(category.label)}
+                  >
+                    {category.label}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+            <div className="xl:col-span-3">
+              <EnhancedTimeSlotGenerator
+                shopAvailability={shopAvailability}
+                staff={staff}
+                service={service}
+                selectedDate={selectedDate}
+                onSlotSelect={handleSlotSelect}
+                selectedSlots={selectedSlots}
+                shopId={shopId!}
+                activeCategory={activeCategory}
+              />
+            </div>
+
+            <div className="xl:col-span-1">
+              <div className="sticky top-6">
+                <SelectedServiceDetails
+                  onBookNow={handleBookNow}
+                  onSelectPetId={handlePetSelect}
+                  selectedSlots={selectedSlots}
+                  selectedPetId={selectedPetId}
+                  userId={getUserId()}
+                />
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Calendar Modal */}
+        <Dialog open={isCalendarModalOpen} onOpenChange={setIsCalendarModalOpen}>
+          <DialogContent className="w-[95vw] max-w-[500px] p-0 rounded-2xl overflow-hidden">
+            <DialogHeader className="bg-black text-white p-6">
+              <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                <CalendarIcon className="w-6 h-6" />
+                Select Your Preferred Date
+              </DialogTitle>
+              <DialogClose asChild>
+                <Button
+                  variant="ghost"
+                  className="absolute right-4 top-4 p-2 hover:bg-gray-800 text-white rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </DialogClose>
+            </DialogHeader>
+            <div className="p-6">
+              <SlotCalendar
+                currentDate={currentDate}
+                setCurrentDate={setCurrentDate}
+                selectedDate={selectedDate}
+                setSelectedDate={handleDateSelect}
+                holidays={holidays}
+                isLoading={isLoading}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Login Prompt Modal */}
+        <Dialog open={isLoginPromptOpen} onOpenChange={setIsLoginPromptOpen}>
+          <DialogContent className="w-[95vw] max-w-[400px] p-0 rounded-2xl overflow-hidden">
+            <DialogHeader className="bg-black text-white p-6">
+              <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                <User className="w-6 h-6" />
+                Login Required
+              </DialogTitle>
+              <DialogClose asChild>
+                <Button
+                  variant="ghost"
+                  className="absolute right-4 top-4 p-2 hover:bg-gray-800 text-white rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </DialogClose>
+            </DialogHeader>
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-amber-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Please Log In</h3>
+              <p className="text-gray-600 mb-6">
+                You need to log in to your account to book an appointment. Don't worry, we'll save your selection!
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={handleLoginRedirect}
+                  className="bg-black text-white hover:bg-gray-800 font-semibold px-6 py-2"
+                >
+                  Go to Login
+                </Button>
+                <Button
+                  onClick={() => setIsLoginPromptOpen(false)}
+                  variant="outline"
+                  className="border-black text-black hover:bg-gray-50"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Payment Modal */}
+        <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+          <DialogContent className="w-[95vw] max-w-[700px] p-0 rounded-2xl overflow-hidden">
+            <DialogHeader className="bg-black text-white p-6">
+              <DialogTitle className="text-2xl font-bold">Complete Your Payment</DialogTitle>
+              <DialogClose asChild>
+                <Button
+                  variant="ghost"
+                  className="absolute right-4 top-4 p-2 hover:bg-gray-800 text-white rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </DialogClose>
+            </DialogHeader>
+            <div className="p-6">
+              <PaymentForm
+                amount={service.price}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+                serviceId={serviceId || ""}
+                shopId={shopId || ""}
+                selectedPetId={selectedPetId}
+                selectedSlots={selectedSlots}
+                userId={getUserId()}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Footer />
       </div>
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {error && (
-          <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg mb-8 flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-            <p className="text-red-800 font-medium">{error}</p>
-          </div>
-        )}
-        {!serviceId && (
-          <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg mb-8 flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-            <p className="text-red-800 font-medium">Service ID is missing. Please select a service.</p>
-          </div>
-        )}
-        {selectedSlots.length > 0 && (
-          <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg mb-8">
-            <h3 className="font-bold text-lg mb-2">Selected Slots:</h3>
-            <ul className="list-disc pl-5">
-              {selectedSlots.map((slot) => (
-                <li key={slot._id}>
-                  {slot.slotDate} {slot.startTime} - {slot.endTime} ({slot.staffName || "Professional Staff"})
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <div className="space-y-8">
-            <SlotCalendar
-              currentDate={currentDate}
-              setCurrentDate={setCurrentDate}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              schedules={schedules}
-              holidays={holidays}
-              isLoading={isLoading}
-            />
-            <SelectedServiceDetails onBookNow={handleBookNow} /> 
-          </div>
-          <div>
-            <SlotDisplay
-              selectedDate={selectedDate}
-              schedules={schedules}
-              holidays={holidays}
-              onSlotSelect={handleSlotSelect}
-              selectedSlots={selectedSlots}
-              onCancelSelection={handleCancelSelection}
-              isLoading={isLoading}
-            />
-          </div>
-        </div>
-      </div>
-      <Footer />
-    </div>
+    </Elements>
   )
 }

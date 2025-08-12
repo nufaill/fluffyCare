@@ -1,3 +1,7 @@
+import { ShopResponseDTO } from '../../dto/shop.dto';
+import { ShopAuthResponse } from '../../types/Shop.types';
+import { CreateShopDTO, VerifyOtpDTO, ResendOtpDTO, LoginUserDTO, SendResetLinkDTO, ResetPasswordDTO } from '../../dto/auth.dto';
+
 export interface IGenericAuthService<
   TRegisterDTO,
   TLoginDTO,
@@ -36,15 +40,13 @@ export interface IUserAuthService extends IGenericAuthService<
   googleLogin(credential: string): Promise<import('../../types/auth.types').AuthResponse>;
 }
 
-export interface IShopAuthService extends IGenericAuthService<
-  import('../../dto/auth.dto').CreateShopDTO,
-  import('../../dto/auth.dto').LoginUserDTO,
-  import('../../dto/auth.dto').VerifyOtpDTO,
-  import('../../dto/auth.dto').ResendOtpDTO,
-  import('../../dto/auth.dto').ResetPasswordDTO,
-  import('../../dto/auth.dto').SendResetLinkDTO,
-  import('../../types/Shop.types').ShopAuthResponse
-> {
-  // Shop-specific methods
-  getShopById(id: string): Promise<Omit<import('../../types/Shop.types').ShopDocument, 'password'> | null>;
+export interface IShopAuthService {
+  register(shopData: CreateShopDTO): Promise<{ email: string }>;
+  verifyOtpAndCompleteRegistration(data: VerifyOtpDTO): Promise<ShopAuthResponse>;
+  resendOtp(data: ResendOtpDTO): Promise<void>;
+  login(data: LoginUserDTO): Promise<ShopAuthResponse>;
+  refreshToken(refreshToken: string): Promise<string>;
+  sendResetLink(data: SendResetLinkDTO): Promise<void>;
+  resetPassword(data: ResetPasswordDTO): Promise<void>;
+  getShopById(id: string): Promise<ShopResponseDTO | null>; 
 }

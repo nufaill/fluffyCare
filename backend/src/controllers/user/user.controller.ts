@@ -14,11 +14,25 @@ export class UserController implements IUserController {
 
   getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const users = await this.userService.getAllUsers();
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      if (page < 1 || limit < 1) {
+        throw new CustomError('Page and limit must be positive integers', HTTP_STATUS.BAD_REQUEST);
+      }
+
+      const { users, total, totalPages } = await this.userService.getAllUsers(page, limit);
+
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: users,
         message: SUCCESS_MESSAGES.USERS_FETCHED_SUCESS || 'Users fetched successfully',
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
       });
     } catch (error) {
       console.error(`❌ [UserController] Error:`, error);
@@ -35,6 +49,9 @@ export class UserController implements IUserController {
   updateUserStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { userId } = req.params;
+      if (!userId) {
+        throw new CustomError('User ID is required', HTTP_STATUS.BAD_REQUEST);
+      }
       const updateStatusDTO: UpdateUserStatusDTO = req.body;
 
       const updatedUser = await this.userService.updateUserStatus(userId, updateStatusDTO.isActive);
@@ -63,17 +80,7 @@ export class UserController implements IUserController {
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
-        data: {
-          id: user._id,
-          email: user.email,
-          fullName: user.fullName,
-          phone: user.phone,
-          profileImage: user.profileImage,
-          location: user.location,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-          isActive: user.isActive,
-        },
+        data: user,
         message: SUCCESS_MESSAGES.PROFILE_FETCHED_SUCCESS || 'Profile fetched successfully',
       });
     } catch (error) {
@@ -97,17 +104,7 @@ export class UserController implements IUserController {
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
-        data: {
-          id: updatedUser!._id,
-          email: updatedUser!.email,
-          fullName: updatedUser!.fullName,
-          phone: updatedUser!.phone,
-          profileImage: updatedUser!.profileImage,
-          location: updatedUser!.location,
-          createdAt: updatedUser!.createdAt,
-          updatedAt: updatedUser!.updatedAt,
-          isActive: updatedUser!.isActive,
-        },
+        data: updatedUser,
         message: SUCCESS_MESSAGES.PROFILE_UPDATED_SUCCESS || 'Profile updated successfully',
       });
     } catch (error) {
@@ -121,61 +118,62 @@ export class UserController implements IUserController {
       next(error);
     }
   };
+
   getNearbyShops = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { lat, lng, radius } = req.query;
+    // try {
+    //   const { lat, lng, radius } = req.query;
 
-      // Validate required parameters
-      if (!lat || !lng) {
-        return res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'Latitude and longitude are required',
-        });
-      }
+    //   // Validate required parameters
+    //   if (!lat || !lng) {
+    //     return res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+    //       success: false,
+    //       message: 'Latitude and longitude are required',
+    //     });
+    //   }
 
-      const nearbyShopsQuery = {
-        latitude: parseFloat(lat as string),
-        longitude: parseFloat(lng as string),
-        maxDistance: radius ? parseInt(radius as string) : 5000,
-      };
+    //   const nearbyShopsQuery = {
+    //     latitude: parseFloat(lat as string),
+    //     longitude: parseFloat(lng as string),
+    //     maxDistance: radius ? parseInt(radius as string) : 5000,
+    //   };
 
-      // Validate coordinates
-      if (
-        isNaN(nearbyShopsQuery.latitude) ||
-        isNaN(nearbyShopsQuery.longitude) ||
-        nearbyShopsQuery.latitude < -90 || nearbyShopsQuery.latitude > 90 ||
-        nearbyShopsQuery.longitude < -180 || nearbyShopsQuery.longitude > 180
-      ) {
-        return res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'Invalid latitude or longitude values',
-        });
-      }
+    //   // Validate coordinates
+    //   if (
+    //     isNaN(nearbyShopsQuery.latitude) ||
+    //     isNaN(nearbyShopsQuery.longitude) ||
+    //     nearbyShopsQuery.latitude < -90 || nearbyShopsQuery.latitude > 90 ||
+    //     nearbyShopsQuery.longitude < -180 || nearbyShopsQuery.longitude > 180
+    //   ) {
+    //     return res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+    //       success: false,
+    //       message: 'Invalid latitude or longitude values',
+    //     });
+    //   }
 
-      const nearbyShops = await this.nearbyService.findNearbyShops(nearbyShopsQuery);
+    //   const nearbyShops = await this.nearbyService.findNearbyShops(nearbyShopsQuery);
 
-      res.status(HTTP_STATUS.OK || 200).json({
-        success: true,
-        data: nearbyShops,
-        message: `Found ${nearbyShops.length} nearby shops`,
-        meta: {
-          count: nearbyShops.length,
-          searchRadius: nearbyShopsQuery.maxDistance,
-          userLocation: {
-            latitude: nearbyShopsQuery.latitude,
-            longitude: nearbyShopsQuery.longitude,
-          },
-        },
-      });
-    } catch (error) {
-      console.error(`❌ [UserController] Error fetching nearby shops:`, error);
-      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-      const message = error instanceof Error ? error.message : 'Failed to fetch nearby shops';
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
-      next(error);
-    }
+    //   res.status(HTTP_STATUS.OK || 200).json({
+    //     success: true,
+    //     data: nearbyShops,
+    //     message: `Found ${nearbyShops.length} nearby shops`,
+    //     meta: {
+    //       count: nearbyShops.length,
+    //       searchRadius: nearbyShopsQuery.maxDistance,
+    //       userLocation: {
+    //         latitude: nearbyShopsQuery.latitude,
+    //         longitude: nearbyShopsQuery.longitude,
+    //       },
+    //     },
+    //   });
+    // } catch (error) {
+    //   console.error(`❌ [UserController] Error fetching nearby shops:`, error);
+    //   const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+    //   const message = error instanceof Error ? error.message : 'Failed to fetch nearby shops';
+    //   res.status(statusCode).json({
+    //     success: false,
+    //     message,
+    //   });
+    //   next(error);
+    // }
   };
 }

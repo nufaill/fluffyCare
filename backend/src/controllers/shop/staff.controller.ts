@@ -1,26 +1,70 @@
 import { Request, Response, NextFunction } from 'express';
 import { StaffService } from '../../services/shop/staff.service';
 import { IStaffController } from '../../interfaces/controllerInterfaces/IStaffController';
-import { Staff } from '../../types/staff.types';
+import { createStaffDTO, updatesStaffDTO, UpdateStaffStatusDTO, StaffResponseDTO } from '../../dto/staff.dto';
 import { HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
+import mongoose from 'mongoose';
 
 export class StaffController implements IStaffController {
-  constructor(private staffService: StaffService) {}
+  constructor(private staffService: StaffService) { }
+
+  async getAllStaff(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      let shopId = req.shop?.shopId || req.query.shopId;
+
+      if (!shopId) {
+        throw new CustomError('Shop ID is required', HTTP_STATUS.BAD_REQUEST);
+      }
+      if (!mongoose.Types.ObjectId.isValid(shopId as string)) {
+      throw new CustomError('Invalid Shop ID format', HTTP_STATUS.BAD_REQUEST);
+    }
+      if (isNaN(page) || page < 1) {
+        throw new CustomError('Invalid page number', HTTP_STATUS.BAD_REQUEST);
+      }
+      if (isNaN(limit) || limit < 1) {
+        throw new CustomError('Invalid limit value', HTTP_STATUS.BAD_REQUEST);
+      }
+
+      const { staff, total } = await this.staffService.getAllStaff(page, limit, shopId as string);
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: {
+          staff,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        },
+        message: 'Staff list retrieved successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const shopId = req.shop?.shopId;
-      const staffData =req.body;
+      const staffData: createStaffDTO = req.body;
+
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const staffPayload = {
+      if (!mongoose.Types.ObjectId.isValid(shopId)) {
+        throw new CustomError('Invalid Shop ID format', HTTP_STATUS.BAD_REQUEST);
+      }
+
+      const staffPayload: createStaffDTO & { shopId: string | mongoose.Types.ObjectId } = {
         ...staffData,
-        shopId: shopId
+        shopId
       };
 
       const newStaff = await this.staffService.create(staffPayload);
+
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
         data: newStaff,
@@ -31,11 +75,15 @@ export class StaffController implements IStaffController {
     }
   }
 
+
   async findById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
       if (!id) {
         throw new CustomError('Staff ID is required', HTTP_STATUS.BAD_REQUEST);
+      }
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new CustomError('Invalid Staff ID format', HTTP_STATUS.BAD_REQUEST);
       }
       const staff = await this.staffService.findById(id);
       res.status(HTTP_STATUS.OK).json({
@@ -54,8 +102,10 @@ export class StaffController implements IStaffController {
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.BAD_REQUEST);
       }
-
-      const staffList = await this.staffService.findByShopId(shopId as string);
+      if (!mongoose.Types.ObjectId.isValid(shopId)) {
+        throw new CustomError('Invalid Shop ID format', HTTP_STATUS.BAD_REQUEST);
+      }
+      const staffList = await this.staffService.findByShopId(shopId);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: staffList,
@@ -69,31 +119,18 @@ export class StaffController implements IStaffController {
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { staffId } = req.params;
-      const staffData: Partial<Staff> = req.body;
+      const staffData: updatesStaffDTO = req.body;
       if (!staffId) {
         throw new CustomError('Staff ID is required', HTTP_STATUS.BAD_REQUEST);
+      }
+      if (!mongoose.Types.ObjectId.isValid(staffId)) {
+        throw new CustomError('Invalid Staff ID format', HTTP_STATUS.BAD_REQUEST);
       }
       const updatedStaff = await this.staffService.update(staffId, staffData);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: updatedStaff,
         message: 'Staff updated successfully',
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const { staffId } = req.params;
-      if (!staffId) {
-        throw new CustomError('Staff ID is required', HTTP_STATUS.BAD_REQUEST);
-      }
-      await this.staffService.delete(staffId);
-      res.status(HTTP_STATUS.OK).json({
-        success: true,
-        message: 'Staff deleted successfully',
       });
     } catch (error) {
       next(error);
@@ -120,10 +157,14 @@ export class StaffController implements IStaffController {
   async toggleStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { staffId } = req.params;
+      const statusData: UpdateStaffStatusDTO = req.body;
       if (!staffId) {
         throw new CustomError('Staff ID is required', HTTP_STATUS.BAD_REQUEST);
       }
-      const updatedStaff = await this.staffService.toggleStatus(staffId);
+      if (!mongoose.Types.ObjectId.isValid(staffId)) {
+        throw new CustomError('Invalid Staff ID format', HTTP_STATUS.BAD_REQUEST);
+      }
+      const updatedStaff = await this.staffService.toggleStatus(staffId, statusData);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: updatedStaff,

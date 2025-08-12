@@ -1,12 +1,12 @@
-import { Schema } from 'mongoose';
-import { Staff } from '../../types/staff.types';
+import mongoose, { Schema } from 'mongoose';
+import { StaffResponseDTO, createStaffDTO, updatesStaffDTO, UpdateStaffStatusDTO } from '../../dto/staff.dto';
 
 export interface IStaffService {
-  create(staff: Partial<Staff>): Promise<Staff>;
-  findById(id: string | Schema.Types.ObjectId): Promise<Staff | null>;
-  findByShopId(shopId: string | Schema.Types.ObjectId): Promise<Staff[]>;
-  update(id: string | Schema.Types.ObjectId, staff: Partial<Staff>): Promise<Staff | null>;
-  delete(id: string | Schema.Types.ObjectId): Promise<boolean>;
-  findByEmail(email: string): Promise<Staff | null>;
-  toggleStatus(id: string | Schema.Types.ObjectId): Promise<Staff | null>;
+  create(staff: createStaffDTO & { shopId: string | mongoose.Types.ObjectId }): Promise<StaffResponseDTO>;
+  findById(id: string | Schema.Types.ObjectId): Promise<StaffResponseDTO | null>;
+  findByShopId(shopId: string | Schema.Types.ObjectId): Promise<StaffResponseDTO[]>;
+  getAllStaff(page: number, limit: number, shopId: string | Schema.Types.ObjectId): Promise<{ staff: StaffResponseDTO[]; total: number }>;
+  update(id: string | Schema.Types.ObjectId, staff: updatesStaffDTO): Promise<StaffResponseDTO | null>;
+  findByEmail(email: string): Promise<StaffResponseDTO | null>;
+  toggleStatus(id: string | Schema.Types.ObjectId, status: UpdateStaffStatusDTO): Promise<StaffResponseDTO | null>;
 }

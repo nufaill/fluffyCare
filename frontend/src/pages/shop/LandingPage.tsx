@@ -23,6 +23,7 @@ import Header from "@/components/shop/Header"
 import Footer from "@/components/user/Footer"
 import serviceGirl from '@/assets/shop/serviceGirl.png';
 import careImage from '@/assets/shop/careImage.png';
+import team from '@/assets/shop/team.jpg'
 
 // Type definitions
 interface AnimatedCounterProps {
@@ -267,7 +268,7 @@ export default function VendorLandingPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-[#121d28] to-[#121d28]/80"></div>
                     <div className="absolute inset-0 opacity-10">
                         <img
-                            src="https://images.pexels.com/photos/46024/pexels-photo-46024.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                            src="https://videos.openai.com/vg-assets/assets%2Ftask_01k1a5tjapfh2smm7kfdkvhkhf%2F1753762147_img_0.webp?st=2025-07-29T02%3A36%3A35Z&se=2025-08-04T03%3A36%3A35Z&sks=b&skt=2025-07-29T02%3A36%3A35Z&ske=2025-08-04T03%3A36%3A35Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=aa5ddad1-c91a-4f0a-9aca-e20682cc8969&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=%2BYewa54dkFcNns3nQTZBRnCKpzp36a56feRTneipPSc%3D&az=oaivgprodscus"
                             alt="Background pattern"
                             className="w-full h-full object-cover"
                         />
@@ -332,7 +333,7 @@ export default function VendorLandingPage() {
                             <div className="absolute -top-6 -left-6 w-full h-full rounded-2xl border border-[#cbab74]/30 animate-pulse"></div>
                             <div className="relative rounded-2xl overflow-hidden shadow-2xl transform transition-transform duration-500 hover:scale-[1.02]">
                                 <img
-                                    src="https://images.pexels.com/photos/1139793/pexels-photo-1139793.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                                    src={team}
                                     alt="Pet care professional using FluffyCare"
                                     className="w-full h-auto"
                                 />

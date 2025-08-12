@@ -1,11 +1,11 @@
-import { Staff } from 'types/staff.types';
 import { Schema } from 'mongoose';
+import { StaffResponseDTO } from '../../dto/staff.dto'
 
 export interface IStaffRepository {
-  create(staff: Partial<Staff>): Promise<Staff>;
-  findById(id: string | Schema.Types.ObjectId): Promise<Staff | null>;
-  findByShopId(shopId: string | Schema.Types.ObjectId): Promise<Staff[]>;
-  update(id:string | Schema.Types.ObjectId , staff:Partial<Staff>):Promise<Staff | null>;
-  delete(id:string | Schema.Types.ObjectId):Promise<boolean>;
-  findByEmail(email: string): Promise<Staff | null>;
+  create(staff: Partial<StaffResponseDTO>): Promise<StaffResponseDTO>;
+  findById(id: string | Schema.Types.ObjectId): Promise<StaffResponseDTO | null>;
+  findByShopId(shopId: string | Schema.Types.ObjectId): Promise<StaffResponseDTO[]>;
+  update(id: string | Schema.Types.ObjectId, staff: Partial<StaffResponseDTO>): Promise<StaffResponseDTO | null>;
+  getAllStaff(page: number, limit: number, shopId: string | Schema.Types.ObjectId): Promise<{ staff: StaffResponseDTO[]; total: number }>;
+  findByEmail(email: string): Promise<StaffResponseDTO | null>;
 }

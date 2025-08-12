@@ -31,7 +31,7 @@ import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 import toast from 'react-hot-toast'
 
 interface Shop {
-  _id: string
+  id: string
   name: string
   logo?: string
   email: string
@@ -50,9 +50,22 @@ interface Shop {
   description: string
 }
 
+interface ApiResponse {
+  success: boolean
+  data: Shop[]
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
+  message: string
+}
+
 const ShopDetails: React.FC = () => {
   const navigate = useNavigate()
   const [shops, setShops] = useState<Shop[]>([])
+  const [totalShops, setTotalShops] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
@@ -63,57 +76,74 @@ const ShopDetails: React.FC = () => {
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Fetch shops from API
   useEffect(() => {
     const fetchShops = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
-        const response = await getAllShops()
-        // Filter only verified shops
-        setShops(response.data?.filter((shop: Shop) => shop.isVerified === true) || [])
+        const response: ApiResponse = await getAllShops(currentPage, pageSize, true);
+        const verifiedShops = (response.data || []).filter(shop => shop.isVerified);
+        setShops(verifiedShops);
+        setTotalShops(response.pagination.total);
       } catch (error) {
-        console.error('Error fetching shops:', error)
+        console.error('Error fetching shops:', error);
+        toast.error('Failed to fetch shops', {
+          position: 'top-right',
+          duration: 4000,
+          style: {
+            background: '#FEE2E2',
+            color: '#DC2626',
+            border: '1px solid #F87171',
+          },
+        });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchShops()
-  }, [])
+    };
+    fetchShops();
+  }, [currentPage, pageSize]);
 
-  // Filter and sort data
   const filteredAndSortedData = useMemo(() => {
-    const filtered = shops.filter(
-      (shop) =>
-        shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shop.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        shop.address.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filtered = shops
+      .filter(shop => shop.isVerified) 
+      .filter((shop) => {
+        const name = shop.name || "";
+        const email = shop.email || "";
+        const address = shop.address || "";
+
+        const lowerSearch = searchTerm.toLowerCase();
+
+        return (
+          name.toLowerCase().includes(lowerSearch) ||
+          email.toLowerCase().includes(lowerSearch) ||
+          address.toLowerCase().includes(lowerSearch)
+        );
+      });
 
     if (sortBy) {
       filtered.sort((a, b) => {
-        const aValue = a[sortBy as keyof Shop]
-        const bValue = b[sortBy as keyof Shop]
+        const aValue = a[sortBy as keyof Shop];
+        const bValue = b[sortBy as keyof Shop];
 
         if (typeof aValue === "string" && typeof bValue === "string") {
-          return sortOrder === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
+          return sortOrder === "asc"
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
         }
 
         if (typeof aValue === "number" && typeof bValue === "number") {
-          return sortOrder === "asc" ? aValue - bValue : bValue - aValue
+          return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
         }
 
-        return 0
-      })
+        return 0;
+      });
     }
 
-    return filtered
-  }, [shops, searchTerm, sortBy, sortOrder])
+    return filtered;
+  }, [shops, searchTerm, sortBy, sortOrder]);
 
-  // Paginate data
   const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize
-    return filteredAndSortedData.slice(startIndex, startIndex + pageSize)
-  }, [filteredAndSortedData, currentPage, pageSize])
+    return filteredAndSortedData
+  }, [filteredAndSortedData])
 
   const handleMenuItemClick = (item: string) => {
     setActiveMenuItem(item)
@@ -132,6 +162,7 @@ const ShopDetails: React.FC = () => {
 
   const handleSearch = (query: string) => {
     setSearchTerm(query)
+    setCurrentPage(1)
   }
 
   const handleToggleActive = async (shopId: string, isActive: boolean): Promise<void> => {
@@ -143,7 +174,7 @@ const ShopDetails: React.FC = () => {
       if (response.success) {
         setShops(prevShops =>
           prevShops.map(shop =>
-            shop._id === shopId
+            shop.id === shopId
               ? { ...shop, isActive }
               : shop
           )
@@ -200,11 +231,12 @@ const ShopDetails: React.FC = () => {
   }
 
   const handlePageChange = (page: number, newPageSize?: number): void => {
-    setCurrentPage(page)
-    if (newPageSize) {
-      setPageSize(newPageSize)
+    setCurrentPage(page);
+    if (newPageSize && newPageSize !== pageSize) {
+      setPageSize(newPageSize);
+      setCurrentPage(1);
     }
-  }
+  };
 
   const columns: TableColumn<Shop>[] = [
     {
@@ -287,7 +319,7 @@ const ShopDetails: React.FC = () => {
       render: (_value: boolean, record: Shop) => (
         <Switch
           checked={record.isActive}
-          onCheckedChange={(checked: boolean) => handleToggleActive(record._id, checked)}
+          onCheckedChange={(checked: boolean) => handleToggleActive(record.id, checked)}
           disabled={loading}
           className="data-[state=checked]:bg-gray-900 dark:data-[state=checked]:bg-gray-100"
         />
@@ -464,7 +496,7 @@ const ShopDetails: React.FC = () => {
           {/* Pagination */}
           <Pagination
             current={currentPage}
-            total={filteredAndSortedData.length}
+            total={totalShops}
             pageSize={pageSize}
             onChange={handlePageChange}
             showSizeChanger

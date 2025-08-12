@@ -15,18 +15,19 @@ import { Switch } from "@/components/ui/switch"
 import { Search, Filter, Download, Phone, Mail, User } from 'lucide-react'
 import { useNavigate } from "react-router-dom"
 import { getAllUsers, updateUserStatus } from "@/services/admin/admin.service"
-import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary" ;
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
+import toast from "react-hot-toast"
 
 interface User {
-  _id: string
-  fullName: string
-  email: string
-  phone?: string
-  profileImage?: string
-  isActive: boolean
-  isGoogleUser: boolean
-  createdAt: string
-  updatedAt: string
+  _id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  profileImage?: string;
+  isActive: boolean;
+  isGoogleUser: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Define statistics interface
@@ -53,48 +54,95 @@ const CustomerDetails: React.FC = () => {
     fetchUsers()
   }, [])
 
-  const fetchUsers = async (): Promise<void> => {
-    setLoading(true)
-    try {
-      const response = await getAllUsers()
-      if (response.success && response.data) {
-        setUsers(response.data)
-      } else {
-        console.error('Failed to fetch users:', response.message)
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error)
-    } finally {
-      setLoading(false)
+ const fetchUsers = async (): Promise<void> => {
+  setLoading(true);
+  try {
+    const response = await getAllUsers();
+    if (response.success && response.data) {
+      const mappedUsers: User[] = response.data.map((user: any) => ({
+        _id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone || '',
+        profileImage: user.profileImage || '',
+        isActive: user.isActive,
+        isGoogleUser: user.isGoogleUser ?? false,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      }));
+      setUsers(mappedUsers);
+    } else {
+      console.error('Failed to fetch users:', response.message);
     }
+  } catch (error) {
+    console.error('Error fetching users:', error);
+  } finally {
+    setLoading(false);
   }
+};
 
   const handleToggleUserStatus = async (userId: string, currentStatus: boolean): Promise<void> => {
-    setUpdateLoading(userId)
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      console.error('Invalid user ID:', userId);
+      toast.error('Invalid user ID. Please try again.', {
+        position: 'top-right',
+        duration: 4000,
+        style: {
+          background: '#FEE2E2',
+          color: '#DC2626',
+          border: '1px solid #F87171'
+        }
+      });
+      return;
+    }
+    setUpdateLoading(userId);
     try {
-      const newStatus = !currentStatus
-      const response = await updateUserStatus(userId, newStatus)
-
+      const newStatus = !currentStatus;
+      const response = await updateUserStatus(userId, newStatus);
       if (response.success) {
-        // Update local state
         setUsers(prevUsers =>
           prevUsers.map(user =>
             user._id === userId
               ? { ...user, isActive: newStatus }
               : user
           )
-        )
-
-        console.log(`User ${newStatus ? 'activated' : 'blocked'} successfully`)
+        );
+        toast.success(`User ${newStatus ? 'activated' : 'blocked'} successfully!`, {
+          position: 'top-right',
+          duration: 4000,
+          style: {
+            background: newStatus ? '#D1FAE5' : '#FEF3C7',
+            color: newStatus ? '#059669' : '#D97706',
+            border: `1px solid ${newStatus ? '#34D399' : '#FBBF24'}`
+          }
+        });
       } else {
-        console.error('Failed to update user status:', response.message)
+        console.error('Failed to update user status:', response.message);
+        toast.error(response.message || 'Failed to update user status.', {
+          position: 'top-right',
+          duration: 4000,
+          style: {
+            background: '#FEE2E2',
+            color: '#DC2626',
+            border: '1px solid #F87171'
+          }
+        });
       }
     } catch (error) {
-      console.error('Error updating user status:', error)
+      console.error('Error updating user status:', error);
+      toast.error('An error occurred while updating user status.', {
+        position: 'top-right',
+        duration: 4000,
+        style: {
+          background: '#FEE2E2',
+          color: '#DC2626',
+          border: '1px solid #F87171'
+        }
+      });
     } finally {
-      setUpdateLoading(null)
+      setUpdateLoading(null);
     }
-  }
+  };
 
   // Filter and sort users data
   const filteredAndSortedData = useMemo(() => {
@@ -119,7 +167,7 @@ const CustomerDetails: React.FC = () => {
         }
 
         if (typeof aValue === "boolean" && typeof bValue === "boolean") {
-          return sortOrder === "asc" 
+          return sortOrder === "asc"
             ? (aValue === bValue ? 0 : aValue ? 1 : -1)
             : (aValue === bValue ? 0 : aValue ? -1 : 1)
         }
@@ -154,7 +202,7 @@ const CustomerDetails: React.FC = () => {
 
   const handleSearch = (query: string): void => {
     setSearchTerm(query)
-    setCurrentPage(1) // Reset to first page when searching
+    setCurrentPage(1) 
   }
 
   const handleSort = (key: string, order: "asc" | "desc"): void => {
@@ -166,7 +214,7 @@ const CustomerDetails: React.FC = () => {
     setCurrentPage(page)
     if (newPageSize) {
       setPageSize(newPageSize)
-      setCurrentPage(1) // Reset to first page when changing page size
+      setCurrentPage(1) 
     }
   }
 

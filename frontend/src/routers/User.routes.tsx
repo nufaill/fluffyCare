@@ -15,7 +15,9 @@ import { Services } from "@/pages/user/service";
 import EditPetPage from "@/pages/user/edit pet"
 import { ServiceDetails } from "@/pages/user/serviceDetails";
 import SlotsPage from "@/pages/user/User-slot"
+import AppointmentsPage from "@/pages/user/Appointment"
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
+import AppointmentDetailsPage from "@/components/user/AppointmentQuickActions";
 
 const UserRoutes = () => {
   return (
@@ -85,6 +87,24 @@ const UserRoutes = () => {
         element={
           <PrivateRoute userType="user">
             <PetDetails />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/appointments"
+        element={
+          <PrivateRoute userType="user">
+            <AppointmentsPage/>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/appointments/:appointmentId"
+        element={
+          <PrivateRoute userType="user">
+            <AppointmentDetailsPage/>
           </PrivateRoute>
         }
       />

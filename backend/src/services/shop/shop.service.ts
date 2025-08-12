@@ -1,6 +1,5 @@
 import { ShopRepository } from '../../repositories/shop.repository';
-import { ShopDocument } from '../../types/Shop.types';
-import { UpdateShopDTO } from '../../dto/shop.dto';
+import { UpdateShopDTO, ShopResponseDTO } from '../../dto/shop.dto';
 import { CustomError } from '../../util/CustomerError';
 import { HTTP_STATUS } from '../../shared/constant';
 import { IShopService } from '../../interfaces/serviceInterfaces/IShopService';
@@ -50,7 +49,7 @@ export class ShopService implements IShopService {
     }
   }
 
-  async getShopById(shopId: string): Promise<ShopDocument> {
+  async getShopById(shopId: string): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
     const shop = await this.shopRepository.findById(shopId);
     if (!shop) {
@@ -59,22 +58,33 @@ export class ShopService implements IShopService {
     return shop;
   }
 
-  async updateShop(shopId: string, updateData: UpdateShopDTO): Promise<ShopDocument> {
+  async updateShop(shopId: string, updateData: UpdateShopDTO): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
     this.validateShopData(updateData);
 
-    const shop = await this.shopRepository.updateShop(shopId, updateData);
-    if (!shop) {
+    const updatedShop = await this.shopRepository.updateShop(shopId, updateData);
+    if (!updatedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
-    return shop;
+    return updatedShop as ShopResponseDTO; 
   }
 
-  async getAllShops(): Promise<ShopDocument[]> {
-    return await this.shopRepository.getAllShops();
+  async getAllShops(page: number = 1, limit: number = 10): Promise<{ shops: ShopResponseDTO[], total: number, page: number, limit: number }> {
+    const skip = (page - 1) * limit;
+    const [shops, total] = await Promise.all([
+      this.shopRepository.getAllShops(skip, limit),
+      this.shopRepository.countDocuments({})
+    ]);
+
+    return {
+      shops,
+      total,
+      page,
+      limit
+    };
   }
 
-  async updateShopStatus(shopId: string, isActive: boolean): Promise<ShopDocument> {
+  async updateShopStatus(shopId: string, isActive: boolean): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
     const updatedShop = await this.shopRepository.updateShopStatus(shopId, isActive);
     if (!updatedShop) {
@@ -83,11 +93,22 @@ export class ShopService implements IShopService {
     return updatedShop;
   }
 
-  async getUnverifiedShops(): Promise<ShopDocument[]> {
-    return await this.shopRepository.getUnverifiedShops();
+  async getUnverifiedShops(page: number = 1, limit: number = 10): Promise<{ shops: ShopResponseDTO[], total: number, page: number, limit: number }> {
+    const skip = (page - 1) * limit;
+    const [shops, total] = await Promise.all([
+      this.shopRepository.getUnverifiedShops(skip, limit),
+      this.shopRepository.countDocuments({ isVerified: false })
+    ]);
+
+    return {
+      shops,
+      total,
+      page,
+      limit
+    };
   }
 
-  async approveShop(shopId: string): Promise<ShopDocument> {
+  async approveShop(shopId: string): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
     const approvedShop = await this.shopRepository.updateShopVerification(shopId, true);
     if (!approvedShop) {
@@ -96,7 +117,7 @@ export class ShopService implements IShopService {
     return approvedShop;
   }
 
-  async rejectShop(shopId: string): Promise<ShopDocument> {
+  async rejectShop(shopId: string): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
     const shop = await this.shopRepository.findById(shopId);
     if (!shop) {
@@ -112,7 +133,7 @@ export class ShopService implements IShopService {
     return updatedShop;
   }
 
-  async updateShopProfile(shopId: string, updateData: UpdateShopDTO): Promise<ShopDocument> {
+  async updateShopProfile(shopId: string, updateData: UpdateShopDTO): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
     this.validateShopData(updateData);
 
@@ -120,6 +141,6 @@ export class ShopService implements IShopService {
     if (!updatedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
-    return updatedShop;
+    return updatedShop as ShopResponseDTO; 
   }
 }

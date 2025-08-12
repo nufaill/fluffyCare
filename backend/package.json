@@ -37,6 +37,7 @@
     "react-hook-form": "^7.58.1",
     "react-redux": "^9.2.0",
     "reflect-metadata": "^0.2.2",
+    "stripe": "^18.3.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "tsyringe": "^4.10.0",

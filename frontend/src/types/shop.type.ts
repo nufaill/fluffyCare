@@ -5,6 +5,21 @@ export interface GeoLocation {
   coordinates: [number, number]; // [longitude, latitude]
 }
 
+export interface ShopAvailability {
+  workingDays: string[];
+  openingTime: string;
+  closingTime: string;
+  lunchBreak?: {
+    start?: string;
+    end?: string;
+  };
+  teaBreak?: {
+    start?: string;
+    end?: string;
+  };
+  customHolidays?: string[];
+}
+
 export interface Shop {
   _id: string;
   name: string;
@@ -17,11 +32,11 @@ export interface Shop {
   certificateUrl: string;
   location: GeoLocation;
   isVerified: boolean;
+  shopAvailability?: ShopAvailability;
   createdAt: string;
   updatedAt: string;
 }
 
-// Backend types for API responses
 export interface shopDocument extends Shop {
   isActive: boolean;
   password: string;

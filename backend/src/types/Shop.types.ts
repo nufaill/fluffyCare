@@ -6,7 +6,23 @@ export interface GeoLocation {
   coordinates: [number, number]; // [longitude, latitude]
 }
 
-//  Shop Create Data
+// Shop Availability
+export interface ShopAvailability {
+  workingDays: string[];
+  openingTime: string;
+  closingTime: string;
+  lunchBreak?: {
+    start?: string;
+    end?: string;
+  };
+  teaBreak?: {
+    start?: string;
+    end?: string;
+  };
+  customHolidays?: string[];
+}
+
+// Shop Create Data
 export interface CreateShopData {
   logo: string;
   name: string;
@@ -22,9 +38,10 @@ export interface CreateShopData {
   isVerified: boolean;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  shopAvailability?: ShopAvailability;
 }
 
-//  Mongoose Shop Document
+// Mongoose Shop Document
 export interface ShopDocument extends Document {
   _id: Types.ObjectId;
   logo: string;
@@ -41,6 +58,7 @@ export interface ShopDocument extends Document {
   isVerified: boolean;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
+  shopAvailability?: ShopAvailability;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,7 +69,7 @@ export interface ShopProfile {
   name: string;
   email: string;
   phone: string;
-  logo: string;
+  logo?: string;
   city: string;
   streetAddress: string;
   description?: string;
@@ -61,6 +79,7 @@ export interface ShopProfile {
   isVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
+  shopAvailability?: ShopAvailability;
 }
 
 // Auth Types
@@ -126,12 +145,11 @@ export interface Shop {
   isVerified: boolean;
   location: {
     type: 'Point';
-    coordinates: [number, number]; 
+    coordinates: [number, number];
   };
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  shopAvailability?: ShopAvailability;
 }
 
 export interface ShopDocument extends Shop, Document {

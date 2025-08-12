@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, ToggleLeft, ToggleRight, Search, Users } from "lucide-react";
+import { Plus, Edit, ToggleLeft, ToggleRight, Search, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,22 +17,24 @@ import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { PetCareLayout } from "@/components/layout/PetCareLayout";
-import { StaffService } from "@/services/shop/staff.service";
+import { StaffService } from "@/services/shop/staffService";
 import type { Staff } from "@/types/staff.type";
-import {Navbar} from '@/components/shop/Navbar';
+import { Navbar } from '@/components/shop/Navbar';
+import { Pagination } from '@/components/ui/Pagination';
 
 export default function StaffManagement() {
     const [staff, setStaff] = useState<Staff[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
     const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
-    const [staffToDelete, setStaffToDelete] = useState<string | null>(null);
     const [staffToToggle, setStaffToToggle] = useState<{ id: string; isActive: boolean } | null>(null);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [total, setTotal] = useState(0);
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -136,13 +138,22 @@ export default function StaffManagement() {
         setFormErrors(errors);
     };
 
-    // Load staff data on component mount
     useEffect(() => {
         const fetchStaff = async () => {
             try {
                 setInitialLoading(true);
-                const staffResponse = await StaffService.getStaff();
-                setStaff(staffResponse || []);
+                const response = await StaffService.getStaff(currentPage, pageSize);
+                const validStaff = response.staff.filter((s) => /^[0-9a-fA-F]{24}$/.test(s._id));
+                if (validStaff.length !== response.staff.length) {
+                    console.error('Invalid staff IDs detected:', response.staff);
+                    toast({
+                        title: "Warning",
+                        description: "Some staff data contains invalid IDs",
+                        variant: "destructive",
+                    });
+                }
+                setStaff(validStaff || []);
+                setTotal(response.total || 0);
             } catch (error) {
                 console.error("Error loading staff data:", error);
                 toast({
@@ -156,7 +167,14 @@ export default function StaffManagement() {
         };
 
         fetchStaff();
-    }, []);
+    }, [currentPage, pageSize]);
+
+    const handlePaginationChange = (page: number, newPageSize?: number) => {
+        setCurrentPage(page);
+        if (newPageSize) {
+            setPageSize(newPageSize);
+        }
+    };
 
     const filteredStaff = staff.filter(
         (member) =>
@@ -186,7 +204,7 @@ export default function StaffManagement() {
                 name: formData.name.trim(),
                 email: formData.email,
                 phone: formData.phone,
-                shopId: "", // This will be set by the backend from the authenticated shop
+                shopId: "", 
             };
             const response = await StaffService.createStaff(staffPayload);
             setStaff((prev) => [...prev, response.data]);
@@ -213,6 +231,16 @@ export default function StaffManagement() {
             toast({
                 title: "Validation Error",
                 description: "Please correct all form errors before submitting",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (!/^[0-9a-fA-F]{24}$/.test(editingStaff._id)) {
+            console.error('Invalid staff ID:', editingStaff._id);
+            toast({
+                title: "Error",
+                description: "Invalid staff ID format",
                 variant: "destructive",
             });
             return;
@@ -248,9 +276,19 @@ export default function StaffManagement() {
     const handleToggleStatus = async () => {
         if (!staffToToggle) return;
 
+        if (!/^[0-9a-fA-F]{24}$/.test(staffToToggle.id)) {
+            console.error('Invalid staff ID:', staffToToggle.id);
+            toast({
+                title: "Error",
+                description: "Invalid staff ID format",
+                variant: "destructive",
+            });
+            return;
+        }
+
         setLoading(true);
         try {
-            const response = await StaffService.toggleStaffStatus(staffToToggle.id);
+            const response = await StaffService.toggleStaffStatus(staffToToggle.id, staffToToggle.isActive);
             setStaff((prev) =>
                 prev.map((member) => (member._id === staffToToggle.id ? response.data : member)),
             );
@@ -260,36 +298,12 @@ export default function StaffManagement() {
                 title: "Success",
                 description: "Staff status updated successfully",
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error toggling status:", error);
+            const message = error.message || "Failed to update staff status";
             toast({
                 title: "Error",
-                description: "Failed to update staff status",
-                variant: "destructive",
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDeleteStaff = async () => {
-        if (!staffToDelete) return;
-
-        setLoading(true);
-        try {
-            await StaffService.deleteStaff(staffToDelete);
-            setStaff((prev) => prev.filter((member) => member._id !== staffToDelete));
-            setIsDeleteDialogOpen(false);
-            setStaffToDelete(null);
-            toast({
-                title: "Success",
-                description: "Staff member deleted successfully",
-            });
-        } catch (error) {
-            console.error("Error deleting staff:", error);
-            toast({
-                title: "Error",
-                description: "Failed to delete staff member",
+                description: message,
                 variant: "destructive",
             });
         } finally {
@@ -308,12 +322,16 @@ export default function StaffManagement() {
         setIsEditDialogOpen(true);
     };
 
-    const openDeleteDialog = (staffId: string) => {
-        setStaffToDelete(staffId);
-        setIsDeleteDialogOpen(true);
-    };
-
     const openToggleDialog = (staffId: string, isActive: boolean) => {
+        if (!/^[0-9a-fA-F]{24}$/.test(staffId)) {
+            console.error('Invalid staff ID:', staffId);
+            toast({
+                title: "Error",
+                description: "Invalid staff ID format",
+                variant: "destructive",
+            });
+            return;
+        }
         setStaffToToggle({ id: staffId, isActive });
         setIsToggleDialogOpen(true);
     };
@@ -333,7 +351,7 @@ export default function StaffManagement() {
 
     return (
         <PetCareLayout>
-            <Navbar/>
+            <Navbar />
             <div className="space-y-6">
                 {/* Header */}
                 <div className="mb-8">
@@ -351,7 +369,7 @@ export default function StaffManagement() {
                             <CardTitle className="text-sm font-medium text-gray-600">Total Staff</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{staff.length}</div>
+                            <div className="text-2xl font-bold">{total}</div>
                         </CardContent>
                     </Card>
                     <Card className="border-2 border-black">
@@ -512,14 +530,6 @@ export default function StaffManagement() {
                                                             <ToggleLeft className="h-4 w-4" />
                                                         )}
                                                     </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => openDeleteDialog(staffMember._id)}
-                                                        className="border-red-600 text-red-600 hover:bg-red-50"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -535,6 +545,18 @@ export default function StaffManagement() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Pagination */}
+                <Pagination
+                    current={currentPage}
+                    total={total}
+                    pageSize={pageSize}
+                    onChange={handlePaginationChange}
+                    showSizeChanger={true}
+                    showQuickJumper={true}
+                    showTotal={(total, range) => `Showing ${range[0]} to ${range[1]} of ${total} entries`}
+                    pageSizeOptions={[10, 20, 50, 100]}
+                />
 
                 {/* Edit Dialog */}
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -598,37 +620,6 @@ export default function StaffManagement() {
                                 className="bg-black text-white hover:bg-gray-800"
                             >
                                 {loading ? "Updating..." : "Update Staff"}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-
-                {/* Delete Confirmation Dialog */}
-                <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                    <DialogContent className="border-2 border-black">
-                        <DialogHeader>
-                            <DialogTitle>Confirm Delete</DialogTitle>
-                            <DialogDescription>
-                                Are you sure you want to delete this staff member? This action cannot be undone.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    setIsDeleteDialogOpen(false);
-                                    setStaffToDelete(null);
-                                }}
-                                className="border-2 border-black hover:bg-gray-100"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleDeleteStaff}
-                                disabled={loading}
-                                className="bg-red-600 text-white hover:bg-red-700"
-                            >
-                                {loading ? "Deleting..." : "Delete"}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

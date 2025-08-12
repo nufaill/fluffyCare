@@ -1,10 +1,11 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { Types } from 'mongoose';
 import { ShopRepository } from '../../repositories/shop.repository';
 import { JwtService } from '../jwt/jwt.service';
 import { EmailService } from '../emailService/email.service';
 import { OtpRepository } from '../../repositories/otp.repository';
-import {CreateShopData,ShopDocument, ShopAuthResponse,TokenPair,GeoLocation} from '../../types/Shop.types';
+import { CreateShopData, ShopDocument, ShopAuthResponse, TokenPair, GeoLocation } from '../../types/Shop.types';
 import { JwtPayload } from '../../types/auth.types';
 import { HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
@@ -12,6 +13,7 @@ import { generateOtp, sendOtpEmail } from '../../util/sendOtp';
 import PASSWORD_RESET_MAIL_CONTENT from '../../shared/mailTemplate';
 import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from '../../dto/auth.dto';
 import { IShopAuthService } from '../../interfaces/serviceInterfaces/IAuthService';
+import { ShopResponseDTO } from '../../dto/shop.dto';
 
 export class AuthService implements IShopAuthService {
   private readonly saltRounds = 12;
@@ -134,31 +136,28 @@ export class AuthService implements IShopAuthService {
 
     const shop = await this.shopRepository.createShop(shopData);
     console.log(`✅ [ShopAuthService] Shop created successfully:`, {
-      id: shop._id?.toString(),
+      id: shop.id,
       email: shop.email
     });
 
     // Generate tokens
-    const tokens = this.generateTokens(
-      shop._id?.toString() || shop.id?.toString(),
-      shop.email
-    );
+    const tokens = this.generateTokens(shop.id, shop.email);
 
     console.log(`🎟️ [ShopAuthService] Tokens generated successfully for ${email}`);
 
     return {
       success: true,
       shop: {
-        id: shop._id?.toString() || shop.id?.toString(),
+        id: shop.id,
         name: shop.name,
         email: shop.email,
         phone: shop.phone,
-        logo: shop.logo,
-        city: shop.city,
-        streetAddress: shop.streetAddress,
+        logo: shop.logo ?? '', 
+        city: shop.city ?? '',
+        streetAddress: shop.streetAddress ?? '', 
         description: shop.description,
-        certificateUrl: shop.certificateUrl,
-        location: shop.location,
+        certificateUrl: shop.certificateUrl ?? '', 
+        location: shop.location ?? { type: 'Point', coordinates: [0, 0] }, 
         isActive: shop.isActive,
         isVerified: shop.isVerified,
         createdAt: shop.createdAt,
@@ -207,7 +206,7 @@ export class AuthService implements IShopAuthService {
       console.log("🔧 [ShopAuthService] Starting login process...");
 
       const normalizedEmail = data.email.trim().toLowerCase();
-      const shop = await this.shopRepository.findByEmail(normalizedEmail);
+      const shop = await this.shopRepository.findByEmailWithPassword(normalizedEmail);
 
       if (!shop) {
         console.error("❌ [ShopAuthService] No shop found with email:", normalizedEmail);
@@ -228,21 +227,21 @@ export class AuthService implements IShopAuthService {
       }
 
       console.log("🎟️ [ShopAuthService] Generating JWT tokens...");
-      const tokens = this.generateTokens(shop._id.toString(), shop.email);
+      const tokens = this.generateTokens(shop.id, shop.email);
 
       return {
         success: true,
         shop: {
-          id: shop._id.toString(),
+          id: shop.id,
           name: shop.name,
           email: shop.email,
           phone: shop.phone,
-          logo: shop.logo,
-          city: shop.city,
-          streetAddress: shop.streetAddress,
+          logo: shop.logo ?? '',
+          city: shop.city ?? '',
+          streetAddress: shop.streetAddress ?? '',
           description: shop.description,
-          certificateUrl: shop.certificateUrl,
-          location: shop.location,
+          certificateUrl: shop.certificateUrl ?? '',
+          location: shop.location ?? { type: 'Point', coordinates: [0, 0] },
           isActive: shop.isActive,
           isVerified: shop.isVerified,
           createdAt: shop.createdAt,
@@ -278,7 +277,7 @@ export class AuthService implements IShopAuthService {
       }
 
       const newAccessToken = this.jwtService.generateAccessToken({
-        id: shop._id.toString(),
+        id: shop.id,
         email: shop.email,
         role: "shop"
       });
@@ -345,7 +344,7 @@ export class AuthService implements IShopAuthService {
 
       const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
-      await this.shopRepository.updatePasswordAndClearToken(shop._id, hashedPassword);
+      await this.shopRepository.updatePasswordAndClearToken(new Types.ObjectId(shop.id), hashedPassword);
 
       console.log("✅ [ShopAuthService] Password reset successfully");
     } catch (error) {
@@ -354,20 +353,19 @@ export class AuthService implements IShopAuthService {
     }
   }
 
-  async getShopById(id: string): Promise<Omit<ShopDocument, 'password'> | null> {
-    try {
-      console.log("🔧 [ShopAuthService] Fetching shop by ID:", id);
+  async getShopById(id: string): Promise<ShopResponseDTO | null> {
+  try {
+    console.log("🔧 [ShopAuthService] Fetching shop by ID:", id);
 
-      const shop = await this.shopRepository.findById(id);
-      if (!shop) {
-        return null;
-      }
-
-      const { password, ...shopWithoutPassword } = shop.toObject();
-      return shopWithoutPassword as Omit<ShopDocument, 'password'>;
-    } catch (error) {
-      console.error("❌ [ShopAuthService] Get shop by ID error:", error);
-      throw new CustomError('Failed to fetch shop profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    const shop = await this.shopRepository.findById(id);
+    if (!shop) {
+      return null;
     }
+
+    return shop;
+  } catch (error) {
+    console.error("❌ [ShopAuthService] Get shop by ID error:", error);
+    throw new CustomError('Failed to fetch shop profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
+}
 }
