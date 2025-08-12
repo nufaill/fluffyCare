@@ -5,9 +5,19 @@ import { IAppointment, AppointmentStatus, PaymentStatus, RequestStatus, PaymentM
 import { CreateAppointmentDto, UpdateAppointmentDto } from '../dto/appointment.dto';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../shared/constant';
 import { IAppointmentService } from '../interfaces/serviceInterfaces/IAppointmentService';
+import { getSocketHandler } from '../shared/socket.io-handler';
+
+interface TimeSlot {
+  shopId: string;
+  staffId: string;
+  slotDate: string;
+  startTime: string;
+  endTime: string;
+  status: 'booked';
+}
 
 export class AppointmentService implements IAppointmentService {
-  constructor(private appointmentRepository: AppointmentRepository) {}
+  constructor(private appointmentRepository: AppointmentRepository) { }
 
   private validateId(id: string): { isValid: boolean; objectId?: Types.ObjectId } {
     if (!Types.ObjectId.isValid(id)) {
@@ -44,113 +54,147 @@ export class AppointmentService implements IAppointmentService {
   }
 
   async createAppointment(appointmentData: CreateAppointmentDto): Promise<{
-    success: boolean;
-    data?: AppointmentDocument;
-    message: string;
-    statusCode: number;
-  }> {
-    try {
-      // Validate required fields
-      if (
-        !appointmentData.userId ||
-        !appointmentData.petId ||
-        !appointmentData.shopId ||
-        !appointmentData.staffId ||
-        !appointmentData.serviceId ||
-        !appointmentData.slotDetails ||
-        !appointmentData.paymentMethod
-      ) {
-        return {
-          success: false,
-          message: ERROR_MESSAGES.MISSING_REQUIRED_FIELD,
-          statusCode: HTTP_STATUS.BAD_REQUEST,
-        };
-      }
+  success: boolean;
+  data?: AppointmentDocument;
+  message: string;
+  statusCode: number;
+}> {
+  try {
+    // Extract slotDetails early for reuse
+    const slotDetails = appointmentData.slotDetails;
 
-      // Validate slotDetails format
-      if (!this.validateSlotDetails(appointmentData.slotDetails)) {
-        return {
-          success: false,
-          message: 'Invalid slotDetails format or values',
-          statusCode: HTTP_STATUS.BAD_REQUEST,
-        };
-      }
-
-      // Validate enums
-      if (!this.validateEnums(appointmentData)) {
-        return {
-          success: false,
-          message: ERROR_MESSAGES.INVALID_ENUM_VALUE,
-          statusCode: HTTP_STATUS.BAD_REQUEST,
-        };
-      }
-
-      // Validate IDs
-      const ids = [
-        appointmentData.userId,
-        appointmentData.petId,
-        appointmentData.shopId,
-        appointmentData.serviceId,
-        appointmentData.staffId,
-      ];
-      for (const id of ids) {
-        if (!Types.ObjectId.isValid(id)) {
-          return {
-            success: false,
-            message: ERROR_MESSAGES.INVALID_ID,
-            statusCode: HTTP_STATUS.BAD_REQUEST,
-          };
-        }
-      }
-
-      // Check if time slot is available
-      const isSlotAvailable = await this.appointmentRepository.isTimeSlotAvailable(
-        new Types.ObjectId(appointmentData.staffId),
-        appointmentData.slotDetails.date,
-        appointmentData.slotDetails.startTime,
-        appointmentData.slotDetails.endTime
-      );
-
-      if (!isSlotAvailable) {
-        return {
-          success: false,
-          message: ERROR_MESSAGES.SLOT_NOT_AVAILABLE,
-          statusCode: HTTP_STATUS.CONFLICT,
-        };
-      }
-
-      // Create appointment with default statuses
-      const appointmentToCreate: Partial<IAppointment> = {
-        ...appointmentData,
-        userId: new Types.ObjectId(appointmentData.userId),
-        petId: new Types.ObjectId(appointmentData.petId),
-        shopId: new Types.ObjectId(appointmentData.shopId),
-        staffId: new Types.ObjectId(appointmentData.staffId),
-        serviceId: new Types.ObjectId(appointmentData.serviceId),
-        slotDetails: appointmentData.slotDetails,
-        paymentStatus: appointmentData.paymentStatus || PaymentStatus.Pending,
-        appointmentStatus: appointmentData.appointmentStatus || AppointmentStatus.Pending,
-        requestStatus: appointmentData.requestStatus || RequestStatus.Pending,
-        paymentMethod: appointmentData.paymentMethod,
-      };
-
-      const appointment = await this.appointmentRepository.create(appointmentToCreate);
-
-      return {
-        success: true,
-        data: appointment,
-        message: "Appointment created successfully",
-        statusCode: HTTP_STATUS.CREATED,
-      };
-    } catch (error: any) {
-      console.error(error);
+    // Validate required fields
+    if (
+      !appointmentData.userId ||
+      !appointmentData.petId ||
+      !appointmentData.shopId ||
+      !appointmentData.staffId ||
+      !appointmentData.serviceId ||
+      !slotDetails.date ||
+      !slotDetails.startTime ||
+      !slotDetails.endTime ||
+      !appointmentData.paymentMethod
+    ) {
       return {
         success: false,
-        message: ERROR_MESSAGES.FAILED_TO_CREATE_APPOINTMENT,
-        statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        message: ERROR_MESSAGES.MISSING_REQUIRED_FIELD,
+        statusCode: HTTP_STATUS.BAD_REQUEST,
       };
     }
+
+    if (!this.validateSlotDetails(slotDetails)) {
+      return {
+        success: false,
+        message: 'Invalid slotDetails format or values',
+        statusCode: HTTP_STATUS.BAD_REQUEST,
+      };
+    }
+
+    // Validate enums
+    if (!this.validateEnums(appointmentData)) {
+      return {
+        success: false,
+        message: ERROR_MESSAGES.INVALID_ENUM_VALUE,
+        statusCode: HTTP_STATUS.BAD_REQUEST,
+      };
+    }
+
+    // Validate IDs
+    const ids = [
+      appointmentData.userId,
+      appointmentData.petId,
+      appointmentData.shopId,
+      appointmentData.serviceId,
+      appointmentData.staffId,
+    ];
+    for (const id of ids) {
+      if (!Types.ObjectId.isValid(id)) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ID,
+          statusCode: HTTP_STATUS.BAD_REQUEST,
+        };
+      }
+    }
+
+    const isSlotAvailable = await this.appointmentRepository.isTimeSlotAvailable(
+      new Types.ObjectId(appointmentData.staffId),
+      slotDetails.date,
+      slotDetails.startTime,
+      slotDetails.endTime
+    );
+
+    if (!isSlotAvailable) {
+      return {
+        success: false,
+        message: ERROR_MESSAGES.SLOT_NOT_AVAILABLE,
+        statusCode: HTTP_STATUS.CONFLICT,
+      };
+    }
+
+    const isSlotBooked = await this.appointmentRepository.isSlotBooked(
+      new Types.ObjectId(appointmentData.shopId),
+      new Types.ObjectId(appointmentData.staffId),
+      slotDetails.date,
+      slotDetails.startTime
+    );
+
+    if (isSlotBooked) {
+      return {
+        success: false,
+        message: 'This slot has just been booked by another user',
+        statusCode: HTTP_STATUS.CONFLICT,
+      };
+    }
+
+    const appointmentToCreate: Partial<IAppointment> = {
+      ...appointmentData,
+      userId: new Types.ObjectId(appointmentData.userId),
+      petId: new Types.ObjectId(appointmentData.petId),
+      shopId: new Types.ObjectId(appointmentData.shopId),
+      staffId: new Types.ObjectId(appointmentData.staffId),
+      serviceId: new Types.ObjectId(appointmentData.serviceId),
+      slotDetails: slotDetails,
+      paymentStatus: appointmentData.paymentStatus || PaymentStatus.Pending,
+      appointmentStatus: appointmentData.appointmentStatus || AppointmentStatus.Pending,
+      requestStatus: appointmentData.requestStatus || RequestStatus.Pending,
+      paymentMethod: appointmentData.paymentMethod,
+    };
+
+    const appointment: AppointmentDocument = await this.appointmentRepository.create(appointmentToCreate); 
+
+    try {
+      const socketHandler = getSocketHandler();
+      socketHandler.emitSlotBooked({
+        shopId: appointmentData.shopId,
+        staffId: appointmentData.staffId,
+        date: slotDetails.date,
+        startTime: slotDetails.startTime,
+        endTime: slotDetails.endTime,
+        appointmentId: appointment._id.toString(),
+        userId: appointmentData.userId
+      });
+      console.log('Socket event emitted for slot booking');
+    } catch (socketError) {
+      console.error('Failed to emit socket event for slot booking:', socketError);
+      // Continue execution - socket error shouldn't fail the booking
+    }
+
+    return {
+      success: true,
+      data: appointment,
+      message: "Appointment created successfully",
+      statusCode: HTTP_STATUS.CREATED,
+    };
+  } catch (error: any) {
+    console.error(error);
+    return {
+      success: false,
+      message: ERROR_MESSAGES.FAILED_TO_CREATE_APPOINTMENT,
+      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    };
   }
+}
 
   async updateAppointment(
     appointmentId: string,
@@ -292,8 +336,9 @@ export class AppointmentService implements IAppointmentService {
       }
 
       const appointmentObjectId = idValidation.objectId!;
-      const existingAppointment = await this.appointmentRepository.findById(appointmentObjectId);
-      if (!existingAppointment) {
+      const canceledAppointment: AppointmentDocument | null = await this.appointmentRepository.cancel(appointmentObjectId);
+
+      if (!canceledAppointment) {
         return {
           success: false,
           message: ERROR_MESSAGES.APPOINTMENT_NOT_FOUND,
@@ -301,28 +346,25 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      if (existingAppointment.appointmentStatus === AppointmentStatus.Canceled) {
-        return {
-          success: false,
-          message: 'Appointment is already canceled',
-          statusCode: HTTP_STATUS.BAD_REQUEST
-        };
+      try {
+        const socketHandler = getSocketHandler();
+        socketHandler.emitSlotCanceled({
+          shopId: canceledAppointment.shopId.toString(),
+          staffId: canceledAppointment.staffId.toString(),
+          date: canceledAppointment.slotDetails.date,
+          startTime: canceledAppointment.slotDetails.startTime,
+          endTime: canceledAppointment.slotDetails.endTime,
+          appointmentId: canceledAppointment._id.toString()
+        });
+        console.log('Socket event emitted for slot cancellation');
+      } catch (socketError) {
+        console.error('Failed to emit socket event for slot cancellation:', socketError);
       }
-
-      if (existingAppointment.appointmentStatus === AppointmentStatus.Completed) {
-        return {
-          success: false,
-          message: 'Cannot cancel completed appointment',
-          statusCode: HTTP_STATUS.BAD_REQUEST
-        };
-      }
-
-      const canceledAppointment = await this.appointmentRepository.cancel(appointmentObjectId);
 
       return {
         success: true,
         data: canceledAppointment,
-        message: 'Appointment canceled successfully',
+        message: 'Appointment cancelled successfully',
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
@@ -698,7 +740,7 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      if (existingAppointment.appointmentStatus === AppointmentStatus.Booked) {
+      if (existingAppointment.appointmentStatus === AppointmentStatus.Confirmed) {  // Changed from Booked
         return {
           success: false,
           message: 'Appointment is already confirmed',
@@ -707,8 +749,8 @@ export class AppointmentService implements IAppointmentService {
       }
 
       const updateResult = await this.appointmentRepository.update(appointmentObjectId, {
-        appointmentStatus: AppointmentStatus.Booked,
-        requestStatus: RequestStatus.Completed
+        appointmentStatus: AppointmentStatus.Confirmed,  // Changed from Booked
+        requestStatus: RequestStatus.Approved  // Changed from Completed
       });
 
       return {
@@ -764,7 +806,7 @@ export class AppointmentService implements IAppointmentService {
 
       const updateResult = await this.appointmentRepository.update(appointmentObjectId, {
         appointmentStatus: AppointmentStatus.Completed,
-        requestStatus: RequestStatus.Completed
+        requestStatus: RequestStatus.Approved 
       });
 
       return {
@@ -792,6 +834,97 @@ export class AppointmentService implements IAppointmentService {
       return await this.appointmentRepository.getAppointmentsCount(shopId, startDate, endDate);
     } catch (error: any) {
       throw new Error(ERROR_MESSAGES.FAILED_TO_GET_APPOINTMENTS_COUNT);
+    }
+  }
+  async getAvailableSlots(
+    shopId: string,
+    date: string,
+    staffId?: string
+  ): Promise<{
+    success: boolean;
+    data?: TimeSlot[];
+    message: string;
+    statusCode: number;
+  }> {
+    try {
+      // Validate shopId
+      if (!Types.ObjectId.isValid(shopId)) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ID,
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      // Validate date format (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        return {
+          success: false,
+          message: 'Invalid date format. Use YYYY-MM-DD',
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      // Validate staffId if provided
+      if (staffId && !Types.ObjectId.isValid(staffId)) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ID,
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      // Build filter for booked slots
+      const filter: any = {
+        shopId: new Types.ObjectId(shopId),
+        'slotDetails.date': date,
+        appointmentStatus: { $ne: AppointmentStatus.Cancelled } // Exclude canceled appointments
+      };
+
+      // Add staff filter if provided
+      if (staffId) {
+        filter.staffId = new Types.ObjectId(staffId);
+      }
+
+      // Get all booked slots for the date
+      const bookedSlots = await this.appointmentRepository.findBookedSlots(filter);
+
+      // Create a Set of booked slot identifiers for quick lookup
+      const bookedSlotKeys = new Set(
+        bookedSlots.map(slot =>
+          `${slot.staffId}-${slot.slotDetails.date}-${slot.slotDetails.startTime}`
+        )
+      );
+
+      return {
+        success: true,
+        data: Array.from(bookedSlotKeys).map(key => {
+          const [staffId, date, startTime] = key.split('-');
+          const slot = bookedSlots.find(s =>
+            s.staffId.toString() === staffId &&
+            s.slotDetails.date === date &&
+            s.slotDetails.startTime === startTime
+          );
+          return {
+            shopId,
+            staffId,
+            slotDate: date,
+            startTime,
+            endTime: slot?.slotDetails.endTime || '',
+            status: 'booked' as const
+          };
+        }),
+        message: 'Booked slots retrieved successfully',
+        statusCode: HTTP_STATUS.OK
+      };
+    } catch (error: any) {
+      console.error('Get available slots error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve available slots',
+        statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR
+      };
     }
   }
 }

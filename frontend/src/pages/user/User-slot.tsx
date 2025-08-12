@@ -17,6 +17,7 @@ import type { RootState } from "@/redux/store"
 import { SlotCalendar } from "@/components/user/slot-calendar"
 import { EnhancedTimeSlotGenerator } from "@/components/user/TimeSlotGenerator"
 import { Badge } from "@/components/ui/Badge"
+import { useSocket } from "@/hooks/useSocket"
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
@@ -25,7 +26,15 @@ interface TimeSlotCategory {
   startHour: number
   endHour: number
 }
-
+interface BookingSuccessData {
+  appointmentId: string;
+  slotDetails: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  };
+  staffId: string;
+}
 interface Staff {
   id: string
   name: string
@@ -54,15 +63,18 @@ interface Service {
 }
 
 interface TimeSlot {
-  shopId: string
-  staffId: string
-  slotDate: string
-  startTime: string
-  endTime: string
-  durationInMinutes: number
-  status: "available" | "booked" | "break" | "lunch" | "unavailable"
-  staffName: string
-  slotIndex: number
+  _id?: string;
+  shopId: string;
+  staffId: string;
+  slotDate: string;
+  startTime: string;
+  endTime: string;
+  durationInMinutes: number;
+  status: "available" | "booked" | "break" | "lunch" | "unavailable";
+  staffName: string;
+  slotIndex: number;
+  isBooked: boolean;
+  isActive: boolean;
 }
 
 interface Holiday {
@@ -108,6 +120,31 @@ export default function UserSlot() {
     const userId = user?._id || user?.id || ""
     return userId.trim()
   }
+  const { socket, isConnected } = useSocket({
+    shopId: shopId || '',
+    onSlotBooked: (data) => {
+      console.log('Real-time slot booked:', data);
+
+      // If the booked slot matches currently selected slots, clear the selection
+      setSelectedSlots(prev =>
+        prev.filter(slot =>
+          !(slot.staffId === data.staffId &&
+            slot.slotDate === data.date &&
+            slot.startTime === data.startTime)
+        )
+      );
+
+      toast('A slot was just booked by another user', {
+        duration: 3000,
+        style: { background: '#2196f3', color: '#fff' }, // Blue background for info style
+      });
+    },
+    onSlotCanceled: (data) => {
+      console.log('Real-time slot canceled:', data);
+      toast.success('A slot just became available!', { duration: 3000 });
+    },
+    enabled: !!shopId
+  });
 
   const isUserLoggedIn = (): boolean => {
     const userId = getUserId()
@@ -197,7 +234,7 @@ export default function UserSlot() {
 
   const handleBookNow = () => {
     const validation = validateBookingData()
-    
+
     if (!validation.isValid) {
       if (validation.error?.includes("log in")) {
         setIsLoginPromptOpen(true)
@@ -221,7 +258,7 @@ export default function UserSlot() {
       returnUrl: window.location.pathname
     }
     localStorage.setItem('pendingBooking', JSON.stringify(bookingState))
-    
+
     // Redirect to login page
     navigate('/login')
   }
@@ -230,15 +267,30 @@ export default function UserSlot() {
     setSelectedPetId(petId)
   }
 
-  const handlePaymentSuccess = () => {
-    toast.success("Payment successful!")
-    setIsPaymentModalOpen(false)
-    
+  const handlePaymentSuccess = (paymentIntentId: string) => {
+    toast.success("Payment successful!");
+    setIsPaymentModalOpen(false);
+
+    // Clear selected slots immediately (optimistic update)
+    if (selectedSlots.length > 0) {
+      const bookedSlot = selectedSlots[0];
+      setSelectedSlots([]);
+
+      console.log('Booking successful, slot removed from UI:', {
+        staffId: bookedSlot.staffId,
+        date: bookedSlot.slotDate,
+        startTime: bookedSlot.startTime,
+      });
+    }
+
     // Clear any pending booking state
-    localStorage.removeItem('pendingBooking')
-    
-    navigate("/appointments")
-  }
+    localStorage.removeItem('pendingBooking');
+
+    // Navigate to appointments with a slight delay to show the success message
+    setTimeout(() => {
+      navigate("/appointments");
+    }, 1000);
+  };
 
   const handlePaymentCancel = () => {
     setIsPaymentModalOpen(false)
@@ -252,6 +304,12 @@ export default function UserSlot() {
   }
 
   const handleSlotSelect = (slot: TimeSlot) => {
+    // Check if slot is available (additional safety check)
+    if (slot.status !== "available") {
+      toast.error("This slot is no longer available");
+      return;
+    }
+
     setSelectedSlots((prev) => {
       const exists = prev.find(
         (s) => s.slotDate === slot.slotDate && s.startTime === slot.startTime && s.staffId === slot.staffId,
@@ -264,6 +322,7 @@ export default function UserSlot() {
       return [slot]
     })
   }
+
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
@@ -325,7 +384,15 @@ export default function UserSlot() {
                   </div>
                   <div>
                     <h1 className="text-2xl font-bold">Book Your Appointment</h1>
-                    <p className="text-gray-300 text-lg font-medium">{formatDate(selectedDate)}</p>
+                    <p className="text-gray-300 text-lg font-medium">
+                      {formatDate(selectedDate)}
+                      {isConnected && (
+                        <span className="ml-3 inline-flex items-center text-sm">
+                          <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                          Live updates
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
                 <Button

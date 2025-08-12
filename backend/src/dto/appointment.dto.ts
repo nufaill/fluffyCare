@@ -6,10 +6,12 @@ export interface CreateAppointmentDto {
   shopId: string;
   serviceId: string;
   staffId: string;
-  appointmentDate: string; // Keep this field
-  startTime: string; // Keep this field  
-  endTime: string; // Keep this field
-  paymentDetails?: { // Make this optional or change to paymentMethod
+  slotDetails: { 
+    startTime: string;
+    endTime: string;
+    date: string;
+  };
+  paymentDetails?: {
     paymentIntentId: string;
     amount: number;
     currency: string;
@@ -17,7 +19,7 @@ export interface CreateAppointmentDto {
     method: PaymentMethod;
     paidAt: Date;
   };
-  appointmentStatus: AppointmentStatus; // Use correct field name
+  appointmentStatus: AppointmentStatus; 
   paymentStatus: PaymentStatus;
   requestStatus: RequestStatus;
   paymentMethod: PaymentMethod;

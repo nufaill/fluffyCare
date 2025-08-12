@@ -33,8 +33,8 @@ export class AppointmentRepository implements IAppointmentRepository {
       return await Appointment.findByIdAndUpdate(
         appointmentId,
         {
-          appointmentStatus: AppointmentStatus.Canceled,
-          requestStatus: RequestStatus.Canceled
+          appointmentStatus: AppointmentStatus.Cancelled, 
+          requestStatus: RequestStatus.Rejected 
         },
         { new: true }
       ).exec();
@@ -140,21 +140,21 @@ export class AppointmentRepository implements IAppointmentRepository {
     }
   }
 
-  async getAppointmentsCount(
-    shopId: Types.ObjectId,
-    startDate: Date,
-    endDate: Date
-  ): Promise<number> {
-    try {
-      return await Appointment.countDocuments({
-        shopId,
-        createdAt: { $gte: startDate, $lte: endDate },
-        appointmentStatus: { $ne: AppointmentStatus.Canceled }
-      }).exec();
-    } catch (error) {
-      throw new Error(`Failed to get appointments count: ${error}`);
-    }
+async getAppointmentsCount(
+  shopId: Types.ObjectId,
+  startDate: Date,
+  endDate: Date
+): Promise<number> {
+  try {
+    return await Appointment.countDocuments({
+      shopId,
+      createdAt: { $gte: startDate, $lte: endDate },
+      appointmentStatus: { $ne: AppointmentStatus.Cancelled } 
+    }).exec();
+  } catch (error) {
+    throw new Error(`Failed to get appointments count: ${error}`);
   }
+}
 
   async isTimeSlotAvailable(
     staffId: Types.ObjectId,
@@ -167,7 +167,7 @@ export class AppointmentRepository implements IAppointmentRepository {
       const filter: any = {
         staffId,
         'slotDetails.date': date,
-        appointmentStatus: { $ne: AppointmentStatus.Canceled }
+        appointmentStatus: { $ne: AppointmentStatus.Cancelled }
       };
 
       if (excludeAppointmentId) {
@@ -196,6 +196,36 @@ export class AppointmentRepository implements IAppointmentRepository {
       return !!result;
     } catch (error) {
       throw new Error(`Failed to delete appointment: ${error}`);
+    }
+  }
+  async findBookedSlots(filter: any): Promise<AppointmentDocument[]> {
+    try {
+      return await Appointment.find(filter)
+        .select('staffId slotDetails appointmentStatus')
+        .lean()
+        .exec();
+    } catch (error) {
+      throw new Error(`Failed to find booked slots: ${error}`);
+    }
+  }
+  async isSlotBooked(
+    shopId: Types.ObjectId,
+    staffId: Types.ObjectId,
+    date: string,
+    startTime: string
+  ): Promise<boolean> {
+    try {
+      const existingBooking = await Appointment.findOne({
+        shopId,
+        staffId,
+        'slotDetails.date': date,
+        'slotDetails.startTime': startTime,
+        appointmentStatus: { $ne: AppointmentStatus.Cancelled }
+      }).exec();
+
+      return !!existingBooking;
+    } catch (error) {
+      throw new Error(`Failed to check slot booking status: ${error}`);
     }
   }
 }

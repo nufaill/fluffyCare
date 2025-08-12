@@ -1,22 +1,36 @@
-
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Clock, User, Coffee, Sun, Moon, Calendar, Filter, Users, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/Badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useSocket } from "@/hooks/useSocket"
+import Useraxios from "@/api/user.axios"
+import { toast } from "react-hot-toast"
 
 interface TimeSlot {
+  _id?: string;
+  shopId: string;
+  staffId: string;
+  slotDate: string;
+  startTime: string;
+  endTime: string;
+  durationInMinutes: number;
+  status: "available" | "booked" | "break" | "lunch" | "unavailable";
+  staffName: string;
+  slotIndex: number;
+  isBooked: boolean;
+  isActive: boolean;
+}
+
+interface BookedSlot {
   shopId: string
   staffId: string
   slotDate: string
   startTime: string
   endTime: string
-  durationInMinutes: number
-  status: "available" | "booked" | "break" | "lunch" | "unavailable"
-  staffName: string
-  slotIndex: number
+  status: "booked"
 }
 
 interface ShopAvailability {
@@ -110,10 +124,185 @@ export function EnhancedTimeSlotGenerator({
   activeCategory = "Morning",
 }: TimeSlotGeneratorProps) {
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
+  const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([])
   const [config, setConfig] = useState<SlotGenerationConfig>(DEFAULT_CONFIG)
   const [viewMode, setViewMode] = useState<"grid" | "staff">("staff")
   const [selectedStaff, setSelectedStaff] = useState<string | "all">("all")
   const [currentCategory, setCurrentCategory] = useState(activeCategory)
+
+  // Add function to mark a slot as booked immediately
+  const markSlotAsBooked = useCallback((slot: TimeSlot) => {
+    console.log('Marking slot as booked:', {
+      staffId: slot.staffId,
+      date: slot.slotDate,
+      startTime: slot.startTime
+    });
+
+    // Update timeSlots to mark this slot as booked
+    setTimeSlots(prev => 
+      prev.map(existingSlot => {
+        if (existingSlot.staffId === slot.staffId && 
+            existingSlot.slotDate === slot.slotDate && 
+            existingSlot.startTime === slot.startTime) {
+          return {
+            ...existingSlot,
+            status: "booked" as const,
+            isBooked: true
+          };
+        }
+        return existingSlot;
+      })
+    );
+
+    // Also add to bookedSlots state
+    const newBookedSlot: BookedSlot = {
+      shopId: slot.shopId,
+      staffId: slot.staffId,
+      slotDate: slot.slotDate,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      status: "booked"
+    };
+
+    setBookedSlots(prev => {
+      // Check if slot already exists
+      const exists = prev.some(bookedSlot =>
+        bookedSlot.shopId === slot.shopId &&
+        bookedSlot.staffId === slot.staffId &&
+        bookedSlot.slotDate === slot.slotDate &&
+        bookedSlot.startTime === slot.startTime
+      );
+
+      if (!exists) {
+        return [...prev, newBookedSlot];
+      }
+      return prev;
+    });
+  }, []);
+
+  // Socket.IO integration for real-time updates
+  const { socket, isConnected } = useSocket({
+    shopId,
+    onSlotBooked: (data) => {
+      console.log('Slot booked event received:', data);
+
+      // Add the booked slot to our bookedSlots state
+      const newBookedSlot: BookedSlot = {
+        shopId: data.shopId,
+        staffId: data.staffId,
+        slotDate: data.date,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        status: "booked"
+      };
+
+      setBookedSlots(prev => {
+        // Check if slot already exists
+        const exists = prev.some(slot =>
+          slot.shopId === data.shopId &&
+          slot.staffId === data.staffId &&
+          slot.slotDate === data.date &&
+          slot.startTime === data.startTime
+        );
+
+        if (!exists) {
+          return [...prev, newBookedSlot];
+        }
+        return prev;
+      });
+
+      // Update the timeSlots state to mark this slot as booked
+      setTimeSlots(prev => 
+        prev.map(slot => {
+          if (slot.staffId === data.staffId && 
+              slot.slotDate === data.date && 
+              slot.startTime === data.startTime) {
+            return {
+              ...slot,
+              status: "booked" as const,
+              isBooked: true
+            };
+          }
+          return slot;
+        })
+      );
+
+      // Show toast notification
+      if (data.shopId === shopId) {
+        toast.success('A slot was just booked!', { duration: 2000 });
+      }
+    },
+    onSlotCanceled: (data) => {
+      console.log('Slot canceled event received:', data);
+
+      // Remove the canceled slot from bookedSlots state
+      setBookedSlots(prev =>
+        prev.filter(slot =>
+          !(slot.shopId === data.shopId &&
+            slot.staffId === data.staffId &&
+            slot.slotDate === data.date &&
+            slot.startTime === data.startTime)
+        )
+      );
+
+      // Update the timeSlots state to mark this slot as available
+      setTimeSlots(prev => 
+        prev.map(slot => {
+          if (slot.staffId === data.staffId && 
+              slot.slotDate === data.date && 
+              slot.startTime === data.startTime) {
+            return {
+              ...slot,
+              status: "available" as const,
+              isBooked: false
+            };
+          }
+          return slot;
+        })
+      );
+
+      const toastInfo = (msg: string) => toast(msg, { style: { background: '#2196f3', color: '#fff' } });
+
+      // Show toast notification
+      if (data.shopId === shopId) {
+        toastInfo('A slot became available!');
+      }
+    },
+    enabled: true
+  });
+
+  // Expose the markSlotAsBooked function so parent can call it
+  useEffect(() => {
+    // Store the function reference so parent component can access it
+    (window as any).markSlotAsBooked = markSlotAsBooked;
+    
+    return () => {
+      if ((window as any).markSlotAsBooked) {
+        delete (window as any).markSlotAsBooked;
+      }
+    };
+  }, [markSlotAsBooked]);
+
+  // Fetch booked slots from API on component mount and date change
+  useEffect(() => {
+    const fetchBookedSlots = async () => {
+      try {
+        const dateStr = selectedDate.toISOString().split('T')[0];
+        const response = await Useraxios.get(`/appointments/booked-slots/${shopId}?date=${dateStr}`);
+
+        if (response.data.success) {
+          setBookedSlots(response.data.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch booked slots:', error);
+        // Don't show error toast as this is background functionality
+      }
+    };
+
+    if (shopId) {
+      fetchBookedSlots();
+    }
+  }, [shopId, selectedDate]);
 
   const timeToMinutes = (timeStr: string): number => {
     const [h, m] = timeStr.split(":").map(Number)
@@ -152,6 +341,15 @@ export function EnhancedTimeSlotGenerator({
     return { overlaps: false }
   }
 
+  // Check if a slot is booked by comparing with bookedSlots state
+  const isSlotBooked = (staffId: string, date: string, startTime: string): boolean => {
+    return bookedSlots.some(bookedSlot =>
+      bookedSlot.staffId === staffId &&
+      bookedSlot.slotDate === date &&
+      bookedSlot.startTime === startTime
+    );
+  };
+
   const generateStaffSlots = (staffMember: Staff): TimeSlot[] => {
     const dateStr = selectedDate.toISOString().split("T")[0]
     const dayName = selectedDate.toLocaleDateString("en-US", { weekday: "long" })
@@ -184,17 +382,25 @@ export function EnhancedTimeSlotGenerator({
       const end = current + duration
       let status: TimeSlot["status"] = "available"
 
-      const breakCheck = overlapsWithBreak(current, end)
-      if (breakCheck.overlaps && !config.allowBookingDuringBreaks) {
-        status = breakCheck.breakType === "lunch" ? "lunch" : "break"
-      }
+      // Check if slot is already booked
+      if (isSlotBooked(staffMember.id, dateStr, minutesToTime(current))) {
+        status = "booked";
+      } else {
+        // Check for breaks only if not booked
+        const breakCheck = overlapsWithBreak(current, end)
+        if (breakCheck.overlaps && !config.allowBookingDuringBreaks) {
+          status = breakCheck.breakType === "lunch" ? "lunch" : "break"
+        }
 
-      if (selectedDate.toDateString() === new Date().toDateString()) {
-        const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
-        if (current <= nowMin) status = "unavailable"
+        // Check if time has passed (only for today)
+        if (selectedDate.toDateString() === new Date().toDateString()) {
+          const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
+          if (current <= nowMin) status = "unavailable"
+        }
       }
 
       slots.push({
+        _id: `${staffMember.id}-${dateStr}-${minutesToTime(current)}`, 
         shopId,
         staffId: staffMember.id,
         slotDate: dateStr,
@@ -204,7 +410,9 @@ export function EnhancedTimeSlotGenerator({
         status,
         staffName: staffMember.name,
         slotIndex: index,
-      })
+        isBooked: status === "booked",
+        isActive: staffMember.isActive,
+      });
 
       current += duration + buffer
       index++
@@ -237,15 +445,20 @@ export function EnhancedTimeSlotGenerator({
     })
   }
 
+  // Filter slots to show only available ones (hide booked slots)
+  const availableSlots = useMemo(() => {
+    return timeSlots.filter(slot => slot.status !== "booked");
+  }, [timeSlots]);
+
   const filteredSlots = useMemo(() => {
     console.log("Filtering slots:", {
-      totalSlots: timeSlots.length,
+      totalSlots: availableSlots.length,
       selectedStaff,
       currentCategory,
-      staffIds: timeSlots.map((s) => ({ id: s.staffId, name: s.staffName })),
+      staffIds: availableSlots.map((s) => ({ id: s.staffId, name: s.staffName })),
     })
 
-    let s = timeSlots
+    let s = availableSlots
 
     if (currentCategory) {
       s = filterSlotsByCategory(s, currentCategory)
@@ -259,56 +472,56 @@ export function EnhancedTimeSlotGenerator({
     }
 
     return s
-  }, [timeSlots, currentCategory, selectedStaff])
+  }, [availableSlots, currentCategory, selectedStaff])
 
   useEffect(() => {
     const slots = generateAllTimeSlots()
     setTimeSlots(slots)
-  }, [staff, selectedDate, shopAvailability, service])
+  }, [staff, selectedDate, shopAvailability, service, bookedSlots])
 
   useEffect(() => {
     setCurrentCategory(activeCategory)
   }, [activeCategory])
 
-const renderSlotButton = (slot: TimeSlot) => {
-  const isSelected = selectedSlots.some(
-    (s) => s.slotDate === slot.slotDate && s.startTime === slot.startTime && s.staffId === slot.staffId,
-  )
+  const renderSlotButton = (slot: TimeSlot) => {
+    const isSelected = selectedSlots.some(
+      (s) => s.slotDate === slot.slotDate && s.startTime === slot.startTime && s.staffId === slot.staffId,
+    )
 
-  let buttonStyles = "border-2 rounded-xl font-semibold transition-all duration-200 "
-  let buttonContent = ""
-  let disabled = false
+    let buttonStyles = "border-2 rounded-xl font-semibold transition-all duration-200 "
+    let buttonContent = ""
+    let disabled = false
 
-  if (slot.status === "available") {
-    // Show staff name only in grid view
-    buttonContent = viewMode === "grid" 
-      ? `${slot.startTime} - ${slot.endTime} (${slot.staffName})`
-      : `${slot.startTime} - ${slot.endTime}`
-    buttonStyles += isSelected
-      ? "bg-black text-white border-black hover:bg-gray-800"
-      : "bg-white text-black border-gray-300 hover:border-black hover:bg-gray-50"
-  } else if (slot.status === "lunch" || slot.status === "break") {
-    buttonStyles += "bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed"
-    buttonContent = slot.status === "lunch" ? "Lunch Break" : "Tea Break"
-    disabled = true
-  } else {
-    buttonStyles += "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
-    buttonContent = "Unavailable"
-    disabled = true
+    if (slot.status === "available") {
+      // Show staff name only in grid view
+      buttonContent = viewMode === "grid"
+        ? `${slot.startTime} - ${slot.endTime} (${slot.staffName})`
+        : `${slot.startTime} - ${slot.endTime}`
+      buttonStyles += isSelected
+        ? "bg-black text-white border-black hover:bg-gray-800"
+        : "bg-white text-black border-gray-300 hover:border-black hover:bg-gray-50"
+    } else if (slot.status === "lunch" || slot.status === "break") {
+      buttonStyles += "bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed"
+      buttonContent = slot.status === "lunch" ? "Lunch Break" : "Tea Break"
+      disabled = true
+    } else {
+      buttonStyles += "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
+      buttonContent = "Unavailable"
+      disabled = true
+    }
+
+    return (
+      <Button
+        key={`${slot.staffId}-${slot.slotDate}-${slot.startTime}`}
+        className={buttonStyles}
+        onClick={() => onSlotSelect(slot)}
+        disabled={disabled}
+      >
+        {isSelected && <CheckCircle2 className="w-4 h-4 mr-2" />}
+        {buttonContent}
+      </Button>
+    )
   }
-
-  return (
-    <Button
-      key={`${slot.staffId}-${slot.slotDate}-${slot.startTime}`}
-      className={buttonStyles}
-      onClick={() => onSlotSelect(slot)}
-      disabled={disabled}
-    >
-      {isSelected && <CheckCircle2 className="w-4 h-4 mr-2" />}
-      {buttonContent}
-    </Button>
-  )
-}
 
   const slotsByStaff = new Map<string, TimeSlot[]>()
   filteredSlots.forEach((slot) => {
@@ -318,7 +531,7 @@ const renderSlotButton = (slot: TimeSlot) => {
 
   const slotsByCategory = new Map<string, TimeSlot[]>()
   TIME_CATEGORIES.forEach((cat) => {
-    slotsByCategory.set(cat.label, filterSlotsByCategory(timeSlots, cat.label))
+    slotsByCategory.set(cat.label, filterSlotsByCategory(availableSlots, cat.label))
   })
 
   const renderStaffView = () => (
@@ -408,7 +621,7 @@ const renderSlotButton = (slot: TimeSlot) => {
 
   const activeStaff = staff.filter((s) => s.isActive)
   const totalSlots = filteredSlots.length
-  const availableSlots = filteredSlots.filter((s) => s.status === "available").length
+  const availableSlotsCount = filteredSlots.filter((s) => s.status === "available").length
   const serviceDuration = getServiceDurationInMinutes()
 
   return (
@@ -424,12 +637,18 @@ const renderSlotButton = (slot: TimeSlot) => {
                 <h2 className="text-2xl font-bold">Available Time Slots</h2>
                 <p className="text-gray-300 text-sm">
                   Choose your preferred appointment time ({serviceDuration} min sessions)
+                  {isConnected && (
+                    <span className="ml-2 inline-flex items-center">
+                      <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                      Live updates
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <Badge variant="secondary" className="bg-green-500 text-white font-semibold px-4 py-2">
-                {availableSlots} of {totalSlots} available
+                {availableSlotsCount} of {totalSlots} available
               </Badge>
               <Badge variant="secondary" className="bg-green-500 text-white font-semibold px-4 py-2">
                 {selectedSlots.length} selected

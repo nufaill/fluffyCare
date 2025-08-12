@@ -442,4 +442,74 @@ router.patch('/appointments/:appointmentId/complete', appointmentDependencies.ap
 router.get('/appointments/status/:status', appointmentDependencies.appointmentController.getAppointmentsByStatus.bind(appointmentDependencies.appointmentController) as RequestHandler);
 
 
+
+/**
+ * @swagger
+ * /user/appointments/booked-slots/{shopId}:
+ *   get:
+ *     summary: Get booked slots for a specific shop and date
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the shop
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^\d{4}-\d{2}-\d{2}$'
+ *         description: Date in YYYY-MM-DD format
+ *       - in: query
+ *         name: staffId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional staff ID to filter slots
+ *     responses:
+ *       200:
+ *         description: List of booked slots
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       shopId:
+ *                         type: string
+ *                       staffId:
+ *                         type: string
+ *                       slotDate:
+ *                         type: string
+ *                       startTime:
+ *                         type: string
+ *                       endTime:
+ *                         type: string
+ *                       status:
+ *                         type: string
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid parameters
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.get('/appointments/booked-slots/:shopId', appointmentDependencies.appointmentController.getBookedSlots.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+// Add this route for creating appointments with real-time updates
+router.post('/appointments', appointmentDependencies.appointmentController.createAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
 export default router;

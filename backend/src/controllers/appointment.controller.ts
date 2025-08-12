@@ -12,12 +12,9 @@ export class AppointmentController implements IAppointmentController {
     this.appointmentService = appointmentService;
   }
 
-  // Add this debug version to your appointment controller's createAppointment method
   async createAppointment(req: Request, res: Response): Promise<void> {
     try {
       const appointmentData: CreateAppointmentDto = req.body;
-
-      console.log("Full appointment data received:", JSON.stringify(appointmentData, null, 2));
 
       // Validate required fields with detailed logging
       const requiredFields = [
@@ -26,10 +23,10 @@ export class AppointmentController implements IAppointmentController {
         { field: 'shopId', value: appointmentData.shopId },
         { field: 'serviceId', value: appointmentData.serviceId },
         { field: 'staffId', value: appointmentData.staffId },
-        { field: 'appointmentDate', value: appointmentData.appointmentDate },
-        { field: 'startTime', value: appointmentData.startTime },
-        { field: 'endTime', value: appointmentData.endTime },
-        { field: 'paymentDetails', value: appointmentData.paymentDetails },
+        { field: 'slotDetails.date', value: appointmentData.slotDetails?.date },  
+        { field: 'slotDetails.startTime', value: appointmentData.slotDetails?.startTime },  
+        { field: 'slotDetails.endTime', value: appointmentData.slotDetails?.endTime }, 
+        { field: 'paymentDetails', value: appointmentData.paymentDetails }, 
         { field: 'paymentDetails.paymentIntentId', value: appointmentData.paymentDetails?.paymentIntentId },
         { field: 'paymentDetails.amount', value: appointmentData.paymentDetails?.amount },
         { field: 'paymentDetails.currency', value: appointmentData.paymentDetails?.currency },
@@ -37,6 +34,7 @@ export class AppointmentController implements IAppointmentController {
         { field: 'paymentDetails.method', value: appointmentData.paymentDetails?.method },
         { field: 'paymentDetails.paidAt', value: appointmentData.paymentDetails?.paidAt },
         { field: 'requestStatus', value: appointmentData.requestStatus },
+        { field: 'paymentMethod', value: appointmentData.paymentMethod },  
       ];
 
       // Log each field check
@@ -59,7 +57,6 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      // Validate ObjectId fields
       const objectIdFields = [
         { field: 'userId', value: appointmentData.userId },
         { field: 'petId', value: appointmentData.petId },
@@ -552,6 +549,71 @@ export class AppointmentController implements IAppointmentController {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_GET_APPOINTMENTS_BY_STATUS,
+        data: null
+      });
+    }
+  }
+  async getBookedSlots(req: Request, res: Response): Promise<void> {
+    try {
+      const { shopId } = req.params;
+      const { date, staffId } = req.query;
+
+      // Validate required parameters
+      if (!shopId || !Types.ObjectId.isValid(shopId)) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ID,
+          data: null
+        });
+        return;
+      }
+
+      if (!date || typeof date !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Date parameter is required',
+          data: null
+        });
+        return;
+      }
+
+      // Validate date format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Invalid date format. Use YYYY-MM-DD',
+          data: null
+        });
+        return;
+      }
+
+      // Validate staffId if provided
+      if (staffId && !Types.ObjectId.isValid(staffId as string)) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Invalid staff ID',
+          data: null
+        });
+        return;
+      }
+
+      const result = await this.appointmentService.getAvailableSlots(
+        shopId,
+        date,
+        staffId as string | undefined
+      );
+
+      res.status(result.statusCode).json({
+        success: result.success,
+        message: result.message,
+        data: result.data || []
+      });
+    } catch (error: any) {
+      console.error('Get booked slots error:', error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Failed to retrieve booked slots',
         data: null
       });
     }

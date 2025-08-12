@@ -10,10 +10,16 @@ import shopRoutes from './routes/shop.route';
 import adminRoutes from './routes/admin.route';
 import { swaggerUi, swaggerSpec } from './config/swagger';
 import { morganLogger } from "./config/logs";
+import { initializeSocket } from './shared/socket.io-handler';
+import { createServer } from "http";
+
 
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
+// Initialize Socket.IO
+const socketHandler = initializeSocket(server);
 
 async function startApp(): Promise<void> {
   await initializeDatabase();
