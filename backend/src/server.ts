@@ -8,11 +8,11 @@ import authRoutes from './routes/auth.route';
 import userRoutes from './routes/user.route';
 import shopRoutes from './routes/shop.route';
 import adminRoutes from './routes/admin.route';
+import walletRoutes from './routes/wallet.route';
 import { swaggerUi, swaggerSpec } from './config/swagger';
 import { morganLogger } from "./config/logs";
 import { initializeSocket } from './shared/socket.io-handler';
 import { createServer } from "http";
-
 
 dotenv.config();
 
@@ -43,6 +43,7 @@ async function startApp(): Promise<void> {
   app.use("/user", userRoutes);
   app.use("/shop", shopRoutes);
   app.use("/admin", adminRoutes);
+  app.use("/wallet", walletRoutes);
   
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
@@ -51,9 +52,12 @@ async function startApp(): Promise<void> {
   }));
 
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
+  
+  // FIXED: Use server.listen instead of app.listen
+  server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📚 Swagger docs available at http://localhost:${PORT}/api-docs`);
+    console.log(`🔌 Socket.IO server initialized and ready`);
   });
 }
 

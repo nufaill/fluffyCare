@@ -4,6 +4,7 @@ import { shopDependencies } from '../di/shopInjection';
 import { validateCreateService } from '../validations/service.validator';
 import { validateCreateStaff } from '../validations/staff.validator';
 import { ValidationChain } from 'express-validator';
+import { appointmentDependencies } from '../di/appointmentInjection';
 const router = Router();
 
 /**
@@ -691,7 +692,7 @@ router.get('/staff', shopDependencies.staffController.getAllStaff as RequestHand
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/staff-create',validateCreateStaff as (ValidationChain | RequestHandler)[],shopDependencies.staffController.create as RequestHandler);
+router.post('/staff-create', validateCreateStaff as (ValidationChain | RequestHandler)[], shopDependencies.staffController.create as RequestHandler);
 
 /**
  * @swagger
@@ -747,7 +748,7 @@ router.post('/staff-create',validateCreateStaff as (ValidationChain | RequestHan
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/staff/:staffId',validateCreateStaff as (ValidationChain | RequestHandler)[], shopDependencies.staffController.update as RequestHandler);
+router.patch('/staff/:staffId', validateCreateStaff as (ValidationChain | RequestHandler)[], shopDependencies.staffController.update as RequestHandler);
 
 /**
  * @swagger
@@ -813,4 +814,19 @@ router.get('/slot/:shopId/staffCount', shopDependencies.slotController.getStaffB
 router.get('/slot/shop/:shopId/booked', shopDependencies.slotController.findBookedByShop as RequestHandler);
 
 
+
+
+router.post('/appointments', appointmentDependencies.appointmentController.createAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/slots/availability', appointmentDependencies.appointmentController.checkSlotAvailability.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.put('/appointments/:appointmentId', appointmentDependencies.appointmentController.updateAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/:appointmentId', appointmentDependencies.appointmentController.getAppointmentById.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/user/:userId', appointmentDependencies.appointmentController.getAppointmentsByUserId.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/shop/:shopId', appointmentDependencies.appointmentController.getAppointmentsByShopId.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/staff/:staffId', appointmentDependencies.appointmentController.getAppointmentsByStaffId.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.patch('/appointments/:appointmentId/confirm', appointmentDependencies.appointmentController.confirmAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.patch('/appointments/:appointmentId/complete', appointmentDependencies.appointmentController.completeAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.patch('/appointments/:appointmentId/cancel', appointmentDependencies.appointmentController.cancelAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.patch('/appointments/:appointmentId/ongoing', appointmentDependencies.appointmentController.startOngoingAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/stats/:shopId', appointmentDependencies.appointmentController.getAppointmentStats.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/status/:status', appointmentDependencies.appointmentController.getAppointmentsByStatus.bind(appointmentDependencies.appointmentController) as RequestHandler);
 export default router;

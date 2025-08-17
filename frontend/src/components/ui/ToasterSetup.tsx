@@ -1,7 +1,7 @@
 // src/components/ui/ToasterSetup.tsx
 import { Toaster } from 'react-hot-toast';
 
-const ToasterSetup = () => {
+const ToasterSetup = (p0: { title: string; description: any; variant: string; }) => {
   return (
     <Toaster
       position="top-right"

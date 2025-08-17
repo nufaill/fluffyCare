@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { LayoutDashboard, Calendar, Settings, Store, Star, Shield, Users, LogOut, PawPrint, Scissors } from "lucide-react"
+import { LayoutDashboard, Calendar, Settings, Store, Star, Shield, Users, LogOut, PawPrint, Scissors, Wallet } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 
 interface SidebarProps {
@@ -20,6 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick, onLogout }) 
     { id: "ServicesDetail", label: "Services Detail", icon: Settings, path: "/admin/services-detail" },
     { id: "Shops", label: "Shops", icon: Store, path: "/admin/shops" },
     { id: "Reviews", label: "Reviews", icon: Star, path: "/admin/reviews" },
+    { id: "Wallet", label: "Wallet", icon: Wallet, path: "/admin/wallet" },
     { id: "Verification", label: "Verification", icon: Shield, path: "/admin/unverified" },
     { id: "CustomerPetsDetail", label: "Customer Detail", icon: Users, path: "/admin/users" },
     { id: "PetCategory", label: "Pet Category", icon: PawPrint, path: "/admin/pet-types" },

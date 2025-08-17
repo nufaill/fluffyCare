@@ -1,7 +1,7 @@
 import {
   Calendar,
   Heart,
-  Search,
+  WalletIcon,
   Settings,
   User,
   MessageCircle,
@@ -21,7 +21,7 @@ const menuItems = [
   { title: "My Pets", icon: Heart, href: "/pets", badge: "3" },
   { title: "Bookings", icon: Calendar, href: "/appointments", badge: "2" },
   { title: "Messages", icon: MessageCircle, href: "/messages", badge: "5" },
-  { title: "Search", icon: Search, href: "/search", badge: null },
+  { title: "wallet", icon: WalletIcon, href: "/wallet/", badge: null },
   { title: "Settings", icon: Settings, href: "/settings", badge: null },
 ]
 

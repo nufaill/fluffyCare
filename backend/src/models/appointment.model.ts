@@ -1,13 +1,16 @@
-import mongoose, { Schema, model, Document } from 'mongoose';
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 import {
   IAppointment,
   PaymentStatus,
   AppointmentStatus,
-  RequestStatus,
   PaymentMethod,
+  PaymentDetails,
 } from '../types/appointment.types';
 
-export interface AppointmentDocument extends IAppointment, Document {}
+// Define AppointmentDocument interface
+export interface AppointmentDocument extends IAppointment, Document {
+  _id: Types.ObjectId;
+}
 
 const AppointmentSchema = new Schema<AppointmentDocument>(
   {
@@ -16,36 +19,26 @@ const AppointmentSchema = new Schema<AppointmentDocument>(
     shopId: { type: Schema.Types.ObjectId, ref: 'Shop', required: true },
     staffId: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
     serviceId: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
-
     slotDetails: {
       startTime: { type: String, required: true }, // e.g., "11:00"
       endTime: { type: String, required: true },   // e.g., "12:00"
       date: { type: String, required: true },      // e.g., "2025-08-11"
     },
-
-    paymentStatus: {
-      type: String,
-      enum: Object.values(PaymentStatus),
-      default: PaymentStatus.Pending,
+    paymentDetails: {
+      paymentIntentId: { type: String, required: false },
+      amount: { type: Number, required: false },
+      currency: { type: String, required: false },
+      status: { type: String, enum: Object.values(PaymentStatus), required: false },
+      method: { type: String, enum: Object.values(PaymentMethod), required: false },
+      paidAt: { type: Date, required: false },
     },
     appointmentStatus: {
       type: String,
       enum: Object.values(AppointmentStatus),
       default: AppointmentStatus.Pending,
     },
-    requestStatus: {
-      type: String,
-      enum: Object.values(RequestStatus),
-      default: RequestStatus.Pending,
-    },
-    paymentMethod: {
-      type: String,
-      enum: Object.values(PaymentMethod),
-      required: true,
-    },
     notes: { type: String },
   },
-  
   {
     timestamps: true,
     versionKey: false,

@@ -25,8 +25,7 @@ export default function PetsPage() {
   const [error, setError] = React.useState<string | null>(null)
   const navigate = useNavigate()
 
-  // Get user ID from localStorage or context (adjust based on your auth implementation)
-  const userId = localStorage.getItem('userId') || '1' // Fallback to '1' if not found
+  const userId = localStorage.getItem('userId') || '1' 
 
   React.useEffect(() => {
     const fetchData = async () => {

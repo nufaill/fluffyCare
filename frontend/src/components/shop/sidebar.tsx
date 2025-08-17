@@ -17,6 +17,7 @@ import {
   BarChart3,
   PieChart,
   TrendingUp,
+  Wallet,
 } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/button"
@@ -63,11 +64,11 @@ const defaultMenuItems: SidebarItem[] = [
     icon: Calendar,
     url: "/shop/appointments",
     badge: "12",
-    subItems: [
-      { title: "Today", icon: Calendar, url: "/shop/appointments/today", badge: "5" },
-      { title: "This Week", icon: Calendar, url: "/shop/appointments/week", badge: "12" },
-      { title: "Pending", icon: Clock, url: "/shop/appointments/pending", badge: "3" },
-    ],
+    // subItems: [
+    //   { title: "Today", icon: Calendar, url: "/shop/appointments/today", badge: "5" },
+    //   { title: "This Week", icon: Calendar, url: "/shop/appointments/week", badge: "12" },
+    //   { title: "Pending", icon: Clock, url: "/shop/appointments/pending", badge: "3" },
+    // ],
   },
   {
     title: "Messages",
@@ -92,9 +93,9 @@ const defaultMenuItems: SidebarItem[] = [
     url: "/shop/services",
   },
   {
-    title: "Earnings",
-    icon: DollarSign,
-    url: "/shop/earnings",
+    title: "Wallet",
+    icon: Wallet,
+    url: "/shop/wallet",
   },
   {
     title: "Workers",

@@ -12,8 +12,10 @@ import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 import ShopProfilePage from './../pages/shop/ShopProfilePage';
 import ShopProfilePageEdit from './../pages/shop/ShopProfilePageEdit'
 import ServicesPage from "@/pages/shop/Services";
-import {SlotCalendar} from "@/pages/shop/Shop-slot";
+import { SlotCalendar } from "@/pages/shop/Shop-slot";
 import StaffManagement from "@/pages/shop/Staff";
+import ShopWalletPage from "@/pages/shop/Shop-Wallet";
+import ShopAppointmentDetails from "@/pages/shop/ShopAppointments";
 
 const ShopRoutes = () => {
   return (
@@ -77,7 +79,7 @@ const ShopRoutes = () => {
         path="/shop/profile"
         element={
           <PrivateRoute userType="shop">
-            <ShopProfilePage/>
+            <ShopProfilePage />
           </PrivateRoute>
         }
       />
@@ -85,7 +87,7 @@ const ShopRoutes = () => {
         path="/shop/profile/update"
         element={
           <PrivateRoute userType="shop">
-            <ShopProfilePageEdit/>
+            <ShopProfilePageEdit />
           </PrivateRoute>
         }
       />
@@ -93,7 +95,7 @@ const ShopRoutes = () => {
         path="/shop/services"
         element={
           <PrivateRoute userType="shop">
-            <ServicesPage/>
+            <ServicesPage />
           </PrivateRoute>
         }
       />
@@ -101,7 +103,7 @@ const ShopRoutes = () => {
         path="/shop/schedule"
         element={
           <PrivateRoute userType="shop">
-            <SlotCalendar/>
+            <SlotCalendar />
           </PrivateRoute>
         }
       />
@@ -109,7 +111,23 @@ const ShopRoutes = () => {
         path="/shop/workers"
         element={
           <PrivateRoute userType="shop">
-            <StaffManagement/>
+            <StaffManagement />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/shop/wallet"
+        element={
+          <PrivateRoute userType="shop">
+            <ShopWalletPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/shop/appointments"
+         element={
+          <PrivateRoute userType="shop">
+            <ShopAppointmentDetails />
           </PrivateRoute>
         }
       />

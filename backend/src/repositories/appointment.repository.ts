@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 import { Appointment, AppointmentDocument } from '../models/appointment.model';
-import { IAppointment, AppointmentStatus, RequestStatus } from '../types/appointment.types';
+import { IAppointment, AppointmentStatus } from '../types/appointment.types';
 import { IAppointmentRepository } from '../interfaces/repositoryInterfaces/IAppointmentRepository';
 
 export class AppointmentRepository implements IAppointmentRepository {
@@ -28,13 +28,13 @@ export class AppointmentRepository implements IAppointmentRepository {
     }
   }
 
-  async cancel(appointmentId: Types.ObjectId): Promise<AppointmentDocument | null> {
+  async cancel(appointmentId: Types.ObjectId, reason: string): Promise<AppointmentDocument | null> {
     try {
       return await Appointment.findByIdAndUpdate(
         appointmentId,
         {
-          appointmentStatus: AppointmentStatus.Cancelled, 
-          requestStatus: RequestStatus.Rejected 
+          appointmentStatus: AppointmentStatus.Cancelled,
+          notes: reason
         },
         { new: true }
       ).exec();
@@ -59,18 +59,25 @@ export class AppointmentRepository implements IAppointmentRepository {
 
   async findByUserId(
     userId: Types.ObjectId,
-    options: { page?: number; limit?: number } = {}
-  ): Promise<AppointmentDocument[]> {
+    options: { page?: number; limit?: number; status?: string } = {}
+  ): Promise<{ items: AppointmentDocument[]; total: number }> {
     try {
-      const { page = 1, limit = 10 } = options;
-      return await Appointment.find({ userId })
-        .populate('petId', 'name breed')
-        .populate('shopId', 'name address')
-        .populate('serviceId', 'name price')
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .exec();
+      const { page = 1, limit = 10, status } = options;
+      const filter: any = { userId };
+      if (status) {
+        filter.appointmentStatus = status;
+      }
+      const query = Appointment.find(filter)
+        .populate('petId', 'name breed age profileImage')
+        .populate('shopId', 'name address phone')
+        .populate('staffId', 'name')
+        .populate('serviceId', 'name price durationHour')
+        .sort({ createdAt: -1 });
+      const [items, total] = await Promise.all([
+        query.skip((page - 1) * limit).limit(limit).exec(),
+        Appointment.countDocuments(filter)
+      ]);
+      return { items, total };
     } catch (error) {
       throw new Error(`Failed to find appointments by user: ${error}`);
     }
@@ -78,19 +85,28 @@ export class AppointmentRepository implements IAppointmentRepository {
 
   async findByShopId(
     shopId: Types.ObjectId,
-    options: { page?: number; limit?: number } = {}
-  ): Promise<AppointmentDocument[]> {
+    options: { page?: number; limit?: number; status?: string; date?: string } = {}
+  ): Promise<{ items: AppointmentDocument[]; total: number }> {
     try {
-      const { page = 1, limit = 10 } = options;
-      return await Appointment.find({ shopId })
-        .populate('userId', 'name email phone')
-        .populate('petId', 'name breed')
+      const { page = 1, limit = 10, status, date } = options;
+      const filter: any = { shopId };
+      if (status) {
+        filter.appointmentStatus = status;
+      }
+      if (date) {
+        filter['slotDetails.date'] = date;
+      }
+      const query = Appointment.find(filter)
+        .populate('userId', 'fullName phone')
+        .populate('petId', 'name breed profileImage age gender weight additionalNotes friendlyWithPets friendlyWithOthers trainedBefore vaccinationStatus medication')
         .populate('staffId', 'name')
-        .populate('serviceId', 'name duration')
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .exec();
+        .populate('serviceId', 'name durationHour price')
+        .sort({ createdAt: -1 });
+      const [items, total] = await Promise.all([
+        query.skip((page - 1) * limit).limit(limit).exec(),
+        Appointment.countDocuments(filter)
+      ]);
+      return { items, total };
     } catch (error) {
       throw new Error(`Failed to find appointments by shop: ${error}`);
     }
@@ -98,18 +114,24 @@ export class AppointmentRepository implements IAppointmentRepository {
 
   async findByStaffId(
     staffId: Types.ObjectId,
-    options: { page?: number; limit?: number } = {}
-  ): Promise<AppointmentDocument[]> {
+    options: { page?: number; limit?: number; date?: string } = {}
+  ): Promise<{ items: AppointmentDocument[]; total: number }> {
     try {
-      const { page = 1, limit = 10 } = options;
-      return await Appointment.find({ staffId })
+      const { page = 1, limit = 10, date } = options;
+      const filter: any = { staffId };
+      if (date) {
+        filter['slotDetails.date'] = date;
+      }
+      const query = Appointment.find(filter)
         .populate('userId', 'name phone')
         .populate('petId', 'name breed')
         .populate('serviceId', 'name duration')
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .exec();
+        .sort({ createdAt: -1 });
+      const [items, total] = await Promise.all([
+        query.skip((page - 1) * limit).limit(limit).exec(),
+        Appointment.countDocuments(filter)
+      ]);
+      return { items, total };
     } catch (error) {
       throw new Error(`Failed to find appointments by staff: ${error}`);
     }
@@ -119,42 +141,43 @@ export class AppointmentRepository implements IAppointmentRepository {
     status: AppointmentStatus,
     shopId?: Types.ObjectId,
     options: { page?: number; limit?: number } = {}
-  ): Promise<AppointmentDocument[]> {
+  ): Promise<{ items: AppointmentDocument[]; total: number }> {
     try {
       const { page = 1, limit = 10 } = options;
       const filter: any = { appointmentStatus: status };
       if (shopId) {
         filter.shopId = shopId;
       }
-
-      return await Appointment.find(filter)
+      const query = Appointment.find(filter)
         .populate('userId', 'name phone')
         .populate('petId', 'name breed')
         .populate('serviceId', 'name duration')
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .exec();
+        .sort({ createdAt: -1 });
+      const [items, total] = await Promise.all([
+        query.skip((page - 1) * limit).limit(limit).exec(),
+        Appointment.countDocuments(filter)
+      ]);
+      return { items, total };
     } catch (error) {
       throw new Error(`Failed to find appointments by status: ${error}`);
     }
   }
 
-async getAppointmentsCount(
-  shopId: Types.ObjectId,
-  startDate: Date,
-  endDate: Date
-): Promise<number> {
-  try {
-    return await Appointment.countDocuments({
-      shopId,
-      createdAt: { $gte: startDate, $lte: endDate },
-      appointmentStatus: { $ne: AppointmentStatus.Cancelled } 
-    }).exec();
-  } catch (error) {
-    throw new Error(`Failed to get appointments count: ${error}`);
+  async getAppointmentsCount(
+    shopId: Types.ObjectId,
+    startDate: Date,
+    endDate: Date
+  ): Promise<number> {
+    try {
+      return await Appointment.countDocuments({
+        shopId,
+        createdAt: { $gte: startDate, $lte: endDate },
+        appointmentStatus: { $ne: AppointmentStatus.Cancelled }
+      }).exec();
+    } catch (error) {
+      throw new Error(`Failed to get appointments count: ${error}`);
+    }
   }
-}
 
   async isTimeSlotAvailable(
     staffId: Types.ObjectId,
@@ -169,35 +192,23 @@ async getAppointmentsCount(
         'slotDetails.date': date,
         appointmentStatus: { $ne: AppointmentStatus.Cancelled }
       };
-
       if (excludeAppointmentId) {
         filter._id = { $ne: excludeAppointmentId };
       }
-
       const appointments = await Appointment.find(filter)
         .select('slotDetails.startTime slotDetails.endTime')
         .exec();
-
       const hasOverlap = appointments.some(appt => {
         const otherStart = appt.slotDetails.startTime;
         const otherEnd = appt.slotDetails.endTime;
         return !(endTime <= otherStart || startTime >= otherEnd);
       });
-
       return !hasOverlap;
     } catch (error) {
       throw new Error(`Failed to check time slot availability: ${error}`);
     }
   }
 
-  async delete(appointmentId: Types.ObjectId): Promise<boolean> {
-    try {
-      const result = await Appointment.findByIdAndDelete(appointmentId).exec();
-      return !!result;
-    } catch (error) {
-      throw new Error(`Failed to delete appointment: ${error}`);
-    }
-  }
   async findBookedSlots(filter: any): Promise<AppointmentDocument[]> {
     try {
       return await Appointment.find(filter)
@@ -208,6 +219,7 @@ async getAppointmentsCount(
       throw new Error(`Failed to find booked slots: ${error}`);
     }
   }
+
   async isSlotBooked(
     shopId: Types.ObjectId,
     staffId: Types.ObjectId,
@@ -222,7 +234,6 @@ async getAppointmentsCount(
         'slotDetails.startTime': startTime,
         appointmentStatus: { $ne: AppointmentStatus.Cancelled }
       }).exec();
-
       return !!existingBooking;
     } catch (error) {
       throw new Error(`Failed to check slot booking status: ${error}`);

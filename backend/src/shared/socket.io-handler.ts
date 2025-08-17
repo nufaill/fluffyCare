@@ -27,24 +27,26 @@ export class SocketHandler {
   constructor(server: HTTPServer) {
     this.io = new SocketIOServer(server, {
       cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        // FIXED: Use consistent environment variable name
+        origin: process.env.CLIENT_URL || "http://localhost:5173",
         methods: ["GET", "POST"],
         credentials: true
       }
     });
 
     this.setupEventHandlers();
+    console.log('✅ Socket.IO server initialized');
   }
 
   private setupEventHandlers(): void {
    this.io.on('connection', (socket: Socket) => {
-      console.log(`Client connected: ${socket.id}`);
+      console.log(`🔌 Client connected: ${socket.id}`);
 
       // Join shop-specific room for real-time updates
       socket.on('join-shop', (shopId: string) => {
         if (shopId) {
           socket.join(`shop-${shopId}`);
-          console.log(`Client ${socket.id} joined shop room: ${shopId}`);
+          console.log(`🏪 Client ${socket.id} joined shop room: ${shopId}`);
         }
       });
 
@@ -52,12 +54,12 @@ export class SocketHandler {
       socket.on('leave-shop', (shopId: string) => {
         if (shopId) {
           socket.leave(`shop-${shopId}`);
-          console.log(`Client ${socket.id} left shop room: ${shopId}`);
+          console.log(`👋 Client ${socket.id} left shop room: ${shopId}`);
         }
       });
 
       socket.on('disconnect', () => {
-        console.log(`Client disconnected: ${socket.id}`);
+        console.log(`❌ Client disconnected: ${socket.id}`);
       });
     });
   }
@@ -67,7 +69,7 @@ export class SocketHandler {
    * This will trigger real-time removal of the booked slot from UI
    */
   public emitSlotBooked(data: SlotBookedData): void {
-    console.log('Emitting slot booked event:', data);
+    console.log('📅 Emitting slot booked event:', data);
     
     this.io.to(`shop-${data.shopId}`).emit('slot-booked', {
       shopId: data.shopId,
@@ -85,7 +87,7 @@ export class SocketHandler {
    * This will trigger real-time addition of the canceled slot back to UI
    */
   public emitSlotCanceled(data: SlotCanceledData): void {
-    console.log('Emitting slot canceled event:', data);
+    console.log('❌ Emitting slot canceled event:', data);
     
     this.io.to(`shop-${data.shopId}`).emit('slot-canceled', {
       shopId: data.shopId,

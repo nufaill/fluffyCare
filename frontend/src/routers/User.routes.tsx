@@ -18,6 +18,7 @@ import SlotsPage from "@/pages/user/User-slot"
 import AppointmentsPage from "@/pages/user/Appointment"
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 import AppointmentDetailsPage from "@/components/user/AppointmentQuickActions";
+import WalletPage from "@/pages/user/User-Wallet";
 
 const UserRoutes = () => {
   return (
@@ -122,6 +123,15 @@ const UserRoutes = () => {
         element={
           <PrivateRoute userType="user">
             <EditPetPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/wallet/"
+        element={
+          <PrivateRoute userType="user">
+            <WalletPage />
           </PrivateRoute>
         }
       />

@@ -1,4 +1,4 @@
-import { AppointmentStatus, PaymentStatus, RequestStatus, PaymentMethod } from '../types/appointment.types';
+import { AppointmentStatus, PaymentStatus, PaymentMethod } from '../types/appointment.types';
 
 export interface CreateAppointmentDto {
   userId: string;
@@ -21,7 +21,6 @@ export interface CreateAppointmentDto {
   };
   appointmentStatus: AppointmentStatus; 
   paymentStatus: PaymentStatus;
-  requestStatus: RequestStatus;
   paymentMethod: PaymentMethod;
   notes?: string;
 }
@@ -35,7 +34,6 @@ export interface UpdateAppointmentDto {
   };
   paymentStatus?: PaymentStatus;
   appointmentStatus?: AppointmentStatus;
-  requestStatus?: RequestStatus;
   paymentMethod?: PaymentMethod;
   notes?: string;
 }

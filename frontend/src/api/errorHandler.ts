@@ -22,9 +22,9 @@ export const handleAxiosError = (error: AxiosError) => {
     case 400:
       toast.error(`Bad request: ${message}`);
       break;
-    case 404:
-      toast.error(`Resource not found: ${message}`);
-      break;
+    // case 404:
+    //   toast.error(`Resource not found: ${message}`);
+    //   break;
     case 429:
       toast.error('Too many requests: Please try again later.');
       break;
@@ -40,7 +40,7 @@ export const handleAxiosError = (error: AxiosError) => {
         !message.includes('Token is blacklisted') &&
         !message.includes('Access denied')
       ) {
-        toast.error(`Error: ${message}`);
+        // toast.error(`Error: ${message}`);
       }
       break;
   }

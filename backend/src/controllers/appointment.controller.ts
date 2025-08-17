@@ -15,7 +15,7 @@ export class AppointmentController implements IAppointmentController {
   async createAppointment(req: Request, res: Response): Promise<void> {
     try {
       const appointmentData: CreateAppointmentDto = req.body;
-
+  
       // Validate required fields with detailed logging
       const requiredFields = [
         { field: 'userId', value: appointmentData.userId },
@@ -33,14 +33,12 @@ export class AppointmentController implements IAppointmentController {
         { field: 'paymentDetails.status', value: appointmentData.paymentDetails?.status },
         { field: 'paymentDetails.method', value: appointmentData.paymentDetails?.method },
         { field: 'paymentDetails.paidAt', value: appointmentData.paymentDetails?.paidAt },
-        { field: 'requestStatus', value: appointmentData.requestStatus },
         { field: 'paymentMethod', value: appointmentData.paymentMethod },  
       ];
 
       // Log each field check
       for (const { field, value } of requiredFields) {
         const isEmpty = value === undefined || value === null || value === "";
-        console.log(`Field: ${field}, Value: ${value}, Type: ${typeof value}, IsEmpty: ${isEmpty}`);
       }
 
       const missingField = requiredFields.find(({ value }) =>
@@ -189,36 +187,6 @@ export class AppointmentController implements IAppointmentController {
     }
   }
 
-  async deleteAppointment(req: Request, res: Response): Promise<void> {
-    try {
-      const { appointmentId } = req.params;
-
-      if (!appointmentId || !Types.ObjectId.isValid(appointmentId)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          message: ERROR_MESSAGES.INVALID_ID,
-          data: null
-        });
-        return;
-      }
-
-      const result = await this.appointmentService.deleteAppointment(appointmentId);
-
-      res.status(result.statusCode).json({
-        success: result.success,
-        message: result.message,
-        data: result.data
-      });
-    } catch (error: any) {
-      console.error('Delete appointment error:', error);
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: ERROR_MESSAGES.FAILED_TO_DELETE_APPOINTMENT,
-        data: null
-      });
-    }
-  }
-
   async updateAppointment(req: Request, res: Response): Promise<void> {
     try {
       const { appointmentId } = req.params;
@@ -262,6 +230,7 @@ export class AppointmentController implements IAppointmentController {
   async cancelAppointment(req: Request, res: Response): Promise<void> {
     try {
       const { appointmentId } = req.params;
+      const { reason } = req.body;
 
       if (!appointmentId || !Types.ObjectId.isValid(appointmentId)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -272,7 +241,16 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const result = await this.appointmentService.cancelAppointment(appointmentId);
+      if (!reason || typeof reason !== 'string' || reason.trim() === '') {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Cancellation reason is required',
+          data: null
+        });
+        return;
+      }
+
+      const result = await this.appointmentService.cancelAppointment(appointmentId, reason);
 
       res.status(result.statusCode).json({
         success: result.success,
@@ -280,10 +258,10 @@ export class AppointmentController implements IAppointmentController {
         data: result.data || null
       });
     } catch (error: any) {
-      console.error('Cancel appointment error:', error);
+      console.error('Soft cancel appointment error:', error);
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: ERROR_MESSAGES.FAILED_TO_CANCEL_APPOINTMENT,
+        message: 'Failed to soft cancel appointment',
         data: null
       });
     }
@@ -353,7 +331,8 @@ export class AppointmentController implements IAppointmentController {
       res.status(result.statusCode).json({
         success: result.success,
         message: result.message,
-        data: result.data || []
+        data: result.data || [],
+        meta: result.meta
       });
     } catch (error: any) {
       console.error('Get appointments by user ID error:', error);
@@ -397,9 +376,10 @@ export class AppointmentController implements IAppointmentController {
       );
 
       res.status(result.statusCode).json({
-        success: true,
+        success: result.success,
         message: result.message,
-        data: result.data || []
+        data: result.data || [],
+        meta: result.meta
       });
     } catch (error: any) {
       console.error('Get appointments by shop ID error:', error);
@@ -436,7 +416,8 @@ export class AppointmentController implements IAppointmentController {
       res.status(result.statusCode).json({
         success: result.success,
         message: result.message,
-        data: result.data || []
+        data: result.data || [],
+        meta: result.meta
       });
     } catch (error: any) {
       console.error('Get appointments by staff ID error:', error);
@@ -494,7 +475,7 @@ export class AppointmentController implements IAppointmentController {
       const result = await this.appointmentService.completeAppointment(appointmentId);
 
       res.status(result.statusCode).json({
-        success: result.success,
+        success: false,
         message: result.message,
         data: result.data || null
       });
@@ -503,6 +484,36 @@ export class AppointmentController implements IAppointmentController {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_COMPLETE_APPOINTMENT,
+        data: null
+      });
+    }
+  }
+
+  async startOngoingAppointment(req: Request, res: Response): Promise<void> {
+    try {
+      const { appointmentId } = req.params;
+
+      if (!appointmentId || !Types.ObjectId.isValid(appointmentId)) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ID,
+          data: null
+        });
+        return;
+      }
+
+      const result = await this.appointmentService.startOngoingAppointment(appointmentId);
+
+      res.status(result.statusCode).json({
+        success: result.success,
+        message: result.message,
+        data: result.data || null
+      });
+    } catch (error: any) {
+      console.error('Start ongoing appointment error:', error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Failed to start ongoing appointment',
         data: null
       });
     }
@@ -542,7 +553,8 @@ export class AppointmentController implements IAppointmentController {
       res.status(result.statusCode).json({
         success: result.success,
         message: result.message,
-        data: result.data || []
+        data: result.data || [],
+        meta: result.meta
       });
     } catch (error: any) {
       console.error('Get appointments by status error:', error);
@@ -553,6 +565,7 @@ export class AppointmentController implements IAppointmentController {
       });
     }
   }
+
   async getBookedSlots(req: Request, res: Response): Promise<void> {
     try {
       const { shopId } = req.params;

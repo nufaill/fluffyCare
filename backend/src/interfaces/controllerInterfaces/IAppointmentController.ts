@@ -12,5 +12,5 @@ export interface IAppointmentController {
   confirmAppointment(req: Request, res: Response): Promise<void>;
   completeAppointment(req: Request, res: Response): Promise<void>;
   checkSlotAvailability(req: Request, res: Response): Promise<void>;
-  deleteAppointment(req: Request, res: Response): Promise<void>;
+  startOngoingAppointment(req: Request, res: Response): Promise<void>;
 }
