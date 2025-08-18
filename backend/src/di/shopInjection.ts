@@ -3,17 +3,20 @@ import { ShopController } from "../controllers/shop/shop.controller";
 import { ServiceController } from "../controllers/service/service.controller";
 import { StaffController } from '../controllers/shop/staff.controller';
 import { SlotController } from "../controllers/shop/slot.controller";
+import { WalletController } from "@controllers/wallet.controller";
 import { OtpRepository } from "../repositories/otp.repository";
 import { ShopRepository } from "../repositories/shop.repository";
 import { ServiceRepository } from "../repositories/service.repository";
 import { StaffRepository } from '../repositories/staff.repository';
 import { SlotRepository } from "../repositories/slot.repository";
+import { WalletRepository } from "repositories/wallet.repository";
 import { AuthService as ShopAuthService } from "../services/shop/auth.service";
 import { ShopService } from "../services/shop/shop.service"; 
 import { ServiceService } from "../services/service/service.service";
 import { StaffService } from '../services/shop/staff.service';
 import { ShopAvailabilityService } from '../services/shop/shopAvailability.service';
 import { SlotService } from "../services/shop/slot.service";
+import { WalletService } from "services/wallet.service";
 import { JwtService } from "../services/jwt/jwt.service";
 import { EmailService } from "../services/emailService/email.service";
 import { AuthMiddleware } from "../middlewares/auth.middleware";
@@ -24,12 +27,14 @@ const serviceRepository = new ServiceRepository();
 const otpRepository = new OtpRepository();
 const staffRepository = new StaffRepository();
 const slotRepository = new SlotRepository();
+const walletRepository = new WalletRepository();
 
 // Initialize services
 const jwtService = new JwtService();
 const emailService = new EmailService();
 const shopService = new ShopService(shopRepository); 
 const shopAvailabilityService = new ShopAvailabilityService(shopRepository);
+const walletService = new  WalletService(walletRepository)
 const shopAuthService = new ShopAuthService(
   shopRepository,
   jwtService,
@@ -46,7 +51,7 @@ const authMiddleware = authMiddlewareInstance;
 
 // Initialize controllers with dependencies
 const injectedShopAuthController = new ShopAuthController(shopAuthService);
-const injectedShopController = new ShopController(shopService, shopAvailabilityService); 
+const injectedShopController = new ShopController(shopService, shopAvailabilityService,walletService); 
 const injectedServiceController = new ServiceController(serviceService);
 const injectedStaffController = new StaffController(staffService);
 const injectedSlotController = new SlotController(slotService);

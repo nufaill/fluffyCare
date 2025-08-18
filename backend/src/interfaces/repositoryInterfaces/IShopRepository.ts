@@ -1,21 +1,24 @@
-import { CreateShopData } from "types/Shop.types";
-import { ShopResponseDTO,UpdateShopDTO } from "../../dto/shop.dto";
-import { Types } from "mongoose";
+import { ShopResponseDTO, UpdateShopDTO } from '../../dto/shop.dto';
+import { CreateShopData, ShopDocument } from '../../types/Shop.types';
+import { Types } from 'mongoose';
 
-interface IShopRepository {
+export default interface IShopRepository {
   findByEmail(email: string): Promise<ShopResponseDTO | null>;
+  findByEmailWithPassword(email: string): Promise<ShopDocument | null>;
   findById(id: string): Promise<ShopResponseDTO | null>;
   createShop(data: CreateShopData): Promise<ShopResponseDTO>;
   updateShop(id: string, updateData: Partial<CreateShopData>): Promise<UpdateShopDTO | null>;
+  updateShopSubscription(id: string, subscription: 'free' | 'basic' | 'premium'): Promise<ShopResponseDTO | null>;
   existsByEmail(email: string): Promise<boolean>;
   setResetToken(email: string, token: string, expires: Date): Promise<ShopResponseDTO | null>;
   findByResetToken(token: string): Promise<ShopResponseDTO | null>;
   updatePasswordAndClearToken(shopId: Types.ObjectId, hashedPassword: string): Promise<ShopResponseDTO | null>;
-  getAllShops(skip?: number, limit?: number): Promise<ShopResponseDTO[]>;
-  countDocuments(query?: any): Promise<number>;
+  getAllShops(skip: number, limit: number): Promise<ShopResponseDTO[]>;
+  countDocuments(query: any): Promise<number>;
   updateShopStatus(shopId: string, isActive: boolean): Promise<ShopResponseDTO | null>;
-  getUnverifiedShops(skip?: number, limit?: number): Promise<ShopResponseDTO[]>;
+  getUnverifiedShops(skip: number, limit: number): Promise<ShopResponseDTO[]>;
   updateShopVerification(shopId: string, isVerified: boolean): Promise<ShopResponseDTO | null>;
   checkShopNameExists(name: string, excludeShopId?: string): Promise<boolean>;
+  findNearbyShops(longitude: number, latitude: number, maxDistance: number, filters?: { serviceType?: string; petType?: string }): Promise<ShopResponseDTO[]>;
+  findShopsWithinRadius(longitude: number, latitude: number, radiusInMeters: number): Promise<ShopResponseDTO[]>;
 }
-export default IShopRepository;

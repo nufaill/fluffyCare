@@ -12,6 +12,7 @@ export interface UpdateShopDTO {
   city?: string;
   streetAddress?: string;
   description?: string;
+  subscription?: 'free' | 'basic' | 'premium';
 }
 
 export interface RejectShopDTO {
@@ -37,6 +38,7 @@ export interface ShopResponseDTO {
   updatedAt: Date;
   isVerified: boolean;
   shopAvailability?: ShopAvailability;
+  subscription?: 'free' | 'basic' | 'premium';
 }
 
 export interface ShopAvailabilityDTO extends ShopAvailability {

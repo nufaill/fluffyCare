@@ -10,43 +10,44 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
     super(Shop);
   }
 
-private mapToResponseDTO(shop: ShopDocument): ShopResponseDTO {
-        return {
-            id: shop._id.toString(),
-            name: shop.name,
-            email: shop.email,
-            phone: shop.phone,
-            city: shop.city,
-            streetAddress: shop.streetAddress,
-            logo: shop.logo,
-            description: shop.description,
-            certificateUrl: shop.certificateUrl,
-            isActive: shop.isActive,
-            createdAt: shop.createdAt,
-            updatedAt: shop.updatedAt,
-            isVerified: shop.isVerified,
-            shopAvailability: shop.shopAvailability
-                ? {
-                      workingDays: shop.shopAvailability.workingDays,
-                      openingTime: shop.shopAvailability.openingTime,
-                      closingTime: shop.shopAvailability.closingTime,
-                      lunchBreak: shop.shopAvailability.lunchBreak
-                          ? {
-                                start: shop.shopAvailability.lunchBreak.start || '',
-                                end: shop.shopAvailability.lunchBreak.end || '',
-                            }
-                          : undefined,
-                      teaBreak: shop.shopAvailability.teaBreak
-                          ? {
-                                start: shop.shopAvailability.teaBreak.start || '',
-                                end: shop.shopAvailability.teaBreak.end || '',
-                            }
-                          : undefined,
-                      customHolidays: shop.shopAvailability.customHolidays || [],
-                  }
-                : undefined,
-        };
-    }
+  private mapToResponseDTO(shop: ShopDocument): ShopResponseDTO {
+    return {
+      id: shop._id.toString(),
+      name: shop.name,
+      email: shop.email,
+      phone: shop.phone,
+      city: shop.city,
+      streetAddress: shop.streetAddress,
+      logo: shop.logo,
+      description: shop.description,
+      certificateUrl: shop.certificateUrl,
+      isActive: shop.isActive,
+      createdAt: shop.createdAt,
+      updatedAt: shop.updatedAt,
+      isVerified: shop.isVerified,
+      subscription: shop.subscription,
+      shopAvailability: shop.shopAvailability
+        ? {
+          workingDays: shop.shopAvailability.workingDays,
+          openingTime: shop.shopAvailability.openingTime,
+          closingTime: shop.shopAvailability.closingTime,
+          lunchBreak: shop.shopAvailability.lunchBreak
+            ? {
+              start: shop.shopAvailability.lunchBreak.start || '',
+              end: shop.shopAvailability.lunchBreak.end || '',
+            }
+            : undefined,
+          teaBreak: shop.shopAvailability.teaBreak
+            ? {
+              start: shop.shopAvailability.teaBreak.start || '',
+              end: shop.shopAvailability.teaBreak.end || '',
+            }
+            : undefined,
+          customHolidays: shop.shopAvailability.customHolidays || [],
+        }
+        : undefined,
+    };
+  }
 
   async findByEmail(email: string): Promise<ShopResponseDTO | null> {
     const shop = await this.findOne({ email }).exec();
@@ -69,6 +70,13 @@ private mapToResponseDTO(shop: ShopDocument): ShopResponseDTO {
 
   async updateShop(id: string, updateData: Partial<CreateShopData>): Promise<UpdateShopDTO | null> {
     const updatedShop = await this.updateById(id, { $set: updateData }).exec();
+    return updatedShop ? this.mapToResponseDTO(updatedShop) : null;
+  }
+
+  async updateShopSubscription(id: string, subscription: 'free' | 'basic' | 'premium'): Promise<ShopResponseDTO | null> {
+    const updatedShop = await this.updateById(id, { subscription })
+      .select('-password -resetPasswordToken -resetPasswordExpires')
+      .exec();
     return updatedShop ? this.mapToResponseDTO(updatedShop) : null;
   }
 

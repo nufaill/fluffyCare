@@ -2,16 +2,32 @@ import { Request, Response, NextFunction } from 'express';
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { ShopService } from "../../services/shop/shop.service";
 import { ShopAvailabilityService } from "../../services/shop/shopAvailability.service";
+import { WalletService } from "../../services/wallet.service";
 import { CustomError } from '../../util/CustomerError';
 import { CreateShopData } from 'types/Shop.types';
 import { UpdateShopStatusDTO, UpdateShopDTO, RejectShopDTO, ShopResponseDTO, ShopAvailabilityDTO } from '../../dto/shop.dto';
+import { IWalletTransaction } from '../../types/Wallet.types';
 import { IShopController } from '../../interfaces/controllerInterfaces/IShopController';
+import { Types } from 'mongoose';
+import Stripe from "stripe";
+import mongoose from 'mongoose';
 
 export class ShopController implements IShopController {
+  private stripe: Stripe;
+
   constructor(
     private shopService: ShopService,
-    private shopAvailabilityService: ShopAvailabilityService
-  ) { }
+    private shopAvailabilityService: ShopAvailabilityService,
+    private walletService: WalletService
+  ) {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      throw new Error("STRIPE_SECRET_KEY is not defined in environment variables");
+    }
+    this.stripe = new Stripe(stripeSecretKey, {
+      apiVersion: "2025-06-30.basil",
+    });
+  }
 
   getAllShops = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -103,6 +119,227 @@ export class ShopController implements IShopController {
     }
   };
 
+  getShopSubscription = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { shopId } = req.params;
+
+      if (!shopId) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'Shop ID is required'
+        });
+        return;
+      }
+
+      const subscription = await this.shopService.getShopSubscription(shopId);
+
+      res.status(HTTP_STATUS.OK || 200).json({
+        success: true,
+        data: { plan: subscription },
+        message: 'Shop subscription fetched successfully'
+      });
+    } catch (error) {
+      console.error("❌ [ShopController] Get shop subscription error:", error);
+
+      const statusCode = error instanceof CustomError
+        ? error.statusCode
+        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to fetch shop subscription';
+
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
+    }
+  };
+
+  createSubscriptionPaymentIntent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { amount, currency, shopId, subscription } = req.body;
+
+      const requiredFields = [
+        { field: 'amount', value: amount },
+        { field: 'currency', value: currency },
+        { field: 'shopId', value: shopId },
+        { field: 'subscription', value: subscription },
+      ];
+
+      const missingField = requiredFields.find(({ value }) =>
+        value === undefined || value === null || value === ""
+      );
+
+      if (missingField) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: `Missing required field: ${missingField.field}`,
+        });
+        return;
+      }
+
+      if (!['free', 'basic', 'premium'].includes(subscription)) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Invalid subscription type. Must be free, basic, or premium',
+        });
+        return;
+      }
+
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount,
+        currency,
+        metadata: {
+          shopId,
+          subscription,
+        },
+      });
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+      });
+    } catch (error: any) {
+      console.error("❌ [ShopController] Create subscription payment intent error:", error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: `Failed to create payment intent: ${error.message}`,
+      });
+    }
+  };
+
+   confirmSubscriptionPayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { paymentIntentId, shopId, subscription, amount, currency } = req.body;
+
+      // Validate inputs (add more as needed)
+      if (!paymentIntentId || !shopId || !subscription || !amount || !currency) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Missing required fields',
+        });
+        return;
+      }
+
+      if (!Types.ObjectId.isValid(shopId)) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Invalid shopId',
+        });
+        return;
+      }
+
+      // Retrieve and confirm the payment intent from Stripe
+      const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+      if (paymentIntent.status !== 'succeeded') {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Payment not successful',
+        });
+        return;
+      }
+
+      // Start MongoDB transaction
+      const session = await mongoose.startSession();
+      await session.withTransaction(async () => {
+        // Update shop subscription
+        const updatedShop = await this.shopService.updateShopSubscription(shopId, subscription);
+
+        // Optional: If recording as a wallet transaction (e.g., credit admin wallet)
+        // Fetch admin wallet (assuming admin ID is configured)
+        const adminId = process.env.ADMIN_ID || '685ff3212adf35c013419da4';  // From your code
+        const adminWallet = await this.walletService.getWalletByOwner(new Types.ObjectId(adminId), 'admin', session);
+        if (!adminWallet) {
+          throw new CustomError('Admin wallet not found', HTTP_STATUS.NOT_FOUND);
+        }
+
+        // Create transaction WITHOUT converting paymentIntentId to ObjectId
+        // Instead, store paymentIntentId in description or add a new string field to WalletTransactionSchema (e.g., externalRef: String)
+        const adminTransaction: IWalletTransaction = {
+          type: 'credit',
+          amount: amount / 100,  // Convert from cents/paise
+          currency,
+          description: `Subscription payment received from shop ${shopId} (Stripe ID: ${paymentIntentId})`,
+          // If referenceId is required and must be ObjectId, generate a new one or reference a new payment document
+          // referenceId: new Types.ObjectId(),  // Example: Generate new if no real reference
+          referenceId: undefined,  // Or omit if not referencing a MongoDB doc
+        };
+
+        // Update admin wallet balance and add transaction
+        await this.walletService.walletRepository.updateBalance(
+          new Types.ObjectId(adminWallet._id),  // Valid ObjectId
+          adminTransaction.amount,
+          'credit'
+        );
+        await this.walletService.walletRepository.addTransaction(
+          new Types.ObjectId(adminWallet._id),  // Valid ObjectId
+          adminTransaction
+        );
+      });
+
+      session.endSession();
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: 'Subscription payment confirmed and updated successfully',
+      });
+    } catch (error: any) {
+      console.error("❌ [ShopController] Confirm subscription payment error:", error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: `Failed to confirm subscription payment: ${error.message}`,
+      });
+    }
+  };
+
+  updateShopSubscription = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { shopId } = req.params;
+      const { subscription } = req.body;
+
+      if (!shopId) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'Shop ID is required'
+        });
+        return;
+      }
+
+      if (!['free', 'basic', 'premium'].includes(subscription)) {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'Invalid subscription type. Must be free, basic, or premium'
+        });
+        return;
+      }
+
+      const updatedShop = await this.shopService.updateShopSubscription(shopId, subscription);
+
+      res.status(HTTP_STATUS.OK || 200).json({
+        success: true,
+        data: updatedShop,
+        message: `Shop subscription updated to ${subscription} successfully`
+      });
+    } catch (error) {
+      console.error("❌ [ShopController] Update shop subscription error:", error);
+
+      const statusCode = error instanceof CustomError
+        ? error.statusCode
+        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to update shop subscription';
+
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
+    }
+  };
+
   getUnverifiedShops = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -171,7 +408,7 @@ export class ShopController implements IShopController {
 
       const statusCode = error instanceof CustomError
         ? error.statusCode
-        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 400);
 
       const message = error instanceof Error
         ? error.message
@@ -389,42 +626,42 @@ export class ShopController implements IShopController {
     }
   };
 
-  public getShopAvailability= async (req: Request, res: Response): Promise<void> => {
-        try {
-            const { shopId } = req.params;
-            const availability = await this.shopAvailabilityService.getShopAvailability(shopId);
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                data: availability,
-            });
-        } catch (error) {
-            console.error('❌ [ShopController] Get availability error:', error);
-            const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-            const message = error instanceof Error ? error.message : 'Failed to get shop availability';
-            res.status(statusCode).json({
-                success: false,
-                message,
-            });
-        }
-    };
+  public getShopAvailability = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { shopId } = req.params;
+      const availability = await this.shopAvailabilityService.getShopAvailability(shopId);
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: availability,
+      });
+    } catch (error) {
+      console.error('❌ [ShopController] Get availability error:', error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : 'Failed to get shop availability';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
+    }
+  };
 
-    public updateShopAvailability= async (req: Request, res: Response): Promise<void> => {
-        try {
-            const { shopId } = req.params;
-            const availabilityData = req.body;
-            const updatedShop = await this.shopAvailabilityService.updateShopAvailability(shopId, availabilityData);
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                data: updatedShop,
-            });
-        } catch (error) {
-            console.error('❌ [ShopController] Update availability error:', error);
-            const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-            const message = error instanceof Error ? error.message : 'Failed to update shop availability';
-            res.status(statusCode).json({
-                success: false,
-                message,
-            });
-        }
-    };
+  public updateShopAvailability = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { shopId } = req.params;
+      const availabilityData = req.body;
+      const updatedShop = await this.shopAvailabilityService.updateShopAvailability(shopId, availabilityData);
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: updatedShop,
+      });
+    } catch (error) {
+      console.error('❌ [ShopController] Update availability error:', error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : 'Failed to update shop availability';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
+    }
+  };
 }

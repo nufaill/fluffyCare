@@ -39,6 +39,7 @@ export interface CreateShopData {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   shopAvailability?: ShopAvailability;
+  subscription?: "free" | "basic" | "premium";
 }
 
 // Mongoose Shop Document
@@ -59,6 +60,7 @@ export interface ShopDocument extends Document {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   shopAvailability?: ShopAvailability;
+  subscription?: "free" | "basic" | "premium";
   createdAt: Date;
   updatedAt: Date;
 }

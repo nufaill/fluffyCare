@@ -25,7 +25,7 @@ const shopAvailabilitySchema = new Schema(
       end: { type: String, default: '14:00' },
     },
     teaBreak: {
-      start: { type: String, default: '' }, 
+      start: { type: String, default: '' },
       end: { type: String, default: '' },
     },
     customHolidays: {
@@ -38,8 +38,6 @@ const shopAvailabilitySchema = new Schema(
     timestamps: true,
   }
 );
-
-
 // Main Shop Schema
 const shopSchema = new Schema<ShopDocument>(
   {
@@ -70,7 +68,13 @@ const shopSchema = new Schema<ShopDocument>(
 
     shopAvailability: {
       type: shopAvailabilitySchema,
-      default: () => ({}), // Will apply all defaults defined above
+      default: () => ({}),
+    },
+
+    subscription: {
+      type: String,
+      enum: ["free", "basic", "premium"],
+      default: "free",
     },
 
     resetPasswordToken: { type: String },

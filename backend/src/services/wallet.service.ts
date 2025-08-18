@@ -15,7 +15,7 @@ import { IWallet, IWalletTransaction } from '../types/Wallet.types';
 const DEFAULT_COMMISSION_RATE = 0.1; // 10% commission
 
 export class WalletService implements IWalletService {
-  public walletRepository: IWalletRepository; // Made public for access in PaymentController
+  public walletRepository: IWalletRepository; 
   private appointmentService?: IAppointmentService;
 
   constructor(walletRepository: IWalletRepository) {
@@ -120,10 +120,6 @@ export class WalletService implements IWalletService {
     const session = await mongoose.startSession();
 
     try {
-      console.log(`=== PROCESSING WALLET PAYMENT ===`);
-      console.log(`User ID: ${dto.userId}, Shop ID: ${dto.shopId}`);
-      console.log(`Amount: ${dto.amount} ${dto.currency}`);
-      console.log(`Appointment ID: ${dto.appointmentId}`);
 
       await session.withTransaction(async () => {
         // Fetch wallets
@@ -162,9 +158,6 @@ export class WalletService implements IWalletService {
         const commission = Math.round(dto.amount * DEFAULT_COMMISSION_RATE * 100) / 100;
         const shopAmount = Math.round((dto.amount - commission) * 100) / 100;
 
-        console.log(`Commission breakdown:`);
-        console.log(`Total: ${dto.amount}, Commission: ${commission}, Shop Amount: ${shopAmount}`);
-
         // Create transaction records
         const userTransaction = new WalletTransactionDto(
           'debit',
@@ -190,26 +183,17 @@ export class WalletService implements IWalletService {
           dto.appointmentId
         );
 
-        // Update wallets
-        console.log(`Updating wallet balances...`);
-
         // Debit user wallet
         await this.walletRepository.updateBalance(userWallet._id!, dto.amount, 'debit');
         await this.walletRepository.addTransaction(userWallet._id!, userTransaction);
-        console.log(`✅ Debited ${dto.amount} from user wallet`);
-
         // Credit shop wallet
         await this.walletRepository.updateBalance(shopWallet._id!, shopAmount, 'credit');
         await this.walletRepository.addTransaction(shopWallet._id!, shopTransaction);
-        console.log(`✅ Credited ${shopAmount} to shop wallet`);
-
         // Credit admin wallet
         await this.walletRepository.updateBalance(adminWallet._id!, commission, 'credit');
         await this.walletRepository.addTransaction(adminWallet._id!, adminTransaction);
-        console.log(`✅ Credited ${commission} to admin wallet`);
       });
 
-      console.log(`✅ Wallet payment processed successfully`);
     } catch (error: any) {
       console.error(`❌ Failed to process wallet payment:`, error);
       throw error;
@@ -226,10 +210,6 @@ export class WalletService implements IWalletService {
     const session = await mongoose.startSession();
 
     try {
-      console.log(`=== PROCESSING WALLET REFUND ===`);
-      console.log(`Appointment ID: ${dto.appointmentId}`);
-      console.log(`Refund Amount: ${dto.amount} ${dto.currency}`);
-
       const appointmentResult = await this.appointmentService.getAppointmentById(dto.appointmentId);
       if (!appointmentResult.success || !appointmentResult.data) {
         throw new Error('Appointment not found for refund');
@@ -241,7 +221,6 @@ export class WalletService implements IWalletService {
         const userWallet = await this.walletRepository.findWalletByOwner(appointment.userId, 'user');
         const shopWallet = await this.walletRepository.findWalletByOwner(appointment.shopId, 'shop');
 
-        // Get admin ID from environment or use default
         const adminId = process.env.ADMIN_ID || '685ff3212adf35c013419da4';
         const adminWallet = await this.walletRepository.findWalletByOwner(
           new Types.ObjectId(adminId),
@@ -301,20 +280,16 @@ export class WalletService implements IWalletService {
         // Credit user wallet
         await this.walletRepository.updateBalance(userWallet._id!, dto.amount, 'credit');
         await this.walletRepository.addTransaction(userWallet._id!, userTransaction);
-        console.log(`✅ Credited ${dto.amount} to user wallet`);
 
         // Debit shop wallet
         await this.walletRepository.updateBalance(shopWallet._id!, shopAmount, 'debit');
         await this.walletRepository.addTransaction(shopWallet._id!, shopTransaction);
-        console.log(`✅ Debited ${shopAmount} from shop wallet`);
 
         // Debit admin wallet
         await this.walletRepository.updateBalance(adminWallet._id!, commission, 'debit');
         await this.walletRepository.addTransaction(adminWallet._id!, adminTransaction);
-        console.log(`✅ Debited ${commission} from admin wallet`);
       });
 
-      console.log(`✅ Wallet refund processed successfully`);
     } catch (error: any) {
       console.error(`❌ Failed to process wallet refund:`, error);
       throw error;

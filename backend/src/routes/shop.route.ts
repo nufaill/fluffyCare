@@ -799,22 +799,10 @@ router.get('/staff/:id', shopDependencies.staffController.findById as RequestHan
 router.get('/:shopId/availability', shopDependencies.shopController.getShopAvailability as RequestHandler)
 router.put('/:shopId/availability', shopDependencies.shopController.updateShopAvailability as RequestHandler)
 
-
-
-
-router.post('/slot/create', shopDependencies.slotController.create as RequestHandler);
-router.get('/slot/:slotId', shopDependencies.slotController.findById as RequestHandler);
-router.get('/slot/shop/:shopId/range', shopDependencies.slotController.findByShopAndDateRange as RequestHandler);
-router.get('/slot/shop/:shopId', shopDependencies.slotController.findByShop as RequestHandler);
-router.patch('/slot/:slotId', shopDependencies.slotController.update as RequestHandler);
-router.delete('/slot/:slotId', shopDependencies.slotController.delete as RequestHandler);
-router.patch('/slot/:slotId/cancel', shopDependencies.slotController.cancel as RequestHandler);
-router.get('/slot/date/:slotDate', shopDependencies.slotController.findByDate as RequestHandler);
-router.get('/slot/:shopId/staffCount', shopDependencies.slotController.getStaffByShop as RequestHandler);
-router.get('/slot/shop/:shopId/booked', shopDependencies.slotController.findBookedByShop as RequestHandler);
-
-
-
+router.get('/shops/:shopId/subscription', shopDependencies.shopController.getShopSubscription as RequestHandler);
+router.patch('/shops/:shopId/subscription', shopDependencies.shopController.updateShopSubscription as RequestHandler);
+router.post('/payment/create-subscription-payment-intent', shopDependencies.shopController.createSubscriptionPaymentIntent as RequestHandler);
+router.post('/payment/confirm-subscription-payment', shopDependencies.shopController.confirmSubscriptionPayment as RequestHandler);
 
 router.post('/appointments', appointmentDependencies.appointmentController.createAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
 router.get('/appointments/slots/availability', appointmentDependencies.appointmentController.checkSlotAvailability.bind(appointmentDependencies.appointmentController) as RequestHandler);

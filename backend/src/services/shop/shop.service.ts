@@ -5,7 +5,7 @@ import { HTTP_STATUS } from '../../shared/constant';
 import { IShopService } from '../../interfaces/serviceInterfaces/IShopService';
 
 export class ShopService implements IShopService {
-  constructor(private readonly shopRepository: ShopRepository) {}
+  constructor(private readonly shopRepository: ShopRepository) { }
 
   private validateShopId(shopId: string): void {
     if (!/^[a-f\d]{24}$/i.test(shopId)) {
@@ -66,7 +66,7 @@ export class ShopService implements IShopService {
     if (!updatedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
-    return updatedShop as ShopResponseDTO; 
+    return updatedShop as ShopResponseDTO;
   }
 
   async getAllShops(page: number = 1, limit: number = 10): Promise<{ shops: ShopResponseDTO[], total: number, page: number, limit: number }> {
@@ -87,6 +87,28 @@ export class ShopService implements IShopService {
   async updateShopStatus(shopId: string, isActive: boolean): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
     const updatedShop = await this.shopRepository.updateShopStatus(shopId, isActive);
+    if (!updatedShop) {
+      throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
+    }
+    return updatedShop;
+  }
+  
+  async getShopSubscription(shopId: string): Promise<'free' | 'basic' | 'premium'> {
+    this.validateShopId(shopId);
+    const shop = await this.shopRepository.findById(shopId);
+    if (!shop) {
+      throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
+    }
+    return shop.subscription || 'free';
+  }
+
+  async updateShopSubscription(shopId: string, subscription: 'free' | 'basic' | 'premium'): Promise<ShopResponseDTO> {
+    this.validateShopId(shopId);
+    if (!['free', 'basic', 'premium'].includes(subscription)) {
+      throw new CustomError('Invalid subscription type. Must be free, basic, or premium', HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const updatedShop = await this.shopRepository.updateShopSubscription(shopId, subscription);
     if (!updatedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -141,6 +163,6 @@ export class ShopService implements IShopService {
     if (!updatedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
-    return updatedShop as ShopResponseDTO; 
+    return updatedShop as ShopResponseDTO;
   }
 }

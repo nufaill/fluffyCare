@@ -19,6 +19,7 @@ import { useSelector } from "react-redux"
 import type { RootState } from "@/redux/store"
 import { removeShop } from "@/redux/slices/shop.slice"
 import { logoutShop } from "@/services/shop/auth.service"
+import BillingModal from "./BillingModal"
 
 interface NavbarProps {
   className?: string
@@ -45,6 +46,7 @@ export function Navbar({
 }: NavbarProps) {
   const [searchFocused, setSearchFocused] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isBillingOpen, setIsBillingOpen] = useState(false)
 
   const { shopData: shop } = useSelector((state: RootState) => state.shop)
   const dispatch = useDispatch()
@@ -164,7 +166,10 @@ export function Navbar({
               <DropdownMenuItem className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 ⚙️ Account Settings
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <DropdownMenuItem
+                onClick={() => setIsBillingOpen(true)}
+                className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
                 💳 Billing & Plans
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
@@ -178,6 +183,7 @@ export function Navbar({
           </DropdownMenu>
         </div>
       </div>
+      {isBillingOpen && <BillingModal onClose={() => setIsBillingOpen(false)} />}
     </header>
   )
 }
