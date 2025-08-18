@@ -1,3 +1,4 @@
+// wallet.service.ts (updated)
 import mongoose, { Types } from 'mongoose';
 import { IWalletRepository } from '../interfaces/repositoryInterfaces/IWalletRepository';
 import { IWalletService } from '../interfaces/serviceInterfaces/IWalletService';
@@ -10,6 +11,7 @@ import {
   WalletResponseDto,
 } from '../dto/wallet.dto';
 import { IWallet, IWalletTransaction } from '../types/Wallet.types';
+import { Shop } from '../models/shop.model';  // Added import
 
 // Configurable commission rate (could be moved to a database or config service)
 const DEFAULT_COMMISSION_RATE = 0.1; // 10% commission
@@ -25,6 +27,29 @@ export class WalletService implements IWalletService {
   // Add setter for AppointmentService
   public setAppointmentService(appointmentService: IAppointmentService): void {
     this.appointmentService = appointmentService;
+  }
+
+  // Added method to get commission rate based on shop subscription
+  public async getCommissionRate(shopId: Types.ObjectId): Promise<number> {
+    try {
+      const shop = await Shop.findById(shopId).select('subscription').exec();
+      if (!shop) {
+        throw new Error('Shop not found');
+      }
+      switch (shop.subscription?.toLowerCase()) {
+        case 'free':
+          return 0.1;
+        case 'basic':
+          return 0.05;
+        case 'premium':
+          return 0.03;
+        default:
+          return DEFAULT_COMMISSION_RATE;
+      }
+    } catch (error: any) {
+      console.error(`Error fetching commission rate for shop ${shopId}:`, error);
+      return DEFAULT_COMMISSION_RATE; // Fallback to default if error
+    }
   }
 
   // In wallet.service.ts
@@ -154,8 +179,11 @@ export class WalletService implements IWalletService {
           throw new Error(`Insufficient balance in user wallet. Required: ${dto.amount}, Available: ${userWallet.balance}`);
         }
 
+        // Get dynamic commission rate based on shop subscription
+        const commissionRate = await this.getCommissionRate(dto.shopId);
+
         // Calculate commission
-        const commission = Math.round(dto.amount * DEFAULT_COMMISSION_RATE * 100) / 100;
+        const commission = Math.round(dto.amount * commissionRate * 100) / 100;
         const shopAmount = Math.round((dto.amount - commission) * 100) / 100;
 
         // Create transaction records
@@ -237,8 +265,11 @@ export class WalletService implements IWalletService {
         console.log(`Shop: ${shopWallet.balance} ${dto.currency}`);
         console.log(`Admin: ${adminWallet.balance} ${dto.currency}`);
 
+        // Get dynamic commission rate based on shop subscription
+        const commissionRate = await this.getCommissionRate(appointment.shopId);
+
         // Calculate commission for reversal
-        const commission = Math.round(dto.amount * DEFAULT_COMMISSION_RATE * 100) / 100;
+        const commission = Math.round(dto.amount * commissionRate * 100) / 100;
         const shopAmount = Math.round((dto.amount - commission) * 100) / 100;
 
         // Verify shop and admin have sufficient balance for reversal

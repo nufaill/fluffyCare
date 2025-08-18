@@ -125,10 +125,18 @@ export function EnhancedTimeSlotGenerator({
 }: TimeSlotGeneratorProps) {
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
   const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([])
-  const [config, setConfig] = useState<SlotGenerationConfig>(DEFAULT_CONFIG)
+  const [config] = useState<SlotGenerationConfig>(DEFAULT_CONFIG)
   const [viewMode, setViewMode] = useState<"grid" | "staff">("staff")
   const [selectedStaff, setSelectedStaff] = useState<string | "all">("all")
   const [currentCategory, setCurrentCategory] = useState(activeCategory)
+
+  // Function to format date consistently
+  const formatDateToString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 
   // Add function to mark a slot as booked immediately
   const markSlotAsBooked = useCallback((slot: TimeSlot) => {
@@ -287,7 +295,8 @@ export function EnhancedTimeSlotGenerator({
   useEffect(() => {
     const fetchBookedSlots = async () => {
       try {
-        const dateStr = selectedDate.toISOString().split('T')[0];
+        const dateStr = formatDateToString(selectedDate);
+        console.log('Fetching booked slots for date:', dateStr);
         const response = await Useraxios.get(`/appointments/booked-slots/${shopId}?date=${dateStr}`);
 
         if (response.data.success) {
@@ -350,12 +359,13 @@ export function EnhancedTimeSlotGenerator({
     );
   };
 
-  const generateStaffSlots = (staffMember: Staff): TimeSlot[] => {
-    const dateStr = selectedDate.toISOString().split("T")[0]
-    const dayName = selectedDate.toLocaleDateString("en-US", { weekday: "long" })
+  const generateStaffSlots = (staffMember: Staff, currentDate: Date): TimeSlot[] => {
+    // Use the correctly formatted date string from selectedDate
+    const dateStr = formatDateToString(currentDate);
+    const dayName = currentDate.toLocaleDateString("en-US", { weekday: "long" })
     const isWorkingDay = shopAvailability.workingDays.includes(dayName)
 
-    console.log(`Generating slots for ${staffMember.name} (ID: ${staffMember.id})`)
+    console.log(`Generating slots for ${staffMember.name} (ID: ${staffMember.id}) on date: ${dateStr}`)
 
     if (!isWorkingDay || shopAvailability.customHolidays.includes(dateStr) || !staffMember.isActive) {
       console.log(`Skipping ${staffMember.name}: not working day, holiday, or inactive`)
@@ -393,7 +403,7 @@ export function EnhancedTimeSlotGenerator({
         }
 
         // Check if time has passed (only for today)
-        if (selectedDate.toDateString() === new Date().toDateString()) {
+        if (currentDate.toDateString() === new Date().toDateString()) {
           const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
           if (current <= nowMin) status = "unavailable"
         }
@@ -403,7 +413,7 @@ export function EnhancedTimeSlotGenerator({
         _id: `${staffMember.id}-${dateStr}-${minutesToTime(current)}`, 
         shopId,
         staffId: staffMember.id,
-        slotDate: dateStr,
+        slotDate: dateStr, // This now uses the correct date from selectedDate
         startTime: minutesToTime(current),
         endTime: minutesToTime(end),
         durationInMinutes: duration,
@@ -418,7 +428,7 @@ export function EnhancedTimeSlotGenerator({
       index++
     }
 
-    console.log(`Generated ${slots.length} slots for ${staffMember.name} with ${duration} minute duration`)
+    console.log(`Generated ${slots.length} slots for ${staffMember.name} with ${duration} minute duration on ${dateStr}`)
     return slots
   }
 
@@ -429,10 +439,11 @@ export function EnhancedTimeSlotGenerator({
     }
     let all: TimeSlot[] = []
     staff.forEach((s) => {
-      const staffSlots = generateStaffSlots(s)
+      const staffSlots = generateStaffSlots(s, selectedDate)
       all = [...all, ...staffSlots]
     })
-    console.log(`Total slots generated: ${all.length}`)
+    const dateStr = formatDateToString(selectedDate);
+    console.log(`Total slots generated: ${all.length} for date: ${dateStr}`)
     return all
   }
 
@@ -451,10 +462,12 @@ export function EnhancedTimeSlotGenerator({
   }, [timeSlots]);
 
   const filteredSlots = useMemo(() => {
+    const dateStr = formatDateToString(selectedDate);
     console.log("Filtering slots:", {
       totalSlots: availableSlots.length,
       selectedStaff,
       currentCategory,
+      selectedDate: dateStr,
       staffIds: availableSlots.map((s) => ({ id: s.staffId, name: s.staffName })),
     })
 
@@ -472,9 +485,16 @@ export function EnhancedTimeSlotGenerator({
     }
 
     return s
-  }, [availableSlots, currentCategory, selectedStaff])
+  }, [availableSlots, currentCategory, selectedStaff, selectedDate])
 
+  // Generate slots when dependencies change - simplified to prevent infinite loops
   useEffect(() => {
+    const dateStr = formatDateToString(selectedDate);
+    console.log('Regenerating slots because dependencies changed:', {
+      selectedDate: dateStr,
+      staffCount: staff.length,
+      serviceName: service.name
+    });
     const slots = generateAllTimeSlots()
     setTimeSlots(slots)
   }, [staff, selectedDate, shopAvailability, service, bookedSlots])
@@ -514,7 +534,16 @@ export function EnhancedTimeSlotGenerator({
       <Button
         key={`${slot.staffId}-${slot.slotDate}-${slot.startTime}`}
         className={buttonStyles}
-        onClick={() => onSlotSelect(slot)}
+        onClick={() => {
+          console.log('Slot clicked:', {
+            slotDate: slot.slotDate,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            staffId: slot.staffId,
+            staffName: slot.staffName
+          });
+          onSlotSelect(slot);
+        }}
         disabled={disabled}
       >
         {isSelected && <CheckCircle2 className="w-4 h-4 mr-2" />}
@@ -636,7 +665,7 @@ export function EnhancedTimeSlotGenerator({
               <div>
                 <h2 className="text-2xl font-bold">Available Time Slots</h2>
                 <p className="text-gray-300 text-sm">
-                  Choose your preferred appointment time ({serviceDuration} min sessions)
+                  Choose your preferred appointment time ({serviceDuration} min sessions) for {formatDateToString(selectedDate)}
                   {isConnected && (
                     <span className="ml-2 inline-flex items-center">
                       <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>

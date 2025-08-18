@@ -238,8 +238,10 @@ export class PaymentController {
         throw new Error("One or more wallets could not be ensured");
       }
 
+      // Get dynamic commission rate based on shop subscription
+      const commissionRate = await this.walletService.getCommissionRate(shopObjectId);
+
       // Calculate commission
-      const commissionRate = parseFloat(process.env.COMMISSION_RATE || '0.1');
       const adminCommission = Math.round((paymentAmount / 100) * commissionRate * 100) / 100;
       const shopAmount = Math.round((paymentAmount / 100 - adminCommission) * 100) / 100;
 
@@ -249,7 +251,7 @@ export class PaymentController {
         type: 'credit',
         amount: adminCommission,
         currency: currency,
-        description: `Commission from appointment ${appointmentObjectId} (${commissionRate * 100}%)`,
+        description: `Commission from appointment ${appointmentObjectId}`,
         referenceId: appointmentObjectId,
       });
 
@@ -258,7 +260,7 @@ export class PaymentController {
         type: 'credit',
         amount: shopAmount,
         currency: currency,
-        description: `Payment for appointment ${appointmentObjectId} (after ${commissionRate * 100}% commission)`,
+        description: `Payment for appointment ${appointmentObjectId} (after commission)`,
         referenceId: appointmentObjectId,
       });
 
@@ -275,7 +277,6 @@ export class PaymentController {
       console.error("Error details:", walletError);
       console.error("Stack trace:", walletError.stack);
 
-      // Roll back appointment creation if wallet transactions fail
       await this.appointmentService.cancelAppointment(appointmentObjectId.toString());
 
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
