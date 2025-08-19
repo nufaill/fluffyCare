@@ -1,15 +1,14 @@
-import { Request, Response } from "express";
-import { AuthService } from "../../services/shop/auth.service";
-import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../../shared/constant";
-import { CustomError } from "../../util/CustomerError";
-import { setAuthCookies } from "util/cookie-helper";
-import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from "../../dto/auth.dto";
+import { Request, Response } from 'express';
+import { IShopAuthService } from '../../interfaces/serviceInterfaces/IAuthService';
+import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
+import { CustomError } from '../../util/CustomerError';
+import { setAuthCookies } from '../../util/cookie-helper';
+import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordDTO, SendResetLinkDTO } from '../../dto/auth.dto';
 
 export class ShopAuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly _authService: IShopAuthService) {}
 
-  // Register shop 
-  public register = async (req: Request, res: Response): Promise<void> => {
+  public async register(req: Request, res: Response): Promise<void> {
     try {
       const shopData: CreateShopDTO = req.body;
 
@@ -17,7 +16,7 @@ export class ShopAuthController {
       if (!email || !password || !name || !phone || !city || !streetAddress || !certificateUrl || !location) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'All required fields (email, password, name, phone, city, streetAddress, certificateUrl, location) must be provided'
+          message: 'All required fields (email, password, name, phone, city, streetAddress, certificateUrl, location) must be provided',
         });
         return;
       }
@@ -25,7 +24,7 @@ export class ShopAuthController {
       if (location.type !== 'Point' || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'Invalid location format. Expected GeoJSON Point with coordinates [longitude, latitude]'
+          message: 'Invalid location format. Expected GeoJSON Point with coordinates [longitude, latitude]',
         });
         return;
       }
@@ -33,12 +32,12 @@ export class ShopAuthController {
       if (typeof lng !== 'number' || typeof lat !== 'number' || lng < -180 || lng > 180 || lat < -90 || lat > 90) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'Invalid location coordinates. Must be numbers with longitude between -180 and 180, latitude between -90 and 90'
+          message: 'Invalid location coordinates. Must be numbers with longitude between -180 and 180, latitude between -90 and 90',
         });
         return;
       }
 
-      const result = await this.authService.register(shopData);
+      const result = await this._authService.register(shopData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -47,24 +46,12 @@ export class ShopAuthController {
         otpSent: true,
       });
     } catch (error) {
-      console.error("❌ [ShopAuthController] Registration failed:", error);
-
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        HTTP_STATUS.BAD_REQUEST;
-
-      const message = error instanceof Error ?
-        error.message :
-        "Failed to register shop";
-
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
+      console.error('❌ [ShopAuthController] Registration failed:', error);
+      this._handleError(res, error, 'Failed to register shop');
     }
-  };
+  }
 
-  public verifyOtp = async (req: Request, res: Response): Promise<void> => {
+  public async verifyOtp(req: Request, res: Response): Promise<void> {
     try {
       const verifyData: VerifyOtpDTO = req.body;
 
@@ -76,7 +63,7 @@ export class ShopAuthController {
         return;
       }
 
-      const result = await this.authService.verifyOtpAndCompleteRegistration(verifyData);
+      const result = await this._authService.verifyOtpAndCompleteRegistration(verifyData);
 
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
@@ -84,28 +71,16 @@ export class ShopAuthController {
         shop: result.shop,
         tokens: {
           accessToken: result.tokens.accessToken,
-          refreshToken: result.tokens.refreshToken
-        }
+          refreshToken: result.tokens.refreshToken,
+        },
       });
     } catch (error) {
-      console.error("❌ [ShopAuthController] OTP verification error:", error);
-
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        HTTP_STATUS.BAD_REQUEST;
-
-      const message = error instanceof Error ?
-        error.message :
-        'OTP verification failed';
-
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
+      console.error('❌ [ShopAuthController] OTP verification error:', error);
+      this._handleError(res, error, 'OTP verification failed');
     }
-  };
+  }
 
-  public resendOtp = async (req: Request, res: Response): Promise<void> => {
+  public async resendOtp(req: Request, res: Response): Promise<void> {
     try {
       const resendData: ResendOtpDTO = req.body;
 
@@ -117,44 +92,31 @@ export class ShopAuthController {
         return;
       }
 
-      await this.authService.resendOtp(resendData);
+      await this._authService.resendOtp(resendData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: 'New OTP sent to your email',
       });
     } catch (error) {
-      console.error("❌ [ShopAuthController] Resend OTP error:", error);
-
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        HTTP_STATUS.BAD_REQUEST;
-
-      const message = error instanceof Error ?
-        error.message :
-        'Failed to resend OTP';
-
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
+      console.error('❌ [ShopAuthController] Resend OTP error:', error);
+      this._handleError(res, error, 'Failed to resend OTP');
     }
-  };
+  }
 
-  // Shop login
-  public login = async (req: Request, res: Response): Promise<void> => {
+  public async login(req: Request, res: Response): Promise<void> {
     try {
       const loginData: LoginUserDTO = req.body;
 
       if (!loginData.email || !loginData.password) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: "Email and password are required",
+          message: 'Email and password are required',
         });
         return;
       }
 
-      const result = await this.authService.login(loginData);
+      const result = await this._authService.login(loginData);
 
       if (!result.shop.isVerified) {
         res.status(HTTP_STATUS.UNAUTHORIZED).json({
@@ -168,7 +130,7 @@ export class ShopAuthController {
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: "Login successful",
+        message: 'Login successful',
         shop: {
           id: result.shop.id,
           name: result.shop.name,
@@ -188,25 +150,12 @@ export class ShopAuthController {
         token: result.tokens.accessToken,
       });
     } catch (error) {
-      console.error("❌ [ShopAuthController] Login failed:", error);
-
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        HTTP_STATUS.UNAUTHORIZED;
-
-      const message = error instanceof Error ?
-        error.message :
-        "Login failed";
-
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
+      console.error('❌ [ShopAuthController] Login failed:', error);
+      this._handleError(res, error, 'Login failed', HTTP_STATUS.UNAUTHORIZED);
     }
-  };
+  }
 
-  // Refresh token
-  public refreshToken = async (req: Request, res: Response): Promise<void> => {
+  public async refreshToken(req: Request, res: Response): Promise<void> {
     try {
       const { refreshToken } = req.body;
 
@@ -218,32 +167,20 @@ export class ShopAuthController {
         return;
       }
 
-      const newAccessToken = await this.authService.refreshToken(refreshToken);
+      const newAccessToken = await this._authService.refreshToken(refreshToken);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: 'Token refreshed successfully',
-        accessToken: newAccessToken
+        accessToken: newAccessToken,
       });
     } catch (error) {
-      console.error("❌ [ShopAuthController] Token refresh error:", error);
-
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        HTTP_STATUS.UNAUTHORIZED;
-
-      const message = error instanceof Error ?
-        error.message :
-        'Token refresh failed';
-
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
+      console.error('❌ [ShopAuthController] Token refresh error:', error);
+      this._handleError(res, error, 'Token refresh failed', HTTP_STATUS.UNAUTHORIZED);
     }
-  };
+  }
 
-  public sendResetLink = async (req: Request, res: Response): Promise<void> => {
+  public async sendResetLink(req: Request, res: Response): Promise<void> {
     try {
       const resetLinkData: SendResetLinkDTO = req.body;
 
@@ -255,32 +192,19 @@ export class ShopAuthController {
         return;
       }
 
-      await this.authService.sendResetLink(resetLinkData);
+      await this._authService.sendResetLink(resetLinkData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: SUCCESS_MESSAGES.OTP_SEND_SUCCESS || 'Reset link sent successfully'
+        message: SUCCESS_MESSAGES.OTP_SEND_SUCCESS || 'Reset link sent successfully',
       });
     } catch (error) {
-      console.error("❌ [ShopAuthController] Send reset link error:", error);
-
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        HTTP_STATUS.BAD_REQUEST;
-
-      const message = error instanceof Error ?
-        error.message :
-        'Failed to send reset link';
-
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
+      console.error('❌ [ShopAuthController] Send reset link error:', error);
+      this._handleError(res, error, 'Failed to send reset link');
     }
-  };
+  }
 
-  // Reset password
-  public resetPassword = async (req: Request, res: Response): Promise<void> => {
+  public async resetPassword(req: Request, res: Response): Promise<void> {
     try {
       const resetData: ResetPasswordDTO = req.body;
 
@@ -292,44 +216,39 @@ export class ShopAuthController {
         return;
       }
 
-      await this.authService.resetPassword(resetData);
+      await this._authService.resetPassword(resetData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS || 'Password reset successful'
+        message: SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS || 'Password reset successful',
       });
     } catch (error) {
-      console.error("❌ [ShopAuthController] Reset password error:", error);
-
-      const statusCode = error instanceof CustomError ?
-        error.statusCode :
-        HTTP_STATUS.BAD_REQUEST;
-
-      const message = error instanceof Error ?
-        error.message :
-        'Password reset failed';
-
-      res.status(statusCode).json({
-        success: false,
-        message,
-      });
+      console.error('❌ [ShopAuthController] Reset password error:', error);
+      this._handleError(res, error, 'Password reset failed');
     }
-  };
+  }
 
-  // Logout
-  public logout = async (_req: Request, res: Response): Promise<void> => {
+  public async logout(_req: Request, res: Response): Promise<void> {
     try {
       res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: "Logged out successfully",
+        message: 'Logged out successfully',
       });
     } catch (error) {
-      console.error("❌ [ShopAuthController] Logout error:", error);
-
+      console.error('❌ [ShopAuthController] Logout error:', error);
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: "Logout failed",
+        message: 'Logout failed',
       });
     }
-  };
+  }
+
+  private _handleError(res: Response, error: unknown, defaultMessage: string, defaultStatus: number = HTTP_STATUS.BAD_REQUEST): void {
+    const statusCode = error instanceof CustomError ? error.statusCode : defaultStatus;
+    const message = error instanceof Error ? error.message : defaultMessage;
+    res.status(statusCode).json({
+      success: false,
+      message,
+    });
+  }
 }

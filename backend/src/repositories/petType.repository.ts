@@ -3,7 +3,6 @@ import { CreatePetType, PetTypeDocument } from '../types/PetType.type';
 import { IPetTypeRepository } from '../interfaces/repositoryInterfaces/IPetTypeRepository';
 
 export class PetTypeRepository implements IPetTypeRepository {
-  
   async createPetType(petTypeData: Partial<CreatePetType>): Promise<PetTypeDocument> {
     const petType = new PetType(petTypeData);
     return await petType.save();

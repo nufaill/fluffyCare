@@ -1,26 +1,26 @@
 import { PetTypeDocument } from 'types/PetType.type';
-import { PetRepository } from '../../repositories/pet.repository';
+import { CreatePetDTO, UpdatePetDTO } from '../../dto/pet.dto';
 import { PetDocument } from '../../types/Pet.types';
 import { CustomError } from '../../util/CustomerError';
-import { CreatePetDTO, UpdatePetDTO } from '../../dto/pet.dto';
+import { IPetRepository } from '../../interfaces/repositoryInterfaces/IPetRepository';
 import { IPetService } from '../../interfaces/serviceInterfaces/IPetService';
 
 export class PetService implements IPetService {
-  private petRepository: PetRepository;
+  private _petRepository: IPetRepository;
 
-  constructor(petRepository: PetRepository) {
-    this.petRepository = petRepository;
+  constructor(petRepository: IPetRepository) {
+    this._petRepository = petRepository;
   }
 
   async createPet(userId: string, petData: CreatePetDTO): Promise<PetDocument> {
     const { name, petTypeId } = petData;
 
-    const nameExists = await this.petRepository.checkPetNameExists(userId, name);
+    const nameExists = await this._petRepository.checkPetNameExists(userId, name);
     if (nameExists) {
       throw new CustomError('Pet name already exists for this user', 400);
     }
 
-    const newPet = await this.petRepository.createPet({
+    const newPet = await this._petRepository.createPet({
       ...petData,
       userId,
       name: name.trim(),
@@ -36,11 +36,11 @@ export class PetService implements IPetService {
   }
 
   async getPetsByUserId(userId: string): Promise<PetDocument[]> {
-    return await this.petRepository.getPetsByUserId(userId);
+    return await this._petRepository.getPetsByUserId(userId);
   }
 
   async getPetById(petId: string): Promise<PetDocument> {
-    const pet = await this.petRepository.getPetById(petId);
+    const pet = await this._petRepository.getPetById(petId);
     if (!pet) {
       throw new CustomError('Pet not found', 404);
     }
@@ -48,7 +48,7 @@ export class PetService implements IPetService {
   }
 
   async updatePet(petId: string, userId: string, updateData: UpdatePetDTO): Promise<PetDocument> {
-    const existingPet = await this.petRepository.getPetById(petId);
+    const existingPet = await this._petRepository.getPetById(petId);
     if (!existingPet) {
       throw new CustomError('Pet not found', 404);
     }
@@ -58,14 +58,14 @@ export class PetService implements IPetService {
     }
 
     if (updateData.name && updateData.name.trim() !== existingPet.name) {
-      const nameExists = await this.petRepository.checkPetNameExists(userId, updateData.name, petId);
+      const nameExists = await this._petRepository.checkPetNameExists(userId, updateData.name, petId);
       if (nameExists) {
         throw new CustomError('Pet name already exists for this user', 400);
       }
     }
 
     if (updateData.petTypeId && updateData.petTypeId !== existingPet.petTypeId.toString()) {
-      const petTypes = await this.petRepository.getAllPetTypes();
+      const petTypes = await this._petRepository.getAllPetTypes();
       const petTypeExists = petTypes.some(type => type._id.toString() === updateData.petTypeId);
 
       if (!petTypeExists) {
@@ -73,7 +73,7 @@ export class PetService implements IPetService {
       }
     }
 
-    const updatedPet = await this.petRepository.updatePet(petId, {
+    const updatedPet = await this._petRepository.updatePet(petId, {
       ...updateData,
       name: updateData.name?.trim(),
     });
@@ -86,6 +86,6 @@ export class PetService implements IPetService {
   }
 
   async getAllPetTypes(): Promise<PetTypeDocument[]> {
-    return await this.petRepository.getAllPetTypes();
+    return await this._petRepository.getAllPetTypes();
   }
 }

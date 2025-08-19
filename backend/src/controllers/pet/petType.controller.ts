@@ -1,17 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
-import { PetTypeService } from '../../services/pet/petType.service';
+import { IPetTypeService } from '../../interfaces/serviceInterfaces/IPetTypeService';
 import { CreatePetTypeDTO, UpdatePetTypeDTO, UpdatePetTypeStatusDTO } from '../../dto/petType.dto';
 import { IPetTypeController } from '../../interfaces/controllerInterfaces/IPetTypeController';
 
 export class PetTypeController implements IPetTypeController {
-  private petService: PetTypeService;
+  private _petService: IPetTypeService; 
 
-  constructor(petService: PetTypeService) {
-    this.petService = petService;
+  constructor(petService: IPetTypeService) {
+    this._petService = petService;
   }
 
-  createPetType = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async createPetType(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const petTypeData: CreatePetTypeDTO = req.body;
 
@@ -23,7 +23,7 @@ export class PetTypeController implements IPetTypeController {
         return;
       }
 
-      const newPetType = await this.petService.createPetType(petTypeData);
+      const newPetType = await this._petService.createPetType(petTypeData);
 
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
@@ -33,11 +33,11 @@ export class PetTypeController implements IPetTypeController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getAllPetTypes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getAllPetTypes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const petTypes = await this.petService.getAllPetTypes();
+      const petTypes = await this._petService.getAllPetTypes();
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -47,9 +47,9 @@ export class PetTypeController implements IPetTypeController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getPetTypeById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getPetTypeById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -61,7 +61,7 @@ export class PetTypeController implements IPetTypeController {
         return;
       }
 
-      const petType = await this.petService.getPetTypeById(id);
+      const petType = await this._petService.getPetTypeById(id);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -71,9 +71,9 @@ export class PetTypeController implements IPetTypeController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  updatePetType = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async updatePetType(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
       const petTypeData: UpdatePetTypeDTO = req.body;
@@ -94,7 +94,7 @@ export class PetTypeController implements IPetTypeController {
         return;
       }
 
-      const updatedPetType = await this.petService.updatePetType(id, petTypeData);
+      const updatedPetType = await this._petService.updatePetType(id, petTypeData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -104,9 +104,9 @@ export class PetTypeController implements IPetTypeController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  updatePetTypeStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async updatePetTypeStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
       const statusData: UpdatePetTypeStatusDTO = req.body;
@@ -127,7 +127,7 @@ export class PetTypeController implements IPetTypeController {
         return;
       }
 
-      const updatedPetType = await this.petService.updatePetTypeStatus(id, statusData.isActive);
+      const updatedPetType = await this._petService.updatePetTypeStatus(id, statusData.isActive);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -137,5 +137,5 @@ export class PetTypeController implements IPetTypeController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 }

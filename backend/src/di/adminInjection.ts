@@ -17,6 +17,9 @@ import { ServiceTypeService } from "services/service/serviceType.service";
 import { JwtService } from "../services/jwt/jwt.service";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
 import { IAdminService } from "../interfaces/serviceInterfaces/IAdminService";
+import { WalletService } from "services/wallet.service";
+import { WalletRepository } from "repositories/wallet.repository";
+import { ShopAvailabilityService } from "../services/shop/shopAvailability.service";
 
 // Initialize repositories
 const shopRepository = new ShopRepository();
@@ -24,6 +27,7 @@ const userRepository = new UserRepository();
 const adminRepository = new AdminRepository();
 const petTypeRepository = new PetTypeRepository();
 const serviceTypeRepository = new ServiceTypeRepository();
+const walletRepository = new WalletRepository();
 
 // Initialize services
 const jwtService = new JwtService();
@@ -32,24 +36,50 @@ const shopService = new ShopService(shopRepository);
 const userService = new UserService(userRepository); 
 const petTypeService = new PetTypeService(petTypeRepository);
 const serviceService = new ServiceTypeService(serviceTypeRepository);
+const walletService = new WalletService(walletRepository);
+const shopAvailabilityService = new ShopAvailabilityService(shopRepository);
 
 const authMiddlewareInstance = new AuthMiddleware(jwtService);
 const authMiddleware = authMiddlewareInstance;
 
 // Initialize controllers with dependencies
 const injectedAdminAuthController = new AdminAuthController(adminAuthService);
-const injectedShopController = new ShopController(shopService); 
+const injectedShopController = new ShopController(shopService, shopAvailabilityService, walletService); 
 const injectedUserController = new UserController(userService); 
 const injectedPetTypeController = new PetTypeController(petTypeService);
 const injectedServiceController = new ServiceTypeController(serviceService);
 
-// Export for route usage
+// Bind controller methods to their instances
 export const adminDependencies = {
-  adminAuthController: injectedAdminAuthController,
-  shopController: injectedShopController,
-  userController: injectedUserController,
-  petTypeController: injectedPetTypeController,
-  serviceController: injectedServiceController,
+  adminAuthController: {
+    login: injectedAdminAuthController.login.bind(injectedAdminAuthController),
+    logout: injectedAdminAuthController.logout.bind(injectedAdminAuthController),
+  },
+  shopController: {
+    getAllShops: injectedShopController.getAllShops.bind(injectedShopController),
+    updateShopStatus: injectedShopController.updateShopStatus.bind(injectedShopController),
+    getUnverifiedShops: injectedShopController.getUnverifiedShops.bind(injectedShopController),
+    approveShop: injectedShopController.approveShop.bind(injectedShopController),
+    rejectShop: injectedShopController.rejectShop.bind(injectedShopController),
+  },
+  userController: {
+    getAllUsers: injectedUserController.getAllUsers.bind(injectedUserController),
+    updateUserStatus: injectedUserController.updateUserStatus.bind(injectedUserController),
+  },
+  petTypeController: {
+    createPetType: injectedPetTypeController.createPetType.bind(injectedPetTypeController),
+    getAllPetTypes: injectedPetTypeController.getAllPetTypes.bind(injectedPetTypeController),
+    getPetTypeById: injectedPetTypeController.getPetTypeById.bind(injectedPetTypeController),
+    updatePetType: injectedPetTypeController.updatePetType.bind(injectedPetTypeController),
+    updatePetTypeStatus: injectedPetTypeController.updatePetTypeStatus.bind(injectedPetTypeController),
+  },
+  serviceController: {
+    createServiceType: injectedServiceController.createServiceType.bind(injectedServiceController),
+    getAllServiceTypes: injectedServiceController.getAllServiceTypes.bind(injectedServiceController),
+    getServiceTypeById: injectedServiceController.getServiceTypeById.bind(injectedServiceController),
+    updateServiceType: injectedServiceController.updateServiceType.bind(injectedServiceController),
+    updateServiceTypeStatus: injectedServiceController.updateServiceTypeStatus.bind(injectedServiceController),
+  },
   authMiddleware,
   userService,
   userRepository 

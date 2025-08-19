@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { StaffService } from '../../services/shop/staff.service';
+import { IStaffService } from '../../interfaces/serviceInterfaces/IStaffService';
 import { IStaffController } from '../../interfaces/controllerInterfaces/IStaffController';
 import { createStaffDTO, updatesStaffDTO, UpdateStaffStatusDTO, StaffResponseDTO } from '../../dto/staff.dto';
 import { HTTP_STATUS } from '../../shared/constant';
@@ -7,7 +7,11 @@ import { CustomError } from '../../util/CustomerError';
 import mongoose from 'mongoose';
 
 export class StaffController implements IStaffController {
-  constructor(private staffService: StaffService) { }
+  private readonly _staffService: IStaffService;
+
+  constructor(staffService: IStaffService) {
+    this._staffService = staffService;
+  }
 
   async getAllStaff(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -19,8 +23,8 @@ export class StaffController implements IStaffController {
         throw new CustomError('Shop ID is required', HTTP_STATUS.BAD_REQUEST);
       }
       if (!mongoose.Types.ObjectId.isValid(shopId as string)) {
-      throw new CustomError('Invalid Shop ID format', HTTP_STATUS.BAD_REQUEST);
-    }
+        throw new CustomError('Invalid Shop ID format', HTTP_STATUS.BAD_REQUEST);
+      }
       if (isNaN(page) || page < 1) {
         throw new CustomError('Invalid page number', HTTP_STATUS.BAD_REQUEST);
       }
@@ -28,7 +32,7 @@ export class StaffController implements IStaffController {
         throw new CustomError('Invalid limit value', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const { staff, total } = await this.staffService.getAllStaff(page, limit, shopId as string);
+      const { staff, total } = await this._staffService.getAllStaff(page, limit, shopId as string);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: {
@@ -63,7 +67,7 @@ export class StaffController implements IStaffController {
         shopId
       };
 
-      const newStaff = await this.staffService.create(staffPayload);
+      const newStaff = await this._staffService.create(staffPayload);
 
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
@@ -75,7 +79,6 @@ export class StaffController implements IStaffController {
     }
   }
 
-
   async findById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
@@ -85,7 +88,7 @@ export class StaffController implements IStaffController {
       if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new CustomError('Invalid Staff ID format', HTTP_STATUS.BAD_REQUEST);
       }
-      const staff = await this.staffService.findById(id);
+      const staff = await this._staffService.findById(id);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: staff,
@@ -105,7 +108,7 @@ export class StaffController implements IStaffController {
       if (!mongoose.Types.ObjectId.isValid(shopId)) {
         throw new CustomError('Invalid Shop ID format', HTTP_STATUS.BAD_REQUEST);
       }
-      const staffList = await this.staffService.findByShopId(shopId);
+      const staffList = await this._staffService.findByShopId(shopId);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: staffList,
@@ -126,7 +129,7 @@ export class StaffController implements IStaffController {
       if (!mongoose.Types.ObjectId.isValid(staffId)) {
         throw new CustomError('Invalid Staff ID format', HTTP_STATUS.BAD_REQUEST);
       }
-      const updatedStaff = await this.staffService.update(staffId, staffData);
+      const updatedStaff = await this._staffService.update(staffId, staffData);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: updatedStaff,
@@ -143,7 +146,7 @@ export class StaffController implements IStaffController {
       if (!email || typeof email !== 'string') {
         throw new CustomError('Email is required', HTTP_STATUS.BAD_REQUEST);
       }
-      const staff = await this.staffService.findByEmail(email);
+      const staff = await this._staffService.findByEmail(email);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: staff,
@@ -164,7 +167,7 @@ export class StaffController implements IStaffController {
       if (!mongoose.Types.ObjectId.isValid(staffId)) {
         throw new CustomError('Invalid Staff ID format', HTTP_STATUS.BAD_REQUEST);
       }
-      const updatedStaff = await this.staffService.toggleStatus(staffId, statusData);
+      const updatedStaff = await this._staffService.toggleStatus(staffId, statusData);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: updatedStaff,

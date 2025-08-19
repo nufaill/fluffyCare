@@ -2,6 +2,8 @@ import { PetType } from "types/PetType.type";
 
 export interface IPetTypeService {
   createPetType(petTypeData: Partial<PetType>): Promise<PetType>;
+  getAllPetTypes(): Promise<PetType[]>;
   getPetTypeById(petTypeId: string): Promise<PetType | null>;
   updatePetType(petTypeId: string, updateData: Partial<PetType>): Promise<PetType | null>;
+  updatePetTypeStatus(petTypeId: string, isActive: boolean): Promise<PetType | null>;
 }

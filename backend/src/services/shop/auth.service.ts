@@ -1,12 +1,12 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { Types } from 'mongoose';
-import { ShopRepository } from '../../repositories/shop.repository';
-import { JwtService } from '../jwt/jwt.service';
-import { EmailService } from '../emailService/email.service';
-import { OtpRepository } from '../../repositories/otp.repository';
-import { CreateShopData, ShopDocument, ShopAuthResponse, TokenPair, GeoLocation } from '../../types/Shop.types';
-import { JwtPayload } from '../../types/auth.types';
+import IShopRepository from '../../interfaces/repositoryInterfaces/IShopRepository';
+import { IJwtService } from '../../interfaces/serviceInterfaces/IJwtService';
+import { IEmailService } from '../../interfaces/serviceInterfaces/IEmailService';
+import { IOtpRepository } from '../../interfaces/repositoryInterfaces/IOtpRepository';
+import { TokenPair, CreateShopData, ShopDocument, ShopAuthResponse, GeoLocation } from '../../types/Shop.types';
+import { ShopJwtPayload } from 'types/jwt.types';
 import { HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import { generateOtp, sendOtpEmail } from '../../util/sendOtp';
@@ -15,18 +15,8 @@ import { CreateShopDTO, LoginUserDTO, VerifyOtpDTO, ResendOtpDTO, ResetPasswordD
 import { IShopAuthService } from '../../interfaces/serviceInterfaces/IAuthService';
 import { ShopResponseDTO } from '../../dto/shop.dto';
 
-export class AuthService implements IShopAuthService {
-  private readonly saltRounds = 12;
-
-  constructor(
-    private readonly shopRepository: ShopRepository,
-    private readonly jwtService: JwtService,
-    private readonly emailService: EmailService,
-    private readonly otpRepository: OtpRepository
-  ) { }
-
-  // VALIDATE GEOJSON POINT
-  private validateGeoLocation(location: GeoLocation): location is GeoLocation {
+class GeoLocationValidator {
+  validate(location: GeoLocation): location is GeoLocation {
     if (!location || typeof location !== 'object') {
       throw new CustomError('Location is required', HTTP_STATUS.BAD_REQUEST);
     }
@@ -54,13 +44,26 @@ export class AuthService implements IShopAuthService {
 
     return true;
   }
+}
 
-  // GENERATE TOKENS
-  private generateTokens(id: string, email: string): TokenPair {
-    return this.jwtService.generateTokens({
+export class AuthService implements IShopAuthService {
+  private readonly _saltRounds = 12;
+  private readonly _geoValidator: GeoLocationValidator;
+
+  constructor(
+    private readonly _shopRepository: IShopRepository,
+    private readonly _jwtService: IJwtService,
+    private readonly _emailService: IEmailService,
+    private readonly _otpRepository: IOtpRepository
+  ) {
+    this._geoValidator = new GeoLocationValidator();
+  }
+
+  private _generateTokens(id: string, email: string): TokenPair {
+    return this._jwtService.generateTokens({
       id,
       email,
-      role: "shop"
+      role: 'shop',
     });
   }
 
@@ -70,80 +73,78 @@ export class AuthService implements IShopAuthService {
     if (!location) {
       throw new CustomError('Location is required', HTTP_STATUS.BAD_REQUEST);
     }
-    this.validateGeoLocation(location);
+    this._geoValidator.validate(location);
 
-    const existingShop = await this.shopRepository.findByEmail(email);
+    const existingShop = await this._shopRepository.findByEmail(email);
     if (existingShop) {
-      console.log(`❌ [ShopAuthService] Shop already exists: ${email}`);
+      console.log(`❌ [AuthService] Shop already exists: ${email}`);
       throw new CustomError('Shop with this email already exists', HTTP_STATUS.CONFLICT);
     }
-    const hashedPassword = await bcrypt.hash(password, this.saltRounds);
+    const hashedPassword = await bcrypt.hash(password, this._saltRounds);
     const tempShopData: CreateShopData = {
       ...otherData,
       email,
       password: hashedPassword,
       location: {
         type: 'Point',
-        coordinates: [location.coordinates[0], location.coordinates[1]]
+        coordinates: [location.coordinates[0], location.coordinates[1]],
       },
       isActive: true,
       isVerified: false,
     };
 
     const otp = generateOtp();
-    console.log(`🔢 [ShopAuthService] Generated OTP: ${otp} for ${email}`);
-    await this.otpRepository.createOtp(email, otp, tempShopData);
+    console.log(`🔢 [AuthService] Generated OTP: ${otp} for ${email}`);
+    await this._otpRepository.createOtp(email, otp, tempShopData);
 
     const shopName = shopData.name;
     await sendOtpEmail(email, otp, shopName);
 
-    console.log(`📧 [ShopAuthService] OTP sent to ${email}`);
+    console.log(`📧 [AuthService] OTP sent to ${email}`);
     return { email };
   }
 
-  // VERIFY OTP AND COMPLETE REGISTRATION
   async verifyOtpAndCompleteRegistration(data: VerifyOtpDTO): Promise<ShopAuthResponse> {
     const { email, otp } = data;
-    console.log(`🔍 [ShopAuthService] Verifying OTP for email: ${email}`);
+    console.log(`🔍 [AuthService] Verifying OTP for email: ${email}`);
 
-    const verificationResult = await this.otpRepository.verifyOtp(email, otp);
+    const verificationResult = await this._otpRepository.verifyOtp(email, otp);
 
     if (!verificationResult.isValid) {
       if (verificationResult.isExpired) {
-        console.log(`⏰ [ShopAuthService] OTP expired for ${email}`);
+        console.log(`⏰ [AuthService] OTP expired for ${email}`);
         throw new CustomError('OTP has expired. Please request a new one.', HTTP_STATUS.BAD_REQUEST);
       }
       if (verificationResult.maxAttemptsReached) {
-        console.log(`🚫 [ShopAuthService] Max attempts reached for ${email}`);
+        console.log(`🚫 [AuthService] Max attempts reached for ${email}`);
         throw new CustomError('Maximum verification attempts reached. Please request a new OTP.', HTTP_STATUS.BAD_REQUEST);
       }
-      console.log(`❌ [ShopAuthService] Invalid OTP for ${email}`);
+      console.log(`❌ [AuthService] Invalid OTP for ${email}`);
       throw new CustomError('Invalid OTP. Please try again.', HTTP_STATUS.BAD_REQUEST);
     }
 
-    console.log(`✅ [ShopAuthService] OTP verified successfully for ${email}`);
+    console.log(`✅ [AuthService] OTP verified successfully for ${email}`);
     const shopData = verificationResult.userData as unknown as CreateShopData;
 
     if (shopData.location) {
-      this.validateGeoLocation(shopData.location);
+      this._geoValidator.validate(shopData.location);
     }
 
-    console.log(`🏪 [ShopAuthService] Creating shop with data:`, {
+    console.log(`🏪 [AuthService] Creating shop with data:`, {
       email: shopData.email,
       name: shopData.name,
-      location: shopData.location
+      location: shopData.location,
     });
 
-    const shop = await this.shopRepository.createShop(shopData);
-    console.log(`✅ [ShopAuthService] Shop created successfully:`, {
+    const shop = await this._shopRepository.createShop(shopData);
+    console.log(`✅ [AuthService] Shop created successfully:`, {
       id: shop.id,
-      email: shop.email
+      email: shop.email,
     });
 
-    // Generate tokens
-    const tokens = this.generateTokens(shop.id, shop.email);
+    const tokens = this._generateTokens(shop.id, shop.email);
 
-    console.log(`🎟️ [ShopAuthService] Tokens generated successfully for ${email}`);
+    console.log(`🎟️ [AuthService] Tokens generated successfully for ${email}`);
 
     return {
       success: true,
@@ -152,12 +153,12 @@ export class AuthService implements IShopAuthService {
         name: shop.name,
         email: shop.email,
         phone: shop.phone,
-        logo: shop.logo ?? '', 
+        logo: shop.logo ?? '',
         city: shop.city ?? '',
-        streetAddress: shop.streetAddress ?? '', 
+        streetAddress: shop.streetAddress ?? '',
         description: shop.description,
-        certificateUrl: shop.certificateUrl ?? '', 
-        location: shop.location ?? { type: 'Point', coordinates: [0, 0] }, 
+        certificateUrl: shop.certificateUrl ?? '',
+        location: shop.location ?? { type: 'Point', coordinates: [0, 0] },
         isActive: shop.isActive,
         isVerified: shop.isVerified,
         createdAt: shop.createdAt,
@@ -167,67 +168,62 @@ export class AuthService implements IShopAuthService {
     };
   }
 
-  // RESEND OTP
   async resendOtp(data: ResendOtpDTO): Promise<void> {
     const { email } = data;
-    console.log(`🔄 [ShopAuthService] Resending OTP for email: ${email}`);
+    console.log(`🔄 [AuthService] Resending OTP for email: ${email}`);
 
-    const existingOtp = await this.otpRepository.findByEmail(email);
+    const existingOtp = await this._otpRepository.findByEmail(email);
     if (!existingOtp) {
-      console.log(`❌ [ShopAuthService] No pending verification found for ${email}`);
+      console.log(`❌ [AuthService] No pending verification found for ${email}`);
       throw new CustomError('No pending verification found for this email. Please start registration again.', HTTP_STATUS.BAD_REQUEST);
     }
 
-    console.log(`✅ [ShopAuthService] Found existing OTP record for ${email}`);
+    console.log(`✅ [AuthService] Found existing OTP record for ${email}`);
 
-    // Validate existing location data
     const userData = existingOtp.userData as unknown as CreateShopData;
     if (!userData.location) {
       throw new CustomError('Location data missing in OTP record', HTTP_STATUS.BAD_REQUEST);
     }
-    this.validateGeoLocation(userData.location);
+    this._geoValidator.validate(userData.location);
 
-    // Generate new OTP
     const otp = generateOtp();
-    console.log(`🔢 [ShopAuthService] Generated new OTP for ${email}`);
+    console.log(`🔢 [AuthService] Generated new OTP for ${email}`);
 
-    await this.otpRepository.createOtp(email, otp, existingOtp.userData);
+    await this._otpRepository.createOtp(email, otp, existingOtp.userData);
 
-    // Send new OTP email
     const shopName = userData?.name || 'Shop';
     await sendOtpEmail(email, otp, shopName);
 
-    console.log(`📧 [ShopAuthService] New OTP sent to ${email}`);
+    console.log(`📧 [AuthService] New OTP sent to ${email}`);
   }
 
-  // LOGIN
   async login(data: LoginUserDTO): Promise<ShopAuthResponse> {
     try {
-      console.log("🔧 [ShopAuthService] Starting login process...");
+      console.log('🔧 [AuthService] Starting login process...');
 
       const normalizedEmail = data.email.trim().toLowerCase();
-      const shop = await this.shopRepository.findByEmailWithPassword(normalizedEmail);
+      const shop = await this._shopRepository.findByEmailWithPassword(normalizedEmail);
 
       if (!shop) {
-        console.error("❌ [ShopAuthService] No shop found with email:", normalizedEmail);
+        console.error('❌ [AuthService] No shop found with email:', normalizedEmail);
         throw new CustomError('Invalid email or password', HTTP_STATUS.UNAUTHORIZED);
       }
 
       if (!shop.isActive) {
-        console.error("❌ [ShopAuthService] Shop account is inactive:", normalizedEmail);
+        console.error('❌ [AuthService] Shop account is inactive:', normalizedEmail);
         throw new CustomError('Shop account is inactive', HTTP_STATUS.FORBIDDEN);
       }
 
-      console.log("🔐 [ShopAuthService] Verifying password...");
+      console.log('🔐 [AuthService] Verifying password...');
       const isValidPassword = await bcrypt.compare(data.password, shop.password);
 
       if (!isValidPassword) {
-        console.error("❌ [ShopAuthService] Password mismatch for shop:", normalizedEmail);
+        console.error('❌ [AuthService] Password mismatch for shop:', normalizedEmail);
         throw new CustomError('Invalid email or password', HTTP_STATUS.UNAUTHORIZED);
       }
 
-      console.log("🎟️ [ShopAuthService] Generating JWT tokens...");
-      const tokens = this.generateTokens(shop.id, shop.email);
+      console.log('🎟️ [AuthService] Generating JWT tokens...');
+      const tokens = this._generateTokens(shop.id, shop.email);
 
       return {
         success: true,
@@ -250,7 +246,7 @@ export class AuthService implements IShopAuthService {
         tokens,
       };
     } catch (error) {
-      console.error("❌ [ShopAuthService] Login error:", error);
+      console.error('❌ [AuthService] Login error:', error);
       if (error instanceof CustomError) {
         throw error;
       }
@@ -258,34 +254,33 @@ export class AuthService implements IShopAuthService {
     }
   }
 
-  // REFRESH TOKEN
   async refreshToken(refreshToken: string): Promise<string> {
     try {
-      console.log("🔧 [ShopAuthService] Refreshing token...");
+      console.log('🔧 [AuthService] Refreshing token...');
 
-      const payload = this.jwtService.verifyRefreshToken(refreshToken);
+      const payload = this._jwtService.verifyRefreshToken(refreshToken);
 
       if (!payload || typeof payload === 'string') {
         throw new CustomError('Invalid refresh token', HTTP_STATUS.UNAUTHORIZED);
       }
 
-      const shopId = (payload as JwtPayload).id;
-      const shop = await this.shopRepository.findById(shopId);
+      const shopId = (payload as ShopJwtPayload).id;
+      const shop = await this._shopRepository.findById(shopId);
 
       if (!shop || !shop.isActive) {
         throw new CustomError('Shop not found or inactive', HTTP_STATUS.UNAUTHORIZED);
       }
 
-      const newAccessToken = this.jwtService.generateAccessToken({
+      const newAccessToken = this._jwtService.generateAccessToken({
         id: shop.id,
         email: shop.email,
-        role: "shop"
+        role: 'shop',
       });
 
-      console.log("✅ [ShopAuthService] Token refreshed successfully");
+      console.log('✅ [AuthService] Token refreshed successfully');
       return newAccessToken;
     } catch (error) {
-      console.error("❌ [ShopAuthService] Token refresh error:", error);
+      console.error('❌ [AuthService] Token refresh error:', error);
       if (error instanceof CustomError) {
         throw error;
       }
@@ -293,13 +288,12 @@ export class AuthService implements IShopAuthService {
     }
   }
 
-  // SEND RESET LINK
   async sendResetLink(data: SendResetLinkDTO): Promise<void> {
     try {
       const { email } = data;
-      console.log("🔧 [ShopAuthService] Sending reset link for email:", email);
+      console.log('🔧 [AuthService] Sending reset link for email:', email);
 
-      const shop = await this.shopRepository.findByEmail(email);
+      const shop = await this._shopRepository.findByEmail(email);
       if (!shop) {
         throw new CustomError('Shop not found with this email address', HTTP_STATUS.NOT_FOUND);
       }
@@ -307,25 +301,24 @@ export class AuthService implements IShopAuthService {
       const token = crypto.randomBytes(32).toString('hex');
       const expires = new Date(Date.now() + 3600000); // 1 hour from now
 
-      await this.shopRepository.setResetToken(email, token, expires);
+      await this._shopRepository.setResetToken(email, token, expires);
 
       const resetLink = `${process.env.CLIENT_URL}/shop/reset-password?token=${token}`;
 
       const emailContent = PASSWORD_RESET_MAIL_CONTENT(resetLink);
-      await this.emailService.sendOtpEmail(email, 'Reset Your Shop Password', emailContent);
+      await this._emailService.sendOtpEmail(email, 'Reset Your Shop Password', emailContent);
 
-      console.log("✅ [ShopAuthService] Reset link sent successfully");
+      console.log('✅ [AuthService] Reset link sent successfully');
     } catch (error) {
-      console.error("❌ [ShopAuthService] Send reset link error:", error);
+      console.error('❌ [AuthService] Send reset link error:', error);
       throw error instanceof CustomError ? error : new CustomError('Failed to send reset link', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
 
-  // RESET PASSWORD
   async resetPassword(data: ResetPasswordDTO): Promise<void> {
     try {
       const { token, password, confirmPassword } = data;
-      console.log("🔧 [ShopAuthService] Processing password reset with token");
+      console.log('🔧 [AuthService] Processing password reset with token');
 
       if (password !== confirmPassword) {
         throw new CustomError('Passwords do not match', HTTP_STATUS.BAD_REQUEST);
@@ -335,37 +328,37 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Password must be at least 8 characters long', HTTP_STATUS.BAD_REQUEST);
       }
 
-      console.log("🔍 [ShopAuthService] Checking reset token:", token);
-      const shop = await this.shopRepository.findByResetToken(token);
+      console.log('🔍 [AuthService] Checking reset token:', token);
+      const shop = await this._shopRepository.findByResetToken(token);
 
       if (!shop) {
         throw new CustomError('Invalid or expired reset token', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const hashedPassword = await bcrypt.hash(password, this.saltRounds);
+      const hashedPassword = await bcrypt.hash(password, this._saltRounds);
 
-      await this.shopRepository.updatePasswordAndClearToken(new Types.ObjectId(shop.id), hashedPassword);
+      await this._shopRepository.updatePasswordAndClearToken(new Types.ObjectId(shop.id), hashedPassword);
 
-      console.log("✅ [ShopAuthService] Password reset successfully");
+      console.log('✅ [AuthService] Password reset successfully');
     } catch (error) {
-      console.error("❌ [ShopAuthService] Reset password error:", error);
+      console.error('❌ [AuthService] Reset password error:', error);
       throw error instanceof CustomError ? error : new CustomError('Failed to reset password', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
 
   async getShopById(id: string): Promise<ShopResponseDTO | null> {
-  try {
-    console.log("🔧 [ShopAuthService] Fetching shop by ID:", id);
+    try {
+      console.log('🔧 [AuthService] Fetching shop by ID:', id);
 
-    const shop = await this.shopRepository.findById(id);
-    if (!shop) {
-      return null;
+      const shop = await this._shopRepository.findById(id);
+      if (!shop) {
+        return null;
+      }
+
+      return shop;
+    } catch (error) {
+      console.error('❌ [AuthService] Get shop by ID error:', error);
+      throw new CustomError('Failed to fetch shop profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
-
-    return shop;
-  } catch (error) {
-    console.error("❌ [ShopAuthService] Get shop by ID error:", error);
-    throw new CustomError('Failed to fetch shop profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
-}
 }

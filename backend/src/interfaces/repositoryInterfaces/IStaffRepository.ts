@@ -1,11 +1,13 @@
 import { Schema } from 'mongoose';
-import { StaffResponseDTO } from '../../dto/staff.dto'
+import { Staff } from '../../types/staff.types';
 
 export interface IStaffRepository {
-  create(staff: Partial<StaffResponseDTO>): Promise<StaffResponseDTO>;
-  findById(id: string | Schema.Types.ObjectId): Promise<StaffResponseDTO | null>;
-  findByShopId(shopId: string | Schema.Types.ObjectId): Promise<StaffResponseDTO[]>;
-  update(id: string | Schema.Types.ObjectId, staff: Partial<StaffResponseDTO>): Promise<StaffResponseDTO | null>;
-  getAllStaff(page: number, limit: number, shopId: string | Schema.Types.ObjectId): Promise<{ staff: StaffResponseDTO[]; total: number }>;
-  findByEmail(email: string): Promise<StaffResponseDTO | null>;
+  getAllStaff(page: number, limit: number, shopId: string | Schema.Types.ObjectId): Promise<{ staff: Staff[]; total: number }>;
+  create(staff: Partial<Staff>): Promise<Staff>;
+  findById(id: string | Schema.Types.ObjectId): Promise<Staff | null>;
+  findByShopId(shopId: string | Schema.Types.ObjectId): Promise<Staff[]>;
+  update(id: string | Schema.Types.ObjectId, staff: Partial<Staff>): Promise<Staff | null>;
+  findByEmail(email: string): Promise<Staff | null>;
+  findActiveStaffByShopId(shopId: string | Schema.Types.ObjectId): Promise<Staff[]>;
+  countByShopId(shopId: string | Schema.Types.ObjectId): Promise<number>;
 }

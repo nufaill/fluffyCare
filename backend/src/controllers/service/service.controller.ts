@@ -1,19 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
-import { ServiceService } from '../../services/service/service.service';
+import { IServiceService } from '../../interfaces/serviceInterfaces/IServiceService';
 import { CustomError } from '../../util/CustomerError';
 import { CreateServiceDTO, UpdateServiceDTO, ServiceFiltersDTO } from '../../dto/service.dto';
 import { IServiceController } from '../../interfaces/controllerInterfaces/IServiceController';
 import { Types } from 'mongoose';
 
 export class ServiceController implements IServiceController {
-  private serviceService: ServiceService;
+  private _serviceService: IServiceService;
 
-  constructor(serviceService: ServiceService) {
-    this.serviceService = serviceService;
+  constructor(serviceService: IServiceService) {
+    this._serviceService = serviceService;
   }
 
-  createService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async createService(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const shopId = req.shop?.shopId;
       if (!shopId) {
@@ -33,7 +33,7 @@ export class ServiceController implements IServiceController {
         throw new CustomError('At least one pet type must be selected', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const newService = await this.serviceService.createService(shopId, serviceData);
+      const newService = await this._serviceService.createService(shopId, serviceData);
 
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
@@ -43,16 +43,16 @@ export class ServiceController implements IServiceController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getServicesByShop = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getServicesByShop(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const shopId = req.shop?.shopId;
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.UNAUTHORIZED);
       }
 
-      const services = await this.serviceService.getServiceByShopId(shopId);
+      const services = await this._serviceService.getServiceByShopId(shopId);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -62,16 +62,16 @@ export class ServiceController implements IServiceController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getServiceById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getServiceById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { serviceId } = req.params;
       if (!serviceId) {
         throw new CustomError('Service ID is required', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const service = await this.serviceService.getServiceById(serviceId);
+      const service = await this._serviceService.getServiceById(serviceId);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -81,22 +81,21 @@ export class ServiceController implements IServiceController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getServiceByIdPublic(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { serviceId } = req.params;
       if (!serviceId) {
         throw new CustomError('Service ID is required', HTTP_STATUS.BAD_REQUEST);
       }
 
-      // Validate if serviceId is a valid ObjectId
       if (!Types.ObjectId.isValid(serviceId)) {
         throw new CustomError('Invalid Service ID format', HTTP_STATUS.BAD_REQUEST);
       }
 
       console.log(`Fetching service with ID: ${serviceId}`);
-      const service = await this.serviceService.getServiceByIdPublic(serviceId);
+      const service = await this._serviceService.getServiceByIdPublic(serviceId);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.DATA_RETRIEVED,
@@ -106,9 +105,9 @@ getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): 
       console.error(`Error in getServiceByIdPublic [Controller]: ${error.message}`, error);
       next(error);
     }
-  };
+  }
 
-  updateService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async updateService(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { serviceId } = req.params;
       const shopId = req.shop?.shopId;
@@ -121,7 +120,7 @@ getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): 
 
       const updateData: UpdateServiceDTO = req.body;
 
-      const updatedService = await this.serviceService.updateService(serviceId, shopId, updateData);
+      const updatedService = await this._serviceService.updateService(serviceId, shopId, updateData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -131,9 +130,9 @@ getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): 
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  toggleServiceStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async toggleServiceStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { serviceId } = req.params;
       const shopId = req.shop?.shopId;
@@ -144,12 +143,12 @@ getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): 
         throw new CustomError('Service ID is required', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const service = await this.serviceService.getServiceById(serviceId);
+      const service = await this._serviceService.getServiceById(serviceId);
       if (service.shopId._id.toString() !== shopId) {
         throw new CustomError('Not authorized to update this service', HTTP_STATUS.FORBIDDEN);
       }
 
-      const updatedService = await this.serviceService.updateService(serviceId, shopId, {
+      const updatedService = await this._serviceService.updateService(serviceId, shopId, {
         isActive: !service.isActive
       });
 
@@ -161,11 +160,11 @@ getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): 
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getServiceTypes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getServiceTypes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const serviceTypes = await this.serviceService.getAllServiceTypes();
+      const serviceTypes = await this._serviceService.getAllServiceTypes();
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -175,11 +174,11 @@ getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): 
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getPetTypes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getPetTypes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const petTypes = await this.serviceService.getAllPetTypes();
+      const petTypes = await this._serviceService.getAllPetTypes();
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -189,9 +188,9 @@ getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): 
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getAllServices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getAllServices(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const filters: ServiceFiltersDTO = {
         page: parseInt(req.query.page as string) || 1,
@@ -223,7 +222,7 @@ getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): 
         }
       }
 
-      const services = await this.serviceService.getAllServices(filters);
+      const services = await this._serviceService.getAllServices(filters);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -235,5 +234,5 @@ getServiceByIdPublic = async (req: Request, res: Response, next: NextFunction): 
       console.error('❌ getAllServices error:', error);
       next(error);
     }
-  };
+  }
 }

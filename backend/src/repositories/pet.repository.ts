@@ -6,7 +6,6 @@ import { PetType } from '../models/petType.model';
 import { IPetRepository } from '../interfaces/repositoryInterfaces/IPetRepository';
 
 export class PetRepository implements IPetRepository {
-
   async createPet(petData: CreatePetData): Promise<PetDocument> {
     const pet = new Pet(petData);
     return await pet.save();
@@ -51,8 +50,8 @@ export class PetRepository implements IPetRepository {
       petTypeId: new Types.ObjectId(petTypeId)
     });
   }
+
   async getAllPetTypes(): Promise<PetTypeDocument[]> {
     return await PetType.find().sort({ createdAt: -1 });
   }
-
 }

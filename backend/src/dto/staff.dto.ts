@@ -1,13 +1,13 @@
-export interface createStaffDTO{
-    name:string;
-    email:string;
-    phone:string;
+export interface createStaffDTO {
+  name: string;
+  email: string;
+  phone: string;
 }
 
-export interface updatesStaffDTO{
-    name:string;
-    email:string;
-    phone:string;
+export interface updatesStaffDTO {
+  name?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface UpdateStaffStatusDTO {
@@ -15,7 +15,7 @@ export interface UpdateStaffStatusDTO {
 }
 
 export interface StaffResponseDTO {
-  _id: string; 
+  _id: string;
   name: string;
   email: string;
   phone: string;

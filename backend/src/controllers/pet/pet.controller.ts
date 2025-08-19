@@ -1,17 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
-import { PetService } from '../../services/pet/pet.service';
 import { CreatePetDTO, UpdatePetDTO } from '../../dto/pet.dto';
+import { IPetService } from '../../interfaces/serviceInterfaces/IPetService';
 import { IPetController } from '../../interfaces/controllerInterfaces/IPetController';
 
 export class PetController implements IPetController {
-  private petService: PetService;
+  private _petService: IPetService;
 
-  constructor(petService: PetService) {
-    this.petService = petService;
+  constructor(petService: IPetService) {
+    this._petService = petService;
   }
 
-  createPet = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async createPet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user?.userId || req.params.userId;
       const petData: CreatePetDTO = req.body;
@@ -41,16 +41,6 @@ export class PetController implements IPetController {
         return;
       }
 
-      // try {
-      //   new URL(petData.profileImage);
-      // } catch {
-      //   res.status(HTTP_STATUS.BAD_REQUEST).json({
-      //     success: false,
-      //     message: 'Profile image must be a valid URL'
-      //   });
-      //   return;
-      // }
-
       if (!['Male', 'Female'].includes(petData.gender)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
@@ -59,7 +49,7 @@ export class PetController implements IPetController {
         return;
       }
 
-      const newPet = await this.petService.createPet(userId, {
+      const newPet = await this._petService.createPet(userId, {
         petTypeId: petData.petTypeId,
         profileImage: petData.profileImage,
         name: petData.name.trim(),
@@ -83,11 +73,11 @@ export class PetController implements IPetController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getAllPetTypes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getAllPetTypes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const petTypes = await this.petService.getAllPetTypes();
+      const petTypes = await this._petService.getAllPetTypes();
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -97,9 +87,9 @@ export class PetController implements IPetController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getPetsByUserId = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getPetsByUserId(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user?.userId || req.params.userId;
 
@@ -111,7 +101,7 @@ export class PetController implements IPetController {
         return;
       }
 
-      const pets = await this.petService.getPetsByUserId(userId);
+      const pets = await this._petService.getPetsByUserId(userId);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -121,9 +111,9 @@ export class PetController implements IPetController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  getPetById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async getPetById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { petId } = req.params;
 
@@ -135,7 +125,7 @@ export class PetController implements IPetController {
         return;
       }
 
-      const pet = await this.petService.getPetById(petId);
+      const pet = await this._petService.getPetById(petId);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -145,9 +135,9 @@ export class PetController implements IPetController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 
-  updatePet = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async updatePet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { petId } = req.params;
       const userId = req.user?.userId;
@@ -177,7 +167,7 @@ export class PetController implements IPetController {
         return;
       }
 
-      const updatedPet = await this.petService.updatePet(petId, userId, updateData);
+      const updatedPet = await this._petService.updatePet(petId, userId, updateData);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -187,5 +177,5 @@ export class PetController implements IPetController {
     } catch (error) {
       next(error);
     }
-  };
+  }
 }

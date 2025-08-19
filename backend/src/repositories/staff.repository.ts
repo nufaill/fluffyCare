@@ -2,41 +2,31 @@ import { Schema } from 'mongoose';
 import StaffModel from '../models/staff.model';
 import { Staff } from '../types/staff.types';
 import { IStaffRepository } from '../interfaces/repositoryInterfaces/IStaffRepository';
-import { StaffResponseDTO } from '../dto/staff.dto';
 
 export class StaffRepository implements IStaffRepository {
-  private model = StaffModel;
-  
-  async getAllStaff(page: number = 1, limit: number = 10, shopId: string | Schema.Types.ObjectId): Promise<{ staff: StaffResponseDTO[]; total: number }> {
-  try {
-    const skip = (page - 1) * limit;
-    const [staff, total] = await Promise.all([
-      this.model
-        .find({ shopId }) 
-        .skip(skip)
-        .limit(limit)
-        .lean<Staff[]>(),
-      this.model.countDocuments({ shopId }) 
-    ]);
-    
-    return {
-      staff: staff.map(staff => ({
-        _id: staff._id.toString(), 
-        name: staff.name,
-        email: staff.email,
-        phone: staff.phone,
-        isActive: staff.isActive
-      })),
-      total
-    };
-  } catch (error) {
-    throw error;
+  private readonly _model = StaffModel;
+
+  async getAllStaff(page: number = 1, limit: number = 10, shopId: string | Schema.Types.ObjectId): Promise<{ staff: Staff[]; total: number }> {
+    try {
+      const skip = (page - 1) * limit;
+      const [staff, total] = await Promise.all([
+        this._model
+          .find({ shopId })
+          .skip(skip)
+          .limit(limit)
+          .lean<Staff[]>(),
+        this._model.countDocuments({ shopId })
+      ]);
+      
+      return { staff, total };
+    } catch (error) {
+      throw error;
+    }
   }
-}
 
   async create(staff: Partial<Staff>): Promise<Staff> {
     try {
-      const newStaff = await this.model.create(staff);
+      const newStaff = await this._model.create(staff);
       return newStaff.toObject() as Staff;
     } catch (error) {
       throw error;
@@ -45,7 +35,7 @@ export class StaffRepository implements IStaffRepository {
 
   async findById(id: string | Schema.Types.ObjectId): Promise<Staff | null> {
     try {
-      const staff = await this.model.findById(id).lean<Staff>();
+      const staff = await this._model.findById(id).lean<Staff>();
       return staff;
     } catch (error) {
       if (error instanceof Error && error.name === 'CastError') {
@@ -57,9 +47,9 @@ export class StaffRepository implements IStaffRepository {
 
   async findByShopId(shopId: string | Schema.Types.ObjectId): Promise<Staff[]> {
     try {
-      const staff = await this.model
+      const staff = await this._model
         .find({ shopId })
-        .sort({ createdAt: -1 }) 
+        .sort({ createdAt: -1 })
         .lean<Staff[]>();
       return staff;
     } catch (error) {
@@ -69,13 +59,13 @@ export class StaffRepository implements IStaffRepository {
 
   async update(id: string | Schema.Types.ObjectId, staff: Partial<Staff>): Promise<Staff | null> {
     try {
-      const updatedStaff = await this.model
+      const updatedStaff = await this._model
         .findByIdAndUpdate(
-          id, 
-          { $set: staff }, 
-          { 
+          id,
+          { $set: staff },
+          {
             new: true,
-            runValidators: true 
+            runValidators: true
           }
         )
         .lean<Staff>();
@@ -90,8 +80,8 @@ export class StaffRepository implements IStaffRepository {
 
   async findByEmail(email: string): Promise<Staff | null> {
     try {
-      const staff = await this.model
-        .findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } }) 
+      const staff = await this._model
+        .findOne({ email: { $regex: new RegExp(`^${email}$`, 'i') } })
         .lean<Staff>();
       return staff;
     } catch (error) {
@@ -101,7 +91,7 @@ export class StaffRepository implements IStaffRepository {
 
   async findActiveStaffByShopId(shopId: string | Schema.Types.ObjectId): Promise<Staff[]> {
     try {
-      const staff = await this.model
+      const staff = await this._model
         .find({ shopId, isActive: true })
         .sort({ createdAt: -1 })
         .lean<Staff[]>();
@@ -113,7 +103,7 @@ export class StaffRepository implements IStaffRepository {
 
   async countByShopId(shopId: string | Schema.Types.ObjectId): Promise<number> {
     try {
-      return await this.model.countDocuments({ shopId });
+      return await this._model.countDocuments({ shopId });
     } catch (error) {
       throw error;
     }
