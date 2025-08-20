@@ -35,7 +35,7 @@ interface Shop {
   name: string
   logo?: string
   email: string
-  isVerified: boolean
+  isVerified: "approved" | "rejected" | "pending";
   isActive: boolean
   address: string
   phone: string
@@ -46,6 +46,8 @@ interface Shop {
   certificateUrl: string
   joinDate: string
   lastActive: string
+  createdAt: Date
+  updatedAt: Date
   totalRevenue: number
   description: string
 }
@@ -81,7 +83,7 @@ const ShopDetails: React.FC = () => {
       setLoading(true);
       try {
         const response: ApiResponse = await getAllShops(currentPage, pageSize, true);
-        const verifiedShops = (response.data || []).filter(shop => shop.isVerified);
+        const verifiedShops = (response.data || []).filter(shop => shop.isVerified === 'approved');
         setShops(verifiedShops);
         setTotalShops(response.pagination.total);
       } catch (error) {
@@ -104,7 +106,7 @@ const ShopDetails: React.FC = () => {
 
   const filteredAndSortedData = useMemo(() => {
     const filtered = shops
-      .filter(shop => shop.isVerified) 
+      .filter(shop => shop.isVerified)
       .filter((shop) => {
         const name = shop.name || "";
         const email = shop.email || "";
@@ -349,8 +351,10 @@ const ShopDetails: React.FC = () => {
       title: "Join Date",
       dataIndex: "joinDate",
       sortable: true,
-      render: (value: string) => (
-        <span className="text-gray-900 dark:text-gray-100">{new Date(value).toLocaleDateString()}</span>
+      render: (_value: string, record: Shop) => (
+        <span className="text-gray-900 dark:text-gray-100">
+          {record.createdAt ? new Date(record.createdAt).toLocaleDateString() : "N/A"}
+        </span>
       ),
     },
     {
@@ -566,11 +570,11 @@ const ShopDetails: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Join Date</p>
-                      <p className="text-base">{new Date(selectedShop.joinDate).toLocaleDateString()}</p>
+                      <p className="text-base">{new Date(selectedShop.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Active</p>
-                      <p className="text-base">{new Date(selectedShop.lastActive).toLocaleDateString()}</p>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Update</p>
+                      <p className="text-base">{new Date(selectedShop.updatedAt).toLocaleDateString()}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Certificate</p>

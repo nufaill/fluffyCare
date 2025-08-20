@@ -51,8 +51,11 @@ const shopSchema = new Schema<ShopDocument>(
     description: { type: String },
     certificateUrl: { type: String, required: true },
     isActive: { type: Boolean, default: true },
-    isVerified: { type: Boolean, default: false },
-
+    isVerified: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
     location: {
       type: {
         type: String,

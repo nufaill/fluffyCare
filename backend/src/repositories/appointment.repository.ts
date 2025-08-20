@@ -68,8 +68,8 @@ export class AppointmentRepository implements IAppointmentRepository {
         filter.appointmentStatus = status;
       }
       const query = Appointment.find(filter)
-        .populate('petId', 'name breed age profileImage')
-        .populate('shopId', 'name address phone')
+        .populate('petId', 'name breed  profileImage')
+        .populate('shopId', 'name city streetAddress')
         .populate('staffId', 'name')
         .populate('serviceId', 'name price durationHour')
         .sort({ createdAt: -1 });

@@ -27,10 +27,10 @@ export interface CreateShopDTO {
     coordinates: [number, number];
   };
   isActive: boolean;
-  isVerified: boolean;
+  isVerified?: 'pending' | 'approved' | 'rejected';
 }
 
-export type CreateUserDTO = CreateUserData; 
+export type CreateUserDTO = CreateUserData;
 
 export interface LoginUserDTO {
   email: string;

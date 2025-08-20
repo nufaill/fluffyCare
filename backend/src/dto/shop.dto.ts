@@ -8,7 +8,7 @@ export interface UpdateShopDTO {
   name?: string;
   phone?: string;
   logo?: string;
-   location?: GeoLocation;
+  location?: GeoLocation;
   city?: string;
   streetAddress?: string;
   description?: string;
@@ -36,7 +36,7 @@ export interface ShopResponseDTO {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  isVerified: boolean;
+  isVerified?: 'pending' | 'approved' | 'rejected';
   shopAvailability?: ShopAvailability;
   subscription?: 'free' | 'basic' | 'premium';
 }

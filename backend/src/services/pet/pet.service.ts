@@ -57,13 +57,6 @@ export class PetService implements IPetService {
       throw new CustomError('Not authorized to update this pet', 403);
     }
 
-    if (updateData.name && updateData.name.trim() !== existingPet.name) {
-      const nameExists = await this._petRepository.checkPetNameExists(userId, updateData.name, petId);
-      if (nameExists) {
-        throw new CustomError('Pet name already exists for this user', 400);
-      }
-    }
-
     if (updateData.petTypeId && updateData.petTypeId !== existingPet.petTypeId.toString()) {
       const petTypes = await this._petRepository.getAllPetTypes();
       const petTypeExists = petTypes.some(type => type._id.toString() === updateData.petTypeId);

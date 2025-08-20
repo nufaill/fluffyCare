@@ -137,7 +137,7 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
   }
 
   async getUnverifiedShops(skip: number = 0, limit: number = 10): Promise<ShopResponseDTO[]> {
-    const shops = await this.find({ isVerified: false })
+    const shops = await this.find({ isVerified: 'pending' })
       .select('-password -resetPasswordToken -resetPasswordExpires')
       .skip(skip)
       .limit(limit)
@@ -146,7 +146,7 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
     return shops.map(shop => this.mapToResponseDTO(shop));
   }
 
-  async updateShopVerification(shopId: string, isVerified: boolean): Promise<ShopResponseDTO | null> {
+  async updateShopVerification(shopId: string, isVerified: 'pending' | 'approved' | 'rejected'): Promise<ShopResponseDTO | null> {
     const updatedShop = await this.updateById(shopId, { isVerified })
       .select('-password -resetPasswordToken -resetPasswordExpires')
       .exec();
@@ -163,7 +163,7 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
   async findNearbyShops(longitude: number, latitude: number, maxDistance: number, filters: { serviceType?: string; petType?: string } = {}): Promise<ShopResponseDTO[]> {
     const query: any = {
       isActive: true,
-      isVerified: true,
+      isVerified: 'approved',
       location: {
         $near: {
           $geometry: {
@@ -202,7 +202,7 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
           spherical: true,
           query: {
             isActive: true,
-            isVerified: true
+            isVerified: 'approved'
           }
         }
       },

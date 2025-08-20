@@ -41,6 +41,7 @@ import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 type VerificationStatus = "approved" | "rejected" | "pending";
 
 interface Shop {
+  certificateUrl(certificateUrl: any): string | undefined;
   id: string;
   name: string;
   logo?: string;
@@ -251,7 +252,7 @@ const ShopVerification: React.FC = () => {
       render: (_value: string, record: Shop) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-12 w-12 ring-2 ring-gray-200 dark:ring-gray-600">
-          <AvatarImage src={cloudinaryUtils.getFullUrl(record?.logo ?? "")} />
+            <AvatarImage src={cloudinaryUtils.getFullUrl(record?.logo ?? "")} />
             <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300">
               {record.name
                 .split(" ")
@@ -619,17 +620,6 @@ const ShopVerification: React.FC = () => {
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-16 w-16">
-                            <AvatarImage src={selectedShop.logo || "/placeholder.svg?height=64&width=64"} />
-                            <AvatarFallback className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
-                              {selectedShop.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase()
-                                .slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
                           <div>
                             <h3 className="font-semibold text-gray-900 dark:text-gray-100">{selectedShop.name}</h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400">{selectedShop.email}</p>
@@ -663,16 +653,10 @@ const ShopVerification: React.FC = () => {
                                 key={index}
                                 className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-500"
                               >
-                                {/* <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4 text-gray-400" />
-                                  <span className="text-sm text-gray-900 dark:text-gray-100 truncate max-w-xs">
-                                    {doc}
-                                  </span>
-                                </div> */}
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => window.open(doc, "_blank")} 
+                                  onClick={() => window.open(cloudinaryUtils.getFullUrl(doc), "_blank")}
                                   className="text-xs bg-transparent"
                                 >
                                   View
@@ -681,7 +665,9 @@ const ShopVerification: React.FC = () => {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-600 dark:text-gray-400">No documents submitted.</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            No documents submitted.
+                          </p>
                         )}
                       </CardContent>
                     </Card>

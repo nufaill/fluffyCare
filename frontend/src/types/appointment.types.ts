@@ -8,13 +8,6 @@ export const AppointmentStatus = {
 
 export type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 
-export const RequestStatus = {
-  Pending: 'pending',
-  Approved: 'approved',
-  Rejected: 'rejected',
-} as const;
-
-export type RequestStatus = typeof RequestStatus[keyof typeof RequestStatus];
 
 export const PaymentStatus = {
   Pending: 'pending',

@@ -90,7 +90,7 @@ export class AuthService implements IShopAuthService {
         coordinates: [location.coordinates[0], location.coordinates[1]],
       },
       isActive: true,
-      isVerified: false,
+      isVerified: 'pending',
     };
 
     const otp = generateOtp();
@@ -136,7 +136,7 @@ export class AuthService implements IShopAuthService {
       location: shopData.location,
     });
 
-    const shop = await this._shopRepository.createShop(shopData);
+    const shop = await this._shopRepository.createShop({ ...shopData, isVerified: 'pending' });
     console.log(`✅ [AuthService] Shop created successfully:`, {
       id: shop.id,
       email: shop.email,
@@ -214,6 +214,11 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Shop account is inactive', HTTP_STATUS.FORBIDDEN);
       }
 
+      if (shop.isVerified !== 'approved') {
+        console.error('❌ [AuthService] Shop not approved:', normalizedEmail);
+        throw new CustomError('Shop account is not approved', HTTP_STATUS.FORBIDDEN);
+      }
+
       console.log('🔐 [AuthService] Verifying password...');
       const isValidPassword = await bcrypt.compare(data.password, shop.password);
 
@@ -269,6 +274,10 @@ export class AuthService implements IShopAuthService {
 
       if (!shop || !shop.isActive) {
         throw new CustomError('Shop not found or inactive', HTTP_STATUS.UNAUTHORIZED);
+      }
+
+      if (shop.isVerified !== 'approved') {
+        throw new CustomError('Shop not approved', HTTP_STATUS.UNAUTHORIZED);
       }
 
       const newAccessToken = this._jwtService.generateAccessToken({

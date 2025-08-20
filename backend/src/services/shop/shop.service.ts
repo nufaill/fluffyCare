@@ -3,12 +3,13 @@ import { UpdateShopDTO, ShopResponseDTO } from '../../dto/shop.dto';
 import { CustomError } from '../../util/CustomerError';
 import { HTTP_STATUS } from '../../shared/constant';
 import { IShopService } from '../../interfaces/serviceInterfaces/IShopService';
+import { Types } from 'mongoose';
 
 export class ShopService implements IShopService {
   constructor(private readonly shopRepository: ShopRepository) { }
 
   private validateShopId(shopId: string): void {
-    if (!/^[a-f\d]{24}$/i.test(shopId)) {
+    if (!Types.ObjectId.isValid(shopId)) {
       throw new CustomError('Invalid shop ID', HTTP_STATUS.BAD_REQUEST);
     }
   }
@@ -92,7 +93,7 @@ export class ShopService implements IShopService {
     }
     return updatedShop;
   }
-  
+
   async getShopSubscription(shopId: string): Promise<'free' | 'basic' | 'premium'> {
     this.validateShopId(shopId);
     const shop = await this.shopRepository.findById(shopId);
@@ -119,7 +120,7 @@ export class ShopService implements IShopService {
     const skip = (page - 1) * limit;
     const [shops, total] = await Promise.all([
       this.shopRepository.getUnverifiedShops(skip, limit),
-      this.shopRepository.countDocuments({ isVerified: false })
+      this.shopRepository.countDocuments({ isVerified: 'pending' })
     ]);
 
     return {
@@ -132,7 +133,7 @@ export class ShopService implements IShopService {
 
   async approveShop(shopId: string): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
-    const approvedShop = await this.shopRepository.updateShopVerification(shopId, true);
+    const approvedShop = await this.shopRepository.updateShopVerification(shopId, 'approved');
     if (!approvedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -145,10 +146,10 @@ export class ShopService implements IShopService {
     if (!shop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
-    if (shop.isVerified) {
-      throw new CustomError('Shop is already verified', HTTP_STATUS.BAD_REQUEST);
+    if (shop.isVerified === 'approved') {
+      throw new CustomError('Shop is already approved', HTTP_STATUS.BAD_REQUEST);
     }
-    const updatedShop = await this.shopRepository.updateShopVerification(shopId, false);
+    const updatedShop = await this.shopRepository.updateShopVerification(shopId, 'rejected');
     if (!updatedShop) {
       throw new CustomError('Failed to reject shop', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }

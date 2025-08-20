@@ -35,7 +35,7 @@ export interface CreateShopData {
   certificateUrl: string;
   location: GeoLocation;
   isActive: boolean;
-  isVerified: boolean;
+  isVerified: "pending" | "approved" | "rejected";
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   shopAvailability?: ShopAvailability;
@@ -56,7 +56,7 @@ export interface ShopDocument extends Document {
   certificateUrl: string;
   location: GeoLocation;
   isActive: boolean;
-  isVerified: boolean;
+  isVerified: "pending" | "approved" | "rejected";
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   shopAvailability?: ShopAvailability;
@@ -78,7 +78,7 @@ export interface ShopProfile {
   certificateUrl: string;
   location: GeoLocation;
   isActive: boolean;
-  isVerified: boolean;
+  isVerified: "pending" | "approved" | "rejected";
   createdAt: Date;
   updatedAt: Date;
   shopAvailability?: ShopAvailability;
@@ -124,7 +124,7 @@ export interface ShopVerificationResponse {
   description?: string;
   certificateUrl: string;
   isActive: boolean;
-  isVerified: boolean;
+  isVerified: "pending" | "approved" | "rejected";
   createdAt: Date;
   updatedAt: Date;
 }
@@ -144,7 +144,7 @@ export interface Shop {
   description?: string;
   certificateUrl: string;
   isActive: boolean;
-  isVerified: boolean;
+  isVerified: "pending" | "approved" | "rejected";
   location: {
     type: 'Point';
     coordinates: [number, number];

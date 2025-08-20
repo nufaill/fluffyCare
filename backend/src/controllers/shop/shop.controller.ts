@@ -210,11 +210,10 @@ export class ShopController implements IShopController {
     }
   };
 
-   confirmSubscriptionPayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  confirmSubscriptionPayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { paymentIntentId, shopId, subscription, amount, currency } = req.body;
 
-      // Validate inputs (add more as needed)
       if (!paymentIntentId || !shopId || !subscription || !amount || !currency) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
@@ -231,7 +230,6 @@ export class ShopController implements IShopController {
         return;
       }
 
-      // Retrieve and confirm the payment intent from Stripe
       const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
       if (paymentIntent.status !== 'succeeded') {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -241,40 +239,31 @@ export class ShopController implements IShopController {
         return;
       }
 
-      // Start MongoDB transaction
       const session = await mongoose.startSession();
       await session.withTransaction(async () => {
-        // Update shop subscription
         const updatedShop = await this.shopService.updateShopSubscription(shopId, subscription);
 
-        // Optional: If recording as a wallet transaction (e.g., credit admin wallet)
-        // Fetch admin wallet (assuming admin ID is configured)
-        const adminId = process.env.ADMIN_ID || '685ff3212adf35c013419da4';  // From your code
+        const adminId = process.env.ADMIN_ID || '685ff3212adf35c013419da4';
         const adminWallet = await this.walletService.getWalletByOwner(new Types.ObjectId(adminId), 'admin', session);
         if (!adminWallet) {
           throw new CustomError('Admin wallet not found', HTTP_STATUS.NOT_FOUND);
         }
 
-        // Create transaction WITHOUT converting paymentIntentId to ObjectId
-        // Instead, store paymentIntentId in description or add a new string field to WalletTransactionSchema (e.g., externalRef: String)
         const adminTransaction: IWalletTransaction = {
           type: 'credit',
-          amount: amount / 100,  // Convert from cents/paise
+          amount: amount / 100,
           currency,
           description: `Subscription payment received from shop ${shopId} (Stripe ID: ${paymentIntentId})`,
-          // If referenceId is required and must be ObjectId, generate a new one or reference a new payment document
-          // referenceId: new Types.ObjectId(),  // Example: Generate new if no real reference
-          referenceId: undefined,  // Or omit if not referencing a MongoDB doc
+          referenceId: undefined,
         };
 
-        // Update admin wallet balance and add transaction
         await this.walletService.walletRepository.updateBalance(
-          new Types.ObjectId(adminWallet._id),  // Valid ObjectId
+          new Types.ObjectId(adminWallet._id),
           adminTransaction.amount,
           'credit'
         );
         await this.walletService.walletRepository.addTransaction(
-          new Types.ObjectId(adminWallet._id),  // Valid ObjectId
+          new Types.ObjectId(adminWallet._id),
           adminTransaction
         );
       });
@@ -364,10 +353,10 @@ export class ShopController implements IShopController {
           limit: currentLimit,
           totalPages: Math.ceil(total / currentLimit)
         },
-        message: 'Unverified shops fetched successfully'
+        message: 'Pending shops fetched successfully'
       });
     } catch (error) {
-      console.error("❌ [ShopController] Get unverified shops error:", error);
+      console.error("❌ [ShopController] Get pending shops error:", error);
 
       const statusCode = error instanceof CustomError
         ? error.statusCode
@@ -375,7 +364,7 @@ export class ShopController implements IShopController {
 
       const message = error instanceof Error
         ? error.message
-        : 'Failed to fetch unverified shops';
+        : 'Failed to fetch pending shops';
 
       res.status(statusCode).json({
         success: false,
@@ -528,7 +517,6 @@ export class ShopController implements IShopController {
 
       const body: UpdateShopDTO = req.body;
 
-      // Manual validation for UpdateShopDTO
       const validFields = ['name', 'phone', 'logo', 'city', 'streetAddress', 'description', 'location'];
       const invalidFields = Object.keys(body).filter(key => !validFields.includes(key));
       if (invalidFields.length > 0) {
@@ -539,7 +527,6 @@ export class ShopController implements IShopController {
         return;
       }
 
-      // Validate types for provided fields
       if (body.name && typeof body.name !== 'string') {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
           success: false,
