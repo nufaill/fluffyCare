@@ -16,6 +16,7 @@ import { SlotCalendar } from "@/pages/shop/Shop-slot";
 import StaffManagement from "@/pages/shop/Staff";
 import ShopWalletPage from "@/pages/shop/Shop-Wallet";
 import ShopAppointmentDetails from "@/pages/shop/ShopAppointments";
+import { ShopChat } from "@/pages/shop/shop-chat";
 
 const ShopRoutes = () => {
   return (
@@ -128,6 +129,14 @@ const ShopRoutes = () => {
          element={
           <PrivateRoute userType="shop">
             <ShopAppointmentDetails />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/shop/messages"
+         element={
+          <PrivateRoute userType="shop">
+            <ShopChat />
           </PrivateRoute>
         }
       />

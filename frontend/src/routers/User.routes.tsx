@@ -19,6 +19,7 @@ import AppointmentsPage from "@/pages/user/Appointment"
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 import AppointmentDetailsPage from "@/components/user/AppointmentQuickActions";
 import WalletPage from "@/pages/user/User-Wallet";
+import { UserChat } from "@/pages/user/user-chat";
 
 const UserRoutes = () => {
   return (
@@ -132,6 +133,15 @@ const UserRoutes = () => {
         element={
           <PrivateRoute userType="user">
             <WalletPage />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/messages"
+        element={
+          <PrivateRoute userType="user">
+            <UserChat />
           </PrivateRoute>
         }
       />
