@@ -9,6 +9,8 @@ import userRoutes from './routes/user.route';
 import shopRoutes from './routes/shop.route';
 import adminRoutes from './routes/admin.route';
 import walletRoutes from './routes/wallet.route';
+import { chatRouter } from "./routes/chat.routes";
+import { messageRouter } from "./routes/message.routes";
 import { swaggerUi, swaggerSpec } from './config/swagger';
 import { morganLogger } from "./config/logs";
 import { initializeSocket } from './shared/socket.io-handler';
@@ -44,6 +46,8 @@ async function startApp(): Promise<void> {
   app.use("/shop", shopRoutes);
   app.use("/admin", adminRoutes);
   app.use("/wallet", walletRoutes);
+  app.use("/chats", chatRouter)
+  app.use("/messages", messageRouter)
   
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
