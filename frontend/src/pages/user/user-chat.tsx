@@ -1,28 +1,28 @@
-"use client"
+import { useState, useEffect } from 'react';
+import { ChatList } from '../../components/chat/chat-list';
+import { ChatWindow } from '../../components/chat/chat-window';
+import { useMobile } from '@/hooks/chat/use-mobile';
+import { useChats } from '@/hooks/chat/useChats';
+import type { Chat } from '@/types/chat.type';
+import Header from '@/components/user/Header';
+import { ModernSidebar } from '@/components/user/App-sidebar';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import type { RootState } from '@/redux/store';
+import { useSelector } from 'react-redux';
+import { getChatId, isValidChatId, extractId } from '@/utils/helpers/chatHelpers';
 
-import { useState, useEffect } from "react"
-import { ChatList } from "../../components/chat/chat-list"
-import { ChatWindow } from "../../components/chat/chat-window"
-import { useMobile } from "@/hooks/chat/use-mobile"
-import { useChats } from "@/hooks/chat/useChats"
-import type { Chat } from "@/types/chat"
-import Header from "@/components/user/Header"
-import Footer from "@/components/user/Footer"
-import { ModernSidebar } from "@/components/user/App-sidebar"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+export function UserChat() {
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [isChatListOpen, setIsChatListOpen] = useState(false);
+  const isMobile = useMobile();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const targetShopId = searchParams.get('shopId');
+  const user = useSelector((state: RootState) => state.user.userDatas);
+  const userId = extractId(user);
 
-interface UserChatProps {
-  userId: string; 
-}
-
-export function UserChat({ userId }: UserChatProps) {
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
-  const [isChatListOpen, setIsChatListOpen] = useState(false)
-  const isMobile = useMobile()
-  const { toast } = useToast()
-
-  // Use the custom hook to fetch chats dynamically
   const {
     chats,
     loading,
@@ -37,48 +37,70 @@ export function UserChat({ userId }: UserChatProps) {
   } = useChats({
     userId,
     userType: 'user',
-    autoRefresh: true,
-    refreshInterval: 30000, // Refresh every 30 seconds
-  })
+    autoRefresh: false,
+    refreshInterval: 300000,
+  });
 
-  // Handle errors
   useEffect(() => {
     if (error) {
       toast({
-        title: "Error",
+        title: 'Error',
         description: error,
-        variant: "destructive",
-      })
+        variant: 'destructive',
+      });
     }
-  }, [error, toast])
+  }, [error, toast]);
 
-  // Handle chat selection and mark as read
+  useEffect(() => {
+    if (targetShopId && userId) {
+      createOrGetChat(userId, targetShopId).then((chat) => {
+        if (chat && isValidChatId(getChatId(chat))) {
+          setSelectedChat(chat);
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Failed to start chat',
+            variant: 'destructive',
+          });
+        }
+      });
+    }
+  }, [targetShopId, createOrGetChat, userId, toast]);
+
   const handleSelectChat = async (chat: Chat) => {
-    setSelectedChat(chat)
-    if (isMobile) setIsChatListOpen(false)
-    
-    // Mark chat as read when selected
-    if (chat.unreadCount > 0) {
-      const chatId = `${chat.userId}-${chat.shopId}`
-      await markChatAsRead(chatId)
+    const chatId = getChatId(chat);
+    if (!isValidChatId(chatId)) {
+      toast({
+        title: 'Error',
+        description: 'Invalid chat selected - please try again',
+        variant: 'destructive',
+      });
+      return;
     }
-  }
+    setSelectedChat(chat);
+    if (isMobile) setIsChatListOpen(false);
+    if (chat.unreadCount > 0) {
+      await markChatAsRead(chatId);
+    }
+  };
 
-  // Handle search functionality
   const handleSearch = async (query: string) => {
     if (query.trim()) {
-      await searchChats(query)
+      await searchChats(query);
     } else {
-      // If search is empty, fetch regular chats
-      fetchChats(1)
+      fetchChats(1);
     }
-  }
+  };
 
-  // Load more chats for pagination
-  const loadMoreChats = async () => {
-    if (pagination.currentPage < pagination.totalPages && !loading) {
-      await fetchChats(pagination.currentPage + 1)
-    }
+  if (!userId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+        <Header />
+        <div className="flex items-center justify-center h-96">
+          <p className="text-lg text-gray-600">Please log in to access chat</p>
+        </div>
+      </div>
+    );
   }
 
   if (loading && chats.length === 0) {
@@ -86,28 +108,25 @@ export function UserChat({ userId }: UserChatProps) {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
         <Header />
         <div className="flex items-center justify-center h-96">
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading conversations...</span>
-          </div>
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading conversations...</span>
         </div>
-        <Footer />
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <Header  />
-      <div className="flex flex-1 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col">
+      <Header />
+      <div className="flex flex-1 overflow-hidden pt-16">
         <ModernSidebar />
-        <div className="flex h-full bg-background">
+        <div className="flex flex-1 h-[calc(100vh-80px)]">
           <div
             className={`
               ${isMobile
-                ? `fixed inset-y-0 left-0 z-50 w-80 transform transition-transform duration-300 ease-in-out ${isChatListOpen ? "translate-x-0" : "-translate-x-full"}`
-                : "w-80 border-r border-border"}
-              bg-card
+                ? `fixed inset-y-0 left-0 z-50 w-80 transform transition-transform duration-300 ease-in-out ${isChatListOpen ? 'translate-x-0' : '-translate-x-full'}`
+                : 'w-80 border-r border-border'}
+              bg-card h-full
             `}
           >
             <div className="p-4 border-b border-border">
@@ -121,23 +140,22 @@ export function UserChat({ userId }: UserChatProps) {
                 )}
               </p>
             </div>
-            <ChatList
-              selectedChat={selectedChat}
-              onSelectChat={handleSelectChat}
-              onClose={() => setIsChatListOpen(false)}
-              isMobile={isMobile}
-              chats={chats}
-              userType="user"
-              loading={loading}
-              onSearch={handleSearch}
-              onLoadMore={loadMoreChats}
-              hasMore={pagination.currentPage < pagination.totalPages}
-              onRefresh={refreshChats}
-            />
+            <div className="h-[calc(100%-80px)]">
+              <ChatList
+                selectedChat={selectedChat}
+                onSelectChat={handleSelectChat}
+                onClose={() => setIsChatListOpen(false)}
+                isMobile={isMobile}
+                chats={chats}
+                userType="user"
+                loading={loading}
+                onSearch={handleSearch}
+                onRefresh={refreshChats}
+                totalUnreadCount={totalUnreadCount}
+              />
+            </div>
           </div>
-
-          {/* Chat Window */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col h-full">
             <ChatWindow
               chat={selectedChat}
               onOpenChatList={() => setIsChatListOpen(true)}
@@ -146,14 +164,11 @@ export function UserChat({ userId }: UserChatProps) {
               userId={userId}
             />
           </div>
-
-          {/* Mobile Overlay */}
           {isMobile && isChatListOpen && (
             <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsChatListOpen(false)} />
           )}
         </div>
       </div>
-      <Footer />
     </div>
-  )
+  );
 }

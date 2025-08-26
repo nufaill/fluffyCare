@@ -1,218 +1,234 @@
-"use client"
-
-import { useEffect, useRef, useState } from "react"
-import { MessageBubble } from "./message-bubble"
-import type { Message } from "@/types/message"
-import { format, isSameDay } from "date-fns"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2, MessageCircle } from "lucide-react"
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { MessageBubble } from './message-bubble';
+import type { Message } from '@/types/message.type';
+import { format, isSameDay } from 'date-fns';
+import { MessageCircle, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { extractId } from '@/utils/helpers/chatHelpers';
 
 interface MessageListProps {
-  messages: Message[]
-  currentUserId: string
-  userType: "user" | "shop"
-  loading?: boolean
-  onReactionAdd: (messageId: string, emoji: string) => void
-  onReactionRemove: (messageId: string, emoji: string) => void
-  onDeleteMessage: (messageId: string) => void
+  messages: Message[];
+  currentUserId: string;
+  userType: 'user' | 'shop';
+  onReactionAdd: (messageId: string, emoji: string) => void;
+  onReactionRemove: (messageId: string, emoji: string) => void;
+  onReply?: (message: Message) => void;
+  onEdit?: (message: Message) => void;
+  onDelete?: (message: Message) => void;
+  onDeleteMessage?: (messageId: string) => void;
+  onForward?: (message: Message) => void;
+  onCopy?: (content: string) => void;
+  onReport?: (message: Message) => void;
 }
 
-// Mock user data - In real app, get from user service
-const getMockUserData = (id: string, type: "user" | "shop") => {
-  const users = [
-    { name: "Sarah Johnson", avatar: "/woman-golden-retriever.png" },
-    { name: "Mike Chen", avatar: "/man-and-cat.png" },
-    { name: "Emma Davis", avatar: "/woman-small-dog.png" },
-    { name: "Alex Rodriguez", avatar: "/person-with-large-dog.png" },
-    { name: "Lisa Thompson", avatar: "/woman-with-beagle.png" },
-    { name: "David Kim", avatar: "/agustin-testimonial.png" },
-    { name: "Rachel Green", avatar: "/woman-with-poodle.png" },
-  ];
-
-  const shops = [
-    { name: "Paws & Claws Grooming", avatar: "/pet-shop-1.png" },
-    { name: "Happy Tails Spa", avatar: "/pet-shop-2.png" },
-    { name: "Furry Friends Care", avatar: "/pet-shop-3.png" },
-    { name: "Pets Paradise", avatar: "/pet-shop-4.png" },
-    { name: "Animal Wellness Center", avatar: "/pet-shop-5.png" },
-    { name: "The Grooming Station", avatar: "/pet-shop-6.png" },
-  ];
-
-  const data = type === "user" ? users : shops;
-  const index = parseInt(id.slice(-1)) % data.length;
-  return data[index];
-};
-
-export function MessageList({ 
-  messages, 
-  currentUserId, 
+export function MessageList({
+  messages,
+  currentUserId,
   userType,
-  loading = false,
   onReactionAdd,
   onReactionRemove,
-  onDeleteMessage
+  onReply,
+  onEdit,
+  onDelete,
+  onDeleteMessage,
+  onForward,
+  onCopy,
+  onReport,
 }: MessageListProps) {
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null)
-  const { toast } = useToast()
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(true);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  const scrollToBottom = useCallback((smooth: boolean = true) => {
+    messagesEndRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'end' });
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const nearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setIsNearBottom(nearBottom);
+    setShowScrollButton(!nearBottom && messages.length > 0);
+  }, [messages.length]);
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    if (messages.length > 0 && isNearBottom) {
+      scrollToBottom();
+    }
+  }, [messages, isNearBottom, scrollToBottom]);
 
-  const shouldShowAvatar = (message: Message, index: number) => {
-    // Always show avatar for the other party's messages
-    const isOwn = userType === "user" 
-      ? message.senderRole === "User" 
-      : message.senderRole === "Shop";
-    
-    if (isOwn) return false;
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => scrollToBottom(false), 100);
+    }
+  }, [scrollToBottom]);
 
-    const nextMessage = messages[index + 1]
-    if (!nextMessage) return true
+  const shouldShowAvatar = useCallback(
+    (message: Message, index: number) => {
+      const isOwn = userType === 'user' ? message.senderRole === 'User' : message.senderRole === 'Shop';
+      if (isOwn) return false;
+      const nextMessage = messages[index + 1];
+      return !nextMessage || nextMessage.senderRole !== message.senderRole;
+    },
+    [userType, messages],
+  );
 
-    return nextMessage.senderRole !== message.senderRole
-  }
+  const shouldShowDateSeparator = useCallback(
+    (message: Message, index: number) => {
+      if (index === 0) return true;
+      const prevMessage = messages[index - 1];
+      if (!prevMessage.createdAt || !message.createdAt) return false;
+      return !isSameDay(new Date(prevMessage.createdAt), new Date(message.createdAt));
+    },
+    [messages],
+  );
 
-  const shouldShowDateSeparator = (message: Message, index: number) => {
-    if (index === 0) return true
+  const handleDelete = useCallback((message: Message) => {
+    const messageId = extractId(message._id || message.id);
+    if (onDeleteMessage) {
+      onDeleteMessage(messageId);
+    } else if (onDelete) {
+      onDelete(message);
+    }
+  }, [onDeleteMessage, onDelete]);
 
-    const prevMessage = messages[index - 1]
-    if (!prevMessage.createdAt || !message.createdAt) return false
+  const handleCopy = useCallback((content: string) => {
+    if (onCopy) {
+      onCopy(content);
+    } else {
+      // Fallback copy functionality
+      navigator.clipboard.writeText(content).catch(console.error);
+    }
+  }, [onCopy]);
 
-    return !isSameDay(prevMessage.createdAt, message.createdAt)
-  }
+  // Generate a stable key for each message
+  const generateMessageKey = useCallback((message: Message, index: number): string => {
+    try {
+      const messageId = extractId(message._id || message.id);
 
-  const handleReactionAdd = (messageId: string, emoji: string) => {
-    onReactionAdd(messageId, emoji);
-    toast({
-      description: `Added ${emoji} reaction`,
+      if (messageId && messageId !== '[object Object]') {
+        return messageId;
+      }
+
+      // Fallback to chatId if available
+      const chatId = extractId(message.chatId);
+      if (chatId && chatId !== '[object Object]') {
+        // Use chatId + timestamp + index as fallback
+        const timestamp = message.createdAt ? new Date(message.createdAt).getTime() : Date.now();
+        return `${chatId}-${timestamp}-${index}`;
+      }
+
+      // Final fallback: use content hash + index
+      const contentHash = message.content ?
+        message.content.slice(0, 10).replace(/[^a-zA-Z0-9]/g, '') :
+        'empty';
+      const timestamp = message.createdAt ? new Date(message.createdAt).getTime() : Date.now();
+      return `msg-${contentHash}-${timestamp}-${index}`;
+
+    } catch (error) {
+      console.warn('Error generating message key:', error);
+      return `fallback-${index}-${Date.now()}`;
+    }
+  }, []);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('MessageList: messages updated', {
+      count: messages.length,
+      messages: messages.slice(0, 3).map(m => ({
+        id: m._id,
+        content: m.content?.slice(0, 20) + '...',
+        sender: m.senderRole
+      }))
     });
-  }
 
-  const handleReactionRemove = (messageId: string, emoji: string) => {
-    onReactionRemove(messageId, emoji);
-    toast({
-      description: `Removed ${emoji} reaction`,
+    // Check for corrupted message IDs
+    const corruptedMessages = messages.filter(m => {
+      const id = extractId(m._id);
+      return id === '[object Object]' || id.includes('[object Object]');
     });
-  }
 
-  const handleReply = (message: Message) => {
-    setReplyToMessage(message)
-    toast({
-      description: "Reply mode activated",
-    })
-  }
+    if (corruptedMessages.length > 0) {
+      console.error(`Found ${corruptedMessages.length} messages with corrupted IDs:`, corruptedMessages);
+    }
+  }, [messages]);
 
-  const handleEdit = (message: Message) => {
-    console.log("Editing message:", message)
-    toast({
-      description: "Edit mode activated",
-    })
-  }
-
-  const handleDelete = (message: Message) => {
-    onDeleteMessage(message.chatId);
-    toast({
-      description: "Message deleted",
-      variant: "destructive",
-    });
-  }
-
-  const handleForward = (message: Message) => {
-    console.log("Forwarding message:", message)
-    toast({
-      description: "Message forwarded",
-    })
-  }
-
-  const handleCopy = (content: string) => {
-    navigator.clipboard.writeText(content)
-    toast({
-      description: "Message copied to clipboard",
-    })
-  }
-
-  const handleReport = (message: Message) => {
-    console.log("Reporting message:", message)
-    toast({
-      description: "Message reported",
-      variant: "destructive",
-    })
-  }
-
-  if (loading && messages.length === 0) {
+  if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-background">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading messages...</p>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+            <MessageCircle className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h3 className="text-sm font-medium text-foreground mb-2">No messages yet</h3>
+          <p className="text-xs text-muted-foreground">Start the conversation by sending a message</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-1">
-      {messages.length === 0 ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
-          </div>
-        </div>
-      ) : (
-        messages.map((message, index) => {
-          const isOwn = userType === "user" 
-            ? message.senderRole === "User" 
-            : message.senderRole === "Shop";
-          
+    <div className="flex-1 relative h-full">
+      <div
+        ref={messagesContainerRef}
+        className="h-full overflow-y-auto p-4 space-y-1 scroll-smooth"
+        style={{ maxHeight: 'calc(100vh - 200px)' }}
+        onScroll={handleScroll}
+      >
+        {messages.map((message, index) => {
+          const isOwn = userType === 'user' ? message.senderRole === 'User' : message.senderRole === 'Shop';
           const showAvatar = shouldShowAvatar(message, index);
           const showDateSeparator = shouldShowDateSeparator(message, index);
-          
-          // Get user data for display
-          const senderId = message.senderRole === "User" ? "user" : "shop";
-          const user = getMockUserData(currentUserId, senderId);
+          const messageKey = generateMessageKey(message, index);
+
 
           return (
-            <div key={`${message.chatId}-${index}`}>
-              {/* Date Separator */}
+            <div key={messageKey}>
               {showDateSeparator && message.createdAt && (
                 <div className="flex items-center justify-center my-4">
                   <div className="bg-muted px-3 py-1 rounded-full">
                     <span className="text-xs text-muted-foreground">
-                      {format(message.createdAt, "MMMM d, yyyy")}
+                      {format(new Date(message.createdAt), 'MMMM d, yyyy')}
                     </span>
                   </div>
                 </div>
               )}
-
-              {/* Message */}
               <MessageBubble
                 message={message}
                 isOwn={isOwn}
                 showAvatar={showAvatar}
-                userName={user.name}
-                userAvatar={user.avatar}
-                replyToMessage={replyToMessage}
-                onReactionAdd={handleReactionAdd}
-                onReactionRemove={handleReactionRemove}
-                onReply={handleReply}
-                onEdit={handleEdit}
+                onReactionAdd={(messageId, emoji) => {
+                  const cleanId = extractId(messageId);
+                  if (cleanId && cleanId !== '[object Object]') {
+                    onReactionAdd(cleanId, emoji);
+                  } else {
+                    console.error('Cannot add reaction - invalid message ID:', messageId);
+                  }
+                }}
+                onReactionRemove={(messageId, emoji) => onReactionRemove(extractId(messageId), emoji)}
+                onReply={() => { }}
+                onEdit={() => { }}
                 onDelete={handleDelete}
-                onForward={handleForward}
+                onForward={() => { }}
                 onCopy={handleCopy}
-                onReport={handleReport}
+                onReport={() => { }}
               />
             </div>
-          )
-        })
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {showScrollButton && (
+        <Button
+          onClick={() => scrollToBottom()}
+          className="absolute bottom-4 right-4 rounded-full h-10 w-10 p-0 shadow-lg z-10"
+          variant="secondary"
+        >
+          <ChevronDown className="h-4 w-4" />
+        </Button>
       )}
-      <div ref={messagesEndRef} />
     </div>
-  )
+  );
 }

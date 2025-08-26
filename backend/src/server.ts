@@ -9,8 +9,8 @@ import userRoutes from './routes/user.route';
 import shopRoutes from './routes/shop.route';
 import adminRoutes from './routes/admin.route';
 import walletRoutes from './routes/wallet.route';
-import { chatRouter } from "./routes/chat.routes";
-import { messageRouter } from "./routes/message.routes";
+import chatRouter from "./routes/chat.routes";
+import messageRouter  from "./routes/message.routes";
 import { swaggerUi, swaggerSpec } from './config/swagger';
 import { morganLogger } from "./config/logs";
 import { initializeSocket } from './shared/socket.io-handler';
@@ -21,7 +21,7 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 // Initialize Socket.IO
-const socketHandler = initializeSocket(server);
+initializeSocket(server);
 
 async function startApp(): Promise<void> {
   await initializeDatabase();
@@ -48,7 +48,7 @@ async function startApp(): Promise<void> {
   app.use("/wallet", walletRoutes);
   app.use("/chats", chatRouter)
   app.use("/messages", messageRouter)
-  
+
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
@@ -56,7 +56,7 @@ async function startApp(): Promise<void> {
   }));
 
   const PORT = process.env.PORT || 5000;
-  
+
   // FIXED: Use server.listen instead of app.listen
   server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);

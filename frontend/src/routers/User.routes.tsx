@@ -138,7 +138,7 @@ const UserRoutes = () => {
       />
 
       <Route
-        path="/messages"
+        path="/messages/"
         element={
           <PrivateRoute userType="user">
             <UserChat />

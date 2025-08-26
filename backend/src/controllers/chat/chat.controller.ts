@@ -1,41 +1,42 @@
-import { Request, Response } from "express";
-import { IChatController } from "../../interfaces/controllerInterfaces/IChatController";
-import { IChatService } from "../../interfaces/serviceInterfaces/IChatService";
-import { CreateChatDTO, ChatSearchDTO } from "../../dto/chat.dto";
+import { Request, Response } from 'express';
+import { IChatController } from '../../interfaces/controllerInterfaces/IChatController';
+import { IChatService } from '../../interfaces/serviceInterfaces/IChatService';
+import { ISocketService } from '../../interfaces/serviceInterfaces/ISocketService';
+import { CreateChatDTO, ChatSearchDTO } from '../../dto/chat.dto';
+import { BaseController } from './base.controller';
 
-export class ChatController implements IChatController {
-  private readonly _chatService: IChatService;
+export class ChatController extends BaseController implements IChatController {
+  private readonly chatService: IChatService;
+  private readonly socketService: ISocketService;
 
-  constructor(chatService: IChatService) {
-    this._chatService = chatService;
+  constructor(chatService: IChatService, socketService: ISocketService) {
+    super();
+    this.chatService = chatService;
+    this.socketService = socketService;
   }
 
   async createChat(req: Request, res: Response): Promise<void> {
     try {
       const { userId, shopId } = req.body;
 
-      if (!userId || !shopId) {
-        res.status(400).json({
-          success: false,
-          message: "userId and shopId are required",
-        });
+      const validationError = this.validateRequiredFields({ userId, shopId });
+      if (validationError) {
+        this.sendErrorResponse(res, 400, validationError);
         return;
       }
 
       const createChatDto: CreateChatDTO = { userId, shopId };
-      const chat = await this._chatService.createChat(createChatDto);
+      const chat = await this.chatService.createChat(createChatDto);
 
-      res.status(201).json({
-        success: true,
-        message: "Chat created successfully",
-        data: chat,
+      // Emit socket event for new chat creation
+      this.socketService.emitChatUpdate(chat.id, {
+        type: 'chat-created',
+        chat,
       });
+
+      this.sendSuccessResponse(res, 201, 'Chat created successfully', chat);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to create chat",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to create chat');
     }
   }
 
@@ -44,94 +45,58 @@ export class ChatController implements IChatController {
       const { chatId } = req.params;
 
       if (!chatId) {
-        res.status(400).json({
-          success: false,
-          message: "Chat ID is required",
-        });
+        this.sendErrorResponse(res, 400, 'Chat ID is required');
         return;
       }
 
-      const chat = await this._chatService.findChatById(chatId);
+      const chat = await this.chatService.findChatById(chatId);
 
       if (!chat) {
-        res.status(404).json({
-          success: false,
-          message: "Chat not found",
-        });
+        this.sendErrorResponse(res, 404, 'Chat not found');
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Chat retrieved successfully",
-        data: chat,
-      });
+      this.sendSuccessResponse(res, 200, 'Chat retrieved successfully', chat);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to get chat",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to get chat');
     }
   }
 
   async getUserChats(req: Request, res: Response): Promise<void> {
     try {
       const { userId } = req.params;
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const page = this.parseIntOrDefault(req.query.page as string, 1);
+      const limit = this.parseIntOrDefault(req.query.limit as string, 20);
 
       if (!userId) {
-        res.status(400).json({
-          success: false,
-          message: "User ID is required",
-        });
+        this.sendErrorResponse(res, 400, 'User ID is required');
         return;
       }
 
-      const chatList = await this._chatService.getUserChats(userId, page, limit);
+      const chatList = await this.chatService.getUserChats(userId, page, limit);
 
-      res.status(200).json({
-        success: true,
-        message: "User chats retrieved successfully",
-        data: chatList,
-      });
+      this.sendSuccessResponse(res, 200, 'User chats retrieved successfully', chatList);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to get user chats",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to get user chats');
     }
   }
 
   async getShopChats(req: Request, res: Response): Promise<void> {
     try {
       const { shopId } = req.params;
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const page = this.parseIntOrDefault(req.query.page as string, 1);
+      const limit = this.parseIntOrDefault(req.query.limit as string, 20);
 
       if (!shopId) {
-        res.status(400).json({
-          success: false,
-          message: "Shop ID is required",
-        });
+        this.sendErrorResponse(res, 400, 'Shop ID is required');
         return;
       }
 
-      const chatList = await this._chatService.getShopChats(shopId, page, limit);
+      const chatList = await this.chatService.getShopChats(shopId, page, limit);
 
-      res.status(200).json({
-        success: true,
-        message: "Shop chats retrieved successfully",
-        data: chatList,
-      });
+      this.sendSuccessResponse(res, 200, 'Shop chats retrieved successfully', chatList);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to get shop chats",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to get shop chats');
     }
   }
 
@@ -139,27 +104,17 @@ export class ChatController implements IChatController {
     try {
       const { userId, shopId } = req.body;
 
-      if (!userId || !shopId) {
-        res.status(400).json({
-          success: false,
-          message: "userId and shopId are required",
-        });
+      const validationError = this.validateRequiredFields({ userId, shopId });
+      if (validationError) {
+        this.sendErrorResponse(res, 400, validationError);
         return;
       }
 
-      const chat = await this._chatService.getOrCreateChat(userId, shopId);
+      const chat = await this.chatService.getOrCreateChat(userId, shopId);
 
-      res.status(200).json({
-        success: true,
-        message: "Chat retrieved or created successfully",
-        data: chat,
-      });
+      this.sendSuccessResponse(res, 200, 'Chat retrieved or created successfully', chat);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to get or create chat",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to get or create chat');
     }
   }
 
@@ -169,48 +124,24 @@ export class ChatController implements IChatController {
       const { lastMessage, lastMessageType, lastMessageAt } = req.body;
 
       if (!chatId) {
-        res.status(400).json({
-          success: false,
-          message: "Chat ID is required",
-        });
+        this.sendErrorResponse(res, 400, 'Chat ID is required');
         return;
       }
 
-      if (!lastMessage || !lastMessageType || !lastMessageAt) {
-        res.status(400).json({
-          success: false,
-          message: "lastMessage, lastMessageType, and lastMessageAt are required",
-        });
-        return;
-      }
-
-      const updateData = {
-        lastMessage,
-        lastMessageType,
-        lastMessageAt: new Date(lastMessageAt),
-      };
-
-      const updatedChat = await this._chatService.updateLastMessage(chatId, updateData);
+      const updatedChat = await this.chatService.updateLastMessage(chatId, {
+        lastMessage: lastMessage || '',
+        lastMessageType: lastMessageType || 'Text',
+        lastMessageAt: lastMessageAt ? new Date(lastMessageAt) : new Date(),
+      });
 
       if (!updatedChat) {
-        res.status(404).json({
-          success: false,
-          message: "Chat not found",
-        });
+        this.sendErrorResponse(res, 404, 'Chat not found');
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Last message updated successfully",
-        data: updatedChat,
-      });
+      this.sendSuccessResponse(res, 200, 'Last message updated successfully', updatedChat);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to update last message",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to update last message');
     }
   }
 
@@ -219,34 +150,25 @@ export class ChatController implements IChatController {
       const { chatId } = req.params;
 
       if (!chatId) {
-        res.status(400).json({
-          success: false,
-          message: "Chat ID is required",
-        });
+        this.sendErrorResponse(res, 400, 'Chat ID is required');
         return;
       }
 
-      const updatedChat = await this._chatService.incrementUnreadCount(chatId);
+      const updatedChat = await this.chatService.incrementUnreadCount(chatId);
 
       if (!updatedChat) {
-        res.status(404).json({
-          success: false,
-          message: "Chat not found",
-        });
+        this.sendErrorResponse(res, 404, 'Chat not found');
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Unread count incremented successfully",
-        data: updatedChat,
+      this.socketService.emitChatUpdate(chatId, {
+        type: 'unread-count-incremented',
+        unreadCount: updatedChat.unreadCount,
       });
+
+      this.sendSuccessResponse(res, 200, 'Unread count incremented successfully', updatedChat);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to increment unread count",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to increment unread count');
     }
   }
 
@@ -255,34 +177,25 @@ export class ChatController implements IChatController {
       const { chatId } = req.params;
 
       if (!chatId) {
-        res.status(400).json({
-          success: false,
-          message: "Chat ID is required",
-        });
+        this.sendErrorResponse(res, 400, 'Chat ID is required');
         return;
       }
 
-      const updatedChat = await this._chatService.resetUnreadCount(chatId);
+      const updatedChat = await this.chatService.resetUnreadCount(chatId);
 
       if (!updatedChat) {
-        res.status(404).json({
-          success: false,
-          message: "Chat not found",
-        });
+        this.sendErrorResponse(res, 404, 'Chat not found');
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Unread count reset successfully",
-        data: updatedChat,
+      this.socketService.emitChatUpdate(chatId, {
+        type: 'unread-count-reset',
+        unreadCount: 0,
       });
+
+      this.sendSuccessResponse(res, 200, 'Unread count reset successfully', updatedChat);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to reset unread count",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to reset unread count');
     }
   }
 
@@ -291,78 +204,60 @@ export class ChatController implements IChatController {
       const { chatId } = req.params;
 
       if (!chatId) {
-        res.status(400).json({
-          success: false,
-          message: "Chat ID is required",
-        });
+        this.sendErrorResponse(res, 400, 'Chat ID is required');
         return;
       }
 
-      const deleted = await this._chatService.deleteChat(chatId);
+      const deleted = await this.chatService.deleteChat(chatId);
 
       if (!deleted) {
-        res.status(404).json({
-          success: false,
-          message: "Chat not found",
-        });
+        this.sendErrorResponse(res, 404, 'Chat not found');
         return;
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Chat deleted successfully",
+      this.socketService.emitChatUpdate(chatId, {
+        type: 'chat-deleted',
       });
+
+      this.sendSuccessResponse(res, 200, 'Chat deleted successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to delete chat",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to delete chat');
     }
   }
 
   async searchChats(req: Request, res: Response): Promise<void> {
     try {
       const { query, searcherId, searcherRole } = req.query;
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const page = this.parseIntOrDefault(req.query.page as string, 1);
+      const limit = this.parseIntOrDefault(req.query.limit as string, 20);
 
-      if (!query || !searcherId || !searcherRole) {
-        res.status(400).json({
-          success: false,
-          message: "query, searcherId, and searcherRole are required",
-        });
+      const validationError = this.validateRequiredFields({ 
+        query, 
+        searcherId, 
+        searcherRole 
+      });
+      if (validationError) {
+        this.sendErrorResponse(res, 400, validationError);
         return;
       }
 
-      if (!["User", "Shop"].includes(searcherRole as string)) {
-        res.status(400).json({
-          success: false,
-          message: "searcherRole must be either 'User' or 'Shop'",
-        });
+      if (!['User', 'Shop'].includes(searcherRole as string)) {
+        this.sendErrorResponse(res, 400, "searcherRole must be either 'User' or 'Shop'");
         return;
       }
 
       const searchDto: ChatSearchDTO = {
         query: query as string,
-        searcherRole: searcherRole as "User" | "Shop",
+        searcherRole: searcherRole as 'User' | 'Shop',
         page,
         limit,
       };
 
-      const searchResults = await this._chatService.searchChats(searchDto);
+      const searchResults = await this.chatService.searchChats(searchDto);
 
-      res.status(200).json({
-        success: true,
-        message: "Chats searched successfully",
-        data: searchResults,
-      });
+      this.sendSuccessResponse(res, 200, 'Chats searched successfully', searchResults);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to search chats",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to search chats');
     }
   }
 
@@ -370,38 +265,25 @@ export class ChatController implements IChatController {
     try {
       const { userId, role } = req.params;
 
-      if (!userId || !role) {
-        res.status(400).json({
-          success: false,
-          message: "userId and role are required",
-        });
+      const validationError = this.validateRequiredFields({ userId, role });
+      if (validationError) {
+        this.sendErrorResponse(res, 400, validationError);
         return;
       }
 
-      if (!["User", "Shop"].includes(role)) {
-        res.status(400).json({
-          success: false,
-          message: "role must be either 'User' or 'Shop'",
-        });
+      if (!['User', 'Shop'].includes(role)) {
+        this.sendErrorResponse(res, 400, "role must be either 'User' or 'Shop'");
         return;
       }
 
-      const unreadCount = await this._chatService.getTotalUnreadCount(
+      const unreadCount = await this.chatService.getTotalUnreadCount(
         userId,
-        role as "User" | "Shop"
+        role as 'User' | 'Shop',
       );
 
-      res.status(200).json({
-        success: true,
-        message: "Total unread count retrieved successfully",
-        data: unreadCount,
-      });
+      this.sendSuccessResponse(res, 200, 'Total unread count retrieved successfully', unreadCount);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Failed to get total unread count",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      this.handleControllerError(res, error, 'Failed to get total unread count');
     }
   }
 }

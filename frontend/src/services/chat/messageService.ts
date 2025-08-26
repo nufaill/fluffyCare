@@ -1,31 +1,34 @@
-// services/messageService.ts
 import MessageAxios from '@/api/message.axios';
-import { type Message } from '@/types/message';
+import { type Message } from '@/types/message.type';
 
-export interface MessageListResponse {
+interface MessageListResponse {
   success: boolean;
   message: string;
   data: {
+    page: number;
+    total: number;
+    data: any;
     messages: Message[];
     totalPages: number;
     currentPage: number;
     totalMessages: number;
+    hasMore?: boolean;
   };
 }
 
-export interface MessageResponse {
+interface MessageResponse {
   success: boolean;
   message: string;
   data: Message;
 }
 
-export interface UnreadCountResponse {
+interface UnreadCountResponse {
   success: boolean;
   message: string;
   data: { unreadCount: number };
 }
 
-export interface MessageStatsResponse {
+interface MessageStatsResponse {
   success: boolean;
   message: string;
   data: {
@@ -39,113 +42,202 @@ export interface MessageStatsResponse {
 }
 
 export class MessageService {
-  // Create a new message
+  private validMessageTypes = ['Text', 'Image', 'Video', 'Audio', 'File'];
+
+  private async handleRequest<T>(request: Promise<any>): Promise<T> {
+    try {
+      const response = await request;
+      if (!response?.data?.success) {
+        throw new Error(response?.data?.message || 'Request failed');
+      }
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const messages: { [key: number]: string } = {
+        401: 'Unauthorized access. Please login again.',
+        403: 'You do not have permission to perform this action.',
+        404: 'Chat or message not found.',
+        500: 'Server error. Please try again later.'
+      };
+      throw new Error(messages[status] || error.response?.data?.message || error.message || 'An unexpected error occurred');
+    }
+  }
+
+  private validateId(id: string, name: string): void {
+    if (!id?.trim()) {
+      throw new Error(`${name} is required and must be a non-empty string`);
+    }
+  }
+
+  private validateMessageType(messageType: string): void {
+    if (!this.validMessageTypes.includes(messageType)) {
+      throw new Error(`Invalid message type: ${messageType}. Must be one of: ${this.validMessageTypes.join(', ')}`);
+    }
+  }
+
   async createMessage(
     chatId: string,
     senderRole: 'User' | 'Shop',
-    messageType: Message['messageType'],
+    messageType: Message['messageType'] = 'Text',
     content: string,
     mediaUrl?: string
   ): Promise<Message> {
-    const response = await MessageAxios.post<MessageResponse>('/', {
+    this.validateId(chatId, 'chatId');
+    if (!['User', 'Shop'].includes(senderRole)) {
+      throw new Error('senderRole must be either "User" or "Shop"');
+    }
+    this.validateMessageType(messageType);
+
+    if (messageType === 'Text') {
+      if (!content?.trim()) {
+        throw new Error('Content is required for text messages');
+      }
+      if (content.trim().length > 10000) {
+        throw new Error('Message content cannot exceed 10000 characters');
+      }
+    } else if (!mediaUrl?.trim()) {
+      throw new Error(`Media URL is required for ${messageType.toLowerCase()} messages`);
+    }
+
+    const payload = {
       chatId,
       senderRole,
       messageType,
-      content,
-      mediaUrl,
-    });
-    return response.data.data;
+      content: content?.trim() || '',
+      ...(mediaUrl && { mediaUrl: mediaUrl.trim() })
+    };
+
+    return (await this.handleRequest<MessageResponse>(MessageAxios.post('/', payload))).data;
   }
 
-  // Get message by ID
-  async getMessageById(messageId: string): Promise<Message> {
-    const response = await MessageAxios.get<MessageResponse>(`/${messageId}`);
-    return response.data.data;
+  async getChatMessages(chatId: string, page: number = 1, limit: number = 50, since?: Date): Promise<MessageListResponse['data']> {
+    this.validateId(chatId, 'chatId');
+    const validPage = Math.max(1, Math.floor(page));
+    const validLimit = Math.min(100, Math.max(1, Math.floor(limit)));
+
+    const response = await this.handleRequest<MessageListResponse>(
+      MessageAxios.get(`/chats/${chatId}/messages`, {
+        params: { page: validPage, limit: validLimit, ...(since && { since: since.toISOString() }) }
+      })
+    );
+
+    // Map messages to use _id and convert dates
+    const mappedMessages = response.data.messages.map((msg: any) => ({
+      ...msg,
+      _id: msg.id || msg._id,
+      createdAt: new Date(msg.createdAt),
+      updatedAt: new Date(msg.updatedAt),
+      deliveredAt: msg.deliveredAt ? new Date(msg.deliveredAt) : undefined,
+      readAt: msg.readAt ? new Date(msg.readAt) : undefined,
+    })) as Message[];
+
+    return {
+      messages: mappedMessages.filter((msg): msg is Message => !!msg && !!msg._id),
+      currentPage: response.data.page || validPage,
+      totalPages: Math.ceil((response.data.total || 0) / validLimit),
+      totalMessages: response.data.total || 0,
+      hasMore: response.data.hasMore,
+    };
   }
 
-  // Get chat messages with pagination
-  async getChatMessages(chatId: string, page: number = 1, limit: number = 50): Promise<MessageListResponse['data']> {
-    const response = await MessageAxios.get<MessageListResponse>(`/chats/${chatId}/messages`, {
-      params: { page, limit },
-    });
-    return response.data.data;
-  }
-
-  // Get latest message in chat
   async getLatestMessage(chatId: string): Promise<Message> {
-    const response = await MessageAxios.get<MessageResponse>(`/chats/${chatId}/messages/latest`);
-    return response.data.data;
+    this.validateId(chatId, 'chatId');
+    const response = await this.handleRequest<MessageResponse>(MessageAxios.get(`/chats/${chatId}/messages/latest`));
+
+    return {
+      ...response.data,
+      createdAt: new Date(response.data.createdAt || Date.now()),
+      updatedAt: new Date(response.data.updatedAt || Date.now()),
+      deliveredAt: response.data.deliveredAt ? new Date(response.data.deliveredAt) : undefined,
+      readAt: response.data.readAt ? new Date(response.data.readAt) : undefined
+    };
   }
 
-  // Mark message as delivered
   async markAsDelivered(messageId: string, deliveredAt: Date = new Date()): Promise<Message> {
-    const response = await MessageAxios.put<MessageResponse>(`/${messageId}/delivered`, {
-      deliveredAt: deliveredAt.toISOString(),
-    });
-    return response.data.data;
+    this.validateId(messageId, 'messageId');
+    return (await this.handleRequest<MessageResponse>(
+      MessageAxios.put(`/${messageId}/delivered`, { deliveredAt: deliveredAt.toISOString() })
+    )).data;
   }
 
-  // Mark message as read
   async markAsRead(messageId: string, readAt: Date = new Date()): Promise<Message> {
-    const response = await MessageAxios.put<MessageResponse>(`/${messageId}/read`, {
-      readAt: readAt.toISOString(),
-    });
-    return response.data.data;
+    this.validateId(messageId, 'messageId');
+    return (await this.handleRequest<MessageResponse>(
+      MessageAxios.put(`/${messageId}/read`, { readAt: readAt.toISOString() })
+    )).data;
   }
 
-  // Mark multiple messages as read
   async markMultipleAsRead(messageIds: string[], readAt: Date = new Date()): Promise<number> {
-    const response = await MessageAxios.put('/mark-multiple-read', {
-      messageIds,
-      readAt: readAt.toISOString(),
-    });
-    return response.data.data.modifiedCount;
+    if (!Array.isArray(messageIds) || !messageIds.length) {
+      throw new Error('messageIds must be a non-empty array');
+    }
+    const validMessageIds = messageIds.filter(id => id?.trim()).map(id => id.trim());
+    if (!validMessageIds.length) {
+      throw new Error('No valid message IDs provided');
+    }
+
+    return (await this.handleRequest<{ data: { modifiedCount: number } }>(
+      MessageAxios.put('/mark-multiple-read', { messageIds: validMessageIds, readAt: readAt.toISOString() })
+    )).data.modifiedCount;
   }
 
-  // Mark chat messages as read
   async markChatMessagesAsRead(
     chatId: string,
     receiverRole: 'User' | 'Shop',
     messageIds?: string[],
     readAt: Date = new Date()
   ): Promise<number> {
-    const response = await MessageAxios.put(`/chats/${chatId}/messages/mark-read`, {
-      receiverRole,
-      messageIds,
-      readAt: readAt.toISOString(),
-    });
-    return response.data.data.modifiedCount;
+    this.validateId(chatId, 'chatId');
+    if (!['User', 'Shop'].includes(receiverRole)) {
+      throw new Error('receiverRole must be either "User" or "Shop"');
+    }
+
+    const validMessageIds = messageIds?.filter(id => id?.trim()).map(id => id.trim());
+    if (messageIds && !validMessageIds?.length) {
+      throw new Error('No valid message IDs provided');
+    }
+
+    return (await this.handleRequest<{ data: { modifiedCount: number } }>(
+      MessageAxios.put(`/chats/${chatId}/messages/mark-read`, {
+        receiverRole,
+        ...(validMessageIds?.length && { messageIds: validMessageIds }),
+        readAt: readAt.toISOString()
+      })
+    )).data.modifiedCount;
   }
 
-  // Get unread count for a chat
   async getUnreadCount(chatId: string, receiverRole: 'User' | 'Shop'): Promise<number> {
-    const response = await MessageAxios.get<UnreadCountResponse>(
-      `/chats/${chatId}/messages/unread-count`,
-      {
-        params: { receiverRole },
-      }
-    );
-    return response.data.data.unreadCount;
+    this.validateId(chatId, 'chatId');
+    if (!['User', 'Shop'].includes(receiverRole)) {
+      throw new Error('receiverRole must be either "User" or "Shop"');
+    }
+
+    return (await this.handleRequest<UnreadCountResponse>(
+      MessageAxios.get(`/chats/${chatId}/messages/unread-count`, { params: { receiverRole } })
+    )).data.unreadCount;
   }
 
-  // Add reaction to message
   async addReaction(messageId: string, userId: string, emoji: string): Promise<Message> {
-    const response = await MessageAxios.post<MessageResponse>(`/${messageId}/reactions`, {
-      userId,
-      emoji,
-    });
-    return response.data.data;
+    this.validateId(messageId, 'messageId');
+    this.validateId(userId, 'userId');
+    if (!emoji?.trim() || emoji.length > 10) {
+      throw new Error('emoji is required and cannot exceed 10 characters');
+    }
+
+    return (await this.handleRequest<MessageResponse>(
+      MessageAxios.post(`/${messageId}/reactions`, { userId, emoji: emoji.trim() })
+    )).data;
   }
 
-  // Remove reaction from message
-  async removeReaction(messageId: string, userId: string): Promise<Message> {
-    const response = await MessageAxios.delete<MessageResponse>(`/${messageId}/reactions`, {
-      data: { userId },
-    });
-    return response.data.data;
+  async removeReaction(messageId: string, userId: string, emoji: string): Promise<Message> {
+    this.validateId(messageId, 'messageId');
+    this.validateId(userId, 'userId');
+
+    return (await this.handleRequest<MessageResponse>(
+      MessageAxios.delete(`/${messageId}/reactions`, { data: { userId } })
+    )).data;
   }
 
-  // Search messages in a chat
   async searchMessages(
     chatId: string,
     query: string,
@@ -153,49 +245,61 @@ export class MessageService {
     page: number = 1,
     limit: number = 20
   ): Promise<MessageListResponse['data']> {
-    const response = await MessageAxios.get<MessageListResponse>(`/chats/${chatId}/messages/search`, {
-      params: {
-        query,
-        messageType,
-        page,
-        limit,
-      },
-    });
-    return response.data.data;
+    this.validateId(chatId, 'chatId');
+    if (!query?.trim()) {
+      throw new Error('Search query cannot be empty');
+    }
+    if (messageType && !this.validMessageTypes.includes(messageType)) {
+      throw new Error('Invalid message type');
+    }
+
+    const validPage = Math.max(1, Math.floor(page));
+    const validLimit = Math.min(100, Math.max(1, Math.floor(limit)));
+
+    return await (await this.handleRequest<MessageListResponse>(
+      MessageAxios.get(`/chats/${chatId}/messages/search`, {
+        params: { query: query.trim(), messageType, page: validPage, limit: validLimit }
+      })
+    )).data;
   }
 
-  // Get messages by type
   async getMessagesByType(
     chatId: string,
     messageType: Message['messageType'],
     page: number = 1,
     limit: number = 20
   ): Promise<MessageListResponse['data']> {
-    const response = await MessageAxios.get<MessageListResponse>(
-      `/chats/${chatId}/messages/by-type/${messageType}`,
-      {
-        params: { page, limit },
-      }
-    );
-    return response.data.data;
+    this.validateId(chatId, 'chatId');
+    this.validateId(messageType, 'messageType');
+    this.validateMessageType(messageType);
+
+    const validPage = Math.max(1, Math.floor(page));
+    const validLimit = Math.min(100, Math.max(1, Math.floor(limit)));
+
+    return await (await this.handleRequest<MessageListResponse>(
+      MessageAxios.get(`/chats/${chatId}/messages/by-type/${messageType}`, {
+        params: { page: validPage, limit: validLimit }
+      })
+    )).data;
   }
 
-  // Get chat message statistics
   async getChatMessageStats(chatId: string): Promise<MessageStatsResponse['data']> {
-    const response = await MessageAxios.get<MessageStatsResponse>(`/chats/${chatId}/messages/stats`);
-    return response.data.data;
+    this.validateId(chatId, 'chatId');
+    return (await this.handleRequest<MessageStatsResponse>(
+      MessageAxios.get(`/chats/${chatId}/messages/stats`)
+    )).data;
   }
 
-  // Delete a message
   async deleteMessage(messageId: string): Promise<boolean> {
-    const response = await MessageAxios.delete(`/${messageId}`);
-    return response.data.success;
+    this.validateId(messageId, 'messageId');
+    return (await this.handleRequest<{ success: boolean }>(MessageAxios.delete(`/${messageId}`))).success;
   }
 
-  // Delete all messages in a chat
   async deleteChatMessages(chatId: string): Promise<number> {
-    const response = await MessageAxios.delete(`/chats/${chatId}/messages`);
-    return response.data.data.deletedCount;
+    this.validateId(chatId, 'chatId');
+    return (await this.handleRequest<{ data: { deletedCount: number } }>(
+      MessageAxios.delete(`/chats/${chatId}/messages`)
+    )).data.deletedCount;
   }
 }
 

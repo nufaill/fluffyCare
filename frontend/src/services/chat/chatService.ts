@@ -1,6 +1,5 @@
-// services/chatService.ts
 import ChatAxios from '@/api/chat.axios';
-import type { Chat } from '@/types/chat';
+import type { Chat } from '@/types/chat.type';
 
 export interface ChatListResponse {
   success: boolean;
@@ -10,6 +9,7 @@ export interface ChatListResponse {
     totalPages: number;
     currentPage: number;
     totalChats: number;
+    hasMore?: boolean; 
   };
 }
 
@@ -26,47 +26,79 @@ export interface UnreadCountResponse {
 }
 
 export class ChatService {
-  // Create a new chat
+  private async handleRequest<T>(request: Promise<any>): Promise<T> {
+    try {
+      const response = await request;
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Request failed');
+      }
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error(error.message || 'Network error occurred');
+    }
+  }
   async createChat(userId: string, shopId: string): Promise<Chat> {
-    const response = await ChatAxios.post<ChatResponse>('/', {
-      userId,
-      shopId,
-    });
-    return response.data.data;
-  }
+    if (!userId || !shopId) {
+      throw new Error('userId and shopId are required');
+    }
 
-  // Get or create chat between user and shop
+    const response = await this.handleRequest<ChatResponse>(
+      ChatAxios.post('/', { userId, shopId })
+    );
+    return response.data;
+  }
   async getOrCreateChat(userId: string, shopId: string): Promise<Chat> {
-    const response = await ChatAxios.post<ChatResponse>('/get-or-create', {
-      userId,
-      shopId,
-    });
-    return response.data.data;
-  }
+    if (!userId || !shopId) {
+      throw new Error('userId and shopId are required');
+    }
 
-  // Get chat by ID
+    const response = await this.handleRequest<ChatResponse>(
+      ChatAxios.post('/get-or-create', { userId, shopId })
+    );
+    return response.data;
+  }
   async getChatById(chatId: string): Promise<Chat> {
-    const response = await ChatAxios.get<ChatResponse>(`/${chatId}`);
-    return response.data.data;
-  }
+    if (!chatId) {
+      throw new Error('chatId is required');
+    }
 
-  // Get user's chats
+    const response = await this.handleRequest<ChatResponse>(
+      ChatAxios.get(`/${chatId}`)
+    );
+    return response.data;
+  }
   async getUserChats(userId: string, page: number = 1, limit: number = 20): Promise<ChatListResponse['data']> {
-    const response = await ChatAxios.get<ChatListResponse>(`/users/${userId}/chats`, {
-      params: { page, limit },
-    });
-    return response.data.data;
-  }
+    if (!userId) {
+      throw new Error('userId is required');
+    }
+    const validPage = Math.max(1, page);
+    const validLimit = Math.min(100, Math.max(1, limit));
 
-  // Get shop's chats
+    const response = await this.handleRequest<ChatListResponse>(
+      ChatAxios.get(`/users/${userId}/chats`, {
+        params: { page: validPage, limit: validLimit },
+      })
+    );
+    return response.data;
+  }
   async getShopChats(shopId: string, page: number = 1, limit: number = 20): Promise<ChatListResponse['data']> {
-    const response = await ChatAxios.get<ChatListResponse>(`/shops/${shopId}/chats`, {
-      params: { page, limit },
-    });
-    return response.data.data;
-  }
+    if (!shopId) {
+      throw new Error('shopId is required');
+    }
 
-  // Search chats
+    const validPage = Math.max(1, page);
+    const validLimit = Math.min(100, Math.max(1, limit));
+
+    const response = await this.handleRequest<ChatListResponse>(
+      ChatAxios.get(`/shops/${shopId}/chats`, {
+        params: { page: validPage, limit: validLimit },
+      })
+    );
+    return response.data;
+  }
   async searchChats(
     query: string,
     searcherId: string,
@@ -74,56 +106,104 @@ export class ChatService {
     page: number = 1,
     limit: number = 20
   ): Promise<ChatListResponse['data']> {
-    const response = await ChatAxios.get<ChatListResponse>('/search', {
-      params: {
-        query,
-        searcherId,
-        searcherRole,
-        page,
-        limit,
-      },
-    });
-    return response.data.data;
-  }
+    if (!query || query.trim().length === 0) {
+      throw new Error('Search query cannot be empty');
+    }
+    
+    if (!searcherId) {
+      throw new Error('searcherId is required');
+    }
 
-  // Update last message
+    if (!['User', 'Shop'].includes(searcherRole)) {
+      throw new Error('searcherRole must be either User or Shop');
+    }
+
+    const validPage = Math.max(1, page);
+    const validLimit = Math.min(100, Math.max(1, limit));
+
+    const response = await this.handleRequest<ChatListResponse>(
+      ChatAxios.get('/search', {
+        params: {
+          query: query.trim(),
+          searcherId,
+          searcherRole,
+          page: validPage,
+          limit: validLimit,
+        },
+      })
+    );
+    return response.data;
+  }
   async updateLastMessage(
     chatId: string,
     lastMessage: string,
     lastMessageType: Chat['lastMessageType'],
     lastMessageAt: Date = new Date()
   ): Promise<Chat> {
-    const response = await ChatAxios.put<ChatResponse>(`/${chatId}/last-message`, {
-      lastMessage,
-      lastMessageType,
-      lastMessageAt: lastMessageAt.toISOString(),
-    });
-    return response.data.data;
-  }
+    if (!chatId) {
+      throw new Error('chatId is required');
+    }
 
-  // Increment unread count
+    if (!lastMessage || lastMessage.trim().length === 0) {
+      throw new Error('lastMessage cannot be empty');
+    }
+
+    if (!lastMessageType) {
+      throw new Error('lastMessageType is required');
+    }
+
+    const response = await this.handleRequest<ChatResponse>(
+      ChatAxios.put(`/${chatId}/last-message`, {
+        lastMessage: lastMessage.trim(),
+        lastMessageType,
+        lastMessageAt: lastMessageAt.toISOString(),
+      })
+    );
+    return response.data;
+  }
   async incrementUnreadCount(chatId: string): Promise<Chat> {
-    const response = await ChatAxios.put<ChatResponse>(`/${chatId}/increment-unread`);
-    return response.data.data;
-  }
+    if (!chatId) {
+      throw new Error('chatId is required');
+    }
 
-  // Reset unread count
+    const response = await this.handleRequest<ChatResponse>(
+      ChatAxios.put(`/${chatId}/increment-unread`)
+    );
+    return response.data;
+  }
   async resetUnreadCount(chatId: string): Promise<Chat> {
-    const response = await ChatAxios.put<ChatResponse>(`/${chatId}/reset-unread`);
-    return response.data.data;
-  }
+    if (!chatId) {
+      throw new Error('chatId is required');
+    }
 
-  // Get total unread count
+    const response = await this.handleRequest<ChatResponse>(
+      ChatAxios.put(`/${chatId}/reset-unread`)
+    );
+    return response.data;
+  }
   async getTotalUnreadCount(userId: string, role: 'User' | 'Shop'): Promise<number> {
-    const response = await ChatAxios.get<UnreadCountResponse>(`/unread-count/${userId}/${role}`);
-    return response.data.data;
-  }
+    if (!userId) {
+      throw new Error('userId is required');
+    }
 
-  // Delete chat
+    if (!['User', 'Shop'].includes(role)) {
+      throw new Error('role must be either User or Shop');
+    }
+
+    const response = await this.handleRequest<UnreadCountResponse>(
+      ChatAxios.get(`/unread-count/${userId}/${role}`)
+    );
+    return response.data;
+  }
   async deleteChat(chatId: string): Promise<boolean> {
-    const response = await ChatAxios.delete(`/${chatId}`);
-    return response.data.success;
+    if (!chatId) {
+      throw new Error('chatId is required');
+    }
+
+    const response = await this.handleRequest<{ success: boolean }>(
+      ChatAxios.delete(`/${chatId}`)
+    );
+    return response.success;
   }
 }
-
 export const chatService = new ChatService();

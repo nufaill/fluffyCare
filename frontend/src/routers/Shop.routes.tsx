@@ -133,7 +133,7 @@ const ShopRoutes = () => {
         }
       />
       <Route
-        path="/shop/messages"
+        path="/shop/messages/"
          element={
           <PrivateRoute userType="shop">
             <ShopChat />

@@ -1,131 +1,84 @@
-"use client"
-
-import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/chat/ui/popover"
-import { Smile } from "lucide-react"
-import { useState } from "react"
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/ui/popover';
+import { Smile } from 'lucide-react';
+import { useState } from 'react';
 
 interface EmojiPickerProps {
-  onEmojiSelect: (emoji: string) => void
+  onEmojiSelect: (emoji: string) => void;
 }
 
 const emojiCategories = {
   Smileys: [
-    "😀",
-    "😃",
-    "😄",
-    "😁",
-    "😆",
-    "😅",
-    "😂",
-    "🤣",
-    "😊",
-    "😇",
-    "🙂",
-    "🙃",
-    "😉",
-    "😌",
-    "😍",
-    "🥰",
-    "😘",
-    "😗",
-    "😙",
-    "😚",
-    "😋",
-    "😛",
-    "😝",
-    "😜",
-    "🤪",
-    "🤨",
-    "🧐",
-    "🤓",
-    "😎",
-    "🤩",
-    "🥳",
+    '😀',
+    '😃',
+    '😄',
+    '😁',
+    '😆',
+    '😅',
+    '😂',
+    '🤣',
+    '😊',
+    '😇',
+    '🙂',
+    '🙃',
+    '😉',
+    '😌',
+    '😍',
+    '🥰',
+    '😘',
+    '😗',
+    '😙',
+    '😚',
+    '😋',
+    '😛',
+    '😝',
+    '😜',
+    '🤪',
+    '🤨',
+    '🧐',
+    '🤓',
+    '😎',
+    '🤩',
+    '🥳',
   ],
   Animals: [
-    "🐶",
-    "🐱",
-    "🐭",
-    "🐹",
-    "🐰",
-    "🦊",
-    "🐻",
-    "🐼",
-    "🐨",
-    "🐯",
-    "🦁",
-    "🐮",
-    "🐷",
-    "🐸",
-    "🐵",
-    "🐔",
-    "🐧",
-    "🐦",
-    "🐤",
-    "🐣",
-    "🐥",
-    "🦆",
-    "🦅",
-    "🦉",
-    "🦇",
-    "🐺",
-    "🐗",
-    "🐴",
-    "🦄",
-    "🐝",
+    '🐶',
+    '🐱',
+    '🐭',
+    '🐹',
+    '🐰',
+    '🦊',
+    '🐻',
+    '🐼',
+    '🐨',
+    '🐯',
+    '🦁',
+    '🐮',
+    '🐷',
+    '🐸',
+    '🐵',
+    '🐔',
+    '🐧',
+    '🐦',
+    '🐤',
+    '🐣',
+    '🐥',
+    '🦆',
+    '🦅',
+    '🦉',
+    '🦇',
+    '🐺',
+    '🐗',
+    '🐴',
+    '🦄',
+    '🐝',
   ],
-  Hearts: [
-    "❤️",
-    "🧡",
-    "💛",
-    "💚",
-    "💙",
-    "💜",
-    "🖤",
-    "🤍",
-    "🤎",
-    "💔",
-    "❣️",
-    "💕",
-    "💞",
-    "💓",
-    "💗",
-    "💖",
-    "💘",
-    "💝",
-    "💟",
-  ],
-  Gestures: [
-    "👍",
-    "👎",
-    "👌",
-    "✌️",
-    "🤞",
-    "🤟",
-    "🤘",
-    "🤙",
-    "👈",
-    "👉",
-    "👆",
-    "🖕",
-    "👇",
-    "☝️",
-    "👋",
-    "🤚",
-    "🖐️",
-    "✋",
-    "🖖",
-    "👏",
-    "🙌",
-    "🤲",
-    "🤝",
-    "🙏",
-  ],
-}
+  Hearts: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟'],
+  Gestures: ['👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👋', '🤚', '🖐️', '✋', '🖖', '👏', '🙌', '🤲', '🤝', '🙏'],
+};
 
 export function EmojiPicker({ onEmojiSelect }: EmojiPickerProps) {
-  const [activeCategory, setActiveCategory] = useState<keyof typeof emojiCategories>("Smileys")
+  const [activeCategory, setActiveCategory] = useState<keyof typeof emojiCategories>('Smileys');
 
   return (
     <Popover>
@@ -140,7 +93,7 @@ export function EmojiPicker({ onEmojiSelect }: EmojiPickerProps) {
             {Object.keys(emojiCategories).map((category) => (
               <Button
                 key={category}
-                variant={activeCategory === category ? "secondary" : "ghost"}
+                variant={activeCategory === category ? 'secondary' : 'ghost'}
                 size="sm"
                 className="text-xs"
                 onClick={() => setActiveCategory(category as keyof typeof emojiCategories)}
@@ -153,13 +106,7 @@ export function EmojiPicker({ onEmojiSelect }: EmojiPickerProps) {
         <div className="p-3 max-h-48 overflow-y-auto">
           <div className="grid grid-cols-8 gap-1">
             {emojiCategories[activeCategory].map((emoji) => (
-              <Button
-                key={emoji}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-lg hover:bg-accent"
-                onClick={() => onEmojiSelect(emoji)}
-              >
+              <Button key={emoji} variant="ghost" size="sm" className="h-8 w-8 p-0 text-lg hover:bg-accent" onClick={() => onEmojiSelect(emoji)}>
                 {emoji}
               </Button>
             ))}
@@ -167,5 +114,5 @@ export function EmojiPicker({ onEmojiSelect }: EmojiPickerProps) {
         </div>
       </PopoverContent>
     </Popover>
-  )
+  );
 }

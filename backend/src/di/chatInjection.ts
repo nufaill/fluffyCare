@@ -3,31 +3,34 @@ import { ChatController } from "../controllers/chat/chat.controller";
 import { MessageController } from "../controllers/chat/message.controller";
 import { ChatService } from "../services/chat/chat.service";
 import { MessageService } from "../services/chat/message.service";
+import { SocketService } from "../services/chat/socket.service";
 import { ChatRepository } from "../repositories/chat.repository";
 import { MessageRepository } from "../repositories/message.repository";
-import { DtoMapper } from "../dto/dto.mapper"; 
+import { DtoMapper } from "../dto/dto.mapper";
 
-//  repository instances
-const chatRepository = new ChatRepository();
-const messageRepository = new MessageRepository();
 
-//  DTO mapper instance
-const dtoMapper = new DtoMapper();
+export const chatDependencies = () => {
+  const chatRepository = new ChatRepository();
+  const messageRepository = new MessageRepository();
 
-//  service instances with dependencies
-const chatService = new ChatService(chatRepository, dtoMapper);
-const messageService = new MessageService(messageRepository, dtoMapper);
+  // DTO mapper instance
+  const dtoMapper = new DtoMapper();
 
-//  controller instances with dependencies
-const chatController = new ChatController(chatService);
-const messageController = new MessageController(messageService);
+  const socketService = new SocketService();
+  const chatService = new ChatService(chatRepository, dtoMapper);
+  const messageService = new MessageService(messageRepository, dtoMapper);
 
-export const chatDependencies = {
-  chatRepository,
-  messageRepository,
-  chatService,
-  messageService,
-  chatController,
-  messageController,
-  dtoMapper
+  const chatController = new ChatController(chatService, socketService);
+  const messageController = new MessageController(messageService, chatService, socketService);
+
+  return {
+    chatRepository,
+    messageRepository,
+    chatService,
+    messageService,
+    chatController,
+    messageController,
+    dtoMapper,
+    socketService,  
+  };
 };

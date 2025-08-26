@@ -29,7 +29,7 @@ export interface ReactionDTO {
 
 export interface MessageResponseDTO {
   id: string;
-  chatId: string;
+  chatId: string;  
   senderRole: "User" | "Shop";
   messageType: "Text" | "Image" | "Video" | "Audio" | "File";
   content: string;
@@ -61,6 +61,7 @@ export interface MessageResponseDTO {
 }
 
 export interface MessageListResponseDTO {
+  totalMessages: number;
   messages: MessageResponseDTO[];
   total: number;
   hasMore: boolean;
@@ -107,7 +108,7 @@ export interface UnreadCountDTO {
 }
 
 export interface MessagesByTypeDTO {
-  chatId: string;
+  chatId: string;  
   messageType: "Text" | "Image" | "Video" | "Audio" | "File";
   page?: number;
   limit?: number;

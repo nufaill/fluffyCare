@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types } from 'mongoose';
 
 export interface CreateChatDTO {
   userId: string;
@@ -7,17 +7,18 @@ export interface CreateChatDTO {
 
 export interface UpdateChatDTO {
   lastMessage?: string;
-  lastMessageType?: "Text" | "Image" | "Video" | "Audio" | "File";
+  lastMessageType?: 'Text' | 'Image' | 'Video' | 'Audio' | 'File';
   lastMessageAt?: Date;
   unreadCount?: number;
 }
 
 export interface ChatResponseDTO {
+  toJSON(): unknown;
   id: string;
   userId: string;
   shopId: string;
   lastMessage: string;
-  lastMessageType: "Text" | "Image" | "Video" | "Audio" | "File";
+  lastMessageType: 'Text' | 'Image' | 'Video' | 'Audio' | 'File';
   lastMessageAt: Date | null;
   unreadCount: number;
   createdAt: Date;
@@ -49,12 +50,12 @@ export interface ChatListResponseDTO {
 
 export interface ChatSearchDTO {
   query: string;
-  searcherRole: "User" | "Shop";
+  searcherRole: 'User' | 'Shop';
   page?: number;
   limit?: number;
 }
 
 export interface UnreadCountResponseDTO {
   totalUnreadCount: number;
-  role: "User" | "Shop";
+  role: 'User' | 'Shop';
 }

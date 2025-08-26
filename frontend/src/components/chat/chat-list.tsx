@@ -1,3 +1,4 @@
+// chat-list.tsx - Enhanced with proper scrolling
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
@@ -7,7 +8,7 @@ import { Button } from "@/components/chat/ui/button"
 import { Badge } from "@/components/chat/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChatListItem } from "./chat-list-item"
-import type { Chat } from "@/types/chat"
+import type { Chat } from "@/types/chat.type"
 
 interface ChatListProps {
   chats: Chat[]
@@ -52,7 +53,6 @@ export function ChatList({
     }
   }, [onSearch, onRefresh])
 
-  // Debounced search
   const debouncedSearch = useCallback(
     (() => {
       let timeoutId: NodeJS.Timeout
@@ -72,17 +72,15 @@ export function ChatList({
   const filteredChats = useMemo(() => {
     let filtered = chats
 
-    // Filter by unread status
     if (activeFilter === "unread") {
       filtered = filtered.filter((chat) => chat.unreadCount > 0)
     }
 
-    // Sort by last message time (most recent first)
     return filtered.sort((a, b) => {
-      const timeA = a.lastMessageAt?.getTime() || 0
-      const timeB = b.lastMessageAt?.getTime() || 0
-      return timeB - timeA
-    })
+      const timeA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const timeB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+      return timeB - timeA;
+    });
   }, [chats, activeFilter])
 
   const unreadChatsCount = chats.filter((chat) => chat.unreadCount > 0).length
@@ -102,7 +100,7 @@ export function ChatList({
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="ghost" 
+              variant="ghost"
               size="sm"
               onClick={onRefresh}
               disabled={loading}
@@ -152,8 +150,8 @@ export function ChatList({
         </Tabs>
       </div>
 
-      {/* Chat List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Chat List with proper scrolling */}
+      <div className="flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
         {loading && chats.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-center p-4">
             <Loader2 className="h-8 w-8 text-muted-foreground mb-2 animate-spin" />
@@ -163,17 +161,17 @@ export function ChatList({
           <div className="flex flex-col items-center justify-center h-32 text-center p-4">
             <Users className="h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
-              {searchQuery 
-                ? "No conversations found" 
-                : activeFilter === "unread" 
-                  ? "No unread messages" 
+              {searchQuery
+                ? "No conversations found"
+                : activeFilter === "unread"
+                  ? "No unread messages"
                   : "No conversations yet"
               }
             </p>
             {searchQuery && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setSearchQuery("")
                   onRefresh()
@@ -185,15 +183,17 @@ export function ChatList({
             )}
           </div>
         ) : (
-          filteredChats.map((chat, index) => (
-            <ChatListItem
-              key={`${chat.userId}-${chat.shopId}-${index}`}
-              chat={chat}
-              isSelected={selectedChat === chat}
-              onClick={() => onSelectChat(chat)}
-              userType={userType}
-            />
-          ))
+          <div className="overflow-y-auto">
+            {filteredChats.map((chat, index) => (
+              <ChatListItem
+                key={`${chat.userId}-${chat.shopId}-${index}`}
+                chat={chat}
+                isSelected={selectedChat === chat}
+                onClick={() => onSelectChat(chat)}
+                userType={userType}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

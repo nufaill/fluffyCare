@@ -1,111 +1,98 @@
-import { useState, useEffect } from "react"
-import { ChatList } from "@/components/chat/chat-list"
-import { ChatWindow } from "@/components/chat/chat-window"
-import { useMobile } from "@/hooks/chat/use-mobile"
-import { useChats } from "@/hooks/chat/useChats"
-import type { Chat } from "@/types/chat"
-import { PetCareLayout } from "@/components/layout/PetCareLayout"
-import Navbar from "@/components/shop/Navbar"
-import Footer from "@/components/user/Footer"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+import { useState, useEffect } from 'react';
+import { ChatList } from '@/components/chat/chat-list';
+import { ChatWindow } from '@/components/chat/chat-window';
+import { useMobile } from '@/hooks/chat/use-mobile';
+import { useChats } from '@/hooks/chat/useChats';
+import type { Chat } from '@/types/chat.type';
+import { PetCareLayout } from '@/components/layout/PetCareLayout';
+import Navbar from '@/components/shop/Navbar';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import type { RootState } from '@/redux/store';
+import { useSelector } from 'react-redux';
 
-interface ShopChatProps {
-  shopId: string; // Pass this from your auth context or parent component
-}
-
-export function ShopChat({ shopId }: ShopChatProps) {
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
-  const [isChatListOpen, setIsChatListOpen] = useState(false)
-  const isMobile = useMobile()
-  const { toast } = useToast()
-
-  // Use the custom hook to fetch chats dynamically
+export function ShopChat() {
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [isChatListOpen, setIsChatListOpen] = useState(false);
+  const isMobile = useMobile();
+  const { toast } = useToast();
+  const { shopData: shop } = useSelector((state: RootState) => state.shop);
+  const shopId = shop?.id;
   const {
     chats,
     loading,
     error,
     totalUnreadCount,
-    pagination,
     fetchChats,
     searchChats,
-    createOrGetChat,
     markChatAsRead,
     refreshChats,
   } = useChats({
     shopId,
     userType: 'shop',
     autoRefresh: true,
-    refreshInterval: 15000, // Refresh every 15 seconds for shops (more frequent)
-  })
+    refreshInterval: 15000,
+  });
 
-  // Handle errors
   useEffect(() => {
     if (error) {
       toast({
-        title: "Error",
+        title: 'Error',
         description: error,
-        variant: "destructive",
-      })
+        variant: 'destructive',
+      });
     }
-  }, [error, toast])
+  }, [error, toast]);
 
-  // Handle chat selection and mark as read
   const handleSelectChat = async (chat: Chat) => {
-    setSelectedChat(chat)
-    if (isMobile) setIsChatListOpen(false)
-    
-    // Mark chat as read when selected
+    setSelectedChat(chat);
+    if (isMobile) setIsChatListOpen(false);
     if (chat.unreadCount > 0) {
-      const chatId = `${chat.userId}-${chat.shopId}`
-      await markChatAsRead(chatId)
+      await markChatAsRead(`${chat.userId}-${chat.shopId}`);
     }
-  }
+  };
 
-  // Handle search functionality
   const handleSearch = async (query: string) => {
     if (query.trim()) {
-      await searchChats(query)
+      await searchChats(query);
     } else {
-      // If search is empty, fetch regular chats
-      fetchChats(1)
+      fetchChats(1);
     }
-  }
+  };
 
-  // Load more chats for pagination
-  const loadMoreChats = async () => {
-    if (pagination.currentPage < pagination.totalPages && !loading) {
-      await fetchChats(pagination.currentPage + 1)
-    }
+
+  if (!shopId) {
+    return (
+      <PetCareLayout>
+        <Navbar />
+        <div className="flex items-center justify-center h-96">
+          <p className="text-lg text-gray-600">Please log in to access chat</p>
+        </div>
+      </PetCareLayout>
+    );
   }
 
   if (loading && chats.length === 0) {
     return (
       <PetCareLayout>
-        <Navbar  />
+        <Navbar />
         <div className="flex items-center justify-center h-96">
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Loading customer messages...</span>
-          </div>
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading customer messages...</span>
         </div>
-        <Footer />
       </PetCareLayout>
-    )
+    );
   }
 
   return (
     <PetCareLayout>
-      <Navbar  />
+      <Navbar />
       <div className="flex h-full bg-background">
-        {/* Chat List - Desktop: Always visible, Mobile: Drawer */}
         <div
           className={`
             ${isMobile
-              ? `fixed inset-y-0 left-0 z-50 w-80 transform transition-transform duration-300 ease-in-out ${isChatListOpen ? "translate-x-0" : "-translate-x-full"
-              }`
-              : "w-80 border-r border-border"
-            }
+              ? `fixed inset-y-0 left-0 z-50 w-80 transform transition-transform duration-300 ease-in-out ${isChatListOpen ? 'translate-x-0' : '-translate-x-full'}`
+              : 'w-80 border-r border-border'}
             bg-card
           `}
         >
@@ -129,29 +116,23 @@ export function ShopChat({ shopId }: ShopChatProps) {
             userType="shop"
             loading={loading}
             onSearch={handleSearch}
-            onLoadMore={loadMoreChats}
-            hasMore={pagination.currentPage < pagination.totalPages}
             onRefresh={refreshChats}
+            totalUnreadCount={totalUnreadCount}
           />
         </div>
-
-        {/* Chat Window */}
         <div className="flex-1 flex flex-col">
           <ChatWindow
             chat={selectedChat}
             onOpenChatList={() => setIsChatListOpen(true)}
             isMobile={isMobile}
             userType="shop"
-            shopId={shopId}
+            userId={shopId}
           />
         </div>
-
-        {/* Mobile Overlay */}
         {isMobile && isChatListOpen && (
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsChatListOpen(false)} />
         )}
       </div>
-      <Footer />
     </PetCareLayout>
-  )
+  );
 }

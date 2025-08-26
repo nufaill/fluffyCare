@@ -70,7 +70,7 @@ const Header = () => {
     if (user?.profileImage && !imageError) {
       return (
         <img
-          src={cloudinaryUtils.getFullUrl(user?.profileImage|| "/placeholder.svg")}
+          src={cloudinaryUtils.getFullUrl(user?.profileImage || "/placeholder.svg")}
           alt="profile"
           className={`${sizeClasses[size]} rounded-full object-cover border group-hover:border-gray-400 transition-colors ${className}`}
           onError={() => setImageError(true)}
@@ -132,9 +132,11 @@ const Header = () => {
                 </button>
 
                 {/* Chat Icon */}
-                <button className="p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300 hover:scale-105">
-                  <MessageSquare className="w-5 h-5" />
-                </button>
+                <Link to="/messages">
+                  <button className="p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300 hover:scale-105">
+                    <MessageSquare className="w-5 h-5" />
+                  </button>
+                </Link>
 
                 {/* User Profile Dropdown */}
                 <div className="relative" ref={dropdownRef}>
@@ -200,9 +202,8 @@ const Header = () => {
 
       {/* Mobile Slide Menu */}
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-white text-black shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${
-          menuOpen ? "translate-x-0" : "translate-x-full"
-        } md:hidden`}
+        className={`fixed top-0 right-0 h-full w-64 bg-white text-black shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${menuOpen ? "translate-x-0" : "translate-x-full"
+          } md:hidden`}
       >
         <div className="p-5 space-y-4">
           {/* Close Icon */}

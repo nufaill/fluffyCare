@@ -31,10 +31,14 @@ import {
   XCircle,
   Zap,
   Users,
+  MessageCircle,
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { PetService } from "@/types/service"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
+import type { RootState } from "@/redux/store"
+import { useSelector } from "react-redux"
+import { chatService } from "@/services/chat/chatService"
 
 // Pet type icon mapping (same as ServiceCard)
 const getPetIcon = (petType: string) => {
@@ -101,6 +105,8 @@ export const ServiceDetails = () => {
   const [service, setService] = useState<PetService | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const user = useSelector((state: RootState) => state.user.userDatas);
+  const userId = user?._id || user?.id || "";
 
   useEffect(() => {
     const fetchServiceDetails = async () => {
@@ -176,6 +182,27 @@ export const ServiceDetails = () => {
       </div>
     )
   }
+
+
+  const handleChatWithShop = async () => {
+    if (!userId) {
+      navigate("/login");
+      return;
+    }
+
+    if (!service?.shopId?._id) {
+      return;
+    }
+
+    try {
+      const chat = await chatService.createChat(userId, service.shopId._id);
+      const chatId = chat._id || `${chat.userId}-${chat.shopId}`;
+      navigate(`/messages?chatId=${chatId}`);
+    } catch (err: any) {
+      console.error("Failed to create chat:", err);
+    }
+  };
+
 
   const formatPetTypes = (petTypes: any[]) => {
     if (!petTypes || petTypes.length === 0) return []
@@ -448,6 +475,15 @@ export const ServiceDetails = () => {
                     </div>
                   )}
                 </div>
+
+                <Button
+                  onClick={handleChatWithShop}
+                  className="w-full font-mono font-bold text-lg py-4 transition-all duration-200 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                  size="lg"
+                >
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Chat with Shop
+                </Button>
               </CardContent>
             </Card>
 
