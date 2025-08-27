@@ -15,6 +15,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/Badge";
 import type { RootState } from "@/redux/store";
 import { useSelector } from "react-redux";
 import ShopAxios from "@/api/shop.axios";
@@ -74,6 +75,12 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
     },
   ];
 
+  const planLevels: { [key: string]: number } = {
+    free: 0,
+    basic: 1,
+    premium: 2,
+  };
+
   // Fetch current subscription plan on component mount
   useEffect(() => {
     if (shopId) {
@@ -81,7 +88,7 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
         try {
           setIsLoading(true);
           const response = await ShopAxios.get(`/shops/${shopId}/subscription`);
-          setCurrentPlan(response.data.data.plan);
+          setCurrentPlan(response.data.data.plan.toLowerCase());
         } catch (error) {
           toast.error("Failed to fetch subscription details");
           console.error("Error fetching subscription:", error);
@@ -107,7 +114,7 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
       await ShopAxios.patch(`/shops/${shopId}/subscription`, {
         subscription: selectedPlan.toLowerCase(),
       });
-      setCurrentPlan(selectedPlan);
+      setCurrentPlan(selectedPlan.toLowerCase());
       setSelectedPlan(null);
       toast.success("Subscription updated successfully");
     } catch (error) {
@@ -120,7 +127,7 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
 
   // Handle payment success
   const handlePaymentSuccess = () => {
-    setCurrentPlan(selectedPlan);
+    setCurrentPlan(selectedPlan ? selectedPlan.toLowerCase() : null);
     setSelectedPlan(null);
     toast.success("Subscription updated successfully", {
       style: { background: "#d1fae5", color: "#065f46" },
@@ -141,7 +148,7 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
           </DialogTitle>
           <DialogDescription className="text-sm sm:text-base">
             {currentPlan
-              ? `Current Plan: ${currentPlan}`
+              ? <>Current Plan: <Badge className={`${currentPlan === "free" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"}`}>{currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}</Badge></>
               : "Choose the plan that works best for your pet care business."}{" "}
             All plans include secure payments, client messaging, and calendar
             management.
@@ -149,55 +156,63 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-2">
           <div className="grid gap-4 md:grid-cols-3 sm:grid-cols-2 grid-cols-1">
-            {plans.map((plan, index) => (
-              <Card key={index} className={plan.popular ? "border-2 border-yellow-500" : ""}>
-                <CardHeader>
-                  <CardTitle className="text-base sm:text-lg md:text-xl">
-                    {plan.name}{" "}
-                    {plan.popular && (
-                      <span className="text-yellow-600 text-xs sm:text-sm">
-                        Most Popular
-                      </span>
-                    )}
-                    {currentPlan === plan.name && (
-                      <span className="text-green-600 text-xs sm:text-sm ml-2">
-                        Current
-                      </span>
-                    )}
-                  </CardTitle>
-                  <CardDescription className="text-sm sm:text-base">
-                    {plan.price}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-1 sm:space-y-2">
-                    {plan.features.map((feature, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center text-xs sm:text-sm"
-                      >
-                        <span className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-yellow-500">
-                          ✔
+            {plans.map((plan, index) => {
+              const planLevel = planLevels[plan.name.toLowerCase()];
+              const currentLevel = currentPlan ? planLevels[currentPlan] : -1; // Use -1 if no current plan to show all
+              const showButton = currentLevel < 0 || planLevel >= currentLevel;
+
+              return (
+                <Card key={index} className={plan.popular ? "border-2 border-yellow-500" : ""}>
+                  <CardHeader>
+                    <CardTitle className="text-base sm:text-lg md:text-xl">
+                      {plan.name}{" "}
+                      {plan.popular && (
+                        <span className="text-yellow-600 text-xs sm:text-sm">
+                          Most Popular
                         </span>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className="mt-2 sm:mt-4 w-full text-xs sm:text-sm"
-                    variant={plan.popular ? "default" : "outline"}
-                    onClick={() => handlePlanSelection(plan)}
-                    disabled={currentPlan === plan.name || isLoading}
-                  >
-                    {currentPlan === plan.name
-                      ? "Current Plan"
-                      : plan.name === "Free"
-                        ? "Start Free"
-                        : "Get Started"}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                      )}
+                      {currentPlan === plan.name.toLowerCase() && (
+                        <Badge className={`ml-2 text-xs sm:text-sm ${plan.name.toLowerCase() === "free" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"}`}>
+                          Current
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="text-sm sm:text-base">
+                      {plan.price}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-1 sm:space-y-2">
+                      {plan.features.map((feature, i) => (
+                        <li
+                          key={i}
+                          className="flex items-center text-xs sm:text-sm"
+                        >
+                          <span className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-yellow-500">
+                            ✔
+                          </span>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    {showButton && (
+                      <Button
+                        className="mt-2 sm:mt-4 w-full text-xs sm:text-sm"
+                        variant={plan.popular ? "default" : "outline"}
+                        onClick={() => handlePlanSelection(plan)}
+                        disabled={currentPlan === plan.name.toLowerCase() || isLoading}
+                      >
+                        {currentPlan === plan.name.toLowerCase()
+                          ? "Current Plan"
+                          : plan.name === "Free"
+                            ? "Start Free"
+                            : "Get Started"}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
           {selectedPlan && selectedPlan.toLowerCase() !== "free" && shopId && (
             <Elements stripe={stripePromise}>
