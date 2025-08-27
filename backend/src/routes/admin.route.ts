@@ -1,6 +1,7 @@
 // routes/admin.routes.ts
 import { RequestHandler, Router } from 'express';
 import { adminDependencies } from '../di/adminInjection';
+import { appointmentDependencies } from '../di/appointmentInjection';
 
 const router = Router();
 
@@ -564,5 +565,9 @@ router.put('/service-types/:id', adminDependencies.serviceController.updateServi
  *         description: Service type not found
  */
 router.patch('/service-types/:id/status', adminDependencies.serviceController.updateServiceTypeStatus as RequestHandler);
+
+
+router.get('/appointments', appointmentDependencies.appointmentController.getAllAppointments.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
 
 export default router;

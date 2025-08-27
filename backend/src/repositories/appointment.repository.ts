@@ -163,6 +163,36 @@ export class AppointmentRepository implements IAppointmentRepository {
     }
   }
 
+  async getAllAppointments(
+  filter: Partial<IAppointment> = {},
+  page: number = 1,
+  limit: number = 10
+): Promise<{ data: AppointmentDocument[]; total: number; page: number; limit: number }> {
+  try {
+    const query: any = { ...filter };
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      Appointment.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('petId', 'name breed') 
+        .populate('serviceId', 'name duration') 
+        .populate('staffId', 'name')
+        .populate('userId', 'fullName') 
+        .populate('shopId', 'name') 
+        .exec(),
+      Appointment.countDocuments(query).exec(),
+    ]);
+
+    return { data, total, page, limit };
+  } catch (error) {
+    throw new Error(`Failed to get appointments: ${error}`);
+  }
+}
+
+
   async getAppointmentsCount(
     shopId: Types.ObjectId,
     startDate: Date,

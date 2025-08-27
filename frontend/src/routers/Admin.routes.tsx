@@ -9,6 +9,7 @@ import ShopVerification from "@/pages/admin/ShopVerification";
 import PetCategory from '@/pages/admin/PetCategory';
 import PetServices from '@/pages/admin/PetServices';
 import WalletPage from "@/pages/admin/Admin-Wallet";
+import AppointmentManagement from "@/pages/admin/appointment-management";
 
 const AdminRoutes = () => {
   return (
@@ -87,6 +88,14 @@ const AdminRoutes = () => {
         element={
           <PrivateRoute userType="admin">
             <WalletPage />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/admin/appointments" 
+        element={
+          <PrivateRoute userType="admin">
+            <AppointmentManagement/>
           </PrivateRoute>
         } 
       />

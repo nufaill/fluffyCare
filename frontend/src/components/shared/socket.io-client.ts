@@ -1,4 +1,4 @@
-// socket.io-client.ts - Fixed implementation
+// socket.io-client.ts
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
@@ -33,18 +33,19 @@ interface SocketEventData {
 class SocketManager {
   private socket: Socket | null = null;
   private connectionAttempts = 0;
-  private maxRetries = 5;
-  private retryDelay = 1000;
+  private maxRetries = 10; // Increased from 5
+  private retryDelay = 2000; // Increased from 1000
   private isConnecting = false;
   private eventListeners: Map<string, Function[]> = new Map();
 
   getSocket(): Socket {
     if (!this.socket) {
+      console.log('🔌 Creating new socket instance with URL:', SOCKET_URL);
       this.socket = io(SOCKET_URL, {
         withCredentials: true,
         autoConnect: false,
-        transports: ['websocket', 'polling'],
-        timeout: 20000,
+        transports: ['polling'], // Force polling for debugging
+        timeout: 30000, // Increased from 20000
         reconnection: true,
         reconnectionAttempts: this.maxRetries,
         reconnectionDelay: this.retryDelay,
@@ -60,7 +61,6 @@ class SocketManager {
   private setupEventListeners(): void {
     if (!this.socket) return;
 
-    // Connection events
     this.socket.on('connect', () => {
       console.log('✅ Socket connected:', this.socket?.id);
       this.connectionAttempts = 0;
@@ -70,17 +70,15 @@ class SocketManager {
     this.socket.on('disconnect', (reason) => {
       console.log('❌ Socket disconnected:', reason);
       this.isConnecting = false;
-      
       if (reason === 'io server disconnect') {
-        setTimeout(() => this.connectSocket(), 1000);
+        setTimeout(() => this.connectSocket(), this.retryDelay);
       }
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('🔌 Socket connection error:', error);
+      console.error('🔌 Socket connection error:', error.message, error);
       this.connectionAttempts++;
       this.isConnecting = false;
-      
       if (this.connectionAttempts >= this.maxRetries) {
         console.error('❌ Max connection attempts reached. Stopping retries.');
       }
@@ -92,14 +90,13 @@ class SocketManager {
     });
 
     this.socket.on('reconnect_error', (error) => {
-      console.error('🔄❌ Socket reconnection error:', error);
+      console.error('🔄❌ Socket reconnection error:', error.message);
     });
 
     this.socket.on('reconnect_failed', () => {
       console.error('🔄❌ Socket failed to reconnect after all attempts');
     });
 
-    // Chat-specific event listeners with proper error handling
     this.socket.on('new-message', (data: SocketEventData) => {
       try {
         console.log('📩 New message received:', data);
@@ -186,7 +183,6 @@ class SocketManager {
       this.notifyListeners('error', error);
     });
 
-    // Join room confirmation
     this.socket.on('joined-chat', (data: SocketEventData) => {
       console.log('🏠 Joined chat room:', data);
       this.notifyListeners('joined-chat', data);
@@ -209,7 +205,7 @@ class SocketManager {
     });
   }
 
-  connectSocket(): Promise<void> {
+  connectSocket(userId?: string, userRole?: 'User' | 'Shop'): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.isConnecting) {
         console.log('🔌 Connection already in progress...');
@@ -220,15 +216,22 @@ class SocketManager {
       
       if (socket.connected) {
         console.log('✅ Socket already connected');
+        if (userId && userRole) {
+          socket.emit('authenticate-user', { userId, userRole });
+        }
         return resolve();
       }
 
       this.isConnecting = true;
 
       const onConnect = () => {
+        console.log('✅ Socket connection established');
         socket.off('connect', onConnect);
         socket.off('connect_error', onError);
         this.isConnecting = false;
+        if (userId && userRole) {
+          socket.emit('authenticate-user', { userId, userRole });
+        }
         resolve();
       };
 
@@ -236,16 +239,16 @@ class SocketManager {
         socket.off('connect', onConnect);
         socket.off('connect_error', onError);
         this.isConnecting = false;
+        console.error('🔌 Connection failed:', error.message);
         reject(error);
       };
 
       socket.on('connect', onConnect);
       socket.on('connect_error', onError);
 
-      console.log('🔌 Attempting to connect socket...');
+      console.log('🔌 Attempting to connect to:', SOCKET_URL);
       socket.connect();
 
-      // Timeout after 15 seconds
       setTimeout(() => {
         if (this.isConnecting) {
           socket.off('connect', onConnect);
@@ -253,7 +256,7 @@ class SocketManager {
           this.isConnecting = false;
           reject(new Error('Socket connection timeout'));
         }
-      }, 15000);
+      }, 30000); // Increased timeout
     });
   }
 
@@ -269,7 +272,6 @@ class SocketManager {
     return this.socket?.connected || false;
   }
 
-  // Chat-specific methods with validation
   joinChat(chatId: string, userId: string, userRole: 'User' | 'Shop'): void {
     if (!this.socket?.connected) {
       console.warn('Cannot join chat: Socket not connected');
@@ -316,7 +318,6 @@ class SocketManager {
     this.socket.emit('stop-typing', { chatId, userId, userRole });
   }
 
-  // Event listener management
   addEventListener(event: string, callback: Function): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
@@ -334,7 +335,6 @@ class SocketManager {
     }
   }
 
-  // Generic event emitter with validation
   emit(event: string, data: any): void {
     if (!this.socket?.connected) {
       console.warn(`Cannot emit ${event}: Socket not connected`);
@@ -344,7 +344,6 @@ class SocketManager {
     this.socket.emit(event, data);
   }
 
-  // Generic event listener
   on(event: string, callback: (...args: any[]) => void): void {
     this.socket?.on(event, callback);
   }
@@ -353,7 +352,6 @@ class SocketManager {
     this.socket?.off(event, callback);
   }
 
-  // Cleanup method
   destroy(): void {
     if (this.socket) {
       this.socket.removeAllListeners();
@@ -365,7 +363,6 @@ class SocketManager {
     }
   }
 
-  // Get connection status
   getConnectionStatus(): {
     connected: boolean;
     connecting: boolean;
@@ -381,12 +378,10 @@ class SocketManager {
   }
 }
 
-// Create singleton instance
 const socketManager = new SocketManager();
 
-// Export convenience methods
 export const getSocket = (): Socket => socketManager.getSocket();
-export const connectSocket = (): Promise<void> => socketManager.connectSocket();
+export const connectSocket = (userId?: string, userRole?: 'User' | 'Shop'): Promise<void> => socketManager.connectSocket(userId, userRole);
 export const disconnectSocket = (): void => socketManager.disconnectSocket();
 export const isSocketConnected = (): boolean => socketManager.isConnected();
 export const getConnectionStatus = () => socketManager.getConnectionStatus();
@@ -409,5 +404,4 @@ export const addEventListener = (event: string, callback: Function): void =>
 export const removeEventListener = (event: string, callback: Function): void =>
   socketManager.removeEventListener(event, callback);
 
-// Export the manager for advanced use cases
 export default socketManager;

@@ -245,6 +245,32 @@ export class AppointmentService implements IAppointmentService {
     }
   }
 
+  async getAllAppointments(params: { page?: number; limit?: number; filters?: any; }): Promise<{ success: boolean; data?: any; message: string; statusCode: number; }> {
+  try {
+    const page = Number(params.page) || 1;
+    const limit = Number(params.limit) || 10;
+    const filters = params.filters || {};
+    const result = await this.appointmentRepository.getAllAppointments(filters, page, limit);
+    return {
+      success: true,
+      data: {
+        appointments: result.data,
+        pagination: { total: result.total, page: result.page, limit: result.limit, pages: Math.ceil(result.total / result.limit) }
+      },
+      message: 'Appointments retrieved successfully',
+      statusCode: HTTP_STATUS.OK
+    };
+  } catch (error: any) {
+    console.error('Get all appointments error:', error);
+    return {
+      success: false,
+      message: 'Failed to retrieve appointments',
+      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR
+    };
+  }
+}
+
+
   async checkSlotAvailability(
     slotDetails: { startTime: string; endTime: string; date: string },
     staffId: string

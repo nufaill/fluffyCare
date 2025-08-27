@@ -233,7 +233,7 @@ export default function AdminWalletPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="fixed top-0 left-0 right-0 z-50">
-          <Navbar userName="Admin" />
+          <Navbar userName="NUFAIL" />
         </div>
         <div className="flex flex-1 pt-16">
           <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] z-40">

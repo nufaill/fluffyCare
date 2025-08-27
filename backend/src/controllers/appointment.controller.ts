@@ -15,7 +15,7 @@ export class AppointmentController implements IAppointmentController {
   async createAppointment(req: Request, res: Response): Promise<void> {
     try {
       const appointmentData: CreateAppointmentDto = req.body;
-  
+
       // Validate required fields with detailed logging
       const requiredFields = [
         { field: 'userId', value: appointmentData.userId },
@@ -23,17 +23,17 @@ export class AppointmentController implements IAppointmentController {
         { field: 'shopId', value: appointmentData.shopId },
         { field: 'serviceId', value: appointmentData.serviceId },
         { field: 'staffId', value: appointmentData.staffId },
-        { field: 'slotDetails.date', value: appointmentData.slotDetails?.date },  
-        { field: 'slotDetails.startTime', value: appointmentData.slotDetails?.startTime },  
-        { field: 'slotDetails.endTime', value: appointmentData.slotDetails?.endTime }, 
-        { field: 'paymentDetails', value: appointmentData.paymentDetails }, 
+        { field: 'slotDetails.date', value: appointmentData.slotDetails?.date },
+        { field: 'slotDetails.startTime', value: appointmentData.slotDetails?.startTime },
+        { field: 'slotDetails.endTime', value: appointmentData.slotDetails?.endTime },
+        { field: 'paymentDetails', value: appointmentData.paymentDetails },
         { field: 'paymentDetails.paymentIntentId', value: appointmentData.paymentDetails?.paymentIntentId },
         { field: 'paymentDetails.amount', value: appointmentData.paymentDetails?.amount },
         { field: 'paymentDetails.currency', value: appointmentData.paymentDetails?.currency },
         { field: 'paymentDetails.status', value: appointmentData.paymentDetails?.status },
         { field: 'paymentDetails.method', value: appointmentData.paymentDetails?.method },
         { field: 'paymentDetails.paidAt', value: appointmentData.paymentDetails?.paidAt },
-        { field: 'paymentMethod', value: appointmentData.paymentMethod },  
+        { field: 'paymentMethod', value: appointmentData.paymentMethod },
       ];
 
       // Log each field check
@@ -428,6 +428,31 @@ export class AppointmentController implements IAppointmentController {
       });
     }
   }
+
+  async getAllAppointments(req: Request, res: Response): Promise<void> {
+    try {
+      const page = req.query.page ? Number(req.query.page) : 1;
+      const limit = req.query.limit ? Number(req.query.limit) : 10;
+      const filters: any = { ...req.query } as any;
+      delete filters.page;
+      delete filters.limit;
+
+      const result = await this.appointmentService.getAllAppointments({ page, limit, filters });
+      res.status(result.statusCode).json({
+        success: result.success,
+        message: result.message,
+        data: result.data || {}
+      });
+    } catch (error: any) {
+      console.error('Get all appointments error:', error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Failed to retrieve appointments',
+        data: null
+      });
+    }
+  }
+
 
   async confirmAppointment(req: Request, res: Response): Promise<void> {
     try {

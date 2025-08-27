@@ -1,3 +1,4 @@
+// chat-window.tsx
 import { useEffect, useCallback, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { ChatHeader } from "./chat-header";
@@ -49,11 +50,12 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
     const initializeSocket = async () => {
       if (!mounted) return;
       try {
-        await connectSocket();
+        await connectSocket(currentUserId, currentRole); // Pass userId and role
         if (mounted) setSocketConnected(isSocketConnected());
-      } catch {
+      } catch (error: any) {
+        console.error('Socket initialization failed:', error.message);
         setSocketConnected(false);
-        toast({ title: "Connection Failed", description: "Failed to connect to chat server.", variant: "destructive" });
+        toast({ title: "Connection Failed", description: error.message || "Failed to connect to chat server.", variant: "destructive" });
       }
     };
 
@@ -64,7 +66,7 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
       disconnectSocket();
       setSocketConnected(false);
     };
-  }, [toast]);
+  }, [toast, currentUserId, currentRole]);
 
   // Join/leave chat room
   useEffect(() => {

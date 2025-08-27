@@ -16,7 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick, onLogout }) 
 
  const menuItems = [
     { id: "Dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/admin/" },
-    { id: "BookingList", label: "Booking List", icon: Calendar, path: "/admin/booking-list" },
+    { id: "BookingList", label: "Booking List", icon: Calendar, path: "/admin/appointments" },
     { id: "ServicesDetail", label: "Services Detail", icon: Settings, path: "/admin/services-detail" },
     { id: "Shops", label: "Shops", icon: Store, path: "/admin/shops" },
     { id: "Reviews", label: "Reviews", icon: Star, path: "/admin/reviews" },

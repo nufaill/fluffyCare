@@ -1,3 +1,4 @@
+// useMessages.ts
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { messageService } from '@/services/chat/messageService';
 import { type Message } from '@/types/message.type';
@@ -13,7 +14,7 @@ import {
 
 interface UseMessagesOptions {
   chatId: string;
-  autoRefresh?: boolean; // Now optional and ignored (kept for compat), but we rely on sockets/reconnects
+  autoRefresh?: boolean;
   refreshInterval?: number;
   userId?: string;
   currentRole?: 'User' | 'Shop';
@@ -36,7 +37,7 @@ interface SocketMessage {
 
 export const useMessages = ({
   chatId,
-  autoRefresh = false, // Ignored - we use sockets + reconnect fetch instead
+  autoRefresh = false,
   refreshInterval = 10000,
   userId,
   currentRole,
@@ -54,27 +55,29 @@ export const useMessages = ({
   const { toast } = useToast();
   const lastMessageTimestamp = useRef<string | null>(null);
 
-  const transformSocketMessage = useCallback((socketMessage: SocketMessage): Message => ({
-    _id: socketMessage._id,
-    chatId: socketMessage.chatId,
-    senderRole: socketMessage.senderRole,
-    messageType: socketMessage.messageType,
-    content: socketMessage.content || '',
-    mediaUrl: socketMessage.mediaUrl,
-    isRead: socketMessage.isRead,
-    deliveredAt: socketMessage.deliveredAt ? new Date(socketMessage.deliveredAt) : undefined,
-    readAt: socketMessage.readAt ? new Date(socketMessage.readAt) : undefined,
-    reactions: socketMessage.reactions || [],
-    createdAt: new Date(socketMessage.createdAt || Date.now()),
-    updatedAt: new Date(socketMessage.updatedAt || Date.now()),
-  }), []);
+  const transformSocketMessage = useCallback((socketMessage: SocketMessage): Message => {
+    console.log('Transforming socket message:', socketMessage);
+    return {
+      _id: socketMessage._id,
+      chatId: socketMessage.chatId,
+      senderRole: socketMessage.senderRole,
+      messageType: socketMessage.messageType,
+      content: socketMessage.content || '',
+      mediaUrl: socketMessage.mediaUrl,
+      isRead: socketMessage.isRead,
+      deliveredAt: socketMessage.deliveredAt ? new Date(socketMessage.deliveredAt) : undefined,
+      readAt: socketMessage.readAt ? new Date(socketMessage.readAt) : undefined,
+      reactions: socketMessage.reactions || [],
+      createdAt: new Date(socketMessage.createdAt || Date.now()),
+      updatedAt: new Date(socketMessage.updatedAt || Date.now()),
+    };
+  }, []);
 
   const sortMessages = (msgs: Message[]) => {
     return [...msgs].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
   };
-
 
   const fetchMessages = useCallback(async (page: number = 1, limit: number = 50, append: boolean = false) => {
     if (!chatId) return;
@@ -89,7 +92,6 @@ export const useMessages = ({
         throw new Error('Invalid message data received');
       }
 
-      // Map messages
       const mappedMessages: Message[] = response.messages.map((msg: any) => ({
         _id: msg.id || msg._id,
         chatId: msg.chatId,
@@ -105,7 +107,6 @@ export const useMessages = ({
         updatedAt: new Date(msg.updatedAt || Date.now()),
       }));
 
-      // De-dupe if appending
       setMessages(prev => {
         const existingIds = new Set(prev.map(m => m._id));
         const uniqueNew = append ? mappedMessages.filter(m => !existingIds.has(m._id)) : mappedMessages;
@@ -136,14 +137,13 @@ export const useMessages = ({
 
   const fetchNewMessages = useCallback(async () => {
     if (!chatId || loading || sending || !lastMessageTimestamp.current) {
-      return fetchMessages(); // Fallback to full fetch if no timestamp
+      return fetchMessages();
     }
 
     setLoading(true);
     try {
-      // Use strict > by adding 1ms to timestamp (workaround if backend is >=)
       const sinceDate = new Date(lastMessageTimestamp.current);
-      sinceDate.setMilliseconds(sinceDate.getMilliseconds() + 1); // Make it strictly >
+      sinceDate.setMilliseconds(sinceDate.getMilliseconds() + 1);
 
       const response = await messageService.getChatMessages(chatId, 1, 50, sinceDate);
       const newMessages = response.messages || [];
@@ -177,7 +177,7 @@ export const useMessages = ({
     } finally {
       setLoading(false);
     }
-  }, [chatId, loading, sending, fetchMessages]);
+  }, [chatId, fetchMessages, loading, sending]);
 
   const sendMessage = useCallback(async (
     senderRole: 'User' | 'Shop',
@@ -225,29 +225,23 @@ export const useMessages = ({
     }
   }, [chatId]);
 
-  const markMessagesAsRead = useCallback(async (messageIds: string[], receiverRole: 'User' | 'Shop') => {
-    if (!chatId) return;
-
+  const markMessagesAsRead = useCallback(async (messageIds: string[], receiverRole : 'User' | 'Shop') => {
     try {
-      await messageService.markChatMessagesAsRead(chatId, receiverRole, messageIds);
-      setMessages(prev => sortMessages(prev.map(msg =>
-        messageIds.includes(msg._id || '') ? { ...msg, isRead: true, readAt: new Date() } : msg
-      )));
+      await messageService.markMultipleAsRead(messageIds, new Date());
     } catch (err: any) {
       setError(err.message || 'Failed to mark messages as read');
+      throw err;
     }
-  }, [chatId]);
+  }, []);
 
   const deleteMessage = useCallback(async (messageId: string) => {
-    if (!chatId) return;
-
     try {
       await messageService.deleteMessage(messageId);
-      setMessages(prev => prev.filter(msg => msg._id !== messageId));
     } catch (err: any) {
       setError(err.message || 'Failed to delete message');
+      throw err;
     }
-  }, [chatId]);
+  }, []);
 
   const searchMessages = useCallback(async (
     query: string,
@@ -291,6 +285,7 @@ export const useMessages = ({
   }, [chatId]);
 
   const handleSocketEvent = useCallback((event: string, data: any) => {
+    console.log(`Handling socket event: ${event}`, data);
     if (data.chatId !== chatId) return;
 
     switch (event) {
@@ -339,7 +334,6 @@ export const useMessages = ({
     }
   }, [chatId, transformSocketMessage]);
 
-  // Socket event setup
   useEffect(() => {
     if (!chatId || !userId || !currentRole) return;
 
@@ -356,10 +350,12 @@ export const useMessages = ({
     events.forEach(event => addEventListener(event, (data: any) => handleSocketEvent(event, data)));
 
     if (isSocketConnected()) {
+      console.log(`Joining chat ${chatId} on mount`);
       joinChat(chatId, userId, currentRole);
     }
 
     return () => {
+      console.log(`Cleaning up listeners for chat ${chatId}`);
       events.forEach(event => removeEventListener(event, (data: any) => handleSocketEvent(event, data)));
       if (isSocketConnected()) {
         leaveChat(chatId, userId);
@@ -367,7 +363,6 @@ export const useMessages = ({
     };
   }, [chatId, userId, currentRole, handleSocketEvent]);
 
-  // Fetch history on chatId change
   useEffect(() => {
     if (!chatId) {
       setMessages([]);
@@ -378,7 +373,6 @@ export const useMessages = ({
     fetchMessages();
   }, [chatId, fetchMessages]);
 
-  // Fetch new messages on socket connect/reconnect (to catch missed messages)
   useEffect(() => {
     const socket = getSocket();
 
@@ -387,6 +381,10 @@ export const useMessages = ({
       if (chatId && lastMessageTimestamp.current) {
         fetchNewMessages();
       }
+      if (chatId && userId && currentRole) {
+        console.log(`Rejoining chat ${chatId} after reconnect`);
+        joinChat(chatId, userId, currentRole);
+      }
     };
 
     socket.on('connect', handleConnect);
@@ -394,7 +392,7 @@ export const useMessages = ({
     return () => {
       socket.off('connect', handleConnect);
     };
-  }, [chatId, fetchNewMessages]);
+  }, [chatId, fetchNewMessages, userId, currentRole]);
 
   return {
     messages,
