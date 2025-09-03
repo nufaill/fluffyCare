@@ -8,7 +8,7 @@ export default interface IShopRepository {
   findById(id: string): Promise<ShopResponseDTO | null>;
   createShop(data: CreateShopData): Promise<ShopResponseDTO>;
   updateShop(id: string, updateData: Partial<CreateShopData>): Promise<UpdateShopDTO | null>;
-  updateShopSubscription(id: string, subscription: 'free' | 'basic' | 'premium'): Promise<ShopResponseDTO | null>;
+  updateShopSubscription(id: string, subscriptionData: { subscriptionId: string | null; plan: string; subscriptionStart?: Date; subscriptionEnd?: Date; isActive?: boolean;}): Promise<ShopResponseDTO | null>;
   existsByEmail(email: string): Promise<boolean>;
   setResetToken(email: string, token: string, expires: Date): Promise<ShopResponseDTO | null>;
   findByResetToken(token: string): Promise<ShopResponseDTO | null>;

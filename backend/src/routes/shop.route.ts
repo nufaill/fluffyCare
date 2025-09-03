@@ -1362,5 +1362,6 @@ router.get('/appointments/status/:status', appointmentDependencies.appointmentCo
 
 
 router.get('/subscriptions-active', shopDependencies.subscriptionController.getAllActiveSubscriptions as RequestHandler);
+router.get('/subscriptions/by-name/:planName', shopDependencies.subscriptionController.getSubscriptionByName as RequestHandler);
 
 export default router;

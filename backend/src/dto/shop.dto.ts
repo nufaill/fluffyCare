@@ -4,6 +4,14 @@ export interface UpdateShopStatusDTO {
   isActive: boolean;
 }
 
+export interface IShopSubscription {
+  subscriptionId: object | string | null;
+  subscriptionStart: Date | null;
+  subscriptionEnd: Date | null;
+  isActive: boolean;
+  plan?: string; 
+}
+
 export interface UpdateShopDTO {
   name?: string;
   phone?: string;
@@ -12,7 +20,7 @@ export interface UpdateShopDTO {
   city?: string;
   streetAddress?: string;
   description?: string;
-  subscription?: 'free' | 'basic' | 'premium';
+  subscription?: IShopSubscription;
 }
 
 export interface RejectShopDTO {
@@ -38,7 +46,7 @@ export interface ShopResponseDTO {
   updatedAt: Date;
   isVerified?: 'pending' | 'approved' | 'rejected';
   shopAvailability?: ShopAvailability;
-  subscription?: 'free' | 'basic' | 'premium';
+  subscription?: IShopSubscription;
 }
 
 export interface ShopAvailabilityDTO extends ShopAvailability {

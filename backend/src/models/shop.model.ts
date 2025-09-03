@@ -74,10 +74,12 @@ const shopSchema = new Schema<ShopDocument>(
       default: () => ({}),
     },
 
-    subscription: {
-      type: String,
-      enum: ["free", "basic", "premium"],
-      default: "free",
+   subscription: {
+      subscriptionId: {type: Schema.Types.ObjectId,ref: 'Subscription', default: null},
+      subscriptionStart: {  type: Date, default: null},
+      subscriptionEnd: { type: Date, default: null},
+      isActive: {type: Boolean, default: true},
+      plan: {type: String, default: 'free'},
     },
 
     resetPasswordToken: { type: String },

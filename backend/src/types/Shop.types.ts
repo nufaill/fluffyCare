@@ -6,6 +6,14 @@ export interface GeoLocation {
   coordinates: [number, number]; // [longitude, latitude]
 }
 
+export interface IShopSubscription {
+  subscriptionId: Types.ObjectId | null;
+  subscriptionStart: Date | null;
+  subscriptionEnd: Date | null;
+  isActive: boolean;
+  plan: string;
+}
+
 // Shop Availability
 export interface ShopAvailability {
   workingDays: string[];
@@ -59,7 +67,7 @@ export interface ShopDocument extends Document {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   shopAvailability?: ShopAvailability;
-  subscription?: "free" | "basic" | "premium";
+  subscription: IShopSubscription;
   createdAt: Date;
   updatedAt: Date;
 }

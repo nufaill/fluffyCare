@@ -94,22 +94,39 @@ export class ShopService implements IShopService {
     return updatedShop;
   }
 
-  async getShopSubscription(shopId: string): Promise<'free' | 'basic' | 'premium'> {
+  async getShopSubscription(shopId: string): Promise<string> {
     this.validateShopId(shopId);
     const shop = await this.shopRepository.findById(shopId);
     if (!shop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
-    return shop.subscription || 'free';
+    return shop.subscription?.plan || 'free';
   }
 
-  async updateShopSubscription(shopId: string, subscription: 'free' | 'basic' | 'premium'): Promise<ShopResponseDTO> {
+  async updateShopSubscription(
+    shopId: string,
+    subscriptionData: {
+      subscriptionId?: string | null;
+      plan: string;
+      subscriptionStart?: Date;
+      subscriptionEnd?: Date;
+      isActive?: boolean;
+    }
+  ): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
-    if (!['free', 'basic', 'premium'].includes(subscription)) {
-      throw new CustomError('Invalid subscription type. Must be free, basic, or premium', HTTP_STATUS.BAD_REQUEST);
+
+    if (!subscriptionData.plan) {
+      throw new CustomError('Subscription plan is required', HTTP_STATUS.BAD_REQUEST);
     }
 
-    const updatedShop = await this.shopRepository.updateShopSubscription(shopId, subscription);
+    const updatedShop = await this.shopRepository.updateShopSubscription(shopId, {
+      subscriptionId: subscriptionData.subscriptionId || null,
+      plan: subscriptionData.plan,
+      subscriptionStart: subscriptionData.subscriptionStart,
+      subscriptionEnd: subscriptionData.subscriptionEnd,
+      isActive: subscriptionData.isActive ?? true
+    });
+
     if (!updatedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }

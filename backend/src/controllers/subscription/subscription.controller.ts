@@ -4,6 +4,7 @@ import { CreateSubscriptionDTO, UpdateSubscriptionDTO, SubscriptionResponseDTO }
 import { HTTP_STATUS } from '../../shared/constant';
 import { Types } from 'mongoose';
 import { ISubscriptionController } from '../../interfaces/controllerInterfaces/ISubscriptionController';
+import { SubscriptionModel } from '@models/subscription.model';
 
 interface PaymentResponseData {
   success: boolean;
@@ -23,6 +24,7 @@ export class SubscriptionController implements ISubscriptionController {
     this.createSubscription = this.createSubscription.bind(this);
     this.updateSubscription = this.updateSubscription.bind(this);
     this.getAllSubscriptions = this.getAllSubscriptions.bind(this);
+    this.getAllActiveSubscriptions = this.getAllActiveSubscriptions.bind(this);
   }
 
   async createSubscription(req: Request, res: Response): Promise<void> {
@@ -81,7 +83,7 @@ export class SubscriptionController implements ISubscriptionController {
       const { id } = req.params;
       const updateData = new UpdateSubscriptionDTO(req.body);
 
-      
+
 
       if (!id || !Types.ObjectId.isValid(id)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -145,7 +147,7 @@ export class SubscriptionController implements ISubscriptionController {
     }
   }
 
-  
+
   async getAllActiveSubscriptions(req: Request, res: Response): Promise<void> {
     try {
       const { page, limit } = req.query;
@@ -171,5 +173,33 @@ export class SubscriptionController implements ISubscriptionController {
       });
     }
   }
+  
+  getSubscriptionByName = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { planName } = req.params;
+      const subscription = await SubscriptionModel.findOne({
+        plan: planName,
+        isActive: true
+      });
+
+      if (!subscription) {
+        res.status(404).json({
+          success: false,
+          message: 'Subscription plan not found'
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: { subscription }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch subscription'
+      });
+    }
+  };
 
 }

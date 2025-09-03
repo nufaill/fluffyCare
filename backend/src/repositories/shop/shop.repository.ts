@@ -73,8 +73,20 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
     return updatedShop ? this.mapToResponseDTO(updatedShop) : null;
   }
 
-  async updateShopSubscription(id: string, subscription: 'free' | 'basic' | 'premium'): Promise<ShopResponseDTO | null> {
-    const updatedShop = await this.updateById(id, { subscription })
+  async updateShopSubscription(id: string, subscriptionData: {
+    subscriptionId: string | null;
+    plan: string;
+    subscriptionStart?: Date;
+    subscriptionEnd?: Date;
+    isActive?: boolean;
+  }): Promise<ShopResponseDTO | null> {
+    const updatedShop = await this.updateById(id, {
+      'subscription.subscriptionId': subscriptionData.subscriptionId,
+      'subscription.plan': subscriptionData.plan,
+      'subscription.subscriptionStart': subscriptionData.subscriptionStart,
+      'subscription.subscriptionEnd': subscriptionData.subscriptionEnd,
+      'subscription.isActive': subscriptionData.isActive ?? true
+    })
       .select('-password -resetPasswordToken -resetPasswordExpires')
       .exec();
     return updatedShop ? this.mapToResponseDTO(updatedShop) : null;

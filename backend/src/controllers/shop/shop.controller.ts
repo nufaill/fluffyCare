@@ -131,15 +131,15 @@ export class ShopController implements IShopController {
         return;
       }
 
-      const subscription = await this.shopService.getShopSubscription(shopId);
+      const planName = await this.shopService.getShopSubscription(shopId);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
-        data: { plan: subscription },
+        data: { plan: planName },
         message: 'Shop subscription fetched successfully'
       });
     } catch (error) {
-      console.error("❌ [ShopController] Get shop subscription error:", error);
+      console.error("⚠️ [ShopController] Get shop subscription error:", error);
 
       const statusCode = error instanceof CustomError
         ? error.statusCode
@@ -156,15 +156,16 @@ export class ShopController implements IShopController {
     }
   };
 
+
   createSubscriptionPaymentIntent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { amount, currency, shopId, subscription } = req.body;
+      const { amount, currency, shopId, planName } = req.body;
 
       const requiredFields = [
         { field: 'amount', value: amount },
         { field: 'currency', value: currency },
         { field: 'shopId', value: shopId },
-        { field: 'subscription', value: subscription },
+        { field: 'planName', value: planName },
       ];
 
       const missingField = requiredFields.find(({ value }) =>
@@ -179,20 +180,12 @@ export class ShopController implements IShopController {
         return;
       }
 
-      if (!['free', 'basic', 'premium'].includes(subscription)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          message: 'Invalid subscription type. Must be free, basic, or premium',
-        });
-        return;
-      }
-
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount,
         currency,
         metadata: {
           shopId,
-          subscription,
+          planName,
         },
       });
 
@@ -202,7 +195,7 @@ export class ShopController implements IShopController {
         paymentIntentId: paymentIntent.id,
       });
     } catch (error: any) {
-      console.error("❌ [ShopController] Create subscription payment intent error:", error);
+      console.error("⚠️ [ShopController] Create subscription payment intent error:", error);
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: `Failed to create payment intent: ${error.message}`,
@@ -212,9 +205,9 @@ export class ShopController implements IShopController {
 
   confirmSubscriptionPayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { paymentIntentId, shopId, subscription, amount, currency } = req.body;
+      const { paymentIntentId, shopId, planName, subscriptionId, subscriptionStart, subscriptionEnd, amount, currency } = req.body;
 
-      if (!paymentIntentId || !shopId || !subscription || !amount || !currency) {
+      if (!paymentIntentId || !shopId || !planName || !amount || !currency) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Missing required fields',
@@ -241,7 +234,13 @@ export class ShopController implements IShopController {
 
       const session = await mongoose.startSession();
       await session.withTransaction(async () => {
-        const updatedShop = await this.shopService.updateShopSubscription(shopId, subscription);
+        const updatedShop = await this.shopService.updateShopSubscription(shopId, {
+          subscriptionId : subscriptionId,
+          plan: planName,
+          subscriptionStart: subscriptionStart ? new Date(subscriptionStart) : new Date(),
+          subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : undefined,
+          isActive: true
+        });
 
         const adminId = process.env.ADMIN_ID || '685ff3212adf35c013419da4';
         const adminWallet = await this.walletService.getWalletByOwner(new Types.ObjectId(adminId), 'admin', session);
@@ -253,7 +252,7 @@ export class ShopController implements IShopController {
           type: 'credit',
           amount: amount / 100,
           currency,
-          description: `Subscription payment received from shop ${shopId} (Stripe ID: ${paymentIntentId})`,
+          description: `Subscription payment received from shop ${shopId} for plan ${planName} (Stripe ID: ${paymentIntentId})`,
           referenceId: undefined,
         };
 
@@ -275,7 +274,7 @@ export class ShopController implements IShopController {
         message: 'Subscription payment confirmed and updated successfully',
       });
     } catch (error: any) {
-      console.error("❌ [ShopController] Confirm subscription payment error:", error);
+      console.error("⚠️ [ShopController] Confirm subscription payment error:", error);
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: `Failed to confirm subscription payment: ${error.message}`,
@@ -286,7 +285,7 @@ export class ShopController implements IShopController {
   updateShopSubscription = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { shopId } = req.params;
-      const { subscription } = req.body;
+      const { planName, subscriptionId, subscriptionStart, subscriptionEnd } = req.body;
 
       if (!shopId) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -296,20 +295,25 @@ export class ShopController implements IShopController {
         return;
       }
 
-      if (!['free', 'basic', 'premium'].includes(subscription)) {
+      if (!planName) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
           success: false,
-          message: 'Invalid subscription type. Must be free, basic, or premium'
+          message: 'Plan name is required'
         });
         return;
       }
 
-      const updatedShop = await this.shopService.updateShopSubscription(shopId, subscription);
+      const updatedShop = await this.shopService.updateShopSubscription(shopId, {
+        subscriptionId,
+        plan: planName,
+        subscriptionStart: subscriptionStart ? new Date(subscriptionStart) : undefined,
+        subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : undefined,
+      })
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: updatedShop,
-        message: `Shop subscription updated to ${subscription} successfully`
+        message: `Shop subscription updated to  successfully`
       });
     } catch (error) {
       console.error("❌ [ShopController] Update shop subscription error:", error);
