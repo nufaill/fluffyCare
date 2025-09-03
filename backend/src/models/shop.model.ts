@@ -52,9 +52,15 @@ const shopSchema = new Schema<ShopDocument>(
     certificateUrl: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     isVerified: {
-      type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "pending",
+      status: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending",
+      },
+      reason: {
+        type: String,
+        default: null, // only when rejected
+      }
     },
     location: {
       type: {
@@ -74,12 +80,12 @@ const shopSchema = new Schema<ShopDocument>(
       default: () => ({}),
     },
 
-   subscription: {
-      subscriptionId: {type: Schema.Types.ObjectId,ref: 'Subscription', default: null},
-      subscriptionStart: {  type: Date, default: null},
-      subscriptionEnd: { type: Date, default: null},
-      isActive: {type: Boolean, default: true},
-      plan: {type: String, default: 'free'},
+    subscription: {
+      subscriptionId: { type: Schema.Types.ObjectId, ref: 'Subscription', default: null },
+      subscriptionStart: { type: Date, default: null },
+      subscriptionEnd: { type: Date, default: null },
+      isActive: { type: Boolean, default: true },
+      plan: { type: String, default: 'free' },
     },
 
     resetPasswordToken: { type: String },

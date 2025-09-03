@@ -157,19 +157,41 @@ export class ShopService implements IShopService {
     return approvedShop;
   }
 
-  async rejectShop(shopId: string): Promise<ShopResponseDTO> {
+  async rejectShop(shopId: string, rejectionReason?: string): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
+
     const shop = await this.shopRepository.findById(shopId);
     if (!shop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
-    if (shop.isVerified === 'approved') {
+
+    if (shop.isVerified.status === 'approved') {
       throw new CustomError('Shop is already approved', HTTP_STATUS.BAD_REQUEST);
     }
-    const updatedShop = await this.shopRepository.updateShopVerification(shopId, 'rejected');
+
+    // Validate rejection reason
+    if (rejectionReason) {
+      if (typeof rejectionReason !== 'string') {
+        throw new CustomError('Rejection reason must be a string', HTTP_STATUS.BAD_REQUEST);
+      }
+      if (rejectionReason.trim().length < 5) {
+        throw new CustomError('Rejection reason must be at least 5 characters long', HTTP_STATUS.BAD_REQUEST);
+      }
+      if (rejectionReason.length > 500) {
+        throw new CustomError('Rejection reason must be less than 500 characters', HTTP_STATUS.BAD_REQUEST);
+      }
+    }
+
+    const updatedShop = await this.shopRepository.updateShopVerification(
+      shopId,
+      'rejected',
+      rejectionReason?.trim()
+    );
+
     if (!updatedShop) {
       throw new CustomError('Failed to reject shop', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
+
     return updatedShop;
   }
 

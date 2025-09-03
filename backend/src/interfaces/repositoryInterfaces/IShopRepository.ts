@@ -17,7 +17,7 @@ export default interface IShopRepository {
   countDocuments(query: any): Promise<number>;
   updateShopStatus(shopId: string, isActive: boolean): Promise<ShopResponseDTO | null>;
   getUnverifiedShops(skip: number, limit: number): Promise<ShopResponseDTO[]>;
-  updateShopVerification(shopId: string, isVerified: 'pending' | 'approved' | 'rejected'): Promise<ShopResponseDTO | null>;
+  updateShopVerification( shopId: string, status: 'pending' | 'approved' | 'rejected', reason?: string ): Promise<ShopResponseDTO | null>;
   checkShopNameExists(name: string, excludeShopId?: string): Promise<boolean>;
   findNearbyShops(longitude: number, latitude: number, maxDistance: number, filters?: { serviceType?: string; petType?: string }): Promise<ShopResponseDTO[]>;
   findShopsWithinRadius(longitude: number, latitude: number, radiusInMeters: number): Promise<ShopResponseDTO[]>;

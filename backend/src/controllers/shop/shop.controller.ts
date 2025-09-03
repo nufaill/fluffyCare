@@ -235,7 +235,7 @@ export class ShopController implements IShopController {
       const session = await mongoose.startSession();
       await session.withTransaction(async () => {
         const updatedShop = await this.shopService.updateShopSubscription(shopId, {
-          subscriptionId : subscriptionId,
+          subscriptionId: subscriptionId,
           plan: planName,
           subscriptionStart: subscriptionStart ? new Date(subscriptionStart) : new Date(),
           subscriptionEnd: subscriptionEnd ? new Date(subscriptionEnd) : undefined,
@@ -414,6 +414,7 @@ export class ShopController implements IShopController {
     }
   };
 
+
   rejectShop = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { shopId } = req.params;
@@ -427,23 +428,50 @@ export class ShopController implements IShopController {
         return;
       }
 
-      if (body.rejectionReason && typeof body.rejectionReason !== 'string') {
-        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-          success: false,
-          message: 'rejectionReason must be a string'
-        });
-        return;
+      // Validate rejection reason
+      if (body.rejectionReason !== undefined) {
+        if (typeof body.rejectionReason !== 'string') {
+          res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+            success: false,
+            message: 'rejectionReason must be a string'
+          });
+          return;
+        }
+
+        if (body.rejectionReason.trim().length === 0) {
+          res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+            success: false,
+            message: 'rejectionReason cannot be empty'
+          });
+          return;
+        }
+
+        if (body.rejectionReason.trim().length < 5) {
+          res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+            success: false,
+            message: 'rejectionReason must be at least 5 characters long'
+          });
+          return;
+        }
+
+        if (body.rejectionReason.length > 500) {
+          res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+            success: false,
+            message: 'rejectionReason must be less than 500 characters'
+          });
+          return;
+        }
       }
 
-      const shop = await this.shopService.rejectShop(shopId);
+      const shop = await this.shopService.rejectShop(shopId, body.rejectionReason);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
-        message: 'Shop rejection processed successfully',
+        message: 'Shop rejected successfully',
         data: {
           shop,
           action: 'rejected',
-          rejectionReason: body.rejectionReason || 'No reason provided'
+          rejectionReason: body.rejectionReason || null
         }
       });
     } catch (error) {
@@ -455,7 +483,7 @@ export class ShopController implements IShopController {
 
       const message = error instanceof Error
         ? error.message
-        : 'Failed to process shop rejection';
+        : 'Failed to reject shop';
 
       res.status(statusCode).json({
         success: false,

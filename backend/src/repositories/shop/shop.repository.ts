@@ -158,8 +158,20 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
     return shops.map(shop => this.mapToResponseDTO(shop));
   }
 
-  async updateShopVerification(shopId: string, isVerified: 'pending' | 'approved' | 'rejected'): Promise<ShopResponseDTO | null> {
-    const updatedShop = await this.updateById(shopId, { isVerified })
+  async updateShopVerification(
+    shopId: string,
+    status: 'pending' | 'approved' | 'rejected',
+    reason?: string
+  ): Promise<ShopResponseDTO | null> {
+    const updateData: any = { 'isVerified.status': status };
+
+    if (status === 'rejected' && reason) {
+      updateData['isVerified.reason'] = reason;
+    } else if (status === 'approved') {
+      updateData['isVerified.reason'] = null;
+    }
+
+    const updatedShop = await this.updateById(shopId, updateData)
       .select('-password -resetPasswordToken -resetPasswordExpires')
       .exec();
     return updatedShop ? this.mapToResponseDTO(updatedShop) : null;

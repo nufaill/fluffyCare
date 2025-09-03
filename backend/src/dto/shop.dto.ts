@@ -4,12 +4,19 @@ export interface UpdateShopStatusDTO {
   isActive: boolean;
 }
 
+type VerificationStatus = "pending" | "approved" | "rejected";
+
+interface Verification {
+  status: VerificationStatus;
+  reason?: string | null;
+}
+
 export interface IShopSubscription {
   subscriptionId: object | string | null;
   subscriptionStart: Date | null;
   subscriptionEnd: Date | null;
   isActive: boolean;
-  plan?: string; 
+  plan?: string;
 }
 
 export interface UpdateShopDTO {
@@ -44,7 +51,7 @@ export interface ShopResponseDTO {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  isVerified?: 'pending' | 'approved' | 'rejected';
+  isVerified: Verification;
   shopAvailability?: ShopAvailability;
   subscription?: IShopSubscription;
 }

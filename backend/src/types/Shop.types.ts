@@ -6,6 +6,13 @@ export interface GeoLocation {
   coordinates: [number, number]; // [longitude, latitude]
 }
 
+type VerificationStatus = "pending" | "approved" | "rejected";
+
+interface Verification {
+  status: VerificationStatus;
+  reason?: string | null;
+}
+
 export interface IShopSubscription {
   subscriptionId: Types.ObjectId | null;
   subscriptionStart: Date | null;
@@ -43,7 +50,7 @@ export interface CreateShopData {
   certificateUrl: string;
   location: GeoLocation;
   isActive: boolean;
-  isVerified: "pending" | "approved" | "rejected";
+  isVerified: Verification;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   shopAvailability?: ShopAvailability;
@@ -63,7 +70,7 @@ export interface ShopDocument extends Document {
   certificateUrl: string;
   location: GeoLocation;
   isActive: boolean;
-  isVerified: "pending" | "approved" | "rejected";
+  isVerified: Verification;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   shopAvailability?: ShopAvailability;
@@ -85,7 +92,7 @@ export interface ShopProfile {
   certificateUrl: string;
   location: GeoLocation;
   isActive: boolean;
-  isVerified: "pending" | "approved" | "rejected";
+  isVerified: Verification;
   createdAt: Date;
   updatedAt: Date;
   shopAvailability?: ShopAvailability;
@@ -131,7 +138,7 @@ export interface ShopVerificationResponse {
   description?: string;
   certificateUrl: string;
   isActive: boolean;
-  isVerified: "pending" | "approved" | "rejected";
+  isVerified: Verification;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -151,7 +158,7 @@ export interface Shop {
   description?: string;
   certificateUrl: string;
   isActive: boolean;
-  isVerified: "pending" | "approved" | "rejected";
+  isVerified: Verification;
   location: {
     type: 'Point';
     coordinates: [number, number];
