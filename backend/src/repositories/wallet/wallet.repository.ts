@@ -1,7 +1,7 @@
 import mongoose, { Types } from 'mongoose';
-import WalletModel from '../models/wallet.model';
-import { IWallet, IWalletTransaction } from '../types/Wallet.types';
-import { IWalletRepository } from '../interfaces/repositoryInterfaces/IWalletRepository';
+import WalletModel from '../../models/wallet.model';
+import { IWallet, IWalletTransaction } from '../../types/Wallet.types';
+import { IWalletRepository } from '../../interfaces/repositoryInterfaces/IWalletRepository';
 
 export class WalletRepository implements IWalletRepository {
     async createWallet(

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowUpCircle, ArrowDownCircle, Calendar, Search, Filter } from 'lucide-react';
 
 interface IWalletTransaction {
@@ -23,6 +23,32 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Memoize filtered and sorted transactions
+  const filteredTransactions = useMemo(() => {
+    return transactions
+      .filter(transaction => {
+        const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             transaction.referenceId?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesFilter = filterType === 'all' || transaction.type === filterType;
+        return matchesSearch && matchesFilter;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [transactions, searchTerm, filterType]);
+
+  // Reset currentPage when totalPages changes
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    } else if (totalPages === 0) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
+  // Pagination
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -41,19 +67,6 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
     }).format(new Date(date));
   };
 
-  // Filter and search transactions
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.referenceId?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || transaction.type === filterType;
-    return matchesSearch && matchesFilter;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
-
   const getTransactionIcon = (type: 'credit' | 'debit') => {
     return type === 'credit' ? 
       <ArrowUpCircle className="h-5 w-5 text-green-500" /> : 
@@ -63,6 +76,12 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
   const getTransactionColor = (type: 'credit' | 'debit') => {
     return type === 'credit' ? 'text-green-600' : 'text-red-600';
   };
+
+  // Generate page numbers for pagination
+  const pageNumbers = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageNumbers.push(i);
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -86,6 +105,7 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                aria-label="Search transactions"
               />
             </div>
             
@@ -95,6 +115,7 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as 'all' | 'credit' | 'debit')}
                 className="pl-10 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                aria-label="Filter transactions by type"
               >
                 <option value="all">All Types</option>
                 <option value="credit">Credits</option>
@@ -128,7 +149,6 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
                   <div className="flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-sm">
                     {getTransactionIcon(transaction.type)}
                   </div>
-                  
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium text-gray-900 truncate">
                       {transaction.description}
@@ -145,7 +165,6 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
                     </div>
                   </div>
                 </div>
-
                 <div className="text-right">
                   <p className={`text-lg font-semibold ${getTransactionColor(transaction.type)}`}>
                     {transaction.type === 'credit' ? '+' : '-'}{formatCurrency(transaction.amount)}
@@ -158,38 +177,54 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
             ))}
           </div>
         )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
-              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
-            </p>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              
-              <span className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md">
-                {currentPage}
-              </span>
-              
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Pagination */}
+      {filteredTransactions.length > 0 && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-4 border-t border-gray-200 px-6">
+          <p className="text-sm text-gray-600 mb-4 sm:mb-0">
+            Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
+          </p>
+          
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 text-sm border border-gray-300 rounded-md transition-colors ${
+                currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+              }`}
+              aria-label="Previous page"
+            >
+              Previous
+            </button>
+
+            {pageNumbers.map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 text-sm border border-gray-300 rounded-md transition-colors ${
+                  currentPage === page ? 'bg-blue-600 text-white' : 'hover:bg-gray-50'
+                }`}
+                aria-label={`Page ${page}`}
+                aria-current={currentPage === page ? 'page' : undefined}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 text-sm border border-gray-300 rounded-md transition-colors ${
+                currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+              }`}
+              aria-label="Next page"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

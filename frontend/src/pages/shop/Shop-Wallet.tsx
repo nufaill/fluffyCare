@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/redux/store';
-import Walletaxios from '@/api/wallet.axios';
+import { walletService } from '@/services/walletService';
 import { WalletComponent } from '../../components/wallet/WalletComponent';
 import Footer from '@/components/user/Footer';
 import { PetCareLayout } from '@/components/layout/PetCareLayout';
@@ -35,8 +35,6 @@ export default function ShopWalletPage() {
 
   const shopId = shop?.id;
 
-
-
   const createWallet = async () => {
     if (!shopId) {
       setError('Shop ID missing, cannot create wallet');
@@ -46,54 +44,22 @@ export default function ShopWalletPage() {
     try {
       setIsCreating(true);
 
-      // Use the shop-specific route for wallet creation
-      const response = await Walletaxios.post('/shop/create', {
+      const walletData = await walletService.createShopWallet({
         ownerId: shopId,
         ownerType: 'shop',
         currency: 'INR',
       });
 
-
-      if (response.data.success && response.data.data) {
-        setDebugInfo('✅ Wallet created successfully');
-
-        // Set the newly created wallet data immediately
-        setWallet({
-          _id: response.data.data._id,
-          balance: response.data.data.balance,
-          currency: response.data.data.currency,
-          transactions: response.data.data.transactions?.map((t: any) => ({
-            ...t,
-            createdAt: new Date(t.createdAt),
-          })) || [],
-        });
-
-        setError(null);
-      } else {
-        throw new Error(response.data.message || 'Failed to create wallet');
-      }
+      setDebugInfo('✅ Wallet created successfully');
+      setWallet(walletService.formatWalletData(walletData));
+      setError(null);
     } catch (error: any) {
       console.error('Create wallet error:', error);
 
       let errorMessage = 'Failed to create wallet';
 
-      if (error.response) {
-        console.error('Create wallet error response:', {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-
-        errorMessage = `Create Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`;
-
-        // If authentication failed
-        if (error.response.status === 401) {
-          errorMessage += ' - Please ensure you are logged in as a shop';
-        }
-      } else if (error.request) {
-        errorMessage = 'No response from server while creating wallet';
-      } else {
-        errorMessage = `Create request error: ${error.message}`;
+      if (error.message) {
+        errorMessage = error.message;
       }
 
       setError(errorMessage);
@@ -114,68 +80,26 @@ export default function ShopWalletPage() {
       setIsLoading(true);
       setError(null);
 
-      // Use the shop-specific route for fetching wallet
-      const response = await Walletaxios.get(`/shop/owner/${shopId}/shop`);
-
-
-      const data = response.data;
-
-      if (data.success && data.data) {
-        setWallet({
-          _id: data.data._id,
-          balance: data.data.balance,
-          currency: data.data.currency,
-          transactions: data.data.transactions?.map((t: any) => ({
-            ...t,
-            createdAt: new Date(t.createdAt),
-          })) || [],
-        });
-        setDebugInfo('✅ Wallet fetched successfully');
-      } else {
-        throw new Error(data.message || 'Failed to fetch wallet');
-      }
+      const walletData = await walletService.getShopWallet(shopId, 'shop');
+      setWallet(walletService.formatWalletData(walletData));
+      setDebugInfo('✅ Wallet fetched successfully');
     } catch (error: any) {
       console.error('=== WALLET FETCH ERROR ===');
-      console.error('Error object:', error);
-      console.error('Error response:', error.response);
-      console.error('Error config:', error.config);
-      console.error('Error message:', error.message);
+      console.error('Error:', error);
 
       let errorMessage = 'Failed to fetch wallet';
       let debugDetails = '';
 
-      if (error.response) {
-        // Server responded with error status
-        console.error('Server error response:', {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          headers: error.response.headers
-        });
+      if (error.message) {
+        errorMessage = error.message;
+        debugDetails = error.message;
 
-        errorMessage = `Server Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`;
-        debugDetails = `Status: ${error.response.status}, Data: ${JSON.stringify(error.response.data)}`;
-
-        // If wallet doesn't exist (404), try to create it
-        if (error.response.status === 404 || (error.response.data?.message && error.response.data.message.includes('Wallet not found'))) {
+        // If wallet doesn't exist, try to create it
+        if (error.message.includes('Wallet not found') || error.message.includes('404')) {
           setDebugInfo('Wallet not found, creating new wallet...');
           await createWallet();
           return;
         }
-
-        // If authentication failed
-        if (error.response.status === 401) {
-          errorMessage += ' - Authentication failed. Please log in again.';
-        }
-      } else if (error.request) {
-        // Request was made but no response received
-        console.error('No response received:', error.request);
-        errorMessage = 'No response from server - check if backend is running';
-        debugDetails = 'Network error: No response received';
-      } else {
-        console.error('Request setup error:', error.message);
-        errorMessage = `Request error: ${error.message}`;
-        debugDetails = error.message;
       }
 
       setError(errorMessage);

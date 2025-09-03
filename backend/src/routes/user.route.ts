@@ -429,23 +429,485 @@ router.get('/staff', userDependencies.staffController.getAllStaff as RequestHand
 
 router.post("/payment/create-payment-intent", appointmentDependencies.paymentController.createPaymentIntent as RequestHandler);
 router.post('/confirm-payment', appointmentDependencies.paymentController.confirmPayment.bind(appointmentDependencies.paymentController) as RequestHandler);
-router.get('/appointments/stats/:shopId',appointmentDependencies.appointmentController.getAppointmentStats.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.get('/appointments/slots/availability',appointmentDependencies.appointmentController.checkSlotAvailability.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.put('/appointments/:appointmentId', appointmentDependencies.appointmentController.updateAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.get('/appointments/:appointmentId', appointmentDependencies.appointmentController.getAppointmentById.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.get('/appointments/user/:userId',appointmentDependencies.appointmentController.getAppointmentsByUserId.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.get('/appointments/shop/:shopId',appointmentDependencies.appointmentController.getAppointmentsByShopId.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.get('/appointments/staff/:staffId', appointmentDependencies.appointmentController.getAppointmentsByStaffId.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.patch('/appointments/:appointmentId/confirm',appointmentDependencies.appointmentController.confirmAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.patch('/appointments/:appointmentId/complete', appointmentDependencies.appointmentController.completeAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.get('/appointments/status/:status', appointmentDependencies.appointmentController.getAppointmentsByStatus.bind(appointmentDependencies.appointmentController) as RequestHandler);
-router.patch('/appointments/:appointmentId/cancel',appointmentDependencies.appointmentController.cancelAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
-
-
 
 /**
  * @swagger
- * /user/appointments/booked-slots/{shopId}:
+ * /appointments/stats/{shopId}:
+ *   get:
+ *     summary: Get appointment statistics for a shop
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Shop ID
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for statistics (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for statistics (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Appointment statistics retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AppointmentStats'
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/appointments/stats/:shopId', appointmentDependencies.appointmentController.getAppointmentStats.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/slots/availability:
+ *   get:
+ *     summary: Check slot availability
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Shop ID
+ *       - in: query
+ *         name: serviceId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Service ID
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date to check availability (YYYY-MM-DD)
+ *       - in: query
+ *         name: staffId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Specific staff ID (optional)
+ *     responses:
+ *       200:
+ *         description: Slot availability retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/SlotAvailability'
+ *       400:
+ *         description: Missing required parameters
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/appointments/slots/availability', appointmentDependencies.appointmentController.checkSlotAvailability.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/{appointmentId}:
+ *   put:
+ *     summary: Update an appointment
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: appointmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Appointment ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date-time
+ *               staffId:
+ *                 type: string
+ *                 format: uuid
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Appointment updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
+ *       400:
+ *         description: Invalid input data
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Appointment not found
+ */
+router.put('/appointments/:appointmentId', appointmentDependencies.appointmentController.updateAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/{appointmentId}:
+ *   get:
+ *     summary: Get appointment by ID
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: appointmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Appointment ID
+ *     responses:
+ *       200:
+ *         description: Appointment details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Appointment not found
+ */
+router.get('/appointments/:appointmentId', appointmentDependencies.appointmentController.getAppointmentById.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/user/{userId}:
+ *   get:
+ *     summary: Get appointments by user ID
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: User ID
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, ongoing, completed, cancelled]
+ *         description: Filter by status
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: User appointments retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/appointments/user/:userId', appointmentDependencies.appointmentController.getAppointmentsByUserId.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/shop/{shopId}:
+ *   get:
+ *     summary: Get appointments by shop ID
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shopId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Shop ID
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, ongoing, completed, cancelled]
+ *         description: Filter by status
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter by date
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: Shop appointments retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/appointments/shop/:shopId', appointmentDependencies.appointmentController.getAppointmentsByShopId.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/staff/{staffId}:
+ *   get:
+ *     summary: Get appointments by staff ID
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: staffId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Staff ID
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, ongoing, completed, cancelled]
+ *         description: Filter by status
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter by date
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: Staff appointments retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/appointments/staff/:staffId', appointmentDependencies.appointmentController.getAppointmentsByStaffId.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/{appointmentId}/confirm:
+ *   patch:
+ *     summary: Confirm an appointment
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: appointmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Appointment ID
+ *     responses:
+ *       200:
+ *         description: Appointment confirmed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Appointment not found
+ *       409:
+ *         description: Appointment cannot be confirmed
+ */
+router.patch('/appointments/:appointmentId/confirm', appointmentDependencies.appointmentController.confirmAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/{appointmentId}/complete:
+ *   patch:
+ *     summary: Mark appointment as completed
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: appointmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Appointment ID
+ *     responses:
+ *       200:
+ *         description: Appointment completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Appointment not found
+ *       409:
+ *         description: Appointment cannot be completed
+ */
+router.patch('/appointments/:appointmentId/complete', appointmentDependencies.appointmentController.completeAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/status/{status}:
+ *   get:
+ *     summary: Get appointments by status
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: status
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, ongoing, completed, cancelled]
+ *         description: Appointment status
+ *       - in: query
+ *         name: shopId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Filter by shop ID
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: Appointments by status retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ *       400:
+ *         description: Invalid status
+ */
+router.get('/appointments/status/:status', appointmentDependencies.appointmentController.getAppointmentsByStatus.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/{appointmentId}/cancel:
+ *   patch:
+ *     summary: Cancel an appointment
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: appointmentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Appointment ID
+ *     responses:
+ *       200:
+ *         description: Appointment cancelled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Appointment'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Appointment not found
+ *       409:
+ *         description: Appointment cannot be cancelled
+ */
+router.patch('/appointments/:appointmentId/cancel', appointmentDependencies.appointmentController.cancelAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+/**
+ * @swagger
+ * /appointments/booked-slots/{shopId}:
  *   get:
  *     summary: Get booked slots for a specific shop and date
  *     tags: [User]
@@ -457,6 +919,7 @@ router.patch('/appointments/:appointmentId/cancel',appointmentDependencies.appoi
  *         required: true
  *         schema:
  *           type: string
+ *           format: uuid
  *         description: ID of the shop
  *       - in: query
  *         name: date
@@ -467,9 +930,9 @@ router.patch('/appointments/:appointmentId/cancel',appointmentDependencies.appoi
  *         description: Date in YYYY-MM-DD format
  *       - in: query
  *         name: staffId
- *         required: false
  *         schema:
  *           type: string
+ *           format: uuid
  *         description: Optional staff ID to filter slots
  *     responses:
  *       200:
@@ -484,20 +947,7 @@ router.patch('/appointments/:appointmentId/cancel',appointmentDependencies.appoi
  *                 data:
  *                   type: array
  *                   items:
- *                     type: object
- *                     properties:
- *                       shopId:
- *                         type: string
- *                       staffId:
- *                         type: string
- *                       slotDate:
- *                         type: string
- *                       startTime:
- *                         type: string
- *                       endTime:
- *                         type: string
- *                       status:
- *                         type: string
+ *                     $ref: '#/components/schemas/BookedSlot'
  *                 message:
  *                   type: string
  *       400:
@@ -508,7 +958,6 @@ router.patch('/appointments/:appointmentId/cancel',appointmentDependencies.appoi
  *         description: Server error
  */
 router.get('/appointments/booked-slots/:shopId', appointmentDependencies.appointmentController.getBookedSlots.bind(appointmentDependencies.appointmentController) as RequestHandler);
-
 // Add this route for creating appointments with real-time updates
 router.post('/appointments', appointmentDependencies.appointmentController.createAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
 

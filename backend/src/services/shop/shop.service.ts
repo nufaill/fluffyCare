@@ -1,4 +1,4 @@
-import { ShopRepository } from '../../repositories/shop.repository';
+import { ShopRepository } from '../../repositories/shop/shop.repository';
 import { UpdateShopDTO, ShopResponseDTO } from '../../dto/shop.dto';
 import { CustomError } from '../../util/CustomerError';
 import { HTTP_STATUS } from '../../shared/constant';

@@ -4,8 +4,8 @@ import { MessageController } from "../controllers/chat/message.controller";
 import { ChatService } from "../services/chat/chat.service";
 import { MessageService } from "../services/chat/message.service";
 import { SocketService } from "../services/chat/socket.service";
-import { ChatRepository } from "../repositories/chat.repository";
-import { MessageRepository } from "../repositories/message.repository";
+import { ChatRepository } from "../repositories/chat/chat.repository";
+import { MessageRepository } from "../repositories/chat/message.repository";
 import { DtoMapper } from "../dto/dto.mapper";
 
 

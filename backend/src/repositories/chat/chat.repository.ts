@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
-import { ChatModel } from "../models/chat.model";
-import { Chat, ChatDocument } from "../types/Chat.types";
-import { IChatRepository } from '../interfaces/repositoryInterfaces/IChatRepository';
+import { ChatModel } from "../../models/chat.model";
+import { Chat, ChatDocument } from "../../types/Chat.types";
+import { IChatRepository } from '../../interfaces/repositoryInterfaces/IChatRepository';
 
 export class ChatRepository implements IChatRepository {
   async createChat(chatData: Partial<Chat>): Promise<ChatDocument> {

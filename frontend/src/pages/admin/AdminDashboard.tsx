@@ -1,7 +1,7 @@
 import type React from "react"
 import { useState } from "react"
 import Navbar from "@/components/admin/Navbar"
-import Sidebar from "@/components/admin/Sidebar"
+import Sidebar from "@/components/admin/sidebar"
 import { TrendingUp, Calendar, XCircle, DollarSign, BarChart3, PieChart, Star } from "lucide-react"
 import { useSelector, useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"

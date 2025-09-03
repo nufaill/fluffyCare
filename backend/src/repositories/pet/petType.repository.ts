@@ -1,6 +1,6 @@
-import { PetType } from '../models/petType.model';
-import { CreatePetType, PetTypeDocument } from '../types/PetType.type';
-import { IPetTypeRepository } from '../interfaces/repositoryInterfaces/IPetTypeRepository';
+import { PetType } from '../../models/petType.model';
+import { CreatePetType, PetTypeDocument } from '../../types/PetType.type';
+import { IPetTypeRepository } from '../../interfaces/repositoryInterfaces/IPetTypeRepository';
 
 export class PetTypeRepository implements IPetTypeRepository {
   async createPetType(petTypeData: Partial<CreatePetType>): Promise<PetTypeDocument> {

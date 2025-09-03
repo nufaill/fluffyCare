@@ -1,9 +1,9 @@
-import { Shop } from '../models/shop.model';
-import { CreateShopData, ShopDocument } from '../types/Shop.types';
+import { Shop } from '../../models/shop.model';
+import { CreateShopData, ShopDocument } from '../../types/Shop.types';
 import { Types } from 'mongoose';
-import { UpdateShopDTO, ShopResponseDTO } from '../dto/shop.dto';
-import IShopRepository from '../interfaces/repositoryInterfaces/IShopRepository';
-import { BaseRepository } from './base-repository/base.repository';
+import { UpdateShopDTO, ShopResponseDTO } from '../../dto/shop.dto';
+import IShopRepository from '../../interfaces/repositoryInterfaces/IShopRepository';
+import { BaseRepository } from '../base-repository/base.repository';
 
 export class ShopRepository extends BaseRepository<any> implements IShopRepository {
   constructor() {

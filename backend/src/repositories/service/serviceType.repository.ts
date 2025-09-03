@@ -1,6 +1,6 @@
-import { ServiceType } from '../models/serviceType.model';
-import { CreateServiceType, ServiceTypeDocument } from '../types/serviceType.type';
-import { IServiceTypeRepository } from '../interfaces/repositoryInterfaces/IServiceTypeRepository';
+import { ServiceType } from '../../models/serviceType.model';
+import { CreateServiceType, ServiceTypeDocument } from '../../types/serviceType.type';
+import { IServiceTypeRepository } from '../../interfaces/repositoryInterfaces/IServiceTypeRepository';
 
 export class ServiceTypeRepository implements IServiceTypeRepository {
     private _model: typeof ServiceType;

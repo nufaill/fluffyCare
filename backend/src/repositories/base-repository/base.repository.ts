@@ -3,9 +3,8 @@ import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { IBaseRepository } from '../../interfaces/repositoryInterfaces/IBaseRepository';
 
-type MongooseDoc = Document;
 
-export class BaseRepository<T extends MongooseDoc> implements IBaseRepository<T> {
+export class BaseRepository<T extends Document> implements IBaseRepository<T> {
  protected model: Model<T>;
 
   constructor(model: Model<T>) {

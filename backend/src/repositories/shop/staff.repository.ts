@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
-import StaffModel from '../models/staff.model';
-import { Staff } from '../types/staff.types';
-import { IStaffRepository } from '../interfaces/repositoryInterfaces/IStaffRepository';
+import StaffModel from '../../models/staff.model';
+import { Staff } from '../../types/staff.types';
+import { IStaffRepository } from '../../interfaces/repositoryInterfaces/IStaffRepository';
 
 export class StaffRepository implements IStaffRepository {
   private readonly _model = StaffModel;

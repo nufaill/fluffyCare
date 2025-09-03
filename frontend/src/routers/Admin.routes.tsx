@@ -10,6 +10,7 @@ import PetCategory from '@/pages/admin/PetCategory';
 import PetServices from '@/pages/admin/PetServices';
 import WalletPage from "@/pages/admin/Admin-Wallet";
 import AppointmentManagement from "@/pages/admin/appointment-management";
+import AdminSubscriptionPage from "@/pages/admin/admin-subscriptions.tsx";
 
 const AdminRoutes = () => {
   return (
@@ -96,6 +97,14 @@ const AdminRoutes = () => {
         element={
           <PrivateRoute userType="admin">
             <AppointmentManagement/>
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/admin/subscription" 
+        element={
+          <PrivateRoute userType="admin">
+            <AdminSubscriptionPage/>
           </PrivateRoute>
         } 
       />

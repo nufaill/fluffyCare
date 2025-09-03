@@ -1,15 +1,4 @@
-import axios from 'axios';
-import { handleAxiosError } from './errorHandler';
+import { createBaseAxios } from './base.axios';
 
-const AdminAxios = axios.create({
-  baseURL: import.meta.env.VITE_SERVER_URL + "/admin" ,
-  withCredentials: true,
-});
-
-AdminAxios.interceptors.response.use(
-  (response) => response,
-  (error) => handleAxiosError(error)
-);
-
-
+const AdminAxios = createBaseAxios('/admin');
 export default AdminAxios;

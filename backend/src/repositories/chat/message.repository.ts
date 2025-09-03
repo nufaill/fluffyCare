@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
-import { MessageModel } from '../models/message.model';
-import { Message, MessageDocument, Reaction } from '../types/Message.types';
-import { IMessageRepository } from '../interfaces/repositoryInterfaces/IMessageRepository';
+import { MessageModel } from '../../models/message.model';
+import { Message, MessageDocument, Reaction } from '../../types/Message.types';
+import { IMessageRepository } from '../../interfaces/repositoryInterfaces/IMessageRepository';
 
 export class MessageRepository implements IMessageRepository {
   

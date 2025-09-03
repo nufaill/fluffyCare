@@ -1,19 +1,19 @@
 // wallet.service.ts (updated)
 import mongoose, { Types } from 'mongoose';
-import { IWalletRepository } from '../interfaces/repositoryInterfaces/IWalletRepository';
-import { IWalletService } from '../interfaces/serviceInterfaces/IWalletService';
-import { IAppointmentService } from '../interfaces/serviceInterfaces/IAppointmentService';
+import { IWalletRepository } from '../../interfaces/repositoryInterfaces/IWalletRepository';
+import { IWalletService } from '../../interfaces/serviceInterfaces/IWalletService';
+import { IAppointmentService } from '../../interfaces/serviceInterfaces/IAppointmentService';
 import {
   CreateWalletDto,
   WalletTransactionDto,
   ProcessPaymentDto,
   RefundPaymentDto,
   WalletResponseDto,
-} from '../dto/wallet.dto';
-import { IWallet, IWalletTransaction } from '../types/Wallet.types';
-import { Shop } from '../models/shop.model';  // Added import
+} from '../../dto/wallet.dto';
+import { IWallet, IWalletTransaction } from '../../types/Wallet.types';
+import { Shop } from '../../models/shop.model';  
 
-// Configurable commission rate (could be moved to a database or config service)
+
 const DEFAULT_COMMISSION_RATE = 0.1; // 10% commission
 
 export class WalletService implements IWalletService {
@@ -238,7 +238,7 @@ export class WalletService implements IWalletService {
     const session = await mongoose.startSession();
 
     try {
-      const appointmentResult = await this.appointmentService.getAppointmentById(dto.appointmentId);
+      const appointmentResult = await this.appointmentService.getAppointmentById(dto.appointmentId.toString());
       if (!appointmentResult.success || !appointmentResult.data) {
         throw new Error('Appointment not found for refund');
       }

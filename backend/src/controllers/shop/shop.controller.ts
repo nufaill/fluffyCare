@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { ShopService } from "../../services/shop/shop.service";
 import { ShopAvailabilityService } from "../../services/shop/shopAvailability.service";
-import { WalletService } from "../../services/wallet.service";
+import { WalletService } from "../../services/wallet/wallet.service";
 import { CustomError } from '../../util/CustomerError';
 import { CreateShopData } from 'types/Shop.types';
 import { UpdateShopStatusDTO, UpdateShopDTO, RejectShopDTO, ShopResponseDTO, ShopAvailabilityDTO } from '../../dto/shop.dto';

@@ -1,13 +1,13 @@
-import { User } from '../models/user.model';
-import { UpdateUserDTO, UserResponseDTO } from '../dto/user.dto';
-import { CreateUserDTO } from '../dto/auth.dto';
+import { User } from '../../models/user.model';
+import { UpdateUserDTO, UserResponseDTO } from '../../dto/user.dto';
+import { CreateUserDTO } from '../../dto/auth.dto';
 import { Types } from 'mongoose';
-import { CustomError } from '../util/CustomerError';
-import { HTTP_STATUS } from '../shared/constant';
-import { validateGeoLocation } from '../validations/geo.validation';
-import IUserRepository from '../interfaces/repositoryInterfaces/IUserRepository';
-import { BaseRepository } from './base-repository/base.repository';
-import { UserDocument } from '../types/User.types';
+import { CustomError } from '../../util/CustomerError';
+import { HTTP_STATUS } from '../../shared/constant';
+import { validateGeoLocation } from '../../validations/geo.validation';
+import IUserRepository from '../../interfaces/repositoryInterfaces/IUserRepository';
+import { BaseRepository } from '../base-repository/base.repository';
+import { UserDocument } from '../../types/User.types';
 
 export class UserRepository extends BaseRepository<any> implements IUserRepository {
   constructor() {

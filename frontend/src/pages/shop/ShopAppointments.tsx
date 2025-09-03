@@ -181,9 +181,9 @@ export default function ShopAppointmentsPage() {
         setAppointments(
           Array.isArray(data)
             ? data.map((apt) => ({
-                ...apt,
-                appointmentStatus: apt.appointmentStatus || AppointmentStatus.PENDING,
-              }))
+              ...apt,
+              appointmentStatus: apt.appointmentStatus || AppointmentStatus.PENDING,
+            }))
             : [],
         )
         setTotalAppointments(meta?.total || 0)
@@ -570,11 +570,10 @@ export default function ShopAppointmentsPage() {
               key={rerenderKey}
               value={appointmentStatus}
               onChange={(e) => handleAppointmentStatusChange(_id, e.target.value)}
-              className={`text-xs border-2 rounded-xl px-3 py-2 bg-white font-medium transition-all duration-300 ${
-                isStatusLocked
+              className={`text-xs border-2 rounded-xl px-3 py-2 bg-white font-medium transition-all duration-300 ${isStatusLocked
                   ? "opacity-50 cursor-not-allowed border-gray-200"
                   : "hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 rounded-xl px-4 py-2"
-              }`}
+                }`}
               disabled={isStatusLocked}
             >
               {getAvailableStatusOptions(appointmentStatus).map((option) => (
@@ -753,7 +752,7 @@ export default function ShopAppointmentsPage() {
           </div>
 
           <Tabs defaultValue="upcoming" className="mb-10">
-            <TabsList className="grid grid-cols-2 gap-2 bg-white border-2 border-gray-200 rounded-2xl p-2 shadow-lg">
+            <TabsList className="grid grid-cols-2 gap-2 bg-white border-2 border-gray-200 rounded-2xl shadow-lg p-0">
               <TabsTrigger
                 value="upcoming"
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white text-gray-700 hover:bg-gray-100 font-semibold rounded-xl py-3 transition-all duration-300 data-[state=active]:shadow-lg"

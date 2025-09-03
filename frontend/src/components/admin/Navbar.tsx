@@ -14,7 +14,7 @@ interface NavbarProps {
   onSearch?: (query: string) => void
 }
 
-const Navbar: React.FC<NavbarProps> = ({ userName = "Samantha", userAvatar, onSearch }) => {
+const Navbar: React.FC<NavbarProps> = ({ userName = "NUFAIL", userAvatar, onSearch }) => {
   const [searchQuery, setSearchQuery] = useState("")
   const [showUserMenu, setShowUserMenu] = useState(false)
   const dispatch = useDispatch()

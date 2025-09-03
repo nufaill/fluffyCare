@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { WalletService } from '../services/wallet.service';
-import { CreateWalletDto, ProcessPaymentDto, RefundPaymentDto, WalletResponseDto } from '../dto/wallet.dto';
-import { IWalletController } from '../interfaces/controllerInterfaces/IWalletController';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../shared/constant';
+import { WalletService } from '../../services/wallet/wallet.service';
+import { CreateWalletDto, ProcessPaymentDto, RefundPaymentDto, WalletResponseDto } from '../../dto/wallet.dto';
+import { IWalletController } from '../../interfaces/controllerInterfaces/IWalletController';
+import { HTTP_STATUS, ERROR_MESSAGES } from '../../shared/constant';
 import { Types } from 'mongoose';
 
 // Define a type guard for ownerType

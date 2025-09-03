@@ -1,11 +1,11 @@
 // di/appointmentInjection.ts (updated)
-import { AppointmentController } from "../controllers/appointment.controller";
-import { PaymentController } from "../controllers/payment.controller";
-import { AppointmentService } from "../services/appointment.service";
-import { AppointmentRepository } from "../repositories/appointment.repository";
+import { AppointmentController } from "../controllers/appointment/appointment.controller";
+import { PaymentController } from "../controllers/payment/payment.controller";
+import { AppointmentService } from "../services/appointment/appointment.service";
+import { AppointmentRepository } from "../repositories/appointment/appointment.repository";
 import { walletDependencies } from "./walletInjection"; 
-import { WalletRepository } from "repositories/wallet.repository";
-import { WalletService } from "services/wallet.service";
+import { WalletRepository } from "repositories/wallet/wallet.repository";
+import { WalletService } from "services/wallet/wallet.service";
 
 // Create repositories
 const appointmentRepository = new AppointmentRepository();

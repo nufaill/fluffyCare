@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/redux/store';
 import { Wallet } from 'lucide-react';
-import Walletaxios from '@/api/wallet.axios';
+import { walletService } from '@/services/walletService';
 import { WalletComponent } from '../../components/wallet/WalletComponent';
 import Navbar from '@/components/user/Header';
 import Footer from '@/components/user/Footer';
@@ -46,42 +46,21 @@ export default function UserWalletPage() {
     try {
       setIsCreating(true);
 
-      const response = await Walletaxios.post('/user/create', {
+      const walletData = await walletService.createUserWallet({
         ownerId: userId,
         ownerType: 'user',
         currency: 'INR',
       });
 
-      if (response.data.success && response.data.data) {
-        setWallet({
-          _id: response.data.data._id,
-          balance: response.data.data.balance,
-          currency: response.data.data.currency,
-          transactions: response.data.data.transactions?.map((t: any) => ({
-            ...t,
-            createdAt: new Date(t.createdAt),
-          })) || [],
-        });
-
-        setError(null);
-      } else {
-        throw new Error(response.data.message || 'Failed to create wallet');
-      }
+      setWallet(walletService.formatWalletData(walletData));
+      setError(null);
     } catch (error: any) {
       console.error('Create wallet error:', error);
 
       let errorMessage = 'Failed to create wallet';
 
-      if (error.response) {
-        errorMessage = `Create Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`;
-
-        if (error.response.status === 401) {
-          errorMessage += ' - Please ensure you are logged in';
-        }
-      } else if (error.request) {
-        errorMessage = 'No response from server while creating wallet';
-      } else {
-        errorMessage = `Create request error: ${error.message}`;
+      if (error.message) {
+        errorMessage = error.message;
       }
 
       setError(errorMessage);
@@ -101,44 +80,21 @@ export default function UserWalletPage() {
       setIsLoading(true);
       setError(null);
 
-      const response = await Walletaxios.get(`/user/owner/${userId}/user`);
-
-      const data = response.data;
-
-      if (data.success && data.data) {
-        setWallet({
-          _id: data.data._id,
-          balance: data.data.balance,
-          currency: data.data.currency,
-          transactions: data.data.transactions?.map((t: any) => ({
-            ...t,
-            createdAt: new Date(t.createdAt),
-          })) || [],
-        });
-      } else {
-        throw new Error(data.message || 'Failed to fetch wallet');
-      }
+      const walletData = await walletService.getUserWallet(userId, 'user');
+      setWallet(walletService.formatWalletData(walletData));
     } catch (error: any) {
       console.error('Wallet fetch error:', error);
 
       let errorMessage = 'Failed to fetch wallet';
 
-      if (error.response) {
-        errorMessage = `Server Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`;
+      if (error.message) {
+        errorMessage = error.message;
 
-        // If wallet doesn't exist (404), try to create it
-        if (error.response.status === 404 || (error.response.data?.message && error.response.data.message.includes('Wallet not found'))) {
+        // If wallet doesn't exist, try to create it
+        if (error.message.includes('Wallet not found') || error.message.includes('404')) {
           await createWallet();
           return;
         }
-
-        if (error.response.status === 401) {
-          errorMessage += ' - Authentication failed. Please log in again.';
-        }
-      } else if (error.request) {
-        errorMessage = 'No response from server - check if backend is running';
-      } else {
-        errorMessage = `Request error: ${error.message}`;
       }
 
       setError(errorMessage);

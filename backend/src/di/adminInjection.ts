@@ -7,19 +7,23 @@ import { ServiceTypeController } from "@controllers/service/serviceType.controll
 import { AuthService as AdminAuthService } from "../services/admin/admin.service";
 import { ShopService } from "../services/shop/shop.service"; 
 import { UserService } from "../services/user/user.service"; 
-import { ShopRepository } from "../repositories/shop.repository";
-import { UserRepository } from "../repositories/user.repository";
-import { AdminRepository } from "../repositories/admin.repository";
-import { PetTypeRepository } from "../repositories/petType.repository";
-import { ServiceTypeRepository } from "repositories/serviceType.repository";
+import { ShopRepository } from "../repositories/shop/shop.repository";
+import { UserRepository } from "../repositories/user/user.repository";
+import { AdminRepository } from "../repositories/admin/admin.repository";
+import { PetTypeRepository } from "../repositories/pet/petType.repository";
+import { ServiceTypeRepository } from "repositories/service/serviceType.repository";
 import { PetTypeService } from "../services/pet/petType.service";
 import { ServiceTypeService } from "services/service/serviceType.service";
 import { JwtService } from "../services/jwt/jwt.service";
 import { AuthMiddleware } from 'middlewares/auth.middleware';
 import { IAdminService } from "../interfaces/serviceInterfaces/IAdminService";
-import { WalletService } from "services/wallet.service";
-import { WalletRepository } from "repositories/wallet.repository";
+import { WalletService } from "../services/wallet/wallet.service";
+import { WalletRepository } from "../repositories/wallet/wallet.repository";
 import { ShopAvailabilityService } from "../services/shop/shopAvailability.service";
+import { SubscriptionRepository } from '../repositories/subscription/subscription.repository';
+import { SubscriptionService } from '../services/subscription/subscription.service';
+import { SubscriptionController } from './../controllers/subscription/subscription.controller';
+import { NearbyService } from "../services/user/nearby.service";
 
 // Initialize repositories
 const shopRepository = new ShopRepository();
@@ -28,6 +32,7 @@ const adminRepository = new AdminRepository();
 const petTypeRepository = new PetTypeRepository();
 const serviceTypeRepository = new ServiceTypeRepository();
 const walletRepository = new WalletRepository();
+const subscriptionRepository = new SubscriptionRepository();
 
 // Initialize services
 const jwtService = new JwtService();
@@ -37,7 +42,9 @@ const userService = new UserService(userRepository);
 const petTypeService = new PetTypeService(petTypeRepository);
 const serviceService = new ServiceTypeService(serviceTypeRepository);
 const walletService = new WalletService(walletRepository);
+const nearbyService = new NearbyService(shopRepository);
 const shopAvailabilityService = new ShopAvailabilityService(shopRepository);
+const subscriptionService = new SubscriptionService(subscriptionRepository);
 
 const authMiddlewareInstance = new AuthMiddleware(jwtService);
 const authMiddleware = authMiddlewareInstance;
@@ -45,9 +52,10 @@ const authMiddleware = authMiddlewareInstance;
 // Initialize controllers with dependencies
 const injectedAdminAuthController = new AdminAuthController(adminAuthService);
 const injectedShopController = new ShopController(shopService, shopAvailabilityService, walletService); 
-const injectedUserController = new UserController(userService); 
+const injectedUserController = new UserController(userService,nearbyService); 
 const injectedPetTypeController = new PetTypeController(petTypeService);
 const injectedServiceController = new ServiceTypeController(serviceService);
+const injectedSubscriptionController = new SubscriptionController(subscriptionService);
 
 // Bind controller methods to their instances
 export const adminDependencies = {
@@ -80,6 +88,7 @@ export const adminDependencies = {
     updateServiceType: injectedServiceController.updateServiceType.bind(injectedServiceController),
     updateServiceTypeStatus: injectedServiceController.updateServiceTypeStatus.bind(injectedServiceController),
   },
+  subscriptionController : injectedSubscriptionController,
   authMiddleware,
   userService,
   userRepository 

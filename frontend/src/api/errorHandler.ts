@@ -11,20 +11,29 @@ export const handleAxiosError = (error: AxiosError) => {
   }
 
   if (!error.response) {
-    toast.error('Network error: Please check your internet connection.');
+    // toast.error('Network error: Please check your internet connection.');
     return Promise.reject(error);
   }
 
   const { status, data } = error.response;
   const message = (data as any)?.message || 'An unexpected error occurred';
 
+  // Skip toasting for errors handled by token refresh logic
+  if (
+    status === 401 ||
+    status === 403 ||
+    message.includes('Token Expired') ||
+    message.includes('Invalid token') ||
+    message.includes('Token is blacklisted') ||
+    message.includes('Access denied')
+  ) {
+    return Promise.reject(error);
+  }
+
   switch (status) {
     case 400:
       toast.error(`Bad request: ${message}`);
       break;
-    // case 404:
-    //   toast.error(`Resource not found: ${message}`);
-    //   break;
     case 429:
       toast.error('Too many requests: Please try again later.');
       break;
@@ -32,16 +41,7 @@ export const handleAxiosError = (error: AxiosError) => {
       toast.error('Server error: Please try again later.');
       break;
     default:
-      if (
-        status !== 401 &&
-        status !== 403 &&
-        !message.includes('Token Expired') &&
-        !message.includes('Invalid token') &&
-        !message.includes('Token is blacklisted') &&
-        !message.includes('Access denied')
-      ) {
-        // toast.error(`Error: ${message}`);
-      }
+      // toast.error(`Error: ${message}`);
       break;
   }
 

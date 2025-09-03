@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { AppointmentService } from '../services/appointment.service';
-import { CreateAppointmentDto, UpdateAppointmentDto } from '../dto/appointment.dto';
-import { IAppointmentController } from '../interfaces/controllerInterfaces/IAppointmentController';
-import { HTTP_STATUS, ERROR_MESSAGES } from '../shared/constant';
+import { AppointmentService } from '../../services/appointment/appointment.service';
+import { CreateAppointmentDto, UpdateAppointmentDto } from '../../dto/appointment.dto';
+import { IAppointmentController } from '../../interfaces/controllerInterfaces/IAppointmentController';
+import { HTTP_STATUS, ERROR_MESSAGES } from '../../shared/constant';
 import { Types } from 'mongoose';
-import { AppointmentStatus } from '../types/appointment.types';
+import { AppointmentStatus } from '../../types/appointment.types';
 
 export class AppointmentController implements IAppointmentController {
   private appointmentService: AppointmentService;

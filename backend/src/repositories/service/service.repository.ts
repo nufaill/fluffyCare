@@ -1,11 +1,11 @@
-import { Service } from "../models/service.model";
-import { CreateServiceData, ServiceDocument } from "../types/Service.types";
-import { ServiceType } from '../models/serviceType.model';
-import { PetType } from '../models/petType.model';
-import { ServiceTypeDocument } from '../types/serviceType.type';
-import { PetTypeDocument } from '../types/PetType.type';
+import { Service } from "../../models/service.model";
+import { CreateServiceData, ServiceDocument } from "../../types/Service.types";
+import { ServiceType } from '../../models/serviceType.model';
+import { PetType } from '../../models/petType.model';
+import { ServiceTypeDocument } from '../../types/serviceType.type';
+import { PetTypeDocument } from '../../types/PetType.type';
 import { Types } from "mongoose";
-import { IServiceRepository } from '../interfaces/repositoryInterfaces/IServiceRepository';
+import { IServiceRepository } from '../../interfaces/repositoryInterfaces/IServiceRepository';
 
 export class ServiceRepository implements IServiceRepository {
   async createService(serviceData: CreateServiceData): Promise<ServiceDocument> {

@@ -1,6 +1,6 @@
 // authInjection.ts
 import { AuthController } from "../controllers/user/auth.controller";
-import { UserRepository } from "../repositories/user.repository";
+import { UserRepository } from "../repositories/user/user.repository";
 import { AuthService } from "../services/user/auth.service";
 import { JwtService } from "../services/jwt/jwt.service";
 import { GoogleAuthService } from "../services/googleAuth/google.service";

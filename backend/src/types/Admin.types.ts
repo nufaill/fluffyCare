@@ -1,15 +1,15 @@
-import { Types,Document, ObjectId } from 'mongoose';
+import { Types, Document as MongooseDocument, ObjectId } from 'mongoose';
 
 export interface CreateAdminData {
   fullName: string;
   email: string;
-  password: string;
+  password?: string;
 }
 
 export interface Admin {
   fullName: string;
   email: string;
-  password: string;
+  password?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +31,6 @@ export interface JwtPayload {
   iat?: number;
   exp?: number;
 }
-export interface AdminDocument extends Admin, Document {
+export interface AdminDocument extends Admin, MongooseDocument {
   _id: Types.ObjectId;
 }

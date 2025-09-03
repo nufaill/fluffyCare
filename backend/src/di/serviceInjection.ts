@@ -1,7 +1,7 @@
 // serviceInjection.ts
 import { ServiceController } from '../controllers/service/service.controller';
 import { ServiceService } from '../services/service/service.service';
-import { ServiceRepository } from '../repositories/service.repository';
+import { ServiceRepository } from '../repositories/service/service.repository';
 
 // Instantiate dependencies
 const serviceRepository = new ServiceRepository();

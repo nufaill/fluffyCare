@@ -566,8 +566,73 @@ router.put('/service-types/:id', adminDependencies.serviceController.updateServi
  */
 router.patch('/service-types/:id/status', adminDependencies.serviceController.updateServiceTypeStatus as RequestHandler);
 
-
+/**
+ * @swagger
+ * /admin/appointments:
+ *   get:
+ *     summary: Get all appointments
+ *     description: Retrieve a list of all appointments with optional filtering and pagination
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Number of items per page
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, cancelled, completed]
+ *         description: Filter by appointment status
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter by appointment date (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: List of appointments retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Appointment'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/appointments', appointmentDependencies.appointmentController.getAllAppointments.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+
+
+router.post('/subscriptions', adminDependencies.subscriptionController.createSubscription as RequestHandler);
+router.put('/subscriptions/:id', adminDependencies.subscriptionController.updateSubscription as RequestHandler);
+router.get('/subscriptions', adminDependencies.subscriptionController.getAllSubscriptions as RequestHandler);
+
 
 
 export default router;

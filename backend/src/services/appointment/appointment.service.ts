@@ -1,13 +1,13 @@
 import { Types } from 'mongoose';
 import { AppointmentRepository } from '../repositories/appointment.repository';
-import { AppointmentDocument } from '../models/appointment.model';
-import { IAppointment, AppointmentStatus, PaymentStatus, PaymentMethod,PaymentDetails } from '../types/appointment.types';
-import { CreateAppointmentDto, UpdateAppointmentDto } from '../dto/appointment.dto';
-import { ERROR_MESSAGES, HTTP_STATUS } from '../shared/constant';
-import { IWalletService } from '../interfaces/serviceInterfaces/IWalletService';
-import { getSocketHandler } from '../shared/socket.io-handler';
-import { ProcessPaymentDto, RefundPaymentDto } from '../dto/wallet.dto';
-import { IAppointmentService } from '../interfaces/serviceInterfaces/IAppointmentService';
+import { AppointmentDocument } from '../../models/appointment.model';
+import { IAppointment, AppointmentStatus, PaymentStatus, PaymentMethod,PaymentDetails } from '../../types/appointment.types';
+import { CreateAppointmentDto, UpdateAppointmentDto } from '../../dto/appointment.dto';
+import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
+import { IWalletService } from '../../interfaces/serviceInterfaces/IWalletService';
+import { getSocketHandler } from '../../shared/socket.io-handler';
+import { ProcessPaymentDto, RefundPaymentDto } from '../../dto/wallet.dto';
+import { IAppointmentService } from '../../interfaces/serviceInterfaces/IAppointmentService';
 
 interface TimeSlot {
   shopId: string;

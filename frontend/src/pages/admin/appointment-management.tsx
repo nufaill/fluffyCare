@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/Badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, type TableColumn } from "@/components/ui/Table"
-import { Search, Filter, X, Eye } from "lucide-react"
+import { Search, Filter, Eye } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import Navbar from "@/components/admin/Navbar"
-import Sidebar from "@/components/admin/Sidebar"
+import Sidebar from "@/components/admin/sidebar"
 import Footer from "@/components/user/Footer"
 import AdminAxios from "@/api/admin.axios"
 import { Pagination } from "@/components/ui/Pagination"
@@ -283,11 +283,11 @@ export default function AppointmentManagement() {
           >
             <Eye className="h-3 w-3" />
           </Button>
-          {record.appointmentStatus !== "cancelled" && record.appointmentStatus !== "completed" && (
+          {/* {record.appointmentStatus !== "cancelled" && record.appointmentStatus !== "completed" && (
             <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-destructive hover:text-destructive bg-transparent">
               <X className="h-3 w-3" />
             </Button>
-          )}
+          )} */}
         </div>
       ),
     },

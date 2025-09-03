@@ -1,4 +1,4 @@
-import MessageAxios from '@/api/message.axios';
+import { createBaseAxios } from '@/api/base.axios';
 import { type Message } from '@/types/message.type';
 
 interface MessageListResponse {
@@ -42,6 +42,7 @@ interface MessageStatsResponse {
 }
 
 export class MessageService {
+  private axios = createBaseAxios('/messages');
   private validMessageTypes = ['Text', 'Image', 'Video', 'Audio', 'File'];
 
   private async handleRequest<T>(request: Promise<any>): Promise<T> {
@@ -107,21 +108,25 @@ export class MessageService {
       ...(mediaUrl && { mediaUrl: mediaUrl.trim() })
     };
 
-    return (await this.handleRequest<MessageResponse>(MessageAxios.post('/', payload))).data;
+    return (await this.handleRequest<MessageResponse>(this.axios.post('/', payload))).data;
   }
 
-  async getChatMessages(chatId: string, page: number = 1, limit: number = 50, since?: Date): Promise<MessageListResponse['data']> {
+  async getChatMessages(
+    chatId: string,
+    page: number = 1,
+    limit: number = 50,
+    since?: Date
+  ): Promise<MessageListResponse['data']> {
     this.validateId(chatId, 'chatId');
     const validPage = Math.max(1, Math.floor(page));
     const validLimit = Math.min(100, Math.max(1, Math.floor(limit)));
 
     const response = await this.handleRequest<MessageListResponse>(
-      MessageAxios.get(`/chats/${chatId}/messages`, {
+      this.axios.get(`/chats/${chatId}/messages`, {
         params: { page: validPage, limit: validLimit, ...(since && { since: since.toISOString() }) }
       })
     );
 
-    // Map messages to use _id and convert dates
     const mappedMessages = response.data.messages.map((msg: any) => ({
       ...msg,
       _id: msg.id || msg._id,
@@ -132,6 +137,9 @@ export class MessageService {
     })) as Message[];
 
     return {
+      page: response.data.page || validPage,
+      total: response.data.total || 0,
+      data: mappedMessages,
       messages: mappedMessages.filter((msg): msg is Message => !!msg && !!msg._id),
       currentPage: response.data.page || validPage,
       totalPages: Math.ceil((response.data.total || 0) / validLimit),
@@ -140,9 +148,10 @@ export class MessageService {
     };
   }
 
+
   async getLatestMessage(chatId: string): Promise<Message> {
     this.validateId(chatId, 'chatId');
-    const response = await this.handleRequest<MessageResponse>(MessageAxios.get(`/chats/${chatId}/messages/latest`));
+    const response = await this.handleRequest<MessageResponse>(this.axios.get(`/chats/${chatId}/messages/latest`));
 
     return {
       ...response.data,
@@ -156,14 +165,14 @@ export class MessageService {
   async markAsDelivered(messageId: string, deliveredAt: Date = new Date()): Promise<Message> {
     this.validateId(messageId, 'messageId');
     return (await this.handleRequest<MessageResponse>(
-      MessageAxios.put(`/${messageId}/delivered`, { deliveredAt: deliveredAt.toISOString() })
+      this.axios.put(`/${messageId}/delivered`, { deliveredAt: deliveredAt.toISOString() })
     )).data;
   }
 
   async markAsRead(messageId: string, readAt: Date = new Date()): Promise<Message> {
     this.validateId(messageId, 'messageId');
     return (await this.handleRequest<MessageResponse>(
-      MessageAxios.put(`/${messageId}/read`, { readAt: readAt.toISOString() })
+      this.axios.put(`/${messageId}/read`, { readAt: readAt.toISOString() })
     )).data;
   }
 
@@ -177,7 +186,7 @@ export class MessageService {
     }
 
     return (await this.handleRequest<{ data: { modifiedCount: number } }>(
-      MessageAxios.put('/mark-multiple-read', { messageIds: validMessageIds, readAt: readAt.toISOString() })
+      this.axios.put('/mark-multiple-read', { messageIds: validMessageIds, readAt: readAt.toISOString() })
     )).data.modifiedCount;
   }
 
@@ -198,7 +207,7 @@ export class MessageService {
     }
 
     return (await this.handleRequest<{ data: { modifiedCount: number } }>(
-      MessageAxios.put(`/chats/${chatId}/messages/mark-read`, {
+      this.axios.put(`/chats/${chatId}/messages/mark-read`, {
         receiverRole,
         ...(validMessageIds?.length && { messageIds: validMessageIds }),
         readAt: readAt.toISOString()
@@ -213,7 +222,7 @@ export class MessageService {
     }
 
     return (await this.handleRequest<UnreadCountResponse>(
-      MessageAxios.get(`/chats/${chatId}/messages/unread-count`, { params: { receiverRole } })
+      this.axios.get(`/chats/${chatId}/messages/unread-count`, { params: { receiverRole } })
     )).data.unreadCount;
   }
 
@@ -225,7 +234,7 @@ export class MessageService {
     }
 
     return (await this.handleRequest<MessageResponse>(
-      MessageAxios.post(`/${messageId}/reactions`, { userId, emoji: emoji.trim() })
+      this.axios.post(`/${messageId}/reactions`, { userId, emoji: emoji.trim() })
     )).data;
   }
 
@@ -234,7 +243,7 @@ export class MessageService {
     this.validateId(userId, 'userId');
 
     return (await this.handleRequest<MessageResponse>(
-      MessageAxios.delete(`/${messageId}/reactions`, { data: { userId } })
+      this.axios.delete(`/${messageId}/reactions`, { data: { userId } })
     )).data;
   }
 
@@ -257,7 +266,7 @@ export class MessageService {
     const validLimit = Math.min(100, Math.max(1, Math.floor(limit)));
 
     return await (await this.handleRequest<MessageListResponse>(
-      MessageAxios.get(`/chats/${chatId}/messages/search`, {
+      this.axios.get(`/chats/${chatId}/messages/search`, {
         params: { query: query.trim(), messageType, page: validPage, limit: validLimit }
       })
     )).data;
@@ -277,7 +286,7 @@ export class MessageService {
     const validLimit = Math.min(100, Math.max(1, Math.floor(limit)));
 
     return await (await this.handleRequest<MessageListResponse>(
-      MessageAxios.get(`/chats/${chatId}/messages/by-type/${messageType}`, {
+      this.axios.get(`/chats/${chatId}/messages/by-type/${messageType}`, {
         params: { page: validPage, limit: validLimit }
       })
     )).data;
@@ -286,19 +295,19 @@ export class MessageService {
   async getChatMessageStats(chatId: string): Promise<MessageStatsResponse['data']> {
     this.validateId(chatId, 'chatId');
     return (await this.handleRequest<MessageStatsResponse>(
-      MessageAxios.get(`/chats/${chatId}/messages/stats`)
+      this.axios.get(`/chats/${chatId}/messages/stats`)
     )).data;
   }
 
   async deleteMessage(messageId: string): Promise<boolean> {
     this.validateId(messageId, 'messageId');
-    return (await this.handleRequest<{ success: boolean }>(MessageAxios.delete(`/${messageId}`))).success;
+    return (await this.handleRequest<{ success: boolean }>(this.axios.delete(`/${messageId}`))).success;
   }
 
   async deleteChatMessages(chatId: string): Promise<number> {
     this.validateId(chatId, 'chatId');
     return (await this.handleRequest<{ data: { deletedCount: number } }>(
-      MessageAxios.delete(`/chats/${chatId}/messages`)
+      this.axios.delete(`/chats/${chatId}/messages`)
     )).data.deletedCount;
   }
 }

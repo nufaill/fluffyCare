@@ -2,21 +2,24 @@ import { ShopAuthController } from "../controllers/shop/auth.controller";
 import { ShopController } from "../controllers/shop/shop.controller";
 import { ServiceController } from "../controllers/service/service.controller";
 import { StaffController } from '../controllers/shop/staff.controller';
-import { WalletController } from "@controllers/wallet.controller";
+import { WalletController } from "../controllers/wallet/wallet.controller";
 import { OtpRepository } from "../repositories/otp.repository";
-import { ShopRepository } from "../repositories/shop.repository";
-import { ServiceRepository } from "../repositories/service.repository";
-import { StaffRepository } from '../repositories/staff.repository';
-import { WalletRepository } from "repositories/wallet.repository";
+import { ShopRepository } from "../repositories/shop/shop.repository";
+import { ServiceRepository } from "../repositories/service/service.repository";
+import { StaffRepository } from '../repositories/shop/staff.repository';
+import { WalletRepository } from "../repositories/wallet/wallet.repository";
 import { AuthService as ShopAuthService } from "../services/shop/auth.service";
 import { ShopService } from "../services/shop/shop.service";
 import { ServiceService } from "../services/service/service.service";
 import { StaffService } from '../services/shop/staff.service';
 import { ShopAvailabilityService } from '../services/shop/shopAvailability.service';
-import { WalletService } from "services/wallet.service";
+import { WalletService } from "../services/wallet/wallet.service";
 import { JwtService } from "../services/jwt/jwt.service";
 import { EmailService } from "../services/emailService/email.service";
 import { AuthMiddleware } from "../middlewares/auth.middleware";
+import { SubscriptionController } from "../controllers/subscription/subscription.controller";
+import { SubscriptionRepository } from "../repositories/subscription/subscription.repository";
+import { SubscriptionService } from "../services/subscription/subscription.service";
 
 // Initialize repositories
 const shopRepository = new ShopRepository();
@@ -24,6 +27,7 @@ const serviceRepository = new ServiceRepository();
 const otpRepository = new OtpRepository();
 const staffRepository = new StaffRepository();
 const walletRepository = new WalletRepository();
+const subscriptionRepository = new SubscriptionRepository();
 
 // Initialize services
 const jwtService = new JwtService();
@@ -39,6 +43,7 @@ const shopAuthService = new ShopAuthService(
 );
 const serviceService = new ServiceService(serviceRepository);
 const staffService = new StaffService(staffRepository);
+const subscriptionService = new SubscriptionService(subscriptionRepository);
 
 // Initialize middleware
 const authMiddlewareInstance = new AuthMiddleware(jwtService);
@@ -49,6 +54,7 @@ const injectedShopAuthController = new ShopAuthController(shopAuthService);
 const injectedShopController = new ShopController(shopService, shopAvailabilityService, walletService);
 const injectedServiceController = new ServiceController(serviceService);
 const injectedStaffController = new StaffController(staffService);
+const injectedSubscriptionController = new SubscriptionController(subscriptionService);
 
 const boundShopAuthController = {
   register: injectedShopAuthController.register.bind(injectedShopAuthController),
@@ -89,6 +95,7 @@ export const shopDependencies = {
   shopController: injectedShopController,
   serviceController: boundServiceController,
   staffController: boundStaffController,
+  subscriptionController : injectedSubscriptionController,
   shopAuthService,
   shopService,
   shopAvailabilityService,

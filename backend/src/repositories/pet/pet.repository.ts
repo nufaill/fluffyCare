@@ -1,9 +1,9 @@
 import { Types } from 'mongoose';
-import { Pet } from '../models/pet.model';
-import { CreatePetData, PetDocument } from '../types/Pet.types';
-import { PetTypeDocument } from '../types/PetType.type';
-import { PetType } from '../models/petType.model';
-import { IPetRepository } from '../interfaces/repositoryInterfaces/IPetRepository';
+import { Pet } from '../../models/pet.model';
+import { CreatePetData, PetDocument } from '../../types/Pet.types';
+import { PetTypeDocument } from '../../types/PetType.type';
+import { PetType } from '../../models/petType.model';
+import { IPetRepository } from '../../interfaces/repositoryInterfaces/IPetRepository';
 
 export class PetRepository implements IPetRepository {
   async createPet(petData: CreatePetData): Promise<PetDocument> {

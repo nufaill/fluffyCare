@@ -4,10 +4,10 @@ import { useState, useEffect } from "react"
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/redux/store';
 import { Wallet } from 'lucide-react';
-import Walletaxios from '@/api/wallet.axios';
+import { walletService } from '@/services/walletService';
 import { WalletComponent } from "@/components/wallet/WalletComponent"
 import Navbar from "@/components/admin/Navbar"
-import Sidebar from "@/components/admin/Sidebar"
+import Sidebar from "@/components/admin/sidebar"
 import Footer from "@/components/user/Footer"
 import io from 'socket.io-client';
 
@@ -49,47 +49,22 @@ export default function AdminWalletPage() {
       setIsCreating(true);
       console.log('Creating admin wallet...');
       
-      const response = await Walletaxios.post('/admin/create', {
+      const walletData = await walletService.createAdminWallet({
         ownerId: adminId,
         ownerType: 'admin',
         currency: 'INR',
       });
 
-      console.log('Create wallet response:', response.data);
-
-      if (response.data.success && response.data.data) {
-        console.log('Wallet created successfully!');
-        
-        // Set the newly created wallet data immediately
-        setWallet({
-          _id: response.data.data._id,
-          balance: response.data.data.balance,
-          currency: response.data.data.currency,
-          transactions: response.data.data.transactions?.map((t: any) => ({
-            ...t,
-            createdAt: new Date(t.createdAt),
-          })) || [],
-        });
-        
-        setError(null);
-      } else {
-        throw new Error(response.data.message || 'Failed to create wallet');
-      }
+      console.log('Wallet created successfully!');
+      setWallet(walletService.formatWalletData(walletData));
+      setError(null);
     } catch (error: any) {
       console.error('Create wallet error:', error);
       
       let errorMessage = 'Failed to create wallet';
       
-      if (error.response) {
-        errorMessage = `Create Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`;
-        
-        if (error.response.status === 401) {
-          errorMessage += ' - Please ensure you are logged in as admin';
-        }
-      } else if (error.request) {
-        errorMessage = 'No response from server while creating wallet';
-      } else {
-        errorMessage = `Create request error: ${error.message}`;
+      if (error.message) {
+        errorMessage = error.message;
       }
       
       setError(errorMessage);
@@ -111,48 +86,22 @@ export default function AdminWalletPage() {
       
       console.log('Fetching admin wallet...');
       
-      const response = await Walletaxios.get(`/admin/owner/${adminId}/admin`);
-      
-      console.log('Response received:', response.status, response.statusText);
-      console.log('Response data:', response.data);
-      
-      const data = response.data;
-
-      if (data.success && data.data) {
-        setWallet({
-          _id: data.data._id,
-          balance: data.data.balance,
-          currency: data.data.currency,
-          transactions: data.data.transactions?.map((t: any) => ({
-            ...t,
-            createdAt: new Date(t.createdAt),
-          })) || [],
-        });
-      } else {
-        throw new Error(data.message || 'Failed to fetch wallet');
-      }
+      const walletData = await walletService.getAdminWallet(adminId, 'admin');
+      setWallet(walletService.formatWalletData(walletData));
     } catch (error: any) {
       console.error('Wallet fetch error:', error);
       
       let errorMessage = 'Failed to fetch wallet';
       
-      if (error.response) {
-        errorMessage = `Server Error ${error.response.status}: ${error.response.data?.message || error.response.statusText}`;
+      if (error.message) {
+        errorMessage = error.message;
         
-        // If wallet doesn't exist (404), try to create it
-        if (error.response.status === 404 || (error.response.data?.message && error.response.data.message.includes('Wallet not found'))) {
+        // If wallet doesn't exist, try to create it
+        if (error.message.includes('Wallet not found') || error.message.includes('404')) {
           console.log('Wallet not found, attempting to create...');
           await createWallet();
           return;
         }
-        
-        if (error.response.status === 401) {
-          errorMessage += ' - Authentication failed. Please log in again.';
-        }
-      } else if (error.request) {
-        errorMessage = 'No response from server - check if backend is running';
-      } else {
-        errorMessage = `Request error: ${error.message}`;
       }
       
       setError(errorMessage);

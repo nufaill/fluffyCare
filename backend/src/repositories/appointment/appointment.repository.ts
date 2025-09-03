@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
-import { Appointment, AppointmentDocument } from '../models/appointment.model';
-import { IAppointment, AppointmentStatus } from '../types/appointment.types';
-import { IAppointmentRepository } from '../interfaces/repositoryInterfaces/IAppointmentRepository';
+import { Appointment, AppointmentDocument } from '../../models/appointment.model';
+import { IAppointment, AppointmentStatus } from '../../types/appointment.types';
+import { IAppointmentRepository } from '../../interfaces/repositoryInterfaces/IAppointmentRepository';
 
 export class AppointmentRepository implements IAppointmentRepository {
   async create(appointmentData: Partial<IAppointment>): Promise<AppointmentDocument> {
