@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/Badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, type TableColumn } from "@/components/ui/Table"
-import { Search, Filter, Eye } from "lucide-react"
+import { Search, Filter, Eye, Calendar, CreditCard, Dog, Hash, Scissors, StickyNote, User } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import Navbar from "@/components/admin/Navbar"
 import Sidebar from "@/components/admin/sidebar"
@@ -135,7 +135,7 @@ export default function AppointmentManagement() {
             aValue = a.paymentDetails.amount || 0
             bValue = b.paymentDetails.amount || 0
             break
-          case "_id":
+          case "bookingNumber":
             aValue = a._id
             bValue = b._id
             break
@@ -195,7 +195,25 @@ export default function AppointmentManagement() {
   }
 
   const columns: TableColumn<Appointment>[] = [
-    { key: "id", title: "ID", dataIndex: "_id", width: "80px", sortable: true, render: (v) => <span className="font-medium">{v}</span> },
+    {
+      key: "serialNumber",
+      title: "S.No",
+      dataIndex: "_id",
+      width: "60px",
+      sortable: false,
+      render: (_, __, index) => {
+        const sequentialNumber = (currentPage - 1) * itemsPerPage + index + 1;
+        return <span className="font-medium">{sequentialNumber}</span>;
+      },
+    },
+    {
+      key: "bookingNumber",
+      title: "Booking Number",
+      dataIndex: "_id",
+      width: "80px",
+      sortable: true,
+      render: (v) => <span className="font-medium">{v.slice(0, 6).toUpperCase()}</span>,
+    },
     {
       key: "petService",
       title: "Pet & Service",
@@ -372,7 +390,7 @@ export default function AppointmentManagement() {
                 sortOrder={sortOrder}
                 onSort={handleSort}
                 emptyText={loading ? "Loading..." : "No appointments found"}
-                className="w-full min-w-[800px]"
+                className="w-full min-w-[860px]"
               />
             </div>
 
@@ -390,36 +408,52 @@ export default function AppointmentManagement() {
               showQuickJumper={true}
             />
 
+
             <Dialog open={!!selectedAppointment} onOpenChange={() => setSelectedAppointment(null)}>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Appointment Details</DialogTitle>
+              <DialogContent className="sm:max-w-[500px] rounded-2xl shadow-lg bg-gradient-to-br from-white to-gray-50">
+                <DialogHeader className="border-b pb-3">
+                  <DialogTitle className="text-lg font-bold flex items-center gap-2 text-gray-900">
+                    <Calendar className="h-5 w-5 text-gray-700" />
+                    Appointment Details
+                  </DialogTitle>
                   <DialogClose />
                 </DialogHeader>
+
                 {selectedAppointment && (
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <span className="col-span-1 font-medium">ID:</span>
-                      <span className="col-span-3">{selectedAppointment._id}</span>
+                  <div className="grid gap-4 py-4 text-sm text-gray-800">
+                    <div className="grid grid-cols-4 items-center gap-4 bg-gray-50 rounded-lg p-3">
+                      <Hash className="h-4 w-4 text-gray-600 col-span-1" />
+                      <span className="col-span-3 font-medium">
+                        {selectedAppointment._id.slice(0, 6).toUpperCase()}
+                      </span>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <span className="col-span-1 font-medium">Created:</span>
-                      <span className="col-span-3">{formatDate(selectedAppointment.createdAt as string)}</span>
+
+                    <div className="grid grid-cols-4 items-center gap-4 bg-gray-50 rounded-lg p-3">
+                      <Calendar className="h-4 w-4 text-gray-600 col-span-1" />
+                      <span className="col-span-3">
+                        {formatDate(selectedAppointment.createdAt as string)}
+                      </span>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <span className="col-span-1 font-medium">User:</span>
+
+                    <div className="grid grid-cols-4 items-center gap-4 bg-gray-50 rounded-lg p-3">
+                      <User className="h-4 w-4 text-gray-600 col-span-1" />
                       <span className="col-span-3">{selectedAppointment.userId.fullName}</span>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <span className="col-span-1 font-medium">Pet:</span>
-                      <span className="col-span-3">{selectedAppointment.petId.name} ({selectedAppointment.petId.breed})</span>
+
+                    <div className="grid grid-cols-4 items-center gap-4 bg-gray-50 rounded-lg p-3">
+                      <Dog className="h-4 w-4 text-gray-600 col-span-1" />
+                      <span className="col-span-3">
+                        {selectedAppointment.petId.name} ({selectedAppointment.petId.breed})
+                      </span>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <span className="col-span-1 font-medium">Service:</span>
+
+                    <div className="grid grid-cols-4 items-center gap-4 bg-gray-50 rounded-lg p-3">
+                      <Scissors className="h-4 w-4 text-gray-600 col-span-1" />
                       <span className="col-span-3">{selectedAppointment.serviceId.name}</span>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <span className="col-span-1 font-medium">Payment:</span>
+
+                    <div className="grid grid-cols-4 items-start gap-4 bg-gray-100 rounded-lg p-3 border border-gray-200">
+                      <CreditCard className="h-4 w-4 text-gray-700 col-span-1 mt-1" />
                       <div className="col-span-3 space-y-1">
                         <div>Amount: ₹{selectedAppointment.paymentDetails.amount} {selectedAppointment.paymentDetails.currency}</div>
                         <div>Method: {selectedAppointment.paymentDetails.method}</div>
@@ -430,10 +464,11 @@ export default function AppointmentManagement() {
                         <div>Payment ID: {selectedAppointment.paymentDetails.paymentIntentId}</div>
                       </div>
                     </div>
+
                     {selectedAppointment.appointmentStatus === "cancelled" && selectedAppointment.notes && (
-                      <div className="grid grid-cols-4 items-start gap-4">
-                        <span className="col-span-1 font-medium">Cancel Reason:</span>
-                        <span className="col-span-3 whitespace-pre-wrap">{selectedAppointment.notes}</span>
+                      <div className="grid grid-cols-4 items-start gap-4 bg-red-50 rounded-lg p-3 border border-red-100">
+                        <StickyNote className="h-4 w-4 text-red-600 col-span-1 mt-1" />
+                        <span className="col-span-3 whitespace-pre-wrap text-red-700">{selectedAppointment.notes}</span>
                       </div>
                     )}
                   </div>
