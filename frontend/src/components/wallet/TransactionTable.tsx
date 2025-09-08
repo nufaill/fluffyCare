@@ -21,7 +21,7 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'credit' | 'debit'>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 5; // Temporarily reduced for testing
 
   // Memoize filtered and sorted transactions
   const filteredTransactions = useMemo(() => {
@@ -185,7 +185,6 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
           <p className="text-sm text-gray-600 mb-4 sm:mb-0">
             Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
           </p>
-          
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
@@ -197,7 +196,6 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
             >
               Previous
             </button>
-
             {pageNumbers.map((page) => (
               <button
                 key={page}
@@ -211,7 +209,6 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
                 {page}
               </button>
             ))}
-
             <button
               onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}

@@ -82,6 +82,7 @@ export default function UserWalletPage() {
 
       const walletData = await walletService.getUserWallet(userId, 'user');
       setWallet(walletService.formatWalletData(walletData));
+      console.log('Fetched transactions:', walletData.transactions.length); // Debug log
     } catch (error: any) {
       console.error('Wallet fetch error:', error);
 
@@ -251,14 +252,13 @@ export default function UserWalletPage() {
     );
   }
 
-  // Main wallet view
+  // Main wallet view with ensured pagination
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-
       <div className="flex">
         <ModernSidebar />
-        <div className="flex-1">
+        <div className="flex-1 p-4 md:p-6">
           <WalletComponent
             role="user"
             balance={wallet?.balance ?? 0}
@@ -269,7 +269,7 @@ export default function UserWalletPage() {
           />
         </div>
       </div>
-        <Footer />
+      <Footer />
     </div>
   );
 }
