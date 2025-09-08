@@ -633,6 +633,10 @@ router.post('/subscriptions', adminDependencies.subscriptionController.createSub
 router.put('/subscriptions/:id', adminDependencies.subscriptionController.updateSubscription as RequestHandler);
 router.get('/subscriptions', adminDependencies.subscriptionController.getAllSubscriptions as RequestHandler);
 
+router.get("/reviews", adminDependencies.reviewController.getAllReviews as RequestHandler);
+router.put("/reviews/:reviewId", adminDependencies.reviewController.adminUpdateReview as RequestHandler);
+router.delete("/reviews/:reviewId", adminDependencies.reviewController.deleteReview as RequestHandler);
+
 
 
 export default router;

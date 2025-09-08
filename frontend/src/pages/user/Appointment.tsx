@@ -1,4 +1,3 @@
-"use client"
 
 import { useState, useEffect, useMemo } from "react"
 import {
@@ -13,6 +12,7 @@ import {
   TrendingUp,
   Users,
   DollarSign,
+  Star,
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -70,7 +70,6 @@ interface Appointment {
     status?: string
     method?: string
   }
-
   requestStatus?: string
   createdAt: string
   updatedAt?: string
@@ -125,6 +124,14 @@ const getStatusIcon = (status: string) => {
   }
 }
 
+const suggestedMessages = [
+  "Great service, very professional staff!",
+  "My pet was well taken care of, highly recommend!",
+  "Excellent experience, will book again.",
+  "The staff was friendly but the wait time was a bit long.",
+  "Good service, but there's room for improvement."
+]
+
 export default function AppointmentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -138,6 +145,9 @@ export default function AppointmentsPage() {
   const [totalAppointments, setTotalAppointments] = useState(0)
   const [cancelReason, setCancelReason] = useState("")
   const [showCancelDialog, setShowCancelDialog] = useState<string | null>(null)
+  const [showReviewDialog, setShowReviewDialog] = useState<string | null>(null)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState("")
 
   const user = useSelector((state: RootState) => state.user.userDatas)
   const userId = user?._id || user?.id || ""
@@ -159,7 +169,7 @@ export default function AppointmentsPage() {
             status: statusFilter === "all" ? undefined : statusFilter,
           },
         })
-
+        console.log("Appointments API response:", appointmentsResponse.data);
         const { data, meta } = appointmentsResponse.data
         setAppointments(Array.isArray(data) ? data : [])
         setTotalAppointments(meta?.total || 0)
@@ -340,6 +350,95 @@ export default function AppointmentsPage() {
     }
   }
 
+  const handleSubmitReview = async (appointmentId: string, shopId: string) => {
+    console.log("Submitting review with shopId:", shopId);
+    console.log("User ID:", userId);
+
+    try {
+      if (!userId) {
+        ToasterSetup({
+          title: "Error",
+          description: "You must be logged in to submit a review",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate shopId format
+      if (!shopId || !/^[0-9a-fA-F]{24}$/.test(shopId)) {
+        console.error("Invalid shopId format:", shopId);
+        ToasterSetup({
+          title: "Error",
+          description: "Invalid shop ID. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate userId format  
+      if (!userId || !/^[0-9a-fA-F]{24}$/.test(userId)) {
+        console.error("Invalid userId format:", userId);
+        ToasterSetup({
+          title: "Error",
+          description: "Invalid user session. Please log in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate rating
+      if (reviewRating < 1 || reviewRating > 5) {
+        ToasterSetup({
+          title: "Error",
+          description: "Please select a rating between 1 and 5 stars",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Sending review data:", {
+        shopId,
+        userId,
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+      });
+
+      const response = await Useraxios.post(`/reviews`, {
+        shopId,
+        userId,
+        rating: reviewRating,
+        comment: reviewComment.trim() || undefined, 
+      });
+      if (response.status === 201) {
+        ToasterSetup({
+          title: "Success",
+          description: "Review submitted successfully",
+          variant: "success",
+        });
+        setShowReviewDialog(null);
+        setReviewRating(0);
+        setReviewComment("");
+      }
+    } catch (err: any) {
+      console.error("Failed to submit review:", err);
+      console.error("Error response data:", err.response?.data);
+
+      let errorMessage = "Failed to submit review";
+
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      ToasterSetup({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handlePageChange = (page: number, newPageSize?: number) => {
     setCurrentPage(page)
     if (newPageSize) {
@@ -466,6 +565,20 @@ export default function AppointmentsPage() {
                   Cancel
                 </Button>
               )}
+
+              {appointmentStatus.toLowerCase() === "completed" && (
+                <Button
+                  className="w-40 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-0"
+                  onClick={() => {
+                    setShowReviewDialog(_id)
+                    setReviewRating(0)
+                    setReviewComment("")
+                  }}
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Add Review
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -479,6 +592,16 @@ export default function AppointmentsPage() {
       <div className="flex flex-1 overflow-hidden">
         <ModernSidebar />
         <main className="flex-1 px-4 sm:px-6 lg:px-8 pt-24 pb-12 space-y-8">
+          {isLoading && (
+            <div className="text-center">
+              <p className="text-lg text-gray-600">Loading appointments...</p>
+            </div>
+          )}
+          {error && (
+            <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-center">
+              <p className="text-red-800 font-medium">{error}</p>
+            </div>
+          )}
           <div className="relative overflow-hidden bg-gradient-to-r from-black via-gray-900 to-black rounded-3xl p-8 text-white shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-pink-600/20" />
             <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
@@ -625,7 +748,6 @@ export default function AppointmentsPage() {
               </TabsTrigger>
             </TabsList>
 
-
             <TabsContent value="upcoming" className="space-y-8">
               {upcomingAppointments.length > 0 ? (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
@@ -731,6 +853,82 @@ export default function AppointmentsPage() {
                     className="flex-1 border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-bold py-3 rounded-xl transition-all duration-300"
                   >
                     Keep Appointment
+                  </Button>
+                </DialogClose>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {showReviewDialog && (
+        <Dialog
+          open={!!showReviewDialog}
+          onOpenChange={() => {
+            setShowReviewDialog(null)
+            setReviewRating(0)
+            setReviewComment("")
+          }}
+        >
+          <DialogContent className="sm:max-w-[500px] border-0 bg-white shadow-2xl rounded-2xl">
+            <DialogHeader className="pb-6">
+              <DialogTitle className="text-2xl font-bold text-gray-900 text-center">Add Review</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <p className="text-blue-800 font-medium">Rate your experience for this appointment:</p>
+              </div>
+              <div className="flex justify-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-8 h-8 cursor-pointer ${star <= reviewRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                      }`}
+                    onClick={() => setReviewRating(star)}
+                  />
+                ))}
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-900">Suggested Comments:</p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedMessages.map((message, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="text-sm border-gray-200 hover:bg-gray-50"
+                      onClick={() => setReviewComment(message)}
+                    >
+                      {message}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <Textarea
+                placeholder="Enter your review comment here..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                className="border-2 border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white transition-all duration-300 rounded-xl min-h-[100px]"
+              />
+              <div className="flex gap-4">
+                <Button
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-0"
+                  onClick={() => {
+                    const appointment = appointments.find(apt => apt._id === showReviewDialog)
+                    if (appointment) {
+                      handleSubmitReview(showReviewDialog, appointment.shopId._id)
+                    }
+                  }}
+                  disabled={reviewRating === 0}
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Submit Review
+                </Button>
+                <DialogClose asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-bold py-3 rounded-xl transition-all duration-300"
+                  >
+                    Cancel
                   </Button>
                 </DialogClose>
               </div>

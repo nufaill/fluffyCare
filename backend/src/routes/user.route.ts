@@ -108,6 +108,9 @@ router.get('/services/:serviceId', serviceDependencies.serviceController.getServ
 
 // router.post('/payment/webhook', appointmentDependencies.paymentController.handleWebhook as RequestHandler);
 
+router.get("/shops/:shopId/reviews", userDependencies.reviewController.getReviewsByShop as RequestHandler);
+
+
 router.use(userDependencies.authMiddleware.authenticate("user") as RequestHandler);
 
 
@@ -958,7 +961,13 @@ router.patch('/appointments/:appointmentId/cancel', appointmentDependencies.appo
  *         description: Server error
  */
 router.get('/appointments/booked-slots/:shopId', appointmentDependencies.appointmentController.getBookedSlots.bind(appointmentDependencies.appointmentController) as RequestHandler);
-// Add this route for creating appointments with real-time updates
+
 router.post('/appointments', appointmentDependencies.appointmentController.createAppointment.bind(appointmentDependencies.appointmentController) as RequestHandler);
+
+
+router.post("/reviews", userDependencies.reviewController.createReview as RequestHandler);
+router.put("/reviews/:reviewId", userDependencies.reviewController.updateReview as RequestHandler);
+router.delete("/reviews/:reviewId", userDependencies.reviewController.deleteReview as RequestHandler);
+router.get("/shops/:shopId/reviews/summary", userDependencies.reviewController.getShopRatingSummary as RequestHandler);
 
 export default router;

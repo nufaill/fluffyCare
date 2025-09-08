@@ -1,5 +1,3 @@
-"use client"
-
 import Useraxios from "@/api/user.axios"
 import { useParams, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
@@ -32,15 +30,33 @@ import {
   Zap,
   Users,
   MessageCircle,
+  Pencil,
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 import type { PetService } from "@/types/service"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import type { RootState } from "@/redux/store"
 import { useSelector } from "react-redux"
 import { chatService } from "@/services/chat/chatService"
+import { toast } from "@/hooks/use-toast"
 
-// Pet type icon mapping (same as ServiceCard)
+// Define the Review interface based on IReview
+interface Review {
+  _id: string;
+  shopId: string;
+  userId: {
+    _id: string;
+    fullName: string;
+    profileImage?: string;
+  } | string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const getPetIcon = (petType: string) => {
   const type = petType.toLowerCase()
   switch (type) {
@@ -105,13 +121,18 @@ export const ServiceDetails = () => {
   const [service, setService] = useState<PetService | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const user = useSelector((state: RootState) => state.user.userDatas);
-  const userId = user?._id || user?.id || "";
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(true)
+  const [reviewsError, setReviewsError] = useState<string | null>(null)
+  const [showEditReviewDialog, setShowEditReviewDialog] = useState<string | null>(null)
+  const [editReviewRating, setEditReviewRating] = useState<number>(0)
+  const [editReviewComment, setEditReviewComment] = useState<string>("")
+  const user = useSelector((state: RootState) => state.user.userDatas)
+  const userId = user?._id || user?.id || ""
 
   useEffect(() => {
     const fetchServiceDetails = async () => {
       if (!id) {
-        console.log("No ID provided")
         setError("No service ID provided")
         setLoading(false)
         return
@@ -119,26 +140,202 @@ export const ServiceDetails = () => {
       try {
         setLoading(true)
         setError(null)
-        console.log("Fetching service with ID:", id)
         const response = await Useraxios.get(`/services/${id}`)
-        console.log("API Response Status:", response.status)
-        console.log("API Response Headers:", response.headers)
-        console.log("API Response Body:", response.data)
         if (response.status !== 200) {
           throw new Error(`Failed to fetch service details: ${response.statusText}`)
         }
         setService(response.data.data || response.data)
       } catch (err: any) {
-        console.error("Fetch Error:", err)
+        console.error("Service Fetch Error:", err)
         setError(err.response?.data?.message || err.message || "An error occurred")
       } finally {
         setLoading(false)
-        console.log("Final State - Loading:", loading, "Error:", error, "Service:", service)
       }
     }
 
     fetchServiceDetails()
   }, [id])
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!id || !service?.shopId?._id) return;
+      try {
+        setReviewsLoading(true);
+        setReviewsError(null);
+        const response = await Useraxios.get(`/shops/${service.shopId._id}/reviews?page=1&limit=10`);
+        if (response.status !== 200) {
+          throw new Error(`Failed to fetch reviews: ${response.statusText}`);
+        }
+
+        const reviewsData = response.data.data?.reviews || response.data.data || [];
+        if (!Array.isArray(reviewsData)) {
+          console.error("Reviews data is not an array:", reviewsData);
+          throw new Error("Invalid reviews data format");
+        }
+
+        const reviewsWithUserDetails = reviewsData.map((review: any) => ({
+          ...review,
+          _id: review._id || review.id,
+          userId: typeof review.userId === 'object' && review.userId !== null
+            ? {
+              _id: review.userId.id || review.userId._id,
+              fullName: review.userId.fullName || 'Anonymous User',
+              profileImage: review.userId.profileImage || null,
+            }
+            : { _id: '', fullName: 'Anonymous User', profileImage: null },
+        }));
+        setReviews(reviewsWithUserDetails);
+      } catch (err: any) {
+        console.error("Reviews Fetch Error:", err);
+        setReviewsError(err.response?.data?.message || err.message || "Failed to load reviews");
+      } finally {
+        setReviewsLoading(false);
+      }
+    };
+
+    if (service?.shopId?._id) {
+      fetchReviews();
+    }
+  }, [id, service?.shopId?._id]);
+
+  const handleChatWithShop = async () => {
+    if (!userId) {
+      navigate("/login")
+      return
+    }
+
+    if (!service?.shopId?._id) {
+      return
+    }
+
+    try {
+      const chat = await chatService.createChat(userId, service.shopId._id)
+      const chatId = chat._id || `${chat.userId}-${chat.shopId}`
+      navigate(`/messages?chatId=${chatId}`)
+    } catch (err: any) {
+      console.error("Failed to create chat:", err)
+    }
+  }
+
+  const formatPetTypes = (petTypes: any[]) => {
+    if (!petTypes || petTypes.length === 0) return []
+    return petTypes.map((pet) => (typeof pet === "string" ? pet.charAt(0).toUpperCase() + pet.slice(1) : pet.name))
+  }
+
+  const renderStars = (rating: number) => {
+    const validRating = rating || 0
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`w-5 h-5 ${i < Math.floor(validRating) ? "fill-current text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+      />
+    ))
+  }
+
+  const handleSubmitEditReview = async (reviewId: string) => {
+    try {
+      const response = await Useraxios.put(`/reviews/${reviewId}`, { 
+        rating: editReviewRating,
+        comment: editReviewComment,
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setReviews((prevReviews) =>
+        prevReviews.map((r) =>
+          r._id === reviewId
+            ? { ...r, rating: editReviewRating, comment: editReviewComment }
+            : r
+        )
+      );
+      setShowEditReviewDialog(null);
+      setEditReviewRating(0);
+      setEditReviewComment("");
+      toast({ title: "Success", description: "Review updated successfully" });
+    } catch (err: any) {
+      console.error("Failed to update review:", err.response?.data?.message || err.message);
+      setReviewsError(err.response?.data?.message || "Failed to update review");
+      toast({
+        title: "Error",
+        description: err.response?.data?.message || "Failed to update review",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const renderReview = (review: Review) => {
+    const userFullName =
+      typeof review.userId === "object" && review.userId !== null
+        ? review.userId.fullName || "Anonymous User"
+        : "Anonymous User";
+    const userProfileImage =
+      typeof review.userId === "object" && review.userId !== null
+        ? review.userId.profileImage
+        : null;
+    const isOwnReview =
+      typeof review.userId === "object" &&
+      review.userId !== null &&
+      review.userId._id === userId;
+
+    return (
+      <div
+        key={review._id}
+        className="border-2 border-gray-300 dark:border-gray-600 rounded-xl p-4"
+      >
+        <div className="flex items-start justify-between">
+          {/* Left: user info */}
+          <div className="flex items-start gap-4">
+            <img
+              src={
+                userProfileImage
+                  ? cloudinaryUtils.getFullUrl(userProfileImage)
+                  : "/api/placeholder/48/48"
+              }
+              alt={`${userFullName}'s profile`}
+              className="w-12 h-12 rounded-full object-cover border-2 border-black dark:border-white"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/api/placeholder/48/48";
+              }}
+            />
+            <div>
+              <p className="text-lg font-bold text-black dark:text-white font-mono">
+                {userFullName}
+              </p>
+              <div className="flex items-center gap-2 mb-2">
+                {renderStars(review.rating)}
+                <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+                  {new Date(review.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              {review.comment && (
+                <p className="text-gray-700 dark:text-gray-300 font-mono">
+                  {review.comment}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Right: action buttons */}
+          {isOwnReview && (
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setShowEditReviewDialog(review._id);
+                  setEditReviewRating(review.rating);
+                  setEditReviewComment(review.comment || "");
+                }}
+                className="bg-white text-black border border-black hover:bg-gray-100 p-2"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const petTypes = formatPetTypes(service?.petTypeIds || [])
 
   if (loading) {
     return (
@@ -182,45 +379,6 @@ export const ServiceDetails = () => {
       </div>
     )
   }
-
-
-  const handleChatWithShop = async () => {
-    if (!userId) {
-      navigate("/login");
-      return;
-    }
-
-    if (!service?.shopId?._id) {
-      return;
-    }
-
-    try {
-      const chat = await chatService.createChat(userId, service.shopId._id);
-      const chatId = chat._id || `${chat.userId}-${chat.shopId}`;
-      navigate(`/messages?chatId=${chatId}`);
-    } catch (err: any) {
-      console.error("Failed to create chat:", err);
-    }
-  };
-
-
-  const formatPetTypes = (petTypes: any[]) => {
-    if (!petTypes || petTypes.length === 0) return []
-    return petTypes.map((pet) => (typeof pet === "string" ? pet.charAt(0).toUpperCase() + pet.slice(1) : pet.name))
-  }
-
-  const renderStars = (rating: number) => {
-    const validRating = rating || 0
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-5 h-5 ${i < Math.floor(validRating) ? "fill-current text-yellow-400" : "text-gray-300 dark:text-gray-600"
-          }`}
-      />
-    ))
-  }
-
-  const petTypes = formatPetTypes(service.petTypeIds)
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -287,7 +445,7 @@ export const ServiceDetails = () => {
                           {service.rating || 0}
                         </span>
                         <span className="text-gray-600 dark:text-gray-400 font-mono">
-                          ({service.reviewCount || 0} reviews)
+                          ({reviews.length || 0} reviews)
                         </span>
                       </div>
                     </div>
@@ -310,15 +468,14 @@ export const ServiceDetails = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">Duration</p>
                     <p className="font-bold text-black dark:text-white font-mono">
                       {(() => {
-                        const totalSeconds = Math.round((service.durationHour || 0) * 3600);
-                        const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-                        const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-                        const s = String(totalSeconds % 60).padStart(2, '0');
-                        return `${h}:${m}:${s}`;
+                        const totalSeconds = Math.round((service.durationHour || 0) * 3600)
+                        const h = String(Math.floor(totalSeconds / 3600)).padStart(2, "0")
+                        const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0")
+                        const s = String(totalSeconds % 60).padStart(2, "0")
+                        return `${h}:${m}:${s}`
                       })()}
                     </p>
                   </div>
-
 
                   <div className="text-center p-4 border-2 border-black dark:border-white rounded-xl">
                     <Shield className="w-8 h-8 mx-auto mb-2 text-purple-600" />
@@ -344,7 +501,6 @@ export const ServiceDetails = () => {
                       {petTypes.map((petType, index) => {
                         const IconComponent = getPetIcon(petType)
                         const colorClass = getPetColor(petType)
-
                         return (
                           <Badge
                             key={index}
@@ -399,17 +555,22 @@ export const ServiceDetails = () => {
               <CardContent className="p-8">
                 <h3 className="font-bold text-2xl text-black dark:text-white font-mono mb-6 flex items-center gap-2">
                   <Users className="w-6 h-6" />
-                  Reviews ({service.reviewCount || 0})
+                  Reviews ({reviews.length || 0})
                 </h3>
 
-                {service.reviewCount && service.reviewCount > 0 ? (
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
-                      <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 dark:text-gray-400 font-mono text-lg">
-                        Review details will be loaded here from the API
-                      </p>
-                    </div>
+                {reviewsLoading ? (
+                  <div className="text-center py-12">
+                    <Loader2 className="h-12 w-12 animate-spin text-black dark:text-white mx-auto mb-4" />
+                    <span className="text-black dark:text-white font-mono text-lg">Loading reviews...</span>
+                  </div>
+                ) : reviewsError ? (
+                  <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
+                    <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+                    <p className="text-red-600 font-mono text-lg">{reviewsError}</p>
+                  </div>
+                ) : reviews.length > 0 ? (
+                  <div className="space-y-6 max-h-96 overflow-y-auto">
+                    {reviews.map((review) => renderReview(review))}
                   </div>
                 ) : (
                   <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
@@ -512,12 +673,13 @@ export const ServiceDetails = () => {
                   )}
                 </Button>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-3 text-center font-mono">
-                  Duration: {(() => {
-                    const totalSeconds = Math.round((service.durationHour || 0) * 3600);
-                    const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-                    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-                    const s = String(totalSeconds % 60).padStart(2, '0');
-                    return `${h}:${m}:${s}`;
+                  Duration:{" "}
+                  {(() => {
+                    const totalSeconds = Math.round((service.durationHour || 0) * 3600)
+                    const h = String(Math.floor(totalSeconds / 3600)).padStart(2, "0")
+                    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0")
+                    const s = String(totalSeconds % 60).padStart(2, "0")
+                    return `${h}:${m}:${s}`
                   })()}
                 </p>
               </CardContent>
@@ -543,6 +705,68 @@ export const ServiceDetails = () => {
           </div>
         </div>
       </main>
+
+      {/* Edit Review Dialog */}
+      <Dialog
+        open={!!showEditReviewDialog}
+        onOpenChange={() => {
+          setShowEditReviewDialog(null)
+          setEditReviewRating(0)
+          setEditReviewComment("")
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px] border-0 bg-white dark:bg-black shadow-2xl rounded-2xl">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white text-center font-mono">
+              Edit Review
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+              <p className="text-blue-800 dark:text-blue-300 font-medium font-mono">
+                Update your rating for this service:
+              </p>
+            </div>
+            <div className="flex justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-8 h-8 cursor-pointer ${star <= editReviewRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-gray-600"
+                    }`}
+                  onClick={() => setEditReviewRating(star)}
+                />
+              ))}
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 font-mono">Comment:</p>
+              <Textarea
+                placeholder="Update your review comment here..."
+                value={editReviewComment}
+                onChange={(e) => setEditReviewComment(e.target.value)}
+                className="border-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:bg-white dark:focus:bg-black transition-all duration-300 rounded-xl min-h-[100px] font-mono"
+              />
+            </div>
+            <div className="flex gap-4">
+              <Button
+                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-0 font-mono"
+                onClick={() => showEditReviewDialog && handleSubmitEditReview(showEditReviewDialog)}
+                disabled={editReviewRating === 0}
+              >
+                <Star className="w-4 h-4 mr-2" />
+                Update Review
+              </Button>
+              <DialogClose asChild>
+                <Button
+                  variant="outline"
+                  className="flex-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-black text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-bold py-3 rounded-xl transition-all duration-300 font-mono"
+                >
+                  Cancel
+                </Button>
+              </DialogClose>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

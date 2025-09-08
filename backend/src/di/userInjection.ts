@@ -18,6 +18,9 @@ import { WalletRepository } from "../repositories/wallet/wallet.repository";
 import { jwtService, googleAuthService, emailService, otpRepository } from "./authInjection";
 import { ShopController } from "../controllers/shop/shop.controller";
 import { ShopService } from "../services/shop/shop.service";
+import { ReviewController } from '../controllers/review/review.controller';
+import { ReviewService } from "../services/review/review.service";
+import { ReviewRepository } from "../repositories/review/review.repository";
 
 // Initialize repositories
 const userRepository = new UserRepository();
@@ -25,6 +28,7 @@ const petRepository = new PetRepository();
 const staffRepository = new StaffRepository();
 const shopRepository = new ShopRepository();
 const walletRepository = new WalletRepository();
+const reviewRepository = new ReviewRepository();
 
 // Initialize services
 const authService = new AuthService(
@@ -42,12 +46,14 @@ const staffService = new StaffService(staffRepository);
 const shopAvailabilityService = new ShopAvailabilityService(shopRepository);
 const shopService = new ShopService(shopRepository);
 const walletService = new WalletService(walletRepository);
+const reviewService = new ReviewService(reviewRepository);
 
 // Initialize controllers
 const injectedUserController = new UserController(userService, nearbyService);
 const petController = new PetController(petService);
 const injectedStaffController = new StaffController(staffService);
 const shopController = new ShopController(shopService, shopAvailabilityService, walletService);
+const reviewController = new ReviewController(reviewService)
 
 const boundPetController = {
   createPet: petController.createPet.bind(petController),
@@ -80,4 +86,5 @@ export const userDependencies = {
   staffService,
   staffRepository,
   walletService,
+  reviewController
 };

@@ -1,4 +1,4 @@
-// AdminRoutes.tsx - Updated with route protection
+// AdminRoutes.tsx 
 import { Routes, Route } from "react-router-dom";
 import PrivateRoute, { PublicRoute } from '@/protected/PrivateRoute';
 import AdminLogin from "@/pages/admin/AdminLogin";
@@ -11,6 +11,7 @@ import PetServices from '@/pages/admin/PetServices';
 import WalletPage from "@/pages/admin/Admin-Wallet";
 import AppointmentManagement from "@/pages/admin/appointment-management";
 import AdminSubscriptionPage from "@/pages/admin/admin-subscriptions.tsx";
+import ReviewAdminDashboard from "@/pages/admin/ReviewAdminDashboard";
 
 const AdminRoutes = () => {
   return (
@@ -105,6 +106,14 @@ const AdminRoutes = () => {
         element={
           <PrivateRoute userType="admin">
             <AdminSubscriptionPage/>
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/admin/reviews" 
+        element={
+          <PrivateRoute userType="admin">
+            <ReviewAdminDashboard/>
           </PrivateRoute>
         } 
       />

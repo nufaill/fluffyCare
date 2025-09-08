@@ -214,10 +214,10 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Shop account is inactive', HTTP_STATUS.FORBIDDEN);
       }
 
-      if (shop.isVerified !== 'approved') {
-        console.error('❌ [AuthService] Shop not approved:', normalizedEmail);
-        throw new CustomError('Shop account is not approved', HTTP_STATUS.FORBIDDEN);
-      }
+      // if (shop.isVerified !== 'approved') {
+      //   console.error('❌ [AuthService] Shop not approved:', normalizedEmail);
+      //   throw new CustomError('Shop account is not approved', HTTP_STATUS.FORBIDDEN);
+      // }
 
       console.log('🔐 [AuthService] Verifying password...');
       const isValidPassword = await bcrypt.compare(data.password, shop.password);
@@ -276,9 +276,9 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Shop not found or inactive', HTTP_STATUS.UNAUTHORIZED);
       }
 
-      if (shop.isVerified !== 'approved') {
-        throw new CustomError('Shop not approved', HTTP_STATUS.UNAUTHORIZED);
-      }
+      // if (shop.isVerified !== 'approved') {
+      //   throw new CustomError('Shop not approved', HTTP_STATUS.UNAUTHORIZED);
+      // }
 
       const newAccessToken = this._jwtService.generateAccessToken({
         id: shop.id,

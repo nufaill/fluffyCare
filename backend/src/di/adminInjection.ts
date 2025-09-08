@@ -5,8 +5,8 @@ import { UserController } from "../controllers/user/user.controller";
 import { PetTypeController } from "../controllers/pet/petType.controller";
 import { ServiceTypeController } from "@controllers/service/serviceType.controller";
 import { AuthService as AdminAuthService } from "../services/admin/admin.service";
-import { ShopService } from "../services/shop/shop.service"; 
-import { UserService } from "../services/user/user.service"; 
+import { ShopService } from "../services/shop/shop.service";
+import { UserService } from "../services/user/user.service";
 import { ShopRepository } from "../repositories/shop/shop.repository";
 import { UserRepository } from "../repositories/user/user.repository";
 import { AdminRepository } from "../repositories/admin/admin.repository";
@@ -24,6 +24,9 @@ import { SubscriptionRepository } from '../repositories/subscription/subscriptio
 import { SubscriptionService } from '../services/subscription/subscription.service';
 import { SubscriptionController } from './../controllers/subscription/subscription.controller';
 import { NearbyService } from "../services/user/nearby.service";
+import { ReviewController } from '../controllers/review/review.controller';
+import { ReviewService } from "../services/review/review.service";
+import { ReviewRepository } from "../repositories/review/review.repository";
 
 // Initialize repositories
 const shopRepository = new ShopRepository();
@@ -33,29 +36,32 @@ const petTypeRepository = new PetTypeRepository();
 const serviceTypeRepository = new ServiceTypeRepository();
 const walletRepository = new WalletRepository();
 const subscriptionRepository = new SubscriptionRepository();
+const reviewRepository = new ReviewRepository();
 
 // Initialize services
 const jwtService = new JwtService();
 const adminAuthService: IAdminService = new AdminAuthService(adminRepository, jwtService);
-const shopService = new ShopService(shopRepository); 
-const userService = new UserService(userRepository); 
+const shopService = new ShopService(shopRepository);
+const userService = new UserService(userRepository);
 const petTypeService = new PetTypeService(petTypeRepository);
 const serviceService = new ServiceTypeService(serviceTypeRepository);
 const walletService = new WalletService(walletRepository);
 const nearbyService = new NearbyService(shopRepository);
 const shopAvailabilityService = new ShopAvailabilityService(shopRepository);
 const subscriptionService = new SubscriptionService(subscriptionRepository);
+const reviewService = new ReviewService(reviewRepository);
 
 const authMiddlewareInstance = new AuthMiddleware(jwtService);
 const authMiddleware = authMiddlewareInstance;
 
 // Initialize controllers with dependencies
 const injectedAdminAuthController = new AdminAuthController(adminAuthService);
-const injectedShopController = new ShopController(shopService, shopAvailabilityService, walletService); 
-const injectedUserController = new UserController(userService,nearbyService); 
+const injectedShopController = new ShopController(shopService, shopAvailabilityService, walletService);
+const injectedUserController = new UserController(userService, nearbyService);
 const injectedPetTypeController = new PetTypeController(petTypeService);
 const injectedServiceController = new ServiceTypeController(serviceService);
 const injectedSubscriptionController = new SubscriptionController(subscriptionService);
+const reviewController = new ReviewController(reviewService)
 
 // Bind controller methods to their instances
 export const adminDependencies = {
@@ -88,8 +94,9 @@ export const adminDependencies = {
     updateServiceType: injectedServiceController.updateServiceType.bind(injectedServiceController),
     updateServiceTypeStatus: injectedServiceController.updateServiceTypeStatus.bind(injectedServiceController),
   },
-  subscriptionController : injectedSubscriptionController,
+  subscriptionController: injectedSubscriptionController,
   authMiddleware,
   userService,
-  userRepository 
+  userRepository,
+  reviewController
 };

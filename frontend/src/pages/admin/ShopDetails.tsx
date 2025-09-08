@@ -1,7 +1,7 @@
 import type React from "react"
 import { useState, useEffect, useMemo } from "react"
 import Navbar from "@/components/admin/Navbar"
-import Sidebar from "@/components/admin/Sidebar"
+import Sidebar from "@/components/admin/sidebar"
 import Footer from "@/components/user/Footer"
 import { Table, type TableColumn } from "@/components/ui/Table"
 import { Pagination } from "@/components/ui/Pagination"
