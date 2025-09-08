@@ -14,7 +14,6 @@ import Sidebar from "@/components/admin/sidebar"
 import AdminAxios from "@/api/admin.axios"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import { Pagination } from "@/components/ui/Pagination"
-
 interface Review {
     _id: string;
     shopId: {
@@ -55,7 +54,6 @@ export default function ReviewAdminDashboard() {
                 let reviewsData = response.data.data?.reviews || response.data.reviews || response.data || []
                 const total = response.data.data?.total || response.data.total || reviewsData.length
 
-                // Transform DTO response to match Review interface (_id instead of id)
                 const transformedReviews: Review[] = reviewsData.map((review: any) => ({
                     _id: review.id,
                     shopId: {
@@ -84,7 +82,6 @@ export default function ReviewAdminDashboard() {
         fetchReviews()
     }, [currentPage, pageSize])
 
-    // Filter and sort reviews
     const filteredAndSortedReviews = useMemo(() => {
         const safeReviews = Array.isArray(reviews) ? reviews : [];
 
@@ -125,16 +122,14 @@ export default function ReviewAdminDashboard() {
         return filtered;
     }, [reviews, searchTerm, ratingFilter, shopFilter, sortBy, sortOrder]);
 
-    // Get unique shop IDs for filter
     const uniqueShops = useMemo(() => {
         const safeReviews = Array.isArray(reviews) ? reviews : [];
         return Array.from(new Set(safeReviews.map((r) => r.shopId?._id))).filter(Boolean);
     }, [reviews]);
 
-    // Calculate stats
     const stats = useMemo(() => {
         const safeReviews = Array.isArray(reviews) ? reviews : [];
-        const totalReviewsCount = totalReviews; // Use totalReviews from API for stats
+        const totalReviewsCount = totalReviews; 
 
         if (totalReviewsCount === 0) {
             return {
@@ -163,41 +158,56 @@ export default function ReviewAdminDashboard() {
     }
 
     const handleSaveReview = async () => {
-        if (editingReview && editingReview._id) {
-            try {
-                const response = await AdminAxios.put(`/reviews/${editingReview._id}`, {
-                    rating: editingReview.rating,
-                    comment: editingReview.comment,
-                })
-
-                // Transform DTO to Review structure
-                const updatedReviewData: Review = {
-                    _id: response.data.id,
-                    shopId: {
-                        _id: response.data.shopId.id,
-                        name: response.data.shopId.name,
-                        logo: response.data.shopId.logo
-                    },
-                    userId: {
-                        _id: response.data.userId.id,
-                        fullName: response.data.userId.fullName,
-                        profileImage: response.data.userId.profileImage
-                    },
-                    rating: response.data.rating,
-                    comment: response.data.comment,
-                    createdAt: response.data.createdAt,
-                    updatedAt: response.data.updatedAt
-                }
-
-                setReviews((prev) =>
-                    prev.map((r) => (r._id === editingReview._id ? updatedReviewData : r))
-                )
-                setEditingReview(null)
-            } catch (err) {
-                console.error(err)
-            }
+        if (!editingReview || !editingReview._id) {
+            setError("No review selected for editing");
+            return;
         }
-    }
+
+        try {
+            const response = await AdminAxios.put(`/reviews/${editingReview._id}`, {
+                rating: editingReview.rating,
+                comment: editingReview.comment,
+            });
+
+            if (!response.data) {
+                throw new Error("No data returned from the API");
+            }
+
+            const reviewData = response.data.data || response.data;
+
+            if (!reviewData.id) {
+                throw new Error("Response does not contain 'id' property");
+            }
+
+            const updatedReviewData: Review = {
+                _id: reviewData.id,
+                shopId: {
+                    _id: reviewData.shopId?.id || reviewData.shopId?._id || editingReview.shopId._id,
+                    name: reviewData.shopId?.name || editingReview.shopId.name,
+                    logo: reviewData.shopId?.logo || editingReview.shopId.logo,
+                },
+                userId: {
+                    _id: reviewData.userId?.id || reviewData.userId?._id || editingReview.userId._id,
+                    fullName: reviewData.userId?.fullName || editingReview.userId.fullName,
+                    profileImage: reviewData.userId?.profileImage || editingReview.userId.profileImage,
+                },
+                rating: reviewData.rating || editingReview.rating,
+                comment: reviewData.comment || editingReview.comment,
+                createdAt: reviewData.createdAt || editingReview.createdAt,
+                updatedAt: reviewData.updatedAt || editingReview.updatedAt,
+            };
+            setReviews((prev) =>
+                prev.map((r) => (r._id === editingReview._id ? updatedReviewData : r))
+            );
+
+            setEditingReview(null);
+
+        } catch (err:any) {
+            console.error("Failed to save review:", err);
+            setError(err.message || "Failed to save review");
+        }
+    };
+
 
     const handleDeleteReview = async (reviewId: string) => {
         try {
@@ -228,7 +238,6 @@ export default function ReviewAdminDashboard() {
         return "bg-red-100 text-red-800"
     }
 
-    // Define table columns
     const columns = [
         {
             key: "rating",
@@ -319,58 +328,60 @@ export default function ReviewAdminDashboard() {
                                 <Edit className="h-4 w-4" />
                             </Button>
                         </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Edit Review</DialogTitle>
-                            </DialogHeader>
-                            {editingReview && (
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label htmlFor="rating">Rating</Label>
-                                        <Select
-                                            value={editingReview.rating.toString()}
-                                            onValueChange={(value) =>
-                                                setEditingReview({
-                                                    ...editingReview,
-                                                    rating: Number.parseInt(value),
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="1">1 Star</SelectItem>
-                                                <SelectItem value="2">2 Stars</SelectItem>
-                                                <SelectItem value="3">3 Stars</SelectItem>
-                                                <SelectItem value="4">4 Stars</SelectItem>
-                                                <SelectItem value="5">5 Stars</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                        <Dialog open={!!editingReview} onOpenChange={(open) => !open && setEditingReview(null)}>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Edit Review</DialogTitle>
+                                </DialogHeader>
+                                {editingReview && (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label htmlFor="rating">Rating</Label>
+                                            <Select
+                                                value={editingReview.rating.toString()}
+                                                onValueChange={(value) =>
+                                                    setEditingReview({
+                                                        ...editingReview,
+                                                        rating: Number.parseInt(value),
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="1">1 Star</SelectItem>
+                                                    <SelectItem value="2">2 Stars</SelectItem>
+                                                    <SelectItem value="3">3 Stars</SelectItem>
+                                                    <SelectItem value="4">4 Stars</SelectItem>
+                                                    <SelectItem value="5">5 Stars</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="comment">Comment</Label>
+                                            <Textarea
+                                                id="comment"
+                                                value={editingReview.comment || ""}
+                                                onChange={(e) =>
+                                                    setEditingReview({
+                                                        ...editingReview,
+                                                        comment: e.target.value,
+                                                    })
+                                                }
+                                                rows={4}
+                                            />
+                                        </div>
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="outline" onClick={() => setEditingReview(null)}>
+                                                Cancel
+                                            </Button>
+                                            <Button onClick={handleSaveReview}>Save Changes</Button>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <Label htmlFor="comment">Comment</Label>
-                                        <Textarea
-                                            id="comment"
-                                            value={editingReview.comment || ""}
-                                            onChange={(e) =>
-                                                setEditingReview({
-                                                    ...editingReview,
-                                                    comment: e.target.value,
-                                                })
-                                            }
-                                            rows={4}
-                                        />
-                                    </div>
-                                    <div className="flex justify-end gap-2">
-                                        <Button variant="outline" onClick={() => setEditingReview(null)}>
-                                            Cancel
-                                        </Button>
-                                        <Button onClick={handleSaveReview}>Save Changes</Button>
-                                    </div>
-                                </div>
-                            )}
-                        </DialogContent>
+                                )}
+                            </DialogContent>
+                        </Dialog>
                     </Dialog>
                     <Button
                         variant="outline"
