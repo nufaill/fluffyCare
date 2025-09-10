@@ -30,12 +30,17 @@ import { getAllShops, updateShopStatus } from "@/services/admin/admin.service"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 import toast from 'react-hot-toast'
 
+export type Verification = {
+  status: "pending" | "approved" | "rejected";
+  reason: string | null;
+};
+
 interface Shop {
   id: string
   name: string
   logo?: string
   email: string
-  isVerified: "approved" | "rejected" | "pending";
+  isVerified: Verification
   isActive: boolean
   address: string
   phone: string
@@ -83,7 +88,7 @@ const ShopDetails: React.FC = () => {
       setLoading(true);
       try {
         const response: ApiResponse = await getAllShops(currentPage, pageSize, true);
-        const verifiedShops = (response.data || []).filter(shop => shop.isVerified === 'approved');
+        const verifiedShops = (response.data || []).filter(shop => shop.isVerified.status === 'approved');
         setShops(verifiedShops);
         setTotalShops(response.pagination.total);
       } catch (error) {
@@ -265,11 +270,11 @@ const ShopDetails: React.FC = () => {
               <MapPin className="h-3 w-3" />
               <span>{record.city},{record.streetAddress}</span>
             </div>
-            <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+            {/* <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
               <Star className="h-3 w-3 text-yellow-400 fill-current" />
               <span>{record.rating}</span>
               <span>({record.totalServices} services)</span>
-            </div>
+            </div> */}
           </div>
         </div>
       ),
@@ -327,25 +332,25 @@ const ShopDetails: React.FC = () => {
         />
       ),
     },
-    {
-      key: "performance",
-      title: "Performance",
-      dataIndex: "totalRevenue",
-      sortable: true,
-      align: "right",
-      render: (_value: number, record: Shop) => (
-        <div className="text-right space-y-1">
-          <div className="font-medium text-gray-900 dark:text-gray-100">₹{record.totalRevenue || 0}</div>
-          <div className="flex items-center justify-end gap-1 text-sm text-gray-500 dark:text-gray-400">
-            <Users className="h-3 w-3" />
-            <span>{record.totalServices} services</span>
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            Last active: {new Date(record.lastActive).toLocaleDateString()}
-          </div>
-        </div>
-      ),
-    },
+    // {
+    //   key: "performance",
+    //   title: "Performance",
+    //   dataIndex: "totalRevenue",
+    //   sortable: true,
+    //   align: "right",
+    //   render: (_value: number, record: Shop) => (
+    //     <div className="text-right space-y-1">
+    //       <div className="font-medium text-gray-900 dark:text-gray-100">₹{record.totalRevenue || 0}</div>
+    //       <div className="flex items-center justify-end gap-1 text-sm text-gray-500 dark:text-gray-400">
+    //         <Users className="h-3 w-3" />
+    //         <span>{record.totalServices} services</span>
+    //       </div>
+    //       <div className="text-xs text-gray-500 dark:text-gray-400">
+    //         Last active:{new Date(selectedShop.updatedAt).toLocaleDateString()}
+    //       </div>
+    //     </div>
+    //   ),
+    // },
     {
       key: "joinDate",
       title: "Join Date",
@@ -561,13 +566,13 @@ const ShopDetails: React.FC = () => {
                         )}
                       </p>
                     </div>
-                    <div>
+                    {/* <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rating</p>
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 text-yellow-400 fill-current" />
                         <span>{selectedShop.rating} ({selectedShop.totalServices} services)</span>
                       </div>
-                    </div>
+                    </div> */}
                     <div>
                       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Join Date</p>
                       <p className="text-base">{new Date(selectedShop.createdAt).toLocaleDateString()}</p>
