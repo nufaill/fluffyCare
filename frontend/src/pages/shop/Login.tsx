@@ -16,19 +16,15 @@ const Login: React.FC = () => {
 
       if (response.success) {
         dispatch(addShop(response.shop));
-        // Optional: localStorage.setItem('shopToken', response.token);
-
         navigate('/shop/dashboard');
+      } else if (response.message === "You are not allowed") {
+        dispatch(addShop(response.shop));
+        navigate('/shop/shop-verify');
       } else {
         throw new Error(response.message);
       }
     } catch (error: any) {
-      if (error.response.data.message === "Unauthorized: No user found in request") {
-        navigate('/shop/shop-verify');
-      } else {
-        console.error('Shop login failed:', error);
-        throw error;
-      }
+      console.error('Shop login failed:', error);
     }
   };
 

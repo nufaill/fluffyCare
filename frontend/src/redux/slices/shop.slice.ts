@@ -9,7 +9,7 @@ export interface GeoLocation {
 
 interface ShopData {
   _id: string;
-  id: string;
+  id?: string;
   name: string;
   email: string;
   phone?: string;
@@ -20,7 +20,10 @@ interface ShopData {
   certificateUrl?: string;
   location?: GeoLocation;
   isActive?: boolean;
-  isVerified?: boolean;
+  isVerified?: {
+    status: 'pending' | 'approved' | 'rejected';
+    reason: string | null;
+  };
   createdAt?: string;
   updatedAt?: string;
 }

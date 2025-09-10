@@ -1,5 +1,11 @@
 import { CreateUserData } from '../types/User.types';
 
+export type Verification = {
+  status: "pending" | "approved" | "rejected";
+  reason: string | null;
+};
+
+
 export interface RegisterUserDTO {
   email: string;
   password: string;
@@ -27,7 +33,7 @@ export interface CreateShopDTO {
     coordinates: [number, number];
   };
   isActive: boolean;
-  isVerified?: 'pending' | 'approved' | 'rejected';
+  isVerified?: Verification;
 }
 
 export type CreateUserDTO = CreateUserData;

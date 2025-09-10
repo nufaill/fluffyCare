@@ -6,12 +6,11 @@ export interface GeoLocation {
   coordinates: [number, number]; // [longitude, latitude]
 }
 
-type VerificationStatus = "pending" | "approved" | "rejected";
+export type Verification = {
+  status: "pending" | "approved" | "rejected";
+  reason: string | null;
+};
 
-interface Verification {
-  status: VerificationStatus;
-  reason?: string | null;
-}
 
 export interface IShopSubscription {
   subscriptionId: Types.ObjectId | null;

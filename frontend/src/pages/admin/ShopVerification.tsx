@@ -1,7 +1,7 @@
 import type React from "react";
 import { useState, useMemo, useEffect } from "react";
 import Navbar from "@/components/admin/Navbar";
-import Sidebar from "@/components/admin/Sidebar";
+import Sidebar from "@/components/admin/sidebar";
 import Footer from "@/components/user/Footer";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { Pagination } from "@/components/ui/Pagination";
@@ -27,11 +27,14 @@ import {
   XCircle,
   Clock,
   MapPin,
-  Star,
   Mail,
   Calendar,
   FileText,
   Eye,
+  Store,
+  Info,
+  Phone,
+  AlertCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getUnverifiedShops, approveShop, rejectShop } from "@/services/admin/admin.service";
@@ -101,7 +104,7 @@ const ShopVerification: React.FC = () => {
             email: shop.email,
             phone: shop.phone,
             address: `${shop.streetAddress}, ${shop.city}`,
-            isVerified: shop.isVerified || "pending",
+            isVerified: shop.isVerified.status || "pending",
             rating: shop.rating || 0,
             totalServices: shop.totalServices || 0,
             joinDate: shop.createdAt,
@@ -109,7 +112,7 @@ const ShopVerification: React.FC = () => {
             totalRevenue: shop.totalRevenue || 0,
             description: shop.description || "",
             documents,
-            verificationNotes: shop.verificationNotes || "",
+            verificationNotes: shop.isVerified.reason || "",
             submittedDate: shop.createdAt,
           };
         });
@@ -194,11 +197,7 @@ const ShopVerification: React.FC = () => {
     try {
       if (action === "approve") {
         await approveShop(shopId);
-        setShops((prevShops) =>
-          prevShops.map((shop) =>
-            shop.id === shopId ? { ...shop, isVerified: "approved", verificationNotes: notes } : shop,
-          ),
-        );
+        setShops((prevShops) => prevShops.filter((shop) => shop.id !== shopId));
       } else {
         await rejectShop(shopId, notes);
         setShops((prevShops) =>
@@ -351,116 +350,116 @@ const ShopVerification: React.FC = () => {
             <Eye className="h-3 w-3 mr-1" />
             Review
           </Button>
-          {record.isVerified === "pending" && (
-            <>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    onClick={() => setSelectedShop(record)}
-                    className="text-xs bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Approve
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                  <DialogHeader>
-                    <DialogTitle className="text-gray-900 dark:text-gray-100">Approve Shop</DialogTitle>
-                    <DialogDescription className="text-gray-600 dark:text-gray-400">
-                      Are you sure you want to approve "{record.name}"? This action will grant them access to the platform.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Approval Notes (Optional)
-                      </label>
-                      <Textarea
-                        placeholder="Add any notes about the approval..."
-                        value={verificationNotes}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setVerificationNotes(e.target.value)}
-                        className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-                      />
-                    </div>
+          {(record.isVerified === "pending" || record.isVerified === "rejected") && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  onClick={() => setSelectedShop(record)}
+                  className="text-xs bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Approve
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <DialogHeader>
+                  <DialogTitle className="text-gray-900 dark:text-gray-100">Approve Shop</DialogTitle>
+                  <DialogDescription className="text-gray-600 dark:text-gray-400">
+                    Are you sure you want to approve "{record.name}"? This action will grant them access to the platform.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Approval Notes (Optional)
+                    </label>
+                    <Textarea
+                      placeholder="Add any notes about the approval..."
+                      value={verificationNotes}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setVerificationNotes(e.target.value)}
+                      className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                    />
                   </div>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setVerificationNotes("");
-                        setSelectedShop(null);
-                      }}
-                      className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={() =>
-                        selectedShop && handleVerificationAction(selectedShop.id, "approve", verificationNotes)
-                      }
-                      disabled={loading}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      {loading ? "Approving..." : "Approve Shop"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              <Dialog>
-                <DialogTrigger asChild>
+                </div>
+                <DialogFooter>
                   <Button
-                    size="sm"
                     variant="outline"
-                    onClick={() => setSelectedShop(record)}
-                    className="text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
+                    onClick={() => {
+                      setVerificationNotes("");
+                      setSelectedShop(null);
+                    }}
+                    className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
                   >
-                    <XCircle className="h-3 w-3 mr-1" />
-                    Reject
+                    Cancel
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                  <DialogHeader>
-                    <DialogTitle className="text-gray-900 dark:text-gray-100">Reject Shop</DialogTitle>
-                    <DialogDescription className="text-gray-600 dark:text-gray-400">
-                      Please provide a reason for rejecting "{record.name}". This will help them understand what needs to be
-                      improved.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Rejection Reason *</label>
-                      <Textarea
-                        placeholder="Please explain why this application is being rejected..."
-                        value={verificationNotes}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setVerificationNotes(e.target.value)}
-                        className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-                        required
-                      />
-                    </div>
+                  <Button
+                    onClick={() =>
+                      selectedShop && handleVerificationAction(selectedShop.id, "approve", verificationNotes)
+                    }
+                    disabled={loading}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {loading ? "Approving..." : "Approve Shop"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+          {record.isVerified === "pending" && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedShop(record)}
+                  className="text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
+                >
+                  <XCircle className="h-3 w-3 mr-1" />
+                  Reject
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <DialogHeader>
+                  <DialogTitle className="text-gray-900 dark:text-gray-100">Reject Shop</DialogTitle>
+                  <DialogDescription className="text-gray-600 dark:text-gray-400">
+                    Please provide a reason for rejecting "{record.name}". This will help them understand what needs to be
+                    improved.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Rejection Reason *</label>
+                    <Textarea
+                      placeholder="Please explain why this application is being rejected..."
+                      value={verificationNotes}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setVerificationNotes(e.target.value)}
+                      className="mt-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                      required
+                    />
                   </div>
-                  <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setVerificationNotes("");
-                        setSelectedShop(null);
-                      }}
-                      className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={() => selectedShop && handleVerificationAction(selectedShop.id, "reject", verificationNotes)}
-                      disabled={loading || !verificationNotes.trim()}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      {loading ? "Rejecting..." : "Reject Shop"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setVerificationNotes("");
+                      setSelectedShop(null);
+                    }}
+                    className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => selectedShop && handleVerificationAction(selectedShop.id, "reject", verificationNotes)}
+                    disabled={loading || !verificationNotes.trim()}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    {loading ? "Rejecting..." : "Reject Shop"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       ),
@@ -606,8 +605,11 @@ const ShopVerification: React.FC = () => {
           <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
             <DialogContent className="max-w-4xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <DialogHeader>
-                <DialogTitle className="text-gray-900 dark:text-gray-100">Shop Review Details</DialogTitle>
-                <DialogDescription className="text-gray-600 dark:text-gray-400">
+                <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <Store className="h-6 w-6 text-black-500 dark:text-black-400" aria-hidden="true" />
+                  Shop Review Details
+                </DialogTitle>
+                <DialogDescription className="text-gray-600 dark:text-gray-400 mt-2">
                   Review all shop information and documents before making a decision.
                 </DialogDescription>
               </DialogHeader>
@@ -615,27 +617,30 @@ const ShopVerification: React.FC = () => {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                      <CardHeader>
-                        <CardTitle className="text-lg text-gray-900 dark:text-gray-100">Basic Information</CardTitle>
+                      <CardHeader className="flex items-center gap-2">
+                        <Info className="h-5 w-5 text-black-500 dark:text-black-400" aria-hidden="true" />
+                        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                          Basic Information
+                        </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                           <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{selectedShop.name}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{selectedShop.email}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{selectedShop.phone}</p>
+                            <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{selectedShop.name}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                              <Mail className="h-4 w-4" aria-hidden="true" />
+                              {selectedShop.email}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                              <Phone className="h-4 w-4" aria-hidden="true" />
+                              {selectedShop.phone}
+                            </p>
                           </div>
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-gray-400" />
                             <span className="text-sm text-gray-900 dark:text-gray-100">{selectedShop.address}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                            <span className="text-sm text-gray-900 dark:text-gray-100">
-                              {selectedShop.rating} rating • {selectedShop.totalServices} services
-                            </span>
                           </div>
                         </div>
                       </CardContent>
@@ -673,16 +678,26 @@ const ShopVerification: React.FC = () => {
                     </Card>
                   </div>
 
-                  <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-gray-900 dark:text-gray-100">Shop Description</CardTitle>
+                  <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <CardHeader className="flex items-center gap-2">
+                      <Info className="h-5 w-5 text-black-500 dark:text-black-400" aria-hidden="true" />
+                      <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        Shop Description
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedShop.description}</p>
+                      <p className="text-gray-900 dark:text-gray-100">
+                        {selectedShop.description || "No description provided."}
+                      </p>
                       {selectedShop.isVerified === "rejected" && selectedShop.verificationNotes && (
                         <div className="mt-4">
-                          <h4 className="text-sm font-medium text-red-600 dark:text-red-400">Rejection Reason</h4>
-                          <p className="text-sm text-gray-900 dark:text-gray-100">{selectedShop.verificationNotes}</p>
+                          <h4 className="text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                            Rejection Reason
+                          </h4>
+                          <p className="text-sm text-gray-900 dark:text-gray-100 mt-2">
+                            {selectedShop.verificationNotes}
+                          </p>
                         </div>
                       )}
                     </CardContent>

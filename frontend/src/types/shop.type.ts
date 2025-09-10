@@ -5,6 +5,11 @@ export interface GeoLocation {
   coordinates: [number, number]; // [longitude, latitude]
 }
 
+export type Verification = {
+  status: "pending" | "approved" | "rejected";
+  reason: string | null;
+};
+
 export interface ShopAvailability {
   workingDays: string[];
   openingTime: string;
@@ -31,7 +36,7 @@ export interface Shop {
   logo: string;
   certificateUrl: string;
   location: GeoLocation;
-  isVerified: boolean;
+  isVerified: Verification;
   shopAvailability?: ShopAvailability;
   createdAt: string;
   updatedAt: string;
@@ -79,6 +84,7 @@ export interface ShopAuthResponse {
   shop: Shop;
 }
 export interface ShopUpdatePayload {
+  certificateUrl: string;
   name?: string;
   phone?: string;
   city?: string;
@@ -108,7 +114,7 @@ export interface ShopApiResponse {
       coordinates: [number, number];
     };
     isActive: boolean;
-    isVerified: boolean;
+    isVerified: Verification;
     createdAt: string;
     updatedAt: string;
   };

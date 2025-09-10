@@ -118,10 +118,10 @@ export class ShopAuthController {
 
       const result = await this._authService.login(loginData);
 
-      if (!result.shop.isVerified) {
-        res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      if (result.shop.isVerified.status !=='approved') {
+        res.status(HTTP_STATUS.OK).json({
           success: false,
-          message: ERROR_MESSAGES.UNAUTH_NO_USER_FOUND,
+          message: ERROR_MESSAGES.NOT_ALLOWED,
         });
         return;
       }

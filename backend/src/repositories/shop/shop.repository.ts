@@ -149,12 +149,20 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
   }
 
   async getUnverifiedShops(skip: number = 0, limit: number = 10): Promise<ShopResponseDTO[]> {
-    const shops = await this.find({ isVerified: 'pending' })
-      .select('-password -resetPasswordToken -resetPasswordExpires')
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .exec();
+    const query = {
+      'isVerified.status': { $in: ['pending', 'rejected'] }
+    };
+
+    const [shops, total] = await Promise.all([
+      Shop.find(query)
+        .select('-password -resetPasswordToken -resetPasswordExpires')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      Shop.countDocuments(query).exec()
+    ]);
+
     return shops.map(shop => this.mapToResponseDTO(shop));
   }
 

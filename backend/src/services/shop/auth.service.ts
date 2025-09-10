@@ -90,7 +90,7 @@ export class AuthService implements IShopAuthService {
         coordinates: [location.coordinates[0], location.coordinates[1]],
       },
       isActive: true,
-      isVerified: 'pending',
+      isVerified: { status: 'pending', reason: null },
     };
 
     const otp = generateOtp();
@@ -136,7 +136,7 @@ export class AuthService implements IShopAuthService {
       location: shopData.location,
     });
 
-    const shop = await this._shopRepository.createShop({ ...shopData, isVerified: 'pending' });
+    const shop = await this._shopRepository.createShop({ ...shopData, isVerified: { status: 'pending', reason: null } });
     console.log(`✅ [AuthService] Shop created successfully:`, {
       id: shop.id,
       email: shop.email,
@@ -214,12 +214,7 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Shop account is inactive', HTTP_STATUS.FORBIDDEN);
       }
 
-      // if (shop.isVerified !== 'approved') {
-      //   console.error('❌ [AuthService] Shop not approved:', normalizedEmail);
-      //   throw new CustomError('Shop account is not approved', HTTP_STATUS.FORBIDDEN);
-      // }
-
-      console.log('🔐 [AuthService] Verifying password...');
+      console.log('🔍 [AuthService] Verifying password...');
       const isValidPassword = await bcrypt.compare(data.password, shop.password);
 
       if (!isValidPassword) {
@@ -227,6 +222,7 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Invalid email or password', HTTP_STATUS.UNAUTHORIZED);
       }
 
+      // Generate tokens regardless of verification status
       console.log('🎟️ [AuthService] Generating JWT tokens...');
       const tokens = this._generateTokens(shop.id, shop.email);
 
@@ -276,9 +272,10 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Shop not found or inactive', HTTP_STATUS.UNAUTHORIZED);
       }
 
-      // if (shop.isVerified !== 'approved') {
-      //   throw new CustomError('Shop not approved', HTTP_STATUS.UNAUTHORIZED);
-      // }
+      if (shop.isVerified.status !== "approved") {
+        throw new CustomError("Shop not approved", HTTP_STATUS.FORBIDDEN);
+      }
+
 
       const newAccessToken = this._jwtService.generateAccessToken({
         id: shop.id,
