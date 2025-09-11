@@ -1,4 +1,4 @@
-// wallet.service.ts (updated with dynamic commission)
+// wallet.service.ts 
 import mongoose, { Types } from 'mongoose';
 import { IWalletRepository } from '../../interfaces/repositoryInterfaces/IWalletRepository';
 import { IWalletService } from '../../interfaces/serviceInterfaces/IWalletService';
@@ -142,7 +142,6 @@ export class WalletService implements IWalletService {
     }
   }
 
-  // In wallet.service.ts
   async createWallet(dto: CreateWalletDto): Promise<WalletResponseDto> {
     try {
       const existingWallet = await this.walletRepository.findWalletByOwner(dto.ownerId, dto.ownerType);
