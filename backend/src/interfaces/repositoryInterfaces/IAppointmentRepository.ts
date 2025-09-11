@@ -39,4 +39,9 @@ export interface IAppointmentRepository {
     date: string,
     startTime: string
   ): Promise<boolean>;
+  getAllAppointments(
+    filter: Partial<IAppointment>,
+    page: number,
+    limit: number
+  ): Promise<{ data: AppointmentDocument[]; total: number; page: number; limit: number }>;
 }

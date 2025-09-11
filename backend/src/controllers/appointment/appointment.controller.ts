@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AppointmentService } from '../../services/appointment/appointment.service';
+import { IAppointmentService } from '../../interfaces/serviceInterfaces/IAppointmentService';
 import { CreateAppointmentDto, UpdateAppointmentDto } from '../../dto/appointment.dto';
 import { IAppointmentController } from '../../interfaces/controllerInterfaces/IAppointmentController';
 import { HTTP_STATUS, ERROR_MESSAGES } from '../../shared/constant';
@@ -7,9 +7,9 @@ import { Types } from 'mongoose';
 import { AppointmentStatus } from '../../types/appointment.types';
 
 export class AppointmentController implements IAppointmentController {
-  private appointmentService: AppointmentService;
-  constructor(appointmentService: AppointmentService) {
-    this.appointmentService = appointmentService;
+  private _appointmentService: IAppointmentService;
+  constructor(appointmentService: IAppointmentService) {
+    this._appointmentService = appointmentService;
   }
 
   async createAppointment(req: Request, res: Response): Promise<void> {
@@ -77,7 +77,7 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const result = await this.appointmentService.createAppointment(appointmentData);
+      const result = await this._appointmentService.createAppointment(appointmentData);
 
       res.status(result.statusCode).json({
         success: result.success,
@@ -129,7 +129,7 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const appointmentsCount = await this.appointmentService.getAppointmentsCount(
+      const appointmentsCount = await this._appointmentService.getAppointmentsCount(
         new Types.ObjectId(shopId),
         parsedStartDate,
         parsedEndDate
@@ -170,7 +170,7 @@ export class AppointmentController implements IAppointmentController {
 
       const slotDetails = { startTime: startTime as string, endTime: endTime as string, date: date as string };
 
-      const result = await this.appointmentService.checkSlotAvailability(slotDetails, staffId as string);
+      const result = await this._appointmentService.checkSlotAvailability(slotDetails, staffId as string);
 
       res.status(result.statusCode).json({
         success: result.success,
@@ -210,7 +210,7 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const result = await this.appointmentService.updateAppointment(appointmentId, updateData);
+      const result = await this._appointmentService.updateAppointment(appointmentId, updateData);
 
       res.status(result.statusCode).json({
         success: result.success,
@@ -250,7 +250,7 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const result = await this.appointmentService.cancelAppointment(appointmentId, reason);
+      const result = await this._appointmentService.cancelAppointment(appointmentId, reason);
 
       res.status(result.statusCode).json({
         success: result.success,
@@ -280,7 +280,7 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const result = await this.appointmentService.getAppointmentById(appointmentId);
+      const result = await this._appointmentService.getAppointmentById(appointmentId);
 
       res.status(result.statusCode).json({
         success: result.success,
@@ -323,7 +323,7 @@ export class AppointmentController implements IAppointmentController {
       const pageNum = Math.max(1, parseInt(page as string) || 1);
       const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 10));
 
-      const result = await this.appointmentService.getAppointmentsByUserId(
+      const result = await this._appointmentService.getAppointmentsByUserId(
         userId,
         { page: pageNum, limit: limitNum, status: status as string }
       );
@@ -370,7 +370,7 @@ export class AppointmentController implements IAppointmentController {
       const pageNum = Math.max(1, parseInt(page as string) || 1);
       const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 10));
 
-      const result = await this.appointmentService.getAppointmentsByShopId(
+      const result = await this._appointmentService.getAppointmentsByShopId(
         shopId,
         { page: pageNum, limit: limitNum, status: status as string, date: date as string }
       );
@@ -408,7 +408,7 @@ export class AppointmentController implements IAppointmentController {
       const pageNum = Math.max(1, parseInt(page as string) || 1);
       const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 10));
 
-      const result = await this.appointmentService.getAppointmentsByStaffId(
+      const result = await this._appointmentService.getAppointmentsByStaffId(
         staffId,
         { page: pageNum, limit: limitNum, date: date as string }
       );
@@ -437,7 +437,7 @@ export class AppointmentController implements IAppointmentController {
       delete filters.page;
       delete filters.limit;
 
-      const result = await this.appointmentService.getAllAppointments({ page, limit, filters });
+      const result = await this._appointmentService.getAllAppointments({ page, limit, filters });
       res.status(result.statusCode).json({
         success: result.success,
         message: result.message,
@@ -467,7 +467,7 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const result = await this.appointmentService.confirmAppointment(appointmentId);
+      const result = await this._appointmentService.confirmAppointment(appointmentId);
 
       res.status(result.statusCode).json({
         success: result.success,
@@ -497,7 +497,7 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const result = await this.appointmentService.completeAppointment(appointmentId);
+      const result = await this._appointmentService.completeAppointment(appointmentId);
 
       res.status(result.statusCode).json({
         success: false,
@@ -527,7 +527,7 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const result = await this.appointmentService.startOngoingAppointment(appointmentId);
+      const result = await this._appointmentService.startOngoingAppointment(appointmentId);
 
       res.status(result.statusCode).json({
         success: result.success,
@@ -570,7 +570,7 @@ export class AppointmentController implements IAppointmentController {
       const pageNum = Math.max(1, parseInt(page as string) || 1);
       const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 10));
 
-      const result = await this.appointmentService.getAppointmentsByStatus(
+      const result = await this._appointmentService.getAppointmentsByStatus(
         status as string,
         { shopId: shopId as string, page: pageNum, limit: limitNum }
       );
@@ -636,7 +636,7 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      const result = await this.appointmentService.getAvailableSlots(
+      const result = await this._appointmentService.getAvailableSlots(
         shopId,
         date,
         staffId as string | undefined

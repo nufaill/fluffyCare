@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
-import { AppointmentRepository } from '../../repositories/appointment/appointment.repository';
+import { IAppointmentRepository } from '../../interfaces/repositoryInterfaces/IAppointmentRepository';
 import { AppointmentDocument } from '../../models/appointment.model';
-import { IAppointment, AppointmentStatus, PaymentStatus, PaymentMethod,PaymentDetails } from '../../types/appointment.types';
+import { IAppointment, AppointmentStatus, PaymentStatus, PaymentMethod, PaymentDetails } from '../../types/appointment.types';
 import { CreateAppointmentDto, UpdateAppointmentDto } from '../../dto/appointment.dto';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { IWalletService } from '../../interfaces/serviceInterfaces/IWalletService';
@@ -20,8 +20,8 @@ interface TimeSlot {
 
 export class AppointmentService implements IAppointmentService {
   constructor(
-    private appointmentRepository: AppointmentRepository,
-    private walletService: IWalletService
+    private _appointmentRepository: IAppointmentRepository,
+    private _walletService: IWalletService
   ) { }
 
   private validateId(id: string): { isValid: boolean; objectId?: Types.ObjectId } {
@@ -117,7 +117,7 @@ export class AppointmentService implements IAppointmentService {
       }
 
       const staffId = new Types.ObjectId(appointmentData.staffId);
-      const isSlotAvailable = await this.appointmentRepository.isTimeSlotAvailable(
+      const isSlotAvailable = await this._appointmentRepository.isTimeSlotAvailable(
         staffId,
         appointmentData.slotDetails.date,
         appointmentData.slotDetails.startTime,
@@ -132,7 +132,7 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const isSlotBooked = await this.appointmentRepository.isSlotBooked(
+      const isSlotBooked = await this._appointmentRepository.isSlotBooked(
         new Types.ObjectId(appointmentData.shopId),
         staffId,
         appointmentData.slotDetails.date,
@@ -163,9 +163,8 @@ export class AppointmentService implements IAppointmentService {
         },
       };
 
-      const appointment: AppointmentDocument = await this.appointmentRepository.create(appointmentToCreate);
+      const appointment: AppointmentDocument = await this._appointmentRepository.create(appointmentToCreate);
 
-     
       if (appointmentData.paymentMethod === PaymentMethod.Wallet && appointmentData.paymentStatus === PaymentStatus.Completed) {
         const paymentDto = new ProcessPaymentDto(
           new Types.ObjectId(appointmentData.userId),
@@ -175,7 +174,7 @@ export class AppointmentService implements IAppointmentService {
           appointment._id as Types.ObjectId,
           'Payment for appointment'
         );
-        await this.walletService.processPayment(paymentDto);
+        await this._walletService.processPayment(paymentDto);
       }
 
       try {
@@ -226,7 +225,7 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const count = await this.appointmentRepository.getAppointmentsCount(idValidation.objectId!, startDate, endDate);
+      const count = await this._appointmentRepository.getAppointmentsCount(idValidation.objectId!, startDate, endDate);
 
       return {
         success: true,
@@ -244,31 +243,35 @@ export class AppointmentService implements IAppointmentService {
     }
   }
 
-  async getAllAppointments(params: { page?: number; limit?: number; filters?: any; }): Promise<{ success: boolean; data?: any; message: string; statusCode: number; }> {
-  try {
-    const page = Number(params.page) || 1;
-    const limit = Number(params.limit) || 10;
-    const filters = params.filters || {};
-    const result = await this.appointmentRepository.getAllAppointments(filters, page, limit);
-    return {
-      success: true,
-      data: {
-        appointments: result.data,
-        pagination: { total: result.total, page: result.page, limit: result.limit, pages: Math.ceil(result.total / result.limit) }
-      },
-      message: 'Appointments retrieved successfully',
-      statusCode: HTTP_STATUS.OK
-    };
-  } catch (error: any) {
-    console.error('Get all appointments error:', error);
-    return {
-      success: false,
-      message: 'Failed to retrieve appointments',
-      statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR
-    };
+  async getAllAppointments(params: { page?: number; limit?: number; filters?: any }): Promise<{
+    success: boolean;
+    data?: any;
+    message: string;
+    statusCode: number;
+  }> {
+    try {
+      const page = Number(params.page) || 1;
+      const limit = Number(params.limit) || 10;
+      const filters = params.filters || {};
+      const result = await this._appointmentRepository.getAllAppointments(filters, page, limit);
+      return {
+        success: true,
+        data: {
+          appointments: result.data,
+          pagination: { total: result.total, page: result.page, limit: result.limit, pages: Math.ceil(result.total / result.limit) }
+        },
+        message: 'Appointments retrieved successfully',
+        statusCode: HTTP_STATUS.OK
+      };
+    } catch (error: any) {
+      console.error('Get all appointments error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve appointments',
+        statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR
+      };
+    }
   }
-}
-
 
   async checkSlotAvailability(
     slotDetails: { startTime: string; endTime: string; date: string },
@@ -280,15 +283,8 @@ export class AppointmentService implements IAppointmentService {
     statusCode: number;
   }> {
     try {
-      if (!this.validateSlotDetails(slotDetails)) {
-        return {
-          success: false,
-          message: 'Invalid slotDetails format or values',
-          statusCode: HTTP_STATUS.BAD_REQUEST,
-        };
-      }
-
-      if (!Types.ObjectId.isValid(staffId)) {
+      const idValidation = this.validateId(staffId);
+      if (!idValidation.isValid) {
         return {
           success: false,
           message: ERROR_MESSAGES.INVALID_ID,
@@ -296,8 +292,16 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const isAvailable = await this.appointmentRepository.isTimeSlotAvailable(
-        new Types.ObjectId(staffId),
+      if (!this.validateSlotDetails(slotDetails)) {
+        return {
+          success: false,
+          message: 'Invalid slotDetails format or values',
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      const isAvailable = await this._appointmentRepository.isTimeSlotAvailable(
+        idValidation.objectId!,
         slotDetails.date,
         slotDetails.startTime,
         slotDetails.endTime
@@ -310,7 +314,7 @@ export class AppointmentService implements IAppointmentService {
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
-      console.error(error);
+      console.error('Check slot availability error:', error);
       return {
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_CHECK_SLOT_AVAILABILITY,
@@ -319,11 +323,7 @@ export class AppointmentService implements IAppointmentService {
     }
   }
 
-  async updateAppointment(
-    appointmentId: string,
-    updateData: UpdateAppointmentDto,
-    isShop: boolean = false
-  ): Promise<{
+  async updateAppointment(appointmentId: string, updateData: UpdateAppointmentDto, isShop?: boolean): Promise<{
     success: boolean;
     data?: AppointmentDocument | null;
     message: string;
@@ -339,8 +339,48 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
+      if (!updateData || Object.keys(updateData).length === 0) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_REQUEST_BODY,
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      if (updateData.slotDetails && !this.validateSlotDetails(updateData.slotDetails)) {
+        return {
+          success: false,
+          message: 'Invalid slotDetails format or values',
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      if (!this.validateEnums(updateData)) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ENUM_VALUE,
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      if (updateData.staffId && !Types.ObjectId.isValid(updateData.staffId)) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ID,
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      if (updateData.serviceId && !Types.ObjectId.isValid(updateData.serviceId)) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ID,
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
       const appointmentObjectId = idValidation.objectId!;
-      const existingAppointment = await this.appointmentRepository.findById(appointmentObjectId);
+      const existingAppointment = await this._appointmentRepository.findById(appointmentObjectId);
 
       if (!existingAppointment) {
         return {
@@ -350,79 +390,74 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      // Validate enums
-      if (!this.validateEnums(updateData)) {
+      if (isShop && updateData.appointmentStatus === AppointmentStatus.Cancelled) {
         return {
           success: false,
-          message: ERROR_MESSAGES.INVALID_ENUM_VALUE,
-          statusCode: HTTP_STATUS.BAD_REQUEST
+          message: 'Shops cannot cancel appointments directly',
+          statusCode: HTTP_STATUS.FORBIDDEN
         };
       }
 
-      // For user side: only allow cancellation
-      if (!isShop && updateData.appointmentStatus && updateData.appointmentStatus !== AppointmentStatus.Cancelled) {
-        return {
-          success: false,
-          message: 'Users can only cancel appointments',
-          statusCode: HTTP_STATUS.BAD_REQUEST
-        };
-      }
-
-      // Validate slotDetails if provided
-      if (updateData.slotDetails && !this.validateSlotDetails(updateData.slotDetails)) {
-        return {
-          success: false,
-          message: 'Invalid slotDetails format or values',
-          statusCode: HTTP_STATUS.BAD_REQUEST
-        };
-      }
-
-      // If updating slot details, check availability
+      let slotAvailable = true;
       if (updateData.slotDetails && updateData.staffId) {
-        const staffId = new Types.ObjectId(updateData.staffId || existingAppointment.staffId.toString());
-        const isSlotAvailable = await this.appointmentRepository.isTimeSlotAvailable(
-          staffId,
+        slotAvailable = await this._appointmentRepository.isTimeSlotAvailable(
+          new Types.ObjectId(updateData.staffId),
           updateData.slotDetails.date,
           updateData.slotDetails.startTime,
           updateData.slotDetails.endTime,
           appointmentObjectId
         );
-
-        if (!isSlotAvailable) {
-          return {
-            success: false,
-            message: ERROR_MESSAGES.SLOT_NOT_AVAILABLE,
-            statusCode: HTTP_STATUS.CONFLICT
-          };
-        }
       }
 
-      // If cancelling, ensure notes (reason) is provided
-      if (updateData.appointmentStatus === AppointmentStatus.Cancelled && !updateData.notes) {
+      if (!slotAvailable) {
         return {
           success: false,
-          message: 'Cancellation reason is required',
-          statusCode: HTTP_STATUS.BAD_REQUEST
+          message: ERROR_MESSAGES.SLOT_NOT_AVAILABLE,
+          statusCode: HTTP_STATUS.CONFLICT
         };
       }
 
-      // Convert string IDs to ObjectId in updateData
-      const convertedUpdateData: Partial<IAppointment> = {
+      const updateObject: Partial<IAppointment> = {
         ...updateData,
         staffId: updateData.staffId ? new Types.ObjectId(updateData.staffId) : undefined,
         serviceId: updateData.serviceId ? new Types.ObjectId(updateData.serviceId) : undefined,
+        paymentDetails: updateData.paymentDetails
+          ? {
+              ...updateData.paymentDetails,
+              status: updateData.paymentStatus || existingAppointment.paymentDetails?.status,
+              method: updateData.paymentMethod || existingAppointment.paymentDetails?.method
+            }
+          : existingAppointment.paymentDetails
       };
 
-      const updateResult = await this.appointmentRepository.update(appointmentObjectId, convertedUpdateData);
+      const updatedAppointment = await this._appointmentRepository.update(appointmentObjectId, updateObject);
+
+      if (updatedAppointment && updateData.slotDetails) {
+        try {
+          const socketHandler = getSocketHandler();
+          socketHandler.emitSlotBooked({
+            shopId: updatedAppointment.shopId.toString(),
+            staffId: updatedAppointment.staffId.toString(),
+            date: updateData.slotDetails.date,
+            startTime: updateData.slotDetails.startTime,
+            endTime: updateData.slotDetails.endTime,
+            appointmentId: updatedAppointment._id.toString(),
+            userId: updatedAppointment.userId.toString()
+          });
+          console.log('Socket event emitted for slot update');
+        } catch (socketError) {
+          console.error('Failed to emit socket event for slot update:', socketError);
+        }
+      }
 
       return {
         success: true,
-        data: updateResult,
+        data: updatedAppointment,
         message: 'Appointment updated successfully',
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
-      console.error(error);
+      console.error('Update appointment error:', error);
       return {
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_UPDATE_APPOINTMENT,
@@ -447,7 +482,7 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const appointment = await this.appointmentRepository.findById(idValidation.objectId!);
+      const appointment = await this._appointmentRepository.findById(idValidation.objectId!);
 
       if (!appointment) {
         return {
@@ -464,7 +499,7 @@ export class AppointmentService implements IAppointmentService {
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
-      console.error(error);
+      console.error('Get appointment by ID error:', error);
       return {
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_GET_APPOINTMENT,
@@ -473,18 +508,10 @@ export class AppointmentService implements IAppointmentService {
     }
   }
 
-  async getAppointmentsByUserId(
-    userId: string,
-    options: { page?: number; limit?: number; status?: string } = {}
-  ): Promise<{
+  async getAppointmentsByUserId(userId: string, options?: { page?: number; limit?: number; status?: string }): Promise<{
     success: boolean;
     data?: AppointmentDocument[];
-    meta?: {
-      total: number;
-      currentPage: number;
-      pageSize: number;
-      totalPages: number;
-    };
+    meta?: { total: number; currentPage: number; pageSize: number; totalPages: number };
     message: string;
     statusCode: number;
   }> {
@@ -498,22 +525,34 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const { items, total } = await this.appointmentRepository.findByUserId(idValidation.objectId!, options);
+      const page = options?.page || 1;
+      const limit = options?.limit || 10;
+      const status = options?.status;
+
+      if (status && !Object.values(AppointmentStatus).includes(status as AppointmentStatus)) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ENUM_VALUE,
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      const { items, total } = await this._appointmentRepository.findByUserId(idValidation.objectId!, { page, limit, status });
 
       return {
         success: true,
         data: items,
         meta: {
           total,
-          currentPage: options.page || 1,
-          pageSize: options.limit || 10,
-          totalPages: Math.ceil(total / (options.limit || 10))
+          currentPage: page,
+          pageSize: limit,
+          totalPages: Math.ceil(total / limit)
         },
-        message: 'User appointments retrieved successfully',
+        message: 'Appointments retrieved successfully',
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
-      console.error(error);
+      console.error('Get appointments by user ID error:', error);
       return {
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_GET_USER_APPOINTMENTS,
@@ -522,18 +561,10 @@ export class AppointmentService implements IAppointmentService {
     }
   }
 
-  async getAppointmentsByShopId(
-    shopId: string,
-    options: { page?: number; limit?: number; status?: string; date?: string } = {}
-  ): Promise<{
+  async getAppointmentsByShopId(shopId: string, options?: { page?: number; limit?: number; status?: string; date?: string }): Promise<{
     success: boolean;
     data?: AppointmentDocument[];
-    meta?: {
-      total: number;
-      currentPage: number;
-      pageSize: number;
-      totalPages: number;
-    };
+    meta?: { total: number; currentPage: number; pageSize: number; totalPages: number };
     message: string;
     statusCode: number;
   }> {
@@ -547,22 +578,43 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const { items, total } = await this.appointmentRepository.findByShopId(idValidation.objectId!, options);
+      const page = options?.page || 1;
+      const limit = options?.limit || 10;
+      const status = options?.status;
+      const date = options?.date;
+
+      if (status && !Object.values(AppointmentStatus).includes(status as AppointmentStatus)) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ENUM_VALUE,
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return {
+          success: false,
+          message: 'Invalid date format. Use YYYY-MM-DD',
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      const { items, total } = await this._appointmentRepository.findByShopId(idValidation.objectId!, { page, limit, status, date });
 
       return {
         success: true,
         data: items,
         meta: {
           total,
-          currentPage: options.page || 1,
-          pageSize: options.limit || 10,
-          totalPages: Math.ceil(total / (options.limit || 10))
+          currentPage: page,
+          pageSize: limit,
+          totalPages: Math.ceil(total / limit)
         },
-        message: 'Shop appointments retrieved successfully',
+        message: 'Appointments retrieved successfully',
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
-      console.error(error);
+      console.error('Get appointments by shop ID error:', error);
       return {
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_GET_SHOP_APPOINTMENTS,
@@ -571,18 +623,10 @@ export class AppointmentService implements IAppointmentService {
     }
   }
 
-  async getAppointmentsByStaffId(
-    staffId: string,
-    options: { page?: number; limit?: number; date?: string } = {}
-  ): Promise<{
+  async getAppointmentsByStaffId(staffId: string, options?: { page?: number; limit?: number; date?: string }): Promise<{
     success: boolean;
     data?: AppointmentDocument[];
-    meta?: {
-      total: number;
-      currentPage: number;
-      pageSize: number;
-      totalPages: number;
-    };
+    meta?: { total: number; currentPage: number; pageSize: number; totalPages: number };
     message: string;
     statusCode: number;
   }> {
@@ -596,22 +640,34 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const { items, total } = await this.appointmentRepository.findByStaffId(idValidation.objectId!, options);
+      const page = options?.page || 1;
+      const limit = options?.limit || 10;
+      const date = options?.date;
+
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return {
+          success: false,
+          message: 'Invalid date format. Use YYYY-MM-DD',
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
+      }
+
+      const { items, total } = await this._appointmentRepository.findByStaffId(idValidation.objectId!, { page, limit, date });
 
       return {
         success: true,
         data: items,
         meta: {
           total,
-          currentPage: options.page || 1,
-          pageSize: options.limit || 10,
-          totalPages: Math.ceil(total / (options.limit || 10))
+          currentPage: page,
+          pageSize: limit,
+          totalPages: Math.ceil(total / limit)
         },
-        message: 'Staff appointments retrieved successfully',
+        message: 'Appointments retrieved successfully',
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
-      console.error(error);
+      console.error('Get appointments by staff ID error:', error);
       return {
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_GET_STAFF_APPOINTMENTS,
@@ -620,18 +676,10 @@ export class AppointmentService implements IAppointmentService {
     }
   }
 
-  async getAppointmentsByStatus(
-    status: string,
-    options: { shopId?: string; page?: number; limit?: number } = {}
-  ): Promise<{
+  async getAppointmentsByStatus(status: string, options?: { shopId?: string; page?: number; limit?: number }): Promise<{
     success: boolean;
     data?: AppointmentDocument[];
-    meta?: {
-      total: number;
-      currentPage: number;
-      pageSize: number;
-      totalPages: number;
-    };
+    meta?: { total: number; currentPage: number; pageSize: number; totalPages: number };
     message: string;
     statusCode: number;
   }> {
@@ -644,35 +692,38 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      let shopIdObj: Types.ObjectId | undefined;
-      if (options.shopId) {
-        const idValidation = this.validateId(options.shopId);
-        if (!idValidation.isValid) {
-          return {
-            success: false,
-            message: ERROR_MESSAGES.INVALID_ID,
-            statusCode: HTTP_STATUS.BAD_REQUEST
-          };
-        }
-        shopIdObj = idValidation.objectId;
+      const shopId = options?.shopId;
+      if (shopId && !Types.ObjectId.isValid(shopId)) {
+        return {
+          success: false,
+          message: ERROR_MESSAGES.INVALID_ID,
+          statusCode: HTTP_STATUS.BAD_REQUEST
+        };
       }
 
-      const { items, total } = await this.appointmentRepository.findByStatus(status as AppointmentStatus, shopIdObj, options);
+      const page = options?.page || 1;
+      const limit = options?.limit || 10;
+
+      const { items, total } = await this._appointmentRepository.findByStatus(
+        status as AppointmentStatus,
+        shopId ? new Types.ObjectId(shopId) : undefined,
+        { page, limit }
+      );
 
       return {
         success: true,
         data: items,
         meta: {
           total,
-          currentPage: options.page || 1,
-          pageSize: options.limit || 10,
-          totalPages: Math.ceil(total / (options.limit || 10))
+          currentPage: page,
+          pageSize: limit,
+          totalPages: Math.ceil(total / limit)
         },
-        message: 'Appointments by status retrieved successfully',
+        message: 'Appointments retrieved successfully',
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
-      console.error(error);
+      console.error('Get appointments by status error:', error);
       return {
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_GET_APPOINTMENTS_BY_STATUS,
@@ -698,7 +749,7 @@ export class AppointmentService implements IAppointmentService {
       }
 
       const appointmentObjectId = idValidation.objectId!;
-      const existingAppointment = await this.appointmentRepository.findById(appointmentObjectId);
+      const existingAppointment = await this._appointmentRepository.findById(appointmentObjectId);
 
       if (!existingAppointment) {
         return {
@@ -716,8 +767,8 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const updateResult = await this.appointmentRepository.update(appointmentObjectId, {
-        appointmentStatus: AppointmentStatus.Confirmed,
+      const updateResult = await this._appointmentRepository.update(appointmentObjectId, {
+        appointmentStatus: AppointmentStatus.Confirmed
       });
 
       return {
@@ -727,7 +778,7 @@ export class AppointmentService implements IAppointmentService {
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
-      console.error(error);
+      console.error('Confirm appointment error:', error);
       return {
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_CONFIRM_APPOINTMENT,
@@ -753,7 +804,7 @@ export class AppointmentService implements IAppointmentService {
       }
 
       const appointmentObjectId = idValidation.objectId!;
-      const existingAppointment = await this.appointmentRepository.findById(appointmentObjectId);
+      const existingAppointment = await this._appointmentRepository.findById(appointmentObjectId);
 
       if (!existingAppointment) {
         return {
@@ -771,7 +822,7 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const updateResult = await this.appointmentRepository.update(appointmentObjectId, {
+      const updateResult = await this._appointmentRepository.update(appointmentObjectId, {
         appointmentStatus: AppointmentStatus.Completed,
       });
 
@@ -782,7 +833,7 @@ export class AppointmentService implements IAppointmentService {
         statusCode: HTTP_STATUS.OK
       };
     } catch (error: any) {
-      console.error(error);
+      console.error('Complete appointment error:', error);
       return {
         success: false,
         message: ERROR_MESSAGES.FAILED_TO_COMPLETE_APPOINTMENT,
@@ -808,7 +859,7 @@ export class AppointmentService implements IAppointmentService {
       }
 
       const appointmentObjectId = idValidation.objectId!;
-      const existingAppointment = await this.appointmentRepository.findById(appointmentObjectId);
+      const existingAppointment = await this._appointmentRepository.findById(appointmentObjectId);
 
       if (!existingAppointment) {
         return {
@@ -834,7 +885,7 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      const updateResult = await this.appointmentRepository.update(appointmentObjectId, {
+      const updateResult = await this._appointmentRepository.update(appointmentObjectId, {
         appointmentStatus: AppointmentStatus.Ongoing,
       });
 
@@ -879,7 +930,7 @@ export class AppointmentService implements IAppointmentService {
       }
 
       const appointmentObjectId = idValidation.objectId!;
-      const existingAppointment = await this.appointmentRepository.findById(appointmentObjectId);
+      const existingAppointment = await this._appointmentRepository.findById(appointmentObjectId);
 
       if (!existingAppointment) {
         return {
@@ -902,7 +953,6 @@ export class AppointmentService implements IAppointmentService {
         notes: reason,
       };
 
-      // Process refund if paid via wallet and completed
       if (existingAppointment.paymentDetails) {
         const { amount, currency } = existingAppointment.paymentDetails;
         if (!amount || !currency) {
@@ -920,16 +970,15 @@ export class AppointmentService implements IAppointmentService {
           `Refund due to cancellation: ${reason}`
         );
 
-        await this.walletService.refundPayment(refundDto);
+        await this._walletService.refundPayment(refundDto);
 
-        // Update payment status in updateData
         updateData.paymentDetails = {
           ...existingAppointment.paymentDetails,
           status: PaymentStatus.Refunded,
         };
       }
 
-      const updateResult = await this.appointmentRepository.update(appointmentObjectId, updateData);
+      const updateResult = await this._appointmentRepository.update(appointmentObjectId, updateData);
 
       return {
         success: true,
@@ -953,7 +1002,7 @@ export class AppointmentService implements IAppointmentService {
     endDate: Date
   ): Promise<number> {
     try {
-      return await this.appointmentRepository.getAppointmentsCount(shopId, startDate, endDate);
+      return await this._appointmentRepository.getAppointmentsCount(shopId, startDate, endDate);
     } catch (error: any) {
       throw new Error(ERROR_MESSAGES.FAILED_TO_GET_APPOINTMENTS_COUNT);
     }
@@ -970,7 +1019,6 @@ export class AppointmentService implements IAppointmentService {
     statusCode: number;
   }> {
     try {
-      // Validate shopId
       if (!Types.ObjectId.isValid(shopId)) {
         return {
           success: false,
@@ -979,7 +1027,6 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      // Validate date format (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(date)) {
         return {
@@ -989,7 +1036,6 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      // Validate staffId if provided
       if (staffId && !Types.ObjectId.isValid(staffId)) {
         return {
           success: false,
@@ -998,22 +1044,18 @@ export class AppointmentService implements IAppointmentService {
         };
       }
 
-      // Build filter for booked slots
       const filter: any = {
         shopId: new Types.ObjectId(shopId),
         'slotDetails.date': date,
         appointmentStatus: { $ne: AppointmentStatus.Cancelled }
       };
 
-      // Add staff filter if provided
       if (staffId) {
         filter.staffId = new Types.ObjectId(staffId);
       }
 
-      // Get all booked slots for the date
-      const bookedSlots = await this.appointmentRepository.findBookedSlots(filter);
+      const bookedSlots = await this._appointmentRepository.findBookedSlots(filter);
 
-      // Create a Set of booked slot identifiers for quick lookup
       const bookedSlotKeys = new Set(
         bookedSlots.map(slot =>
           `${slot.staffId}-${slot.slotDetails.date}-${slot.slotDetails.startTime}`

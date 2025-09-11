@@ -95,9 +95,15 @@ export interface IAppointmentService {
     statusCode: number;
   }>;
   startOngoingAppointment(appointmentId: string): Promise<{
-  success: boolean;
-  data?: AppointmentDocument | null;
-  message: string;
-  statusCode: number;
-}>;
+    success: boolean;
+    data?: AppointmentDocument | null;
+    message: string;
+    statusCode: number;
+  }>;
+  getAllAppointments(params: { page?: number; limit?: number; filters?: any }): Promise<{
+    success: boolean;
+    data?: any;
+    message: string;
+    statusCode: number;
+  }>;
 }

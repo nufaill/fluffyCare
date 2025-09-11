@@ -36,4 +36,12 @@ export interface UpdateAppointmentDto {
   appointmentStatus?: AppointmentStatus;
   paymentMethod?: PaymentMethod;
   notes?: string;
+  paymentDetails?: {
+  paymentIntentId?: string;
+  amount?: number;
+  currency?: string;
+  status?: PaymentStatus;
+  method?: PaymentMethod;
+  paidAt?: Date;
+};
 }

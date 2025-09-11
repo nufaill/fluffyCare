@@ -17,7 +17,7 @@ export class StaffController implements IStaffController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const { shopId } = req.params;
+      const shopId = req.query.shopId as string;
 
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.BAD_REQUEST);
@@ -30,7 +30,7 @@ export class StaffController implements IStaffController {
         throw new CustomError('Invalid limit value', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const { staff, total } = await this._staffService.getAllStaff(page, limit, shopId as unknown as string);
+      const { staff, total } = await this._staffService.getAllStaff(page, limit, shopId as string);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: {
