@@ -17,14 +17,12 @@ export class StaffController implements IStaffController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      let shopId = req.shop?.shopId || req.query.shopId;
+      const { shopId } = req.params;
 
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.BAD_REQUEST);
       }
-      if (!mongoose.Types.ObjectId.isValid(shopId as string)) {
-        throw new CustomError('Invalid Shop ID format', HTTP_STATUS.BAD_REQUEST);
-      }
+
       if (isNaN(page) || page < 1) {
         throw new CustomError('Invalid page number', HTTP_STATUS.BAD_REQUEST);
       }
@@ -32,7 +30,7 @@ export class StaffController implements IStaffController {
         throw new CustomError('Invalid limit value', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const { staff, total } = await this._staffService.getAllStaff(page, limit, shopId as string);
+      const { staff, total } = await this._staffService.getAllStaff(page, limit, shopId as unknown as string);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: {
@@ -51,7 +49,7 @@ export class StaffController implements IStaffController {
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const shopId = req.shop?.shopId;
+      const { shopId } = req.params;
       const staffData: createStaffDTO = req.body;
 
       if (!shopId) {
@@ -101,7 +99,7 @@ export class StaffController implements IStaffController {
 
   async findByShopId(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const shopId = req.shop?.shopId;
+      const { shopId } = req.params;
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.BAD_REQUEST);
       }

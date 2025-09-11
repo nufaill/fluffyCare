@@ -15,6 +15,8 @@ import { Separator } from "@/components/ui/separator";
 import { PetCareLayout } from "@/components/layout/PetCareLayout";
 import { serviceService } from "@/services/shop/service.service";
 import type { PetType, ServiceType, CreateServiceData, UpdateServiceData } from "@/types/service.type";
+import type { RootState } from "@/redux/store";
+import { useSelector } from "react-redux";
 
 interface Service {
   _id: string;
@@ -483,7 +485,7 @@ function ServiceForm({
                 <p className="text-sm text-destructive flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" />
                   {errors.price}
-              </p>
+                </p>
               )}
             </div>
 
@@ -599,12 +601,19 @@ export default function Services() {
   const [petTypes, setPetTypes] = useState<PetType[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { shopData: shop } = useSelector((state: RootState) => state.shop);
+  const shopId = shop?.id;
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
+        if (!shopId) {
+          console.error("Shop ID is undefined");
+          return;
+        }
         const [servicesData, petTypesData, serviceTypesData] = await Promise.all([
-          serviceService.getServices(),
+          serviceService.getServices(shopId),
           serviceService.getAllPetTypes(),
           serviceService.getAllServiceTypes(),
         ]);
@@ -618,7 +627,7 @@ export default function Services() {
       }
     };
     fetchData();
-  }, []);
+  }, [shop]);
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
@@ -629,18 +638,22 @@ export default function Services() {
     const matchesSearch =
       service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       service.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPetType = selectedPetTypeFilter === "all" || 
-      (Array.isArray(service.petTypeIds) && service.petTypeIds.some(pt => 
+    const matchesPetType = selectedPetTypeFilter === "all" ||
+      (Array.isArray(service.petTypeIds) && service.petTypeIds.some(pt =>
         typeof pt === 'object' ? pt._id === selectedPetTypeFilter : pt === selectedPetTypeFilter));
-    const matchesServiceType = selectedServiceTypeFilter === "all" || 
-      (typeof service.serviceTypeId === 'object' 
-        ? service.serviceTypeId._id === selectedServiceTypeFilter 
+    const matchesServiceType = selectedServiceTypeFilter === "all" ||
+      (typeof service.serviceTypeId === 'object'
+        ? service.serviceTypeId._id === selectedServiceTypeFilter
         : service.serviceTypeId === selectedServiceTypeFilter);
     return matchesSearch && matchesPetType && matchesServiceType;
   });
 
   const handleAddService = async (data: ServiceFormData) => {
     try {
+      if (!shopId) {
+        console.error("Shop ID is undefined");
+        return;
+      }
       const durationValue = Number.parseFloat(data.durationHour);
       const priceValue = Number.parseFloat(data.price);
 
@@ -666,7 +679,7 @@ export default function Services() {
 
       console.log("Sending service data:", serviceData);
 
-      const newService = await serviceService.createService(serviceData);
+      const newService = await serviceService.createService(shopId, serviceData); 
       setServices((prev) => [...prev, newService]);
       setShowAddForm(false);
       showSuccess("Service added successfully!");
@@ -813,14 +826,14 @@ export default function Services() {
             initialData={
               editingService
                 ? {
-                    name: editingService.name,
-                    description: editingService.description,
-                    serviceTypeId: typeof editingService.serviceTypeId === 'object' ? editingService.serviceTypeId._id : editingService.serviceTypeId,
-                    petTypeIds: editingService.petTypeIds.map(pt => typeof pt === 'object' ? pt._id : pt),
-                    price: editingService.price.toString(),
-                    durationHour: editingService.durationHour.toString(),
-                    image: editingService.image,
-                  }
+                  name: editingService.name,
+                  description: editingService.description,
+                  serviceTypeId: typeof editingService.serviceTypeId === 'object' ? editingService.serviceTypeId._id : editingService.serviceTypeId,
+                  petTypeIds: editingService.petTypeIds.map(pt => typeof pt === 'object' ? pt._id : pt),
+                  price: editingService.price.toString(),
+                  durationHour: editingService.durationHour.toString(),
+                  image: editingService.image,
+                }
                 : undefined
             }
             isEditing={!!editingService}

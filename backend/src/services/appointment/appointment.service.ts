@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { AppointmentRepository } from '../repositories/appointment.repository';
+import { AppointmentRepository } from '../../repositories/appointment/appointment.repository';
 import { AppointmentDocument } from '../../models/appointment.model';
 import { IAppointment, AppointmentStatus, PaymentStatus, PaymentMethod,PaymentDetails } from '../../types/appointment.types';
 import { CreateAppointmentDto, UpdateAppointmentDto } from '../../dto/appointment.dto';
@@ -165,7 +165,7 @@ export class AppointmentService implements IAppointmentService {
 
       const appointment: AppointmentDocument = await this.appointmentRepository.create(appointmentToCreate);
 
-      // Add logic: If payment method is Wallet and status is Completed, process payment via WalletService
+     
       if (appointmentData.paymentMethod === PaymentMethod.Wallet && appointmentData.paymentStatus === PaymentStatus.Completed) {
         const paymentDto = new ProcessPaymentDto(
           new Types.ObjectId(appointmentData.userId),
@@ -192,7 +192,6 @@ export class AppointmentService implements IAppointmentService {
         console.log('Socket event emitted for slot booking');
       } catch (socketError) {
         console.error('Failed to emit socket event for slot booking:', socketError);
-        // Continue execution - socket error shouldn't fail the booking
       }
 
       return {

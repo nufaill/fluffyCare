@@ -6,6 +6,7 @@ import Navbar from "@/components/admin/Navbar"
 import Sidebar from "@/components/admin/sidebar"
 import AdminAxios from "@/api/admin.axios"
 import { Pagination as TablePagination } from "@/components/ui/Pagination"
+import { Pencil } from "lucide-react"
 
 interface ISubscription {
     _id: string
@@ -59,7 +60,7 @@ export default function AdminSubscription() {
 
     const totalActive = useMemo(() => subscriptions.filter((s) => s.isActive).length, [subscriptions])
 
-     async function fetchSubscriptions(page: number, limit: number) {
+    async function fetchSubscriptions(page: number, limit: number) {
         setIsLoading(true)
         setError(null)
         try {
@@ -357,22 +358,28 @@ export default function AdminSubscription() {
                                                                     {s.isActive ? "Active" : "Inactive"}
                                                                 </span>
                                                             </Td>
+
                                                             <Td align="right">
-                                                                <div className="flex items-center gap-2 justify-end flex-wrap">
+                                                                <div className="flex items-center gap-3 justify-end flex-wrap">
                                                                     <button
                                                                         onClick={() => openEdit(s)}
-                                                                        className="inline-flex h-9 items-center rounded-lg border bg-white px-3 text-xs font-medium hover:bg-gray-50"
+                                                                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border bg-white hover:bg-gray-50"
                                                                         disabled={isSubmitting}
+                                                                        title="Edit"
                                                                     >
-                                                                        Edit
+                                                                        <Pencil className="w-4 h-4 text-gray-700" />
                                                                     </button>
-                                                                    <button
-                                                                        onClick={() => void handleToggle(s._id, !s.isActive)}
-                                                                        className={`inline-flex h-9 items-center rounded-lg px-3 text-xs font-medium text-white transition disabled:opacity-60 ${s.isActive ? "bg-gray-800 hover:bg-gray-900" : "bg-green-600 hover:bg-green-700"}`}
-                                                                        disabled={isSubmitting}
-                                                                    >
-                                                                        {s.isActive ? "Deactivate" : "Activate"}
-                                                                    </button>
+                                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={s.isActive}
+                                                                            onChange={() => void handleToggle(s._id, !s.isActive)}
+                                                                            disabled={isSubmitting}
+                                                                            className="sr-only peer"
+                                                                        />
+                                                                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-green-600 transition-colors"></div>
+                                                                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
+                                                                    </label>
                                                                 </div>
                                                             </Td>
                                                         </tr>

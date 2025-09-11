@@ -56,7 +56,7 @@ router.post('/login', adminDependencies.adminAuthController.login as RequestHand
 router.post('/logout', adminDependencies.adminAuthController.logout as RequestHandler);
 
 // Protected routes
-router.use(adminDependencies.authMiddleware.authenticate("admin") as RequestHandler);
+router.use(adminDependencies.authMiddleware.authenticate as RequestHandler);
 
 /**
  * @swagger

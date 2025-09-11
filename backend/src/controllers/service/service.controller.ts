@@ -15,7 +15,7 @@ export class ServiceController implements IServiceController {
 
   async createService(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const shopId = req.shop?.shopId;
+      const { shopId } = req.params;
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.UNAUTHORIZED);
       }
@@ -47,7 +47,7 @@ export class ServiceController implements IServiceController {
 
   async getServicesByShop(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const shopId = req.shop?.shopId;
+      const { shopId } = req.params;
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.UNAUTHORIZED);
       }
@@ -110,7 +110,7 @@ export class ServiceController implements IServiceController {
   async updateService(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { serviceId } = req.params;
-      const shopId = req.shop?.shopId;
+      const { shopId } = req.params;
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.UNAUTHORIZED);
       }
@@ -135,7 +135,7 @@ export class ServiceController implements IServiceController {
   async toggleServiceStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { serviceId } = req.params;
-      const shopId = req.shop?.shopId;
+      const { shopId } = req.params;
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.UNAUTHORIZED);
       }

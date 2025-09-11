@@ -2,9 +2,26 @@ import type { PetService } from "@/types/service"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/Badge"
-import { MapPin, Clock, Star, Dog, Cat, Rabbit, Bird, Fish, Heart, Shield, Award, Zap } from "lucide-react"
+import { MapPin, Clock, Star, Dog, Cat, Rabbit, Bird, Fish, Heart, Shield, Award, Zap, Loader2, AlertCircle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
+import { useState, useEffect } from "react"
+import Useraxios from "@/api/user.axios"
+
+// Define the Review interface (same as in serviceDetails.tsx)
+interface Review {
+  _id: string;
+  shopId: string;
+  userId: {
+    _id: string;
+    fullName: string;
+    profileImage?: string;
+  } | string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface ServiceCardProps {
   service: PetService
@@ -34,9 +51,9 @@ const getPetIcon = (petType: string) => {
     case "rats":
     case "hamster":
     case "guinea pig":
-      return Rabbit // Using rabbit as closest match for small mammals
+      return Rabbit
     default:
-      return Heart // Default icon for unknown pet types
+      return Heart
   }
 }
 
@@ -72,6 +89,78 @@ const getPetColor = (petType: string) => {
 
 export const ServiceCard = ({ service }: ServiceCardProps) => {
   const navigate = useNavigate()
+  const [ratingSummary, setRatingSummary] = useState<{ averageRating: number } | null>(null)
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [summaryLoading, setSummaryLoading] = useState(true)
+  const [reviewsLoading, setReviewsLoading] = useState(true)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
+  const [reviewsError, setReviewsError] = useState<string | null>(null)
+
+  // Fetch rating summary
+  useEffect(() => {
+    const fetchRatingSummary = async () => {
+      if (!service?.shopId?._id) return
+      try {
+        setSummaryLoading(true)
+        setSummaryError(null)
+        const response = await Useraxios.get(`/shops/${service.shopId._id}/reviews/summary`)
+        if (response.status !== 200) {
+          throw new Error(`Failed to fetch rating summary: ${response.statusText}`)
+        }
+        setRatingSummary(response.data.data)
+      } catch (err: any) {
+        console.error("Rating Summary Fetch Error:", err)
+        setSummaryError(err.response?.data?.message || err.message || "Failed to load rating summary")
+      } finally {
+        setSummaryLoading(false)
+      }
+    }
+
+    if (service?.shopId?._id) {
+      fetchRatingSummary()
+    }
+  }, [service?.shopId?._id])
+
+  // Fetch reviews
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!service?.shopId?._id) return
+      try {
+        setReviewsLoading(true)
+        setReviewsError(null)
+        const response = await Useraxios.get(`/shops/${service.shopId._id}/reviews?page=1&limit=10`)
+        if (response.status !== 200) {
+          throw new Error(`Failed to fetch reviews: ${response.statusText}`)
+        }
+        const reviewsData = response.data.data?.reviews || response.data.data || []
+        if (!Array.isArray(reviewsData)) {
+          console.error("Reviews data is not an array:", reviewsData)
+          throw new Error("Invalid reviews data format")
+        }
+        const reviewsWithUserDetails = reviewsData.map((review: any) => ({
+          ...review,
+          _id: review._id || review.id,
+          userId: typeof review.userId === "object" && review.userId !== null
+            ? {
+                _id: review.userId.id || review.userId._id,
+                fullName: review.userId.fullName || "Anonymous User",
+                profileImage: review.userId.profileImage || null,
+              }
+            : { _id: "", fullName: "Anonymous User", profileImage: null },
+        }))
+        setReviews(reviewsWithUserDetails)
+      } catch (err: any) {
+        console.error("Reviews Fetch Error:", err)
+        setReviewsError(err.response?.data?.message || err.message || "Failed to load reviews")
+      } finally {
+        setReviewsLoading(false)
+      }
+    }
+
+    if (service?.shopId?._id) {
+      fetchReviews()
+    }
+  }, [service?.shopId?._id])
 
   const handleViewDetails = () => {
     navigate(`/services/${service._id}`)
@@ -79,7 +168,6 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
 
   const formatPetTypes = (petTypes: any) => {
     if (!petTypes) return []
-
     if (Array.isArray(petTypes)) {
       return petTypes.map((type) => {
         if (typeof type === "object" && type.name) {
@@ -88,28 +176,23 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
         return typeof type === "string" ? type : "Unknown"
       })
     }
-
     if (typeof petTypes === "object" && petTypes.name) {
       return [petTypes.name]
     }
     if (typeof petTypes === "string") {
       return [petTypes]
     }
-
     return []
   }
 
   const formatServiceType = (serviceType: any) => {
     if (!serviceType) return "Service"
-
     if (typeof serviceType === "object" && serviceType.name) {
       return serviceType.name
     }
-
     if (typeof serviceType === "string") {
       return serviceType
     }
-
     return "Service"
   }
 
@@ -139,18 +222,16 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
     const hours = Math.floor(totalSeconds / 3600)
     const minutes = Math.floor((totalSeconds % 3600) / 60)
     const seconds = totalSeconds % 60
-
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
   }
 
-
-
-  const getRating = () => {
-    return service.rating || 0
-  }
-
-  const getReviewCount = () => {
-    return service.reviewCount || service.reviews || 0
+  const renderStars = (rating: number) => {
+    return [...Array(5)].map((_, i) => (
+      <Star
+        key={i}
+        className={`w-4 h-4 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+      />
+    ))
   }
 
   const getPrice = () => {
@@ -158,28 +239,27 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
   }
 
   const petTypes = formatPetTypes(service.petTypeIds)
-  const rating = getRating()
+  const rating = ratingSummary?.averageRating || 0
+  const reviewCount = reviews.length
 
   return (
     <Card className="group overflow-hidden bg-white dark:bg-black border-2 border-black dark:border-white hover:shadow-2xl hover:shadow-gray-400/30 transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]">
       {/* Image Section with Overlay */}
       <div className="relative overflow-hidden">
         <img
-          src={getServiceImage() || "/placeholder.svg"}
+          src={getServiceImage()}
           alt={getServiceName()}
           className="w-full h-56 object-cover transition-transform duration-500 group-hover:scale-110"
           onError={(e) => {
-            ; (e.target as HTMLImageElement).src = "/placeholder-service.jpg"
+            (e.target as HTMLImageElement).src = "/placeholder-service.jpg"
           }}
         />
-
         {/* Price Badge */}
         <div className="absolute top-4 right-4">
           <div className="bg-black text-white dark:bg-white dark:text-black border-2 border-black dark:border-white font-mono font-semibold text-base md:text-lg px-2 py-0.5 shadow-sm rounded-full">
             ₹{getPrice()}
           </div>
         </div>
-
         {/* Service Type Badge */}
         <div className="absolute top-4 left-4">
           <Badge className="bg-white dark:bg-black text-black dark:text-white border-2 border-black dark:border-white font-mono font-semibold text-sm px-3 py-1 shadow-sm rounded-full flex items-center">
@@ -187,8 +267,6 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
             {formatServiceType(service.serviceTypeId)}
           </Badge>
         </div>
-
-
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
@@ -202,7 +280,7 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
               alt={`${getShopName()} logo`}
               className="w-12 h-12 rounded-full object-cover border-2 border-black dark:border-white shadow-lg"
               onError={(e) => {
-                ; (e.target as HTMLImageElement).src = "/placeholder-logo.jpg"
+                (e.target as HTMLImageElement).src = "/placeholder-logo.jpg"
               }}
             />
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-black" />
@@ -212,16 +290,16 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
             <h3 className="font-bold text-black dark:text-white font-mono text-lg">{getShopName()}</h3>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300 dark:text-gray-600"
-                      }`}
-                  />
-                ))}
+                {summaryLoading || reviewsLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-black dark:text-white" />
+                ) : summaryError || reviewsError ? (
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                ) : (
+                  renderStars(rating)
+                )}
               </div>
               <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
-                {rating} ({getReviewCount()})
+                {summaryLoading || reviewsLoading ? "..." : summaryError || reviewsError ? "N/A" : rating.toFixed(1)} ({reviewCount})
               </span>
             </div>
           </div>
@@ -238,7 +316,6 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
             </div>
             <span className="font-mono text-sm">{getLocation()}</span>
           </div>
-
           <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
             <div className="w-8 h-8 bg-black dark:bg-white rounded-full flex items-center justify-center">
               <Clock className="w-4 h-4 text-white dark:text-black" />
@@ -258,7 +335,6 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
               {petTypes.map((petType, index) => {
                 const IconComponent = getPetIcon(petType)
                 const colorClass = getPetColor(petType)
-
                 return (
                   <Badge
                     key={index}

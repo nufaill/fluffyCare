@@ -1,4 +1,3 @@
-// backend/src/services/jwt/jwtService.ts
 import ms from "ms";
 import { ITokenService } from "../../interfaces/serviceInterfaces/tokenServiceInterface";
 import jwt, { JwtPayload, Secret } from "jsonwebtoken";
@@ -17,29 +16,23 @@ export class JwtService implements ITokenService {
     this._accessExpiresIn = process.env.JWT_ACCESS_EXPIRES;
     this._refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES;
   }
+  verifyRefreshtoken(token: string): string | JwtPayload | null {
+    throw new Error("Method not implemented.");
+  }
 
   generateAccessToken(payload: {
     id: string;
     email: string;
-    role: "user" | "shop" | "admin";
   }): string {
-    const idKey = payload.role === "user"
-      ? "userId"
-      : payload.role === "admin"
-        ? "adminId"
-        : "shopId";
-
     const jwtPayload = {
-      [idKey]: payload.id,
+      userId: payload.id,
       email: payload.email,
-      role: payload.role,
     };
 
     return jwt.sign(jwtPayload, this._accessSecret, {
       expiresIn: this._accessExpiresIn as ms.StringValue,
     });
   }
-
 
   generateRefreshToken(payload: {
     id: string;
@@ -57,7 +50,6 @@ export class JwtService implements ITokenService {
   generateTokens(payload: {
     id: string;
     email: string;
-    role: "user" | "shop" | "admin";
   }): { accessToken: string; refreshToken: string } {
     const accessToken = this.generateAccessToken(payload);
     const refreshToken = this.generateRefreshToken(payload);
@@ -80,11 +72,6 @@ export class JwtService implements ITokenService {
       console.error("Refresh token verification failed:", error);
       return null;
     }
-  }
-
-  // Fixed the typo in method name
-  verifyRefreshtoken(token: string): string | JwtPayload | null {
-    return this.verifyRefreshToken(token);
   }
 
   decodeAccessToken(token: string): JwtPayload | null {

@@ -3,10 +3,10 @@ import type { Staff, CreateStaffPayload, UpdateStaffPayload, ApiResponse } from 
 import type { AxiosResponse } from "axios";
 
 export const StaffService = {
-    async createStaff(staffData: CreateStaffPayload): Promise<ApiResponse<Staff>> {
+    async createStaff(shopId: string, staffData: Omit<CreateStaffPayload, 'shopId'>): Promise<ApiResponse<Staff>> {
         try {
             const response: AxiosResponse<ApiResponse<Staff>> = await shopaxios.post(
-                "/staff-create",
+                `/staff-create/${shopId}`,
                 staffData
             );
             return response.data;
@@ -15,9 +15,9 @@ export const StaffService = {
         }
     },
 
-    async getStaff(page: number = 1, limit: number = 10): Promise<{ staff: Staff[]; total: number; page: number; limit: number; totalPages: number }> {
+    async getStaff(shopId: string, page: number = 1, limit: number = 10): Promise<{ staff: Staff[]; total: number; page: number; limit: number; totalPages: number }> {
         try {
-            const response: AxiosResponse<ApiResponse<{ staff: Staff[]; total: number; page: number; limit: number; totalPages: number }>> = await shopaxios.get(`/staff`, {
+            const response: AxiosResponse<ApiResponse<{ staff: Staff[]; total: number; page: number; limit: number; totalPages: number }>> = await shopaxios.get(`/staff/${shopId}`, {
                 params: { page, limit }
             });
             const data = response.data.data || { staff: [], total: 0, page: 1, limit: 10, totalPages: 1 };

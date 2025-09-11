@@ -29,8 +29,8 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface Plan {
   name: string;
-  price: string; // Changed to string to match formatted price (e.g., "₹299")
-  amount: number; // Keep as number for payment processing (in cents)
+  price: string;
+  amount: number;
   description: string;
   profitPercentage: number;
   durationInDays: number;
@@ -59,18 +59,37 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
         const plansResponse = await ShopAxios.get("/subscriptions-active");
         const fetchedPlans = plansResponse.data.data.subscriptions.map((plan: any) => ({
           name: plan.plan,
-          price: `₹${(plan.price).toLocaleString("en-IN")}`, 
-          amount: plan.price * 100, 
+          price: `₹${plan.price.toLocaleString("en-IN")}`,
+          amount: plan.price * 100,
           description: plan.description,
           profitPercentage: plan.profitPercentage,
           durationInDays: plan.durationInDays,
           features: [
-            ...plan.description.split("\n"), 
+            ...plan.description.split("\n"),
             `Valid for ${plan.durationInDays} days`,
             `${plan.profitPercentage}% service fee`,
           ],
         }));
-        setPlans(fetchedPlans);
+
+        // Static Free plan
+        const freePlan: Plan = {
+          name: "Free",
+          price: "$0/month",
+          amount: 0,
+          description: "Free starter plan",
+          profitPercentage: 50,
+          durationInDays: 30,
+          features: [
+            "Profile listing",
+            "Up to 5 bookings per month",
+            "Basic analytics",
+            "Email support",
+            "50% service fee",
+          ],
+        };
+
+        // Add Free plan always at top
+        setPlans([freePlan, ...fetchedPlans]);
 
         // Fetch current subscription plan
         const subscriptionResponse = await ShopAxios.get(`/shops/${shopId}/subscription`);
@@ -180,12 +199,13 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
                         className="mt-2 sm:mt-4 w-full text-xs sm:text-sm"
                         variant={plan.popular ? "default" : "outline"}
                         onClick={() => handlePlanSelection(plan)}
-                        disabled={isCurrentPlan || isLoading}
+                        disabled={isCurrentPlan || isLoading || plan.amount === 0}
                       >
-                        {isCurrentPlan 
-                          ? "Current Plan" 
-                          : `Select ${plan.name}`
-                        }
+                        {isCurrentPlan
+                          ? "Current Plan"
+                          : plan.amount === 0
+                          ? "Included"
+                          : `Select ${plan.name}`}
                       </Button>
                     </CardContent>
                   </Card>
@@ -193,7 +213,7 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
               })}
             </div>
           )}
-          {selectedPlan && shopId && (
+          {selectedPlan && shopId && selectedPlan.amount > 0 && (
             <Elements stripe={stripePromise}>
               <PaymentForm
                 shopId={shopId}

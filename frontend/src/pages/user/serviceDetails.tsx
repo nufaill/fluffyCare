@@ -124,6 +124,9 @@ export const ServiceDetails = () => {
   const [reviews, setReviews] = useState<Review[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(true)
   const [reviewsError, setReviewsError] = useState<string | null>(null)
+  const [ratingSummary, setRatingSummary] = useState<{ averageRating: number; reviewCount: number } | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
   const [showEditReviewDialog, setShowEditReviewDialog] = useState<string | null>(null)
   const [editReviewRating, setEditReviewRating] = useState<number>(0)
   const [editReviewComment, setEditReviewComment] = useState<string>("")
@@ -155,6 +158,31 @@ export const ServiceDetails = () => {
 
     fetchServiceDetails()
   }, [id])
+
+  useEffect(() => {
+    const fetchRatingSummary = async () => {
+      if (!service?.shopId?._id) return;
+      try {
+        setSummaryLoading(true);
+        setSummaryError(null);
+        const response = await Useraxios.get(`/shops/${service.shopId._id}/reviews/summary`);
+        if (response.status !== 200) {
+          throw new Error(`Failed to fetch rating summary: ${response.statusText}`);
+        }
+        setRatingSummary(response.data.data);
+      } catch (err: any) {
+        console.error("Rating Summary Fetch Error:", err);
+        setSummaryError(err.response?.data?.message || err.message || "Failed to load rating summary");
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+
+    if (service?.shopId?._id) {
+      fetchRatingSummary();
+    }
+  }, [service?.shopId?._id]);
+
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -234,7 +262,7 @@ export const ServiceDetails = () => {
 
   const handleSubmitEditReview = async (reviewId: string) => {
     try {
-      const response = await Useraxios.put(`/reviews/${reviewId}`, { 
+      const response = await Useraxios.put(`/reviews/${reviewId}`, {
         rating: editReviewRating,
         comment: editReviewComment,
       }, {
@@ -440,9 +468,15 @@ export const ServiceDetails = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-4">
                       <div className="flex items-center gap-2">
-                        {renderStars(service.rating || 0)}
+                        {summaryLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-black dark:text-white" />
+                        ) : summaryError ? (
+                          <AlertCircle className="h-5 w-5 text-red-600" />
+                        ) : (
+                          renderStars(ratingSummary?.averageRating || 0)
+                        )}
                         <span className="text-lg font-mono font-bold text-black dark:text-white">
-                          {service.rating || 0}
+                          {summaryLoading ? "..." : summaryError ? "N/A" : (ratingSummary?.averageRating || 0).toFixed(1)}
                         </span>
                         <span className="text-gray-600 dark:text-gray-400 font-mono">
                           ({reviews.length || 0} reviews)
@@ -767,7 +801,6 @@ export const ServiceDetails = () => {
           </div>
         </DialogContent>
       </Dialog>
-
       <Footer />
     </div>
   )

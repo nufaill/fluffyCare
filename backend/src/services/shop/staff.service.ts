@@ -40,9 +40,13 @@ export class StaffService implements IStaffService {
       }
     }
 
-    const payload = {
+    const shopId = typeof staffDTO.shopId === 'string'
+      ? new mongoose.Types.ObjectId(staffDTO.shopId)
+      : staffDTO.shopId;
+
+    const payload: Partial<Staff> = {
       ...staffDTO,
-      shopId: new mongoose.Types.ObjectId(staffDTO.shopId)
+      shopId: shopId as unknown as Schema.Types.ObjectId,
     };
 
     const staff = await this._staffRepository.create(payload);
@@ -149,11 +153,11 @@ export class StaffService implements IStaffService {
         HTTP_STATUS.NOT_FOUND
       );
     }
-    
+
     const updatedStaff = await this._staffRepository.update(id, {
       isActive: statusDTO.isActive
     });
-    
+
     return updatedStaff ? this._mapToResponseDTO(updatedStaff) : null;
   }
 

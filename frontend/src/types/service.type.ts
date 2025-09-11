@@ -13,10 +13,7 @@ export interface PetType {
   createdAt: string;
   updatedAt: string;
 }
-export interface ServiceType {
-  _id: string;
-  name: string;
-}
+
 export interface Service {
   _id: string;
   shopId: string;

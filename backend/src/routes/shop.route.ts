@@ -365,7 +365,7 @@ router.get('/service-types', shopDependencies.serviceController.getServiceTypes 
 router.get('/pet-types', shopDependencies.serviceController.getPetTypes as RequestHandler);
 
 // Protected routes
-router.use(shopDependencies.authMiddleware.authenticate('shop') as RequestHandler);
+router.use(shopDependencies.authMiddleware.authenticate as RequestHandler);
 
 /**
  * @swagger
@@ -474,7 +474,7 @@ router.patch('/profile/update', shopDependencies.shopController.updateShopProfil
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/service-create', validateCreateService, shopDependencies.serviceController.createService as RequestHandler);
+router.post('/service-create/:shopId', validateCreateService, shopDependencies.serviceController.createService as RequestHandler);
 
 /**
  * @swagger
@@ -500,7 +500,7 @@ router.post('/service-create', validateCreateService, shopDependencies.serviceCo
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/service-list', shopDependencies.serviceController.getServicesByShop as RequestHandler);
+router.get('/service-list/:shopId', shopDependencies.serviceController.getServicesByShop as RequestHandler);
 
 /**
  * @swagger
@@ -649,7 +649,7 @@ router.patch('/service/:serviceId/toggle-status', shopDependencies.serviceContro
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/staff', shopDependencies.staffController.getAllStaff as RequestHandler);
+router.get('/staff/:shopId', shopDependencies.staffController.getAllStaff as RequestHandler);
 
 /**
  * @swagger
@@ -692,7 +692,7 @@ router.get('/staff', shopDependencies.staffController.getAllStaff as RequestHand
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/staff-create', validateCreateStaff as (ValidationChain | RequestHandler)[], shopDependencies.staffController.create as RequestHandler);
+router.post('/staff-create/:shopId', validateCreateStaff as (ValidationChain | RequestHandler)[], shopDependencies.staffController.create as RequestHandler);
 
 /**
  * @swagger

@@ -1,12 +1,10 @@
 import shopaxios from "@/api/shop.axios";
-import type { ServiceType,Service,CreateServiceData,UpdateServiceData,ServiceApiResponse, PetType } from "@/types/service.type";
-
-
+import type { ServiceType, Service, CreateServiceData, UpdateServiceData, ServiceApiResponse, PetType } from "@/types/service.type";
 
 export const serviceService = {
-  async createService(serviceData: CreateServiceData): Promise<Service> {
+  async createService(shopId: string, serviceData: CreateServiceData): Promise<Service> {
     try {
-      const response = await shopaxios.post<ServiceApiResponse>('/service-create', serviceData);
+      const response = await shopaxios.post<ServiceApiResponse>(`/service-create/${shopId}`, serviceData);
       return response.data.data as Service;
     } catch (error) {
       console.error('Error creating service:', error);
@@ -14,9 +12,9 @@ export const serviceService = {
     }
   },
 
-  async getServices(): Promise<Service[]> {
+  async getServices(shopId: string): Promise<Service[]> {
     try {
-      const response = await shopaxios.get<ServiceApiResponse>('/service-list');
+      const response = await shopaxios.get<ServiceApiResponse>(`/service-list/${shopId}`);
       return response.data.data as Service[];
     } catch (error) {
       console.error('Error fetching services:', error);
@@ -53,12 +51,12 @@ export const serviceService = {
       throw error;
     }
   },
-   async getAllServiceTypes():Promise<ServiceType[]>{
+  async getAllServiceTypes(): Promise<ServiceType[]> {
     const res = await shopaxios.get('/service-types');
-    return res.data.data 
+    return res.data.data;
   },
-   async getAllPetTypes():Promise<PetType[]>{
+  async getAllPetTypes(): Promise<PetType[]> {
     const res = await shopaxios.get('/pet-types');
-    return res.data.data 
+    return res.data.data;
   }
 };

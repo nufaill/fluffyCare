@@ -21,6 +21,8 @@ import { StaffService } from "@/services/shop/staffService";
 import type { Staff } from "@/types/staff.type";
 import { Navbar } from '@/components/shop/Navbar';
 import { Pagination } from '@/components/ui/Pagination';
+import type { RootState } from "@/redux/store";
+import { useSelector } from "react-redux";
 
 export default function StaffManagement() {
     const [staff, setStaff] = useState<Staff[]>([]);
@@ -32,6 +34,8 @@ export default function StaffManagement() {
     const [staffToToggle, setStaffToToggle] = useState<{ id: string; isActive: boolean } | null>(null);
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
+    const { shopData: shop } = useSelector((state: RootState) => state.shop);
+    const shopId = shop?.id!;
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [total, setTotal] = useState(0);
@@ -142,7 +146,7 @@ export default function StaffManagement() {
         const fetchStaff = async () => {
             try {
                 setInitialLoading(true);
-                const response = await StaffService.getStaff(currentPage, pageSize);
+                const response = await StaffService.getStaff(shopId, currentPage, pageSize); 
                 const validStaff = response.staff.filter((s) => /^[0-9a-fA-F]{24}$/.test(s._id));
                 if (validStaff.length !== response.staff.length) {
                     console.error('Invalid staff IDs detected:', response.staff);
@@ -167,7 +171,7 @@ export default function StaffManagement() {
         };
 
         fetchStaff();
-    }, [currentPage, pageSize]);
+    }, [currentPage, pageSize, shopId]);
 
     const handlePaginationChange = (page: number, newPageSize?: number) => {
         setCurrentPage(page);
@@ -204,9 +208,9 @@ export default function StaffManagement() {
                 name: formData.name.trim(),
                 email: formData.email,
                 phone: formData.phone,
-                shopId: "", 
+                shopId,
             };
-            const response = await StaffService.createStaff(staffPayload);
+            const response = await StaffService.createStaff(shopId,staffPayload);
             setStaff((prev) => [...prev, response.data]);
             setIsAddDialogOpen(false);
             resetForm();
