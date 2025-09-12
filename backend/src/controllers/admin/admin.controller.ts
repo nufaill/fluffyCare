@@ -13,7 +13,7 @@ export class AdminAuthController implements IAdminController {
       const loginDto: LoginDto = req.body;
       const result: AuthResponseDto = await this._adminService.login(loginDto); 
 
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, 'admin');
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,

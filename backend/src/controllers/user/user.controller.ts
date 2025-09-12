@@ -26,7 +26,7 @@ export class UserController implements IUserController {
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: users,
-        message: SUCCESS_MESSAGES.USERS_FETCHED_SUCESS || 'Users fetched successfully',
+        message: SUCCESS_MESSAGES.USERS_FETCHED_SUCESS,
         meta: {
           page,
           limit,
@@ -37,7 +37,7 @@ export class UserController implements IUserController {
     } catch (error) {
       console.error(`❌ [UserController] Error:`, error);
       const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-      const message = error instanceof Error ? error.message : ERROR_MESSAGES.USERS_FETCHED_FAILED || 'Failed to fetch users';
+      const message = error instanceof Error ? error.message : ERROR_MESSAGES.USERS_FETCHED_FAILED;
       res.status(statusCode).json({
         success: false,
         message,
@@ -81,12 +81,12 @@ export class UserController implements IUserController {
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: user,
-        message: SUCCESS_MESSAGES.PROFILE_FETCHED_SUCCESS || 'Profile fetched successfully',
+        message: SUCCESS_MESSAGES.PROFILE_FETCHED_SUCCESS,
       });
     } catch (error) {
       console.error(`❌ [UserController] Error:`, error);
       const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-      const message = error instanceof Error ? error.message : ERROR_MESSAGES.PROFILE_FETCHED_FAILED || 'Failed to fetch profile';
+      const message = error instanceof Error ? error.message : ERROR_MESSAGES.PROFILE_FETCHED_FAILED;
       res.status(statusCode).json({
         success: false,
         message,
@@ -105,12 +105,12 @@ export class UserController implements IUserController {
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         data: updatedUser,
-        message: SUCCESS_MESSAGES.PROFILE_UPDATED_SUCCESS || 'Profile updated successfully',
+        message: SUCCESS_MESSAGES.PROFILE_UPDATED_SUCCESS,
       });
     } catch (error) {
       console.error(`❌ [UserController] Error:`, error);
       const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-      const message = error instanceof Error ? error.message : ERROR_MESSAGES.PROFILE_UPDATE_FAILED || 'Failed to update profile';
+      const message = error instanceof Error ? error.message : ERROR_MESSAGES.PROFILE_UPDATE_FAILED;
       res.status(statusCode).json({
         success: false,
         message,

@@ -126,7 +126,7 @@ export class ShopAuthController {
         return;
       }
 
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, 'shop');
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -196,7 +196,7 @@ export class ShopAuthController {
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: SUCCESS_MESSAGES.OTP_SEND_SUCCESS || 'Reset link sent successfully',
+        message: SUCCESS_MESSAGES.OTP_SEND_SUCCESS,
       });
     } catch (error) {
       console.error('❌ [ShopAuthController] Send reset link error:', error);
@@ -220,7 +220,7 @@ export class ShopAuthController {
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS || 'Password reset successful',
+        message: SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS,
       });
     } catch (error) {
       console.error('❌ [ShopAuthController] Reset password error:', error);

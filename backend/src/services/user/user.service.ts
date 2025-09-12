@@ -1,4 +1,4 @@
-import { UserRepository } from '../../repositories/user.repository';
+import { UserRepository } from '../../repositories/user/user.repository';
 import { UserResponseDTO, UpdateUserDTO } from '../../dto/user.dto';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
@@ -14,7 +14,7 @@ export class UserService implements IUserService {
       return { users, total, totalPages };
     } catch (error) {
       throw error instanceof CustomError ? error : new CustomError(
-        ERROR_MESSAGES.USERS_FETCHED_FAILED || 'Failed to fetch users',
+        ERROR_MESSAGES.USERS_FETCHED_FAILED,
         HTTP_STATUS.INTERNAL_SERVER_ERROR
       );
     }
@@ -24,14 +24,14 @@ export class UserService implements IUserService {
     try {
       if (!userId) {
         throw new CustomError(
-          ERROR_MESSAGES.ID_REQUIRED || 'User ID is required',
+          ERROR_MESSAGES.ID_REQUIRED,
           HTTP_STATUS.BAD_REQUEST
         );
       }
 
       if (typeof isActive !== 'boolean') {
         throw new CustomError(
-          ERROR_MESSAGES.IS_ACTIVE_ERROR || 'isActive must be a boolean',
+          ERROR_MESSAGES.IS_ACTIVE_ERROR,
           HTTP_STATUS.BAD_REQUEST
         );
       }
@@ -40,7 +40,7 @@ export class UserService implements IUserService {
 
       if (!updatedUser) {
         throw new CustomError(
-          ERROR_MESSAGES.USER_NOT_FOUND || 'User not found',
+          ERROR_MESSAGES.USER_NOT_FOUND,
           HTTP_STATUS.NOT_FOUND
         );
       }
@@ -59,7 +59,7 @@ export class UserService implements IUserService {
     try {
       if (!userId) {
         throw new CustomError(
-          ERROR_MESSAGES.UNAUTH_NO_USER_FOUND || 'User ID required',
+          ERROR_MESSAGES.UNAUTH_NO_USER_FOUND,
           HTTP_STATUS.UNAUTHORIZED
         );
       }
@@ -68,7 +68,7 @@ export class UserService implements IUserService {
 
       if (!user) {
         throw new CustomError(
-          ERROR_MESSAGES.USER_NOT_FOUND || 'User not found',
+          ERROR_MESSAGES.USER_NOT_FOUND,
           HTTP_STATUS.NOT_FOUND
         );
       }
@@ -76,7 +76,7 @@ export class UserService implements IUserService {
       return user;
     } catch (error) {
       throw error instanceof CustomError ? error : new CustomError(
-        ERROR_MESSAGES.PROFILE_FETCHED_FAILED || 'Failed to fetch profile',
+        ERROR_MESSAGES.PROFILE_FETCHED_FAILED,
         HTTP_STATUS.INTERNAL_SERVER_ERROR
       );
     }
@@ -86,7 +86,7 @@ export class UserService implements IUserService {
     try {
       if (!userId) {
         throw new CustomError(
-          ERROR_MESSAGES.UNAUTH_NO_USER_FOUND || 'User ID required',
+          ERROR_MESSAGES.UNAUTH_NO_USER_FOUND,
           HTTP_STATUS.UNAUTHORIZED
         );
       }
@@ -95,7 +95,7 @@ export class UserService implements IUserService {
 
       if (!fullName && !phone && !profileImage && !location) {
         throw new CustomError(
-          ERROR_MESSAGES.INVALID_INPUT || 'At least one field must be provided for update',
+          ERROR_MESSAGES.INVALID_INPUT,
           HTTP_STATUS.BAD_REQUEST
         );
       }
@@ -104,7 +104,7 @@ export class UserService implements IUserService {
 
       if (!updatedUser) {
         throw new CustomError(
-          ERROR_MESSAGES.USER_NOT_FOUND || 'User not found',
+          ERROR_MESSAGES.USER_NOT_FOUND,
           HTTP_STATUS.NOT_FOUND
         );
       }
@@ -112,7 +112,7 @@ export class UserService implements IUserService {
       return updatedUser;
     } catch (error) {
       throw error instanceof CustomError ? error : new CustomError(
-        ERROR_MESSAGES.PROFILE_UPDATE_FAILED || 'Failed to update profile',
+        ERROR_MESSAGES.PROFILE_UPDATE_FAILED,
         HTTP_STATUS.INTERNAL_SERVER_ERROR
       );
     }

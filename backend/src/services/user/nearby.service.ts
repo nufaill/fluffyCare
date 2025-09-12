@@ -1,4 +1,4 @@
-import { ShopRepository } from '../../repositories/shop.repository';
+import { ShopRepository } from '../../repositories/shop/shop.repository';
 import { ShopDocument } from '../../types/Shop.types';
 import {NearbyShopsQuery,NearbyShop} from '../../interfaces/serviceInterfaces/INearbyShopsService'
 

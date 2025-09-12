@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { UserRepository } from '../../repositories/user.repository';
+import { UserRepository } from '../../repositories/user/user.repository';
 import { JwtService } from '../jwt/jwt.service';
 import { GoogleAuthService } from '../googleAuth/google.service';
 import { AuthResponse, JwtPayload } from '../../types/auth.types';
@@ -27,7 +27,7 @@ export class AuthService implements IUserAuthService {
   ) { }
 
   generateTokens(id: string, email: string) {
-    return this.jwtService.generateTokens({ id, email, role: 'user' });
+    return this.jwtService.generateTokens({ id, email });
   }
 
   async register(userData: RegisterUserDTO): Promise<{ email: string }> {
@@ -191,8 +191,7 @@ export class AuthService implements IUserAuthService {
     }
     const newAccessToken = this.jwtService.generateAccessToken({
       id: user.id,
-      email: user.email,
-      role: 'user',
+      email: user.email
     });
     console.log(`✅ [AuthService] Token refreshed for ${user.email}`);
     return newAccessToken;

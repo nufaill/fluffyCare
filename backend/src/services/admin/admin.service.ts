@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { AdminRepository } from '../../repositories/admin.repository';
+import { AdminRepository } from '../../repositories/admin/admin.repository';
 import { JwtService } from '../jwt/jwt.service';
 import { LoginDto, AuthResponseDto, AdminResponseDto } from '../../dto/admin.dto';
 import { AdminDocument } from '../../models/admin.model';
@@ -33,8 +33,7 @@ export class AuthService implements IAdminService {
   private generateTokens(id: string, email: string) {
     return this.jwtService.generateTokens({
       id,
-      email,
-      role: 'admin',
+      email
     });
   }
 
