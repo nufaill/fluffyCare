@@ -212,7 +212,7 @@ export default function AppointmentManagement() {
       dataIndex: "_id",
       width: "80px",
       sortable: true,
-      render: (v) => <span className="font-medium">{v.slice(0, 6).toUpperCase()}</span>,
+      render: (_, record) => <span className="font-medium">{record.bookingNumber}</span>,
     },
     {
       key: "petService",

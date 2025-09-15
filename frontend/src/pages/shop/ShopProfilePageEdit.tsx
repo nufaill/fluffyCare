@@ -46,6 +46,8 @@ export default function ShopEditPage() {
   const [currentLocation, setCurrentLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [locationAddress, setLocationAddress] = useState<string>('');
   const [loadingLocation, setLoadingLocation] = useState(false);
+  
+  const shopId = shop?._id;
 
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<ShopFormData>({
     resolver: zodResolver(shopSchema),
@@ -158,26 +160,33 @@ export default function ShopEditPage() {
     }
   };
 
-  const onSubmit = async (data: ShopFormData) => {
+const onSubmit = async (data: ShopFormData) => {
+  
+  console.log('onSubmit called with:', data);
+    if (!shopId) {
+        toast.error('Shop ID not found');
+        return;
+    }
+
     console.log('Form submitted with data:', data);
     try {
-      setLoading(true);
-      const payload = {
-        ...data,
-        logo: data.logo || undefined,
-      };
-      console.log('Sending payload to API:', payload);
-      const shopData = await shopService.editShop(payload);
-      dispatch(addShop(shopData));
-      toast.success('Profile updated successfully');
-      navigate('/shop/profile');
+        setLoading(true);
+        const payload = {
+            ...data,
+            logo: data.logo || undefined,
+        };
+        console.log('Sending payload to API:', payload);
+        const shopData = await shopService.editShop(shopId, payload); 
+        dispatch(addShop(shopData));
+        toast.success('Profile updated successfully');
+        navigate('/shop/profile');
     } catch (error) {
-      console.error('API error details:', error);
-      toast.error('Failed to update profile: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        console.error('API error details:', error);
+        toast.error('Failed to update profile: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   const handleCancel = () => {
     console.log('Cancel button clicked');

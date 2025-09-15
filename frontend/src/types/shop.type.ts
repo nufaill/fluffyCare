@@ -84,7 +84,7 @@ export interface ShopAuthResponse {
   shop: Shop;
 }
 export interface ShopUpdatePayload {
-  certificateUrl: string;
+  certificateUrl?: string;
   name?: string;
   phone?: string;
   city?: string;

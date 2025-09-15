@@ -57,7 +57,7 @@ export default function ShopProfilePage() {
 
     const { shopData: shop } = useSelector((state: RootState) => state.shop);
     const navigate = useNavigate();
-
+    const shopId = shop?._id;
     const { register, handleSubmit, formState: { errors }, reset } = useForm<ShopFormData>({
         resolver: zodResolver(shopSchema),
         defaultValues: {
@@ -103,14 +103,15 @@ export default function ShopProfilePage() {
     }, [shop, reset]);
 
     const onSubmit = async (data: ShopFormData) => {
-        if (!shop?._id) {
+        console.log('onSubmit called with:', data);
+        if (!shopId) { 
             toast.error('Shop ID not found');
             return;
         }
 
         setLoading(true);
         try {
-            await shopService.editShop(data);
+            await shopService.editShop(shopId, data);
             setIsEditing(false);
             toast.success('Profile updated successfully');
             navigate(0);

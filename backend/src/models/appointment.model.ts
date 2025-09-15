@@ -4,12 +4,12 @@ import {
   PaymentStatus,
   AppointmentStatus,
   PaymentMethod,
-  PaymentDetails,
 } from '../types/appointment.types';
 
 // Define AppointmentDocument interface
 export interface AppointmentDocument extends IAppointment, Document {
   _id: Types.ObjectId;
+  bookingNumber: string;  
 }
 
 const AppointmentSchema = new Schema<AppointmentDocument>(
@@ -20,17 +20,17 @@ const AppointmentSchema = new Schema<AppointmentDocument>(
     staffId: { type: Schema.Types.ObjectId, ref: 'Staff', required: true },
     serviceId: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
     slotDetails: {
-      startTime: { type: String, required: true }, // e.g., "11:00"
-      endTime: { type: String, required: true },   // e.g., "12:00"
-      date: { type: String, required: true },      // e.g., "2025-08-11"
+      startTime: { type: String, required: true },
+      endTime: { type: String, required: true },
+      date: { type: String, required: true }, // format: yyyy-MM-dd
     },
     paymentDetails: {
-      paymentIntentId: { type: String, required: false },
-      amount: { type: Number, required: false },
-      currency: { type: String, required: false },
-      status: { type: String, enum: Object.values(PaymentStatus), required: false },
-      method: { type: String, enum: Object.values(PaymentMethod), required: false },
-      paidAt: { type: Date, required: false },
+      paymentIntentId: { type: String },
+      amount: { type: Number },
+      currency: { type: String },
+      status: { type: String, enum: Object.values(PaymentStatus) },
+      method: { type: String, enum: Object.values(PaymentMethod) },
+      paidAt: { type: Date },
     },
     appointmentStatus: {
       type: String,
@@ -38,6 +38,7 @@ const AppointmentSchema = new Schema<AppointmentDocument>(
       default: AppointmentStatus.Pending,
     },
     notes: { type: String },
+    bookingNumber: { type: String, unique: true },
   },
   {
     timestamps: true,
@@ -45,4 +46,29 @@ const AppointmentSchema = new Schema<AppointmentDocument>(
   }
 );
 
-export const Appointment = model<AppointmentDocument>('Appointment', AppointmentSchema);
+AppointmentSchema.pre<AppointmentDocument>("save", async function (next) {
+  if (this.bookingNumber) return next(); 
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, "0");
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const yyyy = today.getFullYear();
+  const formattedDate = `${dd}${mm}${yyyy}`;
+
+  const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+  const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+  const countToday = await Appointment.countDocuments({
+    createdAt: { $gte: startOfDay, $lte: endOfDay },
+  });
+
+  const seq = String(countToday + 1).padStart(2, "0");
+
+  this.bookingNumber = `FC${formattedDate}-${seq}`;
+
+  next();
+});
+
+export const Appointment = model<AppointmentDocument>(
+  "Appointment",
+  AppointmentSchema
+);

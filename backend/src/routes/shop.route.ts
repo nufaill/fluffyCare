@@ -438,7 +438,7 @@ router.get('/profile/:shopId', shopDependencies.shopController.getShopProfile as
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/profile/update', shopDependencies.shopController.updateShopProfile as RequestHandler);
+router.patch('/profile/update/:shopId', shopDependencies.shopController.updateShopProfile as RequestHandler);
 
 /**
  * @swagger

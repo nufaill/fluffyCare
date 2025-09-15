@@ -74,6 +74,7 @@ export interface Appointment {
   appointmentStatus: AppointmentStatus;
   paymentDetails: PaymentDetails;
   notes?: string;
+  bookingNumber: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }

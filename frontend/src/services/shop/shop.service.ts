@@ -1,6 +1,6 @@
 // src/services/shopService/shopService.ts
 import shopaxios from "@/api/shop.axios";
-import type { Shop,ShopUpdatePayload, ShopApiResponse} from "@/types/shop.type";
+import type { Shop, ShopUpdatePayload, ShopApiResponse } from "@/types/shop.type";
 
 
 export const shopService = {
@@ -30,11 +30,12 @@ export const shopService = {
     }
   },
 
-  async editShop(updateData: ShopUpdatePayload): Promise<Shop> {
+  async editShop(shopId: string, updateData: ShopUpdatePayload): Promise<Shop> {
     try {
-      const response = await shopaxios.patch<ShopApiResponse>('/profile/update', updateData);
+      console.log('Sending PATCH to:', `/profile/update/${shopId}`, 'with data:', updateData);
+      const response = await shopaxios.patch<ShopApiResponse>(`/profile/update/${shopId}`, updateData);
+      console.log('API response:', response.data);
       const data = response.data.data;
-
       return {
         _id: data.id,
         name: data.name,
@@ -51,8 +52,8 @@ export const shopService = {
         updatedAt: data.updatedAt,
       };
     } catch (error) {
-      console.error('Error updating shop profile:', error);
-      throw error;
+      console.error('Error in editShop:', error); // Enhanced logging
+      throw error; // Ensure error propagates
     }
-  },
+  }
 };
