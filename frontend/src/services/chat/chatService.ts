@@ -5,6 +5,7 @@ export interface ChatListResponse {
   success: boolean;
   message: string;
   data: {
+    total: number;
     chats: Chat[];
     totalPages: number;
     currentPage: number;
@@ -26,6 +27,21 @@ export interface UnreadCountResponse {
 }
 
 export class ChatService {
+  searchUserChats(query: string, userId: string): any {
+    throw new Error('Method not implemented.');
+  }
+  searchShopChats(query: string, shopId: string): any {
+    throw new Error('Method not implemented.');
+  }
+  getUserUnreadCount(userId: string): any {
+    throw new Error('Method not implemented.');
+  }
+  getShopUnreadCount(shopId: string): any {
+    throw new Error('Method not implemented.');
+  }
+  getChatByUserAndShop(userId: string, shopId: string) {
+    throw new Error('Method not implemented.');
+  }
   private axios = createBaseAxios('/chats');
 
   private async handleRequest<T>(request: Promise<any>): Promise<T> {

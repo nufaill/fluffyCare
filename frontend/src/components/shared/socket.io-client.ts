@@ -44,7 +44,7 @@ class SocketManager {
       this.socket = io(SOCKET_URL, {
         withCredentials: true,
         autoConnect: false,
-        transports: ['polling'], // Force polling for debugging
+        transports: ['websocket'], // Changed to websocket for real-time; fallback to polling if needed
         timeout: 30000, // Increased from 20000
         reconnection: true,
         reconnectionAttempts: this.maxRetries,
@@ -106,6 +106,33 @@ class SocketManager {
       }
     });
 
+    this.socket.on('message-notification', (data: SocketEventData) => {
+      try {
+        console.log('🔔 Message notification received:', data);
+        this.notifyListeners('message-notification', data);
+      } catch (error) {
+        console.error('Error handling message notification:', error);
+      }
+    });
+
+    this.socket.on('unread-count-update', (data: any) => {
+      try {
+        console.log('📊 Unread count update:', data);
+        this.notifyListeners('unread-count-update', data);
+      } catch (error) {
+        console.error('Error handling unread count update:', error);
+      }
+    });
+
+    this.socket.on('chat-updated', (data: SocketEventData) => {
+      try {
+        console.log('💬 Chat updated:', data);
+        this.notifyListeners('chat-updated', data);
+      } catch (error) {
+        console.error('Error handling chat updated:', error);
+      }
+    });
+
     this.socket.on('message-delivered', (data: SocketEventData) => {
       try {
         console.log('📨 Message delivered:', data);
@@ -139,15 +166,6 @@ class SocketManager {
         this.notifyListeners('user-stopped-typing', data);
       } catch (error) {
         console.error('Error handling user stopped typing:', error);
-      }
-    });
-
-    this.socket.on('chat-updated', (data: SocketEventData) => {
-      try {
-        console.log('💬 Chat updated:', data);
-        this.notifyListeners('chat-updated', data);
-      } catch (error) {
-        console.error('Error handling chat updated:', error);
       }
     });
 

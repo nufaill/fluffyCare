@@ -1,3 +1,4 @@
+// src/components/shop/shop-chat.tsx
 import { useState, useEffect } from 'react';
 import { ChatList } from '@/components/chat/chat-list';
 import { ChatWindow } from '@/components/chat/chat-window';
@@ -10,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { RootState } from '@/redux/store';
 import { useSelector } from 'react-redux';
+import { connectSocket, disconnectSocket } from '@/components/shared/socket.io-client';
 
 export function ShopChat() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -18,6 +20,7 @@ export function ShopChat() {
   const { toast } = useToast();
   const { shopData: shop } = useSelector((state: RootState) => state.shop);
   const shopId = shop?.id;
+
   const {
     chats,
     loading,
@@ -30,8 +33,6 @@ export function ShopChat() {
   } = useChats({
     shopId,
     userType: 'shop',
-    autoRefresh: true,
-    refreshInterval: 15000,
   });
 
   useEffect(() => {
@@ -43,6 +44,16 @@ export function ShopChat() {
       });
     }
   }, [error, toast]);
+
+  useEffect(() => {
+    if (shopId) {
+      connectSocket(shopId, 'Shop');
+    }
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [shopId]);
 
   const handleSelectChat = async (chat: Chat) => {
     setSelectedChat(chat);
@@ -59,7 +70,6 @@ export function ShopChat() {
       fetchChats(1);
     }
   };
-
 
   if (!shopId) {
     return (
@@ -135,4 +145,4 @@ export function ShopChat() {
       </div>
     </PetCareLayout>
   );
-}
+};

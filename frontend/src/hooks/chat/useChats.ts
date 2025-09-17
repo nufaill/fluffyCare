@@ -1,19 +1,19 @@
+// useChats.ts
 import { useState, useEffect, useCallback } from 'react';
 import { chatService } from '@/services/chat/chatService';
 import { type Chat } from '@/types/chat.type';
 import { useToast } from '@/hooks/use-toast';
 import { cleanChatObject, debugChatObject, isValidChatObject } from '@/utils/helpers/chatHelpers';
+import { connectSocket, addEventListener, removeEventListener } from '@/components/shared/socket.io-client';
 
 export interface UseChatOptions {
   userId?: string;
   shopId?: string;
   userType: 'user' | 'shop';
-  autoRefresh?: boolean;
-  refreshInterval?: number;
 }
 
 export const useChats = (options: UseChatOptions) => {
-  const { userId, shopId, userType, autoRefresh = false, refreshInterval = 30000 } = options;
+  const { userId, shopId, userType } = options;
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,96 +75,117 @@ export const useChats = (options: UseChatOptions) => {
         response = await chatService.getUserChats(userId, page, limit);
       } else if (userType === 'shop' && shopId) {
         response = await chatService.getShopChats(shopId, page, limit);
+      } else {
+        throw new Error('Invalid user type or ID');
       }
 
       if (response) {
-        const processedChats = processChatData(response.chats);
-        
-        if (page === 1) {
-          setChats(processedChats);
-        } else {
-          setChats(prev => [...prev, ...processedChats]);
-        }
-
+        const processed = processChatData(response.chats);
+        setChats(processed);
         setPagination({
-          currentPage: response.currentPage,
-          totalPages: response.totalPages,
-          totalChats: response.totalChats,
+          currentPage: page,
+          totalPages: Math.ceil(response.total / limit),
+          totalChats: response.total,
         });
+      } else {
+        setChats([]);
       }
     } catch (err: any) {
-      console.error('fetchChats: Error:', err);
       setError(err.message || 'Failed to fetch chats');
       toast({
         title: 'Error',
-        description: 'Failed to load chats',
+        description: err.message || 'Failed to fetch chats',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  }, [userId, shopId, userType, toast, processChatData]);
+  }, [userId, shopId, userType, processChatData, toast]);
 
-  const fetchUnreadCount = useCallback(async () => {
-    if (!userId && !shopId) return;
-
-    try {
-      const id = userType === 'user' ? userId! : shopId!;
-      const role = userType === 'user' ? 'User' : 'Shop';
-      const count = await chatService.getTotalUnreadCount(id, role);
-      setTotalUnreadCount(count);
-    } catch (err: any) {
-      console.error('Failed to fetch unread count:', err);
+  const searchChats = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      return fetchChats();
     }
-  }, [userId, shopId, userType]);
 
-  const searchChats = useCallback(async (query: string, page: number = 1, limit: number = 20) => {
     if (!userId && !shopId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const id = userType === 'user' ? userId! : shopId!;
-      const role = userType === 'user' ? 'User' : 'Shop';
-      const response = await chatService.searchChats(query, id, role, page, limit);
-      
-      // Process the search results
-      const processedChats = processChatData(response.chats);
-      
-      if (page === 1) {
-        setChats(processedChats);
+      let response;
+      if (userType === 'user' && userId) {
+        response = await chatService.searchUserChats(query, userId);
+      } else if (userType === 'shop' && shopId) {
+        response = await chatService.searchShopChats(query, shopId);
       } else {
-        setChats(prev => [...prev, ...processedChats]);
+        throw new Error('Invalid user type or ID');
       }
 
-      setPagination({
-        currentPage: response.currentPage,
-        totalPages: response.totalPages,
-        totalChats: response.totalChats,
-      });
+      if (response) {
+        const processed = processChatData(response.chats);
+        setChats(processed);
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          totalChats: response.total,
+        });
+      } else {
+        setChats([]);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to search chats');
       toast({
         title: 'Error',
-        description: 'Failed to search chats',
+        description: err.message || 'Failed to search chats',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  }, [userId, shopId, userType, toast, processChatData]);
+  }, [userId, shopId, userType, fetchChats, processChatData, toast]);
 
-  const createOrGetChat = useCallback(async (targetUserId: string, targetShopId: string): Promise<Chat | null> => {
+  const fetchUnreadCount = useCallback(async () => {
+    if (!userId && !shopId) return;
+
     try {
-      const rawChat = await chatService.getOrCreateChat(targetUserId, targetShopId);
+      let count;
+      if (userType === 'user' && userId) {
+        count = await chatService.getUserUnreadCount(userId);
+      } else if (userType === 'shop' && shopId) {
+        count = await chatService.getShopUnreadCount(shopId);
+      }
+      if (count !== undefined) {
+        setTotalUnreadCount(count);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch unread count:', err);
+    }
+  }, [userId, shopId, userType]);
+
+  const createOrGetChat = useCallback(async (userId: string, shopId: string): Promise<Chat | null> => {
+    try {
+      let chat = await chatService.getChatByUserAndShop(userId, shopId);
       
-      // Debug and clean the returned chat
-      debugChatObject(rawChat, 'New/Existing Chat');
-      const cleanedChat = cleanChatObject(rawChat);
+      if (!chat) {
+        chat = await chatService.createChat(userId, shopId);
+      }
+      
+      if (!chat) {
+        toast({
+          title: 'Error',
+          description: 'Failed to create or get chat',
+          variant: 'destructive',
+        });
+        return null;
+      }
+
+      // Debug and clean the retrieved chat
+      debugChatObject(chat, 'New/Existing Chat');
+      const cleanedChat = cleanChatObject(chat);
       
       if (!cleanedChat) {
-        console.error('Failed to clean newly created/retrieved chat:', rawChat);
+        console.error('Failed to clean newly created/retrieved chat:', chat);
         toast({
           title: 'Error',
           description: 'Retrieved chat data is corrupted',
@@ -221,22 +242,69 @@ export const useChats = (options: UseChatOptions) => {
     fetchUnreadCount();
   }, [fetchChats, fetchUnreadCount]);
 
+  // Socket event handlers for real-time updates
+  const handleMessageNotification = useCallback((data: any) => {
+    console.log('Handling message notification:', data);
+    // If the chat exists, update lastMessage and increment unread
+    setChats(prev => prev.map(chat => {
+      const currentChatId = chat._id || chat.id || `${chat.userId}-${chat.shopId}`;
+      if (currentChatId === data.chatId) {
+        return {
+          ...chat,
+          lastMessage: data.content || `[${data.messageType}]`,
+          lastMessageType: data.messageType,
+          lastMessageAt: new Date(data.timestamp),
+          unreadCount: (chat.unreadCount || 0) + 1,
+        };
+      }
+      return chat;
+    }));
+    refreshChats();
+  }, [refreshChats]);
+
+  const handleChatUpdated = useCallback((data: any) => {
+    console.log('Handling chat updated:', data);
+    setChats(prev => prev.map(chat => {
+      const currentChatId = chat._id || chat.id || `${chat.userId}-${chat.shopId}`;
+      if (currentChatId === data.chatId) {
+        return { ...chat, ...data };
+      }
+      return chat;
+    }));
+  }, []);
+
+  const handleUnreadCountUpdate = useCallback((data: any) => {
+    console.log('Handling unread count update:', data);
+    if (data.userId === (userId || shopId)) {
+      setTotalUnreadCount(data.unreadCount);
+    }
+  }, [userId, shopId]);
+
   useEffect(() => {
     if (userId || shopId) {
+      connectSocket(userId || shopId, userType === 'user' ? 'User' : 'Shop')
+        .then(() => {
+          console.log('Socket connected for chats');
+        })
+        .catch(err => {
+          console.error('Failed to connect socket for chats:', err);
+        });
+
       fetchChats();
       fetchUnreadCount();
-    }
-  }, [fetchChats, fetchUnreadCount]);
 
-  useEffect(() => {
-    if (autoRefresh && refreshInterval > 0) {
-      const interval = setInterval(() => {
-        refreshChats();
-      }, refreshInterval);
+      // Add real-time listeners
+      addEventListener('message-notification', handleMessageNotification);
+      addEventListener('chat-updated', handleChatUpdated);
+      addEventListener('unread-count-update', handleUnreadCountUpdate);
 
-      return () => clearInterval(interval);
+      return () => {
+        removeEventListener('message-notification', handleMessageNotification);
+        removeEventListener('chat-updated', handleChatUpdated);
+        removeEventListener('unread-count-update', handleUnreadCountUpdate);
+      };
     }
-  }, [autoRefresh, refreshInterval, refreshChats]);
+  }, [userId, shopId, userType, fetchChats, fetchUnreadCount, handleMessageNotification, handleChatUpdated, handleUnreadCountUpdate]);
 
   return {
     chats,

@@ -1,6 +1,7 @@
+// src/components/user/user-chat.tsx
 import { useState, useEffect } from 'react';
-import { ChatList } from '../../components/chat/chat-list';
-import { ChatWindow } from '../../components/chat/chat-window';
+import { ChatList } from '@/components/chat/chat-list';
+import { ChatWindow } from '@/components/chat/chat-window';
 import { useMobile } from '@/hooks/chat/use-mobile';
 import { useChats } from '@/hooks/chat/useChats';
 import type { Chat } from '@/types/chat.type';
@@ -12,6 +13,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { RootState } from '@/redux/store';
 import { useSelector } from 'react-redux';
 import { getChatId, isValidChatId, extractId } from '@/utils/helpers/chatHelpers';
+import { connectSocket, disconnectSocket } from '@/components/shared/socket.io-client';
 
 export function UserChat() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -37,8 +39,6 @@ export function UserChat() {
   } = useChats({
     userId,
     userType: 'user',
-    autoRefresh: false,
-    refreshInterval: 300000,
   });
 
   useEffect(() => {
@@ -50,6 +50,16 @@ export function UserChat() {
       });
     }
   }, [error, toast]);
+
+  useEffect(() => {
+    if (userId) {
+      connectSocket(userId, 'User');
+    }
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [userId]);
 
   useEffect(() => {
     if (targetShopId && userId) {
@@ -171,4 +181,4 @@ export function UserChat() {
       </div>
     </div>
   );
-}
+};

@@ -58,7 +58,7 @@ export class MessageController extends BaseController implements IMessageControl
       const updateData = {
         lastMessage: content || (mediaUrl ? `[${messageType || 'Text'}]` : 'New message'),
         lastMessageType: (messageType || 'Text') as 'Text' | 'Image' | 'Video' | 'Audio' | 'File',
-        lastMessageAt: new Date(),
+        lastMessageAt: message.createdAt,
       };
 
       await this.chatService.updateLastMessage(chatId, updateData);
@@ -73,7 +73,7 @@ export class MessageController extends BaseController implements IMessageControl
         messageType: messageType || 'Text',
         content: content || '',
         mediaUrl: mediaUrl || '',
-        timestamp: new Date().toISOString(),
+        timestamp: message.createdAt.toISOString(),
       });
 
       this.socketService.emitChatUpdate(chatId, {

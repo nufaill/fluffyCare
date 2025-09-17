@@ -223,6 +223,7 @@ export class SocketHandler {
 
     // Also emit to specific user sockets for notification
     const receiverSockets = this.getUserSockets(data.receiverId);
+    console.log(`🔔 Notifying receiver ${data.receiverId} on sockets:`, receiverSockets);
     receiverSockets.forEach(socketId => {
       this.io.to(socketId).emit('message-notification', {
         chatId: data.chatId,
