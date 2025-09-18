@@ -12,4 +12,5 @@ export interface IShopController {
   updateShopProfile(req: Request, res: Response, next: NextFunction): Promise<void>;
   getShopAvailability(req: Request, res: Response): Promise<void>;
   updateShopAvailability(req: Request, res: Response): Promise<void>;
+  getShopsOverview(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

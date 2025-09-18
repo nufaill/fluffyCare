@@ -159,3 +159,64 @@ export class RatingSummaryDTO {
     };
   }
 }
+
+export class ShopRatingSummaryDTO {
+  shopId: string;
+  shopName: string;
+  shopLogo?: string;
+  averageRating: number;
+  totalReviews: number;
+  ratingBreakdown: { 1: number; 2: number; 3: number; 4: number; 5: number };
+
+  constructor(data: {
+    shopId: Types.ObjectId;
+    shopName: string;
+    shopLogo?: string;
+    averageRating: number;
+    totalReviews: number;
+    ratingBreakdown: { [key: number]: number };
+  }) {
+    this.shopId = data.shopId.toString();
+    this.shopName = data.shopName || "Unknown Shop";
+    this.shopLogo = data.shopLogo;
+    this.averageRating = Math.round(data.averageRating * 10) / 10;
+    this.totalReviews = data.totalReviews;
+    this.ratingBreakdown = {
+      1: data.ratingBreakdown[1] || 0,
+      2: data.ratingBreakdown[2] || 0,
+      3: data.ratingBreakdown[3] || 0,
+      4: data.ratingBreakdown[4] || 0,
+      5: data.ratingBreakdown[5] || 0,
+    };
+  }
+}
+
+export class PaginatedShopRatingsResponseDTO {
+  shopRatings: ShopRatingSummaryDTO[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  };
+
+  constructor(data: {
+    shopRatings: ShopRatingSummaryDTO[];
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+  }) {
+    this.shopRatings = data.shopRatings;
+    this.pagination = {
+      currentPage: data.currentPage,
+      totalPages: data.totalPages,
+      totalCount: data.totalCount,
+      limit: data.limit,
+      hasNext: data.currentPage < data.totalPages,
+      hasPrevious: data.currentPage > 1,
+    };
+  }
+}

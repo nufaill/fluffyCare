@@ -1,15 +1,29 @@
 import { Types } from "mongoose";
 import { IReviewService } from "../../interfaces/serviceInterfaces/IReviewService";
-import { IReviewRepository } from "../../interfaces/repositoryInterfaces/IReviewRepository";
+import { IRatingBreakdown, IReviewRepository } from "../../interfaces/repositoryInterfaces/IReviewRepository";
 import {
     CreateReviewDTO,
     UpdateReviewDTO,
     ReviewResponseDTO,
     PaginatedReviewsResponseDTO,
-    RatingSummaryDTO
+    RatingSummaryDTO,
+    PaginatedShopRatingsResponseDTO,
+    ShopRatingSummaryDTO
 } from "../../dto/review.dto";
 import { CustomError } from '../../util/CustomerError';
+export interface IShopRatingSummary {
+    shopId: Types.ObjectId;
+    shopName: string;
+    shopLogo?: string;
+    averageRating: number;
+    totalReviews: number;
+    ratingBreakdown: IRatingBreakdown;
+}
 
+export interface IPaginatedShopRatings {
+    shopRatings: IShopRatingSummary[];
+    totalCount: number;
+}
 export class ReviewService implements IReviewService {
     constructor(private _reviewRepository: IReviewRepository) { }
 
@@ -114,7 +128,7 @@ export class ReviewService implements IReviewService {
         // Validate pagination parameters
         if (page < 1) page = 1;
         if (limit < 1) limit = 10;
-        if (limit > 100) limit = 100; 
+        if (limit > 100) limit = 100;
 
         const shopObjectId = new Types.ObjectId(shopId);
         const { reviews, totalCount } = await this._reviewRepository.getReviewsByShop(
@@ -164,6 +178,34 @@ export class ReviewService implements IReviewService {
             totalPages,
             totalCount,
             limit
+        });
+    }
+
+
+    async getAllShopsRatingSummaries(
+        page: number,
+        limit: number
+    ): Promise<PaginatedShopRatingsResponseDTO> {
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 10;
+        if (limit > 100) limit = 100;
+
+        const { shopRatings, totalCount } = await this._reviewRepository.getAllShopsRatingSummaries(
+            page,
+            limit
+        );
+
+        const shopRatingDTOs = shopRatings.map(
+            (rating: IShopRatingSummary) => new ShopRatingSummaryDTO(rating)
+        );
+        const totalPages = Math.ceil(totalCount / limit);
+
+        return new PaginatedShopRatingsResponseDTO({
+            shopRatings: shopRatingDTOs,
+            currentPage: page,
+            totalPages,
+            totalCount,
+            limit,
         });
     }
 }

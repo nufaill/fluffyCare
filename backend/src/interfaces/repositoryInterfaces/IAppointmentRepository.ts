@@ -3,6 +3,40 @@ import { AppointmentDocument } from '../../models/appointment.model';
 import { IAppointment, AppointmentStatus } from '../../types/appointment.types';
 
 export interface IAppointmentRepository {
+  getBookingAnalytics(
+    startDate: Date,
+    endDate: Date,
+    shopId?: Types.ObjectId
+  ): Promise<{
+    overall: {
+      total: number;
+      pending: number;
+      confirmed: number;
+      ongoing: number;
+      completed: number;
+      cancelled: number;
+    };
+    shopWise: Array<{
+      shopId: string;
+      shopName: string;
+      total: number;
+      pending: number;
+      confirmed: number;
+      ongoing: number;
+      completed: number;
+      cancelled: number;
+    }>;
+    serviceTypeBreakdown: Array<{
+      name: string;
+      value: number;
+    }>;
+    dailyBookings: Array<{
+      day: string;
+      bookings: number;
+      completed: number;
+      cancelled: number;
+    }>;
+  }>;
   create(appointmentData: Partial<IAppointment>): Promise<AppointmentDocument>;
   update(appointmentId: Types.ObjectId, updateData: Partial<IAppointment>): Promise<AppointmentDocument | null>;
   cancel(appointmentId: Types.ObjectId, reason: string): Promise<AppointmentDocument | null>;

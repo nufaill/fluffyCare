@@ -205,4 +205,8 @@ export class ShopService implements IShopService {
     }
     return updatedShop as ShopResponseDTO;
   }
+
+  async getShopsOverview(): Promise<{ totalShops: number; activeShops: number; inactiveShops: number; pendingShops: number }> {
+    return await this.shopRepository.getShopsOverview();
+  }
 }

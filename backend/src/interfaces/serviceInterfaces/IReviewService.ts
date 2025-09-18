@@ -3,7 +3,8 @@ import {
     UpdateReviewDTO,
     ReviewResponseDTO,
     PaginatedReviewsResponseDTO,
-    RatingSummaryDTO
+    RatingSummaryDTO,
+    PaginatedShopRatingsResponseDTO
 } from "../../dto/review.dto";
 
 export interface IReviewService {
@@ -14,4 +15,5 @@ export interface IReviewService {
     getReviewsByShop(shopId: string, page: number, limit: number): Promise<PaginatedReviewsResponseDTO>;
     getShopRatingSummary(shopId: string): Promise<RatingSummaryDTO>;
     getAllReviews(page: number, limit: number): Promise<PaginatedReviewsResponseDTO>;
+    getAllShopsRatingSummaries(page: number, limit: number): Promise<PaginatedShopRatingsResponseDTO>;
 }

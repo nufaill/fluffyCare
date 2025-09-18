@@ -3,7 +3,7 @@ import { IUserController } from '../../interfaces/controllerInterfaces/IUserCont
 import { UserService } from '../../services/user/user.service';
 import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
-import { UpdateUserStatusDTO, UpdateUserDTO } from '../../dto/user.dto';
+import { UpdateUserStatusDTO, UpdateUserDTO, CustomerAnalytics } from '../../dto/user.dto';
 import { NearbyService } from '../../services/user/nearby.service';
 
 export class UserController implements IUserController {
@@ -175,5 +175,26 @@ export class UserController implements IUserController {
     //   });
     //   next(error);
     // }
+  };
+
+  getCustomerAnalytics = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const analytics: CustomerAnalytics = await this.userService.getCustomerAnalytics();
+
+      res.status(HTTP_STATUS.OK || 200).json({
+        success: true,
+        data: analytics,
+        message: SUCCESS_MESSAGES.USERS_FETCHED_SUCESS,
+      });
+    } catch (error) {
+      console.error(`❌ [UserController] Error:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : 'Failed to fetch customer analytics';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
+      next(error);
+    }
   };
 }

@@ -8,7 +8,7 @@ export default interface IShopRepository {
   findById(id: string): Promise<ShopResponseDTO | null>;
   createShop(data: CreateShopData): Promise<ShopResponseDTO>;
   updateShop(id: string, updateData: Partial<CreateShopData>): Promise<UpdateShopDTO | null>;
-  updateShopSubscription(id: string, subscriptionData: { subscriptionId: string | null; plan: string; subscriptionStart?: Date; subscriptionEnd?: Date; isActive?: boolean;}): Promise<ShopResponseDTO | null>;
+  updateShopSubscription(id: string, subscriptionData: { subscriptionId: string | null; plan: string; subscriptionStart?: Date; subscriptionEnd?: Date; isActive?: boolean; }): Promise<ShopResponseDTO | null>;
   existsByEmail(email: string): Promise<boolean>;
   setResetToken(email: string, token: string, expires: Date): Promise<ShopResponseDTO | null>;
   findByResetToken(token: string): Promise<ShopResponseDTO | null>;
@@ -17,8 +17,9 @@ export default interface IShopRepository {
   countDocuments(query: any): Promise<number>;
   updateShopStatus(shopId: string, isActive: boolean): Promise<ShopResponseDTO | null>;
   getUnverifiedShops(skip: number, limit: number): Promise<ShopResponseDTO[]>;
-  updateShopVerification( shopId: string, status: 'pending' | 'approved' | 'rejected', reason?: string ): Promise<ShopResponseDTO | null>;
+  updateShopVerification(shopId: string, status: 'pending' | 'approved' | 'rejected', reason?: string): Promise<ShopResponseDTO | null>;
   checkShopNameExists(name: string, excludeShopId?: string): Promise<boolean>;
   findNearbyShops(longitude: number, latitude: number, maxDistance: number, filters?: { serviceType?: string; petType?: string }): Promise<ShopResponseDTO[]>;
   findShopsWithinRadius(longitude: number, latitude: number, radiusInMeters: number): Promise<ShopResponseDTO[]>;
+  getShopsOverview(): Promise<{ totalShops: number; activeShops: number; inactiveShops: number; pendingShops: number }>;
 }

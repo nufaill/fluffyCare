@@ -51,3 +51,11 @@ export interface UserResponseDTO {
 //   latitude: number;
 //   radiusInKm: number;
 // }
+
+export interface CustomerAnalytics {
+  total: number;
+  active: number;
+  inactive: number;
+  newThisMonth: number;
+  chartData: Array<{ month: string; total: number; new: number; active: number }>;
+}

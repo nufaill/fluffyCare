@@ -248,4 +248,20 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
     ]);
     return shops.map(shop => this.mapToResponseDTO(shop));
   }
+  
+  async getShopsOverview(): Promise<{ totalShops: number; activeShops: number; inactiveShops: number; pendingShops: number }> {
+    const [total, active, inactive, pending] = await Promise.all([
+      this.countDocuments({}),
+      this.countDocuments({ isActive: true }),
+      this.countDocuments({ isActive: false }),
+      this.countDocuments({ 'isVerified.status': 'pending' })
+    ]);
+
+    return {
+      totalShops: total,
+      activeShops: active,
+      inactiveShops: inactive,
+      pendingShops: pending
+    };
+  }
 }

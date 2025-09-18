@@ -1,5 +1,5 @@
 import { UserRepository } from '../../repositories/user/user.repository';
-import { UserResponseDTO, UpdateUserDTO } from '../../dto/user.dto';
+import { UserResponseDTO, UpdateUserDTO, CustomerAnalytics } from '../../dto/user.dto';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { IUserService } from '../../interfaces/serviceInterfaces/IUserService';
@@ -135,6 +135,17 @@ export class UserService implements IUserService {
     } catch (error) {
       throw error instanceof CustomError ? error : new CustomError(
         'Failed to find user by email',
+        HTTP_STATUS.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async getCustomerAnalytics(): Promise<CustomerAnalytics> {
+    try {
+      return await this.userRepository.getCustomerAnalytics();
+    } catch (error) {
+      throw error instanceof CustomError ? error : new CustomError(
+        'Failed to fetch customer analytics',
         HTTP_STATUS.INTERNAL_SERVER_ERROR
       );
     }

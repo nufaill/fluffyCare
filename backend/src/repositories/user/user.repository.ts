@@ -1,5 +1,5 @@
 import { User } from '../../models/user.model';
-import { UpdateUserDTO, UserResponseDTO } from '../../dto/user.dto';
+import { CustomerAnalytics, UpdateUserDTO, UserResponseDTO } from '../../dto/user.dto';
 import { CreateUserDTO } from '../../dto/auth.dto';
 import { Types } from 'mongoose';
 import { CustomError } from '../../util/CustomerError';
@@ -235,5 +235,52 @@ export class UserRepository extends BaseRepository<any> implements IUserReposito
       } as UserResponseDTO;
     }
     return null;
+  }
+
+  async getCustomerAnalytics(): Promise<CustomerAnalytics> {
+    const total = await this.model.countDocuments({});
+    const active = await this.model.countDocuments({ isActive: true });
+    const inactive = total - active;
+
+    const now = new Date();
+    const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const newThisMonth = await this.model.countDocuments({ createdAt: { $gte: firstDayThisMonth } });
+
+    const chartData: { month: string; total: number; new: number; active: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = monthDate.toLocaleString('default', { month: 'short' });
+
+      const startOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+      const endOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const newCount = await this.model.countDocuments({
+        createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+      });
+
+      const totalUpTo = await this.model.countDocuments({
+        createdAt: { $lte: endOfMonth },
+      });
+
+      const activeUpTo = await this.model.countDocuments({
+        createdAt: { $lte: endOfMonth },
+        isActive: true,
+      });
+
+      chartData.push({
+        month: monthName,
+        total: totalUpTo,
+        new: newCount,
+        active: activeUpTo,
+      });
+    }
+
+    return {
+      total,
+      active,
+      inactive,
+      newThisMonth,
+      chartData,
+    };
   }
 }

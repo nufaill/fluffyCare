@@ -71,6 +71,7 @@ export const adminDependencies = {
   },
   shopController: {
     getAllShops: injectedShopController.getAllShops.bind(injectedShopController),
+    getShopsOverview: injectedShopController.getShopsOverview.bind(injectedShopController),
     updateShopStatus: injectedShopController.updateShopStatus.bind(injectedShopController),
     getUnverifiedShops: injectedShopController.getUnverifiedShops.bind(injectedShopController),
     approveShop: injectedShopController.approveShop.bind(injectedShopController),
@@ -79,6 +80,7 @@ export const adminDependencies = {
   userController: {
     getAllUsers: injectedUserController.getAllUsers.bind(injectedUserController),
     updateUserStatus: injectedUserController.updateUserStatus.bind(injectedUserController),
+    getCustomerAnalytics: injectedUserController.getCustomerAnalytics.bind(injectedUserController)
   },
   petTypeController: {
     createPetType: injectedPetTypeController.createPetType.bind(injectedPetTypeController),

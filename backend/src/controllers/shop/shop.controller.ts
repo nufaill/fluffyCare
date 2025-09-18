@@ -683,4 +683,31 @@ export class ShopController implements IShopController {
       });
     }
   };
+
+  getShopsOverview = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const overview = await this.shopService.getShopsOverview();
+
+      res.status(HTTP_STATUS.OK || 200).json({
+        success: true,
+        data: overview,
+        message: 'Shops overview fetched successfully'
+      });
+    } catch (error) {
+      console.error("❌ [ShopController] Get shops overview error:", error);
+
+      const statusCode = error instanceof CustomError
+        ? error.statusCode
+        : (HTTP_STATUS.INTERNAL_SERVER_ERROR || 500);
+
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to fetch shops overview';
+
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
+    }
+  };
 }

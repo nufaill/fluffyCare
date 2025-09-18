@@ -16,7 +16,22 @@ export interface IPaginatedReviews {
     totalCount: number;
 }
 
+export interface IShopRatingSummary {
+    shopId: Types.ObjectId;
+    shopName: string;
+    shopLogo?: string;
+    averageRating: number;
+    totalReviews: number;
+    ratingBreakdown: IRatingBreakdown;
+}
+
+export interface IPaginatedShopRatings {
+    shopRatings: IShopRatingSummary[];
+    totalCount: number;
+}
+
 export interface IReviewRepository {
+    getAllShopsRatingSummaries(page: number, limit: number): Promise<IPaginatedShopRatings>;
     createReview(reviewData: Partial<IReview>): Promise<IReview>;
     updateReview(reviewId: Types.ObjectId, userId: Types.ObjectId, updateData: Partial<IReview>): Promise<IReview | null>;
     adminUpdateReview(reviewId: Types.ObjectId, updateData: Partial<IReview>): Promise<IReview | null>;

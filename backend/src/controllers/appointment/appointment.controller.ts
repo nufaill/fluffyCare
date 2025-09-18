@@ -656,4 +656,29 @@ export class AppointmentController implements IAppointmentController {
       });
     }
   }
+
+  async getBookingAnalytics(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate, shopId } = req.query;
+
+      const result = await this._appointmentService.getBookingAnalytics(
+        startDate as string,
+        endDate as string,
+        shopId as string
+      );
+
+      res.status(result.statusCode).json({
+        success: result.success,
+        message: result.message,
+        data: result.data || null,
+      });
+    } catch (error: any) {
+      console.error('Get booking analytics error:', error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: ERROR_MESSAGES.FAILED_TO_GET_APPOINTMENT_STATS,
+        data: null,
+      });
+    }
+  }
 }

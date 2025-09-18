@@ -423,10 +423,10 @@ export class AppointmentService implements IAppointmentService {
         serviceId: updateData.serviceId ? new Types.ObjectId(updateData.serviceId) : undefined,
         paymentDetails: updateData.paymentDetails
           ? {
-              ...updateData.paymentDetails,
-              status: updateData.paymentStatus || existingAppointment.paymentDetails?.status,
-              method: updateData.paymentMethod || existingAppointment.paymentDetails?.method
-            }
+            ...updateData.paymentDetails,
+            status: updateData.paymentStatus || existingAppointment.paymentDetails?.status,
+            method: updateData.paymentMethod || existingAppointment.paymentDetails?.method
+          }
           : existingAppointment.paymentDetails
       };
 
@@ -1092,4 +1092,64 @@ export class AppointmentService implements IAppointmentService {
       };
     }
   }
+
+  async getBookingAnalytics(
+    startDate?: string,
+    endDate?: string,
+    shopId?: string
+  ): Promise<{
+    success: boolean;
+    data?: any;
+    message: string;
+    statusCode: number;
+  }> {
+    try {
+      const now = new Date();
+      const defaultStartDate = new Date(now.setDate(now.getDate() - 180)); // Default to last 6 months
+      const parsedStartDate = startDate ? new Date(startDate) : defaultStartDate;
+      const parsedEndDate = endDate ? new Date(endDate) : new Date();
+
+      if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
+        return {
+          success: false,
+          message: 'Invalid date format',
+          statusCode: HTTP_STATUS.BAD_REQUEST,
+        };
+      }
+
+      let shopObjectId: Types.ObjectId | undefined;
+      if (shopId) {
+        const idValidation = this.validateId(shopId);
+        if (!idValidation.isValid) {
+          return {
+            success: false,
+            message: ERROR_MESSAGES.INVALID_ID,
+            statusCode: HTTP_STATUS.BAD_REQUEST,
+          };
+        }
+        shopObjectId = idValidation.objectId;
+      }
+
+      const data = await this._appointmentRepository.getBookingAnalytics(
+        parsedStartDate,
+        parsedEndDate,
+        shopObjectId
+      );
+
+      return {
+        success: true,
+        data,
+        message: 'Booking analytics retrieved successfully',
+        statusCode: HTTP_STATUS.OK,
+      };
+    } catch (error: any) {
+      console.error('Get booking analytics error:', error);
+      return {
+        success: false,
+        message: ERROR_MESSAGES.FAILED_TO_GET_APPOINTMENT_STATS,
+        statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+      };
+    }
+  }
+
 }

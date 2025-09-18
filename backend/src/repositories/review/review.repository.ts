@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { PipelineStage, Types } from "mongoose";
 import Review from "../../models/review.model";
 import { IReview } from "../../types/Review.types";
 import {
@@ -7,6 +7,20 @@ import {
     IPaginatedReviews,
     IRatingBreakdown
 } from "../../interfaces/repositoryInterfaces/IReviewRepository";
+
+export interface IShopRatingSummary {
+    shopId: Types.ObjectId;
+    shopName: string;
+    shopLogo?: string;
+    averageRating: number;
+    totalReviews: number;
+    ratingBreakdown: IRatingBreakdown;
+}
+
+export interface IPaginatedShopRatings {
+    shopRatings: IShopRatingSummary[];
+    totalCount: number;
+}
 
 export class ReviewRepository implements IReviewRepository {
     async createReview(reviewData: Partial<IReview>): Promise<IReview> {
@@ -132,5 +146,79 @@ export class ReviewRepository implements IReviewRepository {
         userId: Types.ObjectId
     ): Promise<IReview | null> {
         return await Review.findOne({ shopId, userId });
+    }
+
+    async getAllShopsRatingSummaries(
+        page: number,
+        limit: number
+    ): Promise<IPaginatedShopRatings> {
+        const skip = (page - 1) * limit;
+
+        const pipeline: PipelineStage[] = [
+            {
+                $group: {
+                    _id: "$shopId",
+                    averageRating: { $avg: "$rating" },
+                    totalReviews: { $sum: 1 },
+                    ratings: { $push: "$rating" },
+                },
+            },
+            {
+                $lookup: {
+                    from: "shops",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "shop",
+                },
+            },
+            {
+                $unwind: "$shop",
+            },
+            {
+                $project: {
+                    shopId: "$_id",
+                    shopName: "$shop.name",
+                    shopLogo: "$shop.logo",
+                    averageRating: 1,
+                    totalReviews: 1,
+                    ratings: 1,
+                },
+            },
+            {
+                $sort: { totalReviews: -1 },
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "totalCount" }],
+                    data: [{ $skip: skip }, { $limit: limit }],
+                },
+            },
+        ];
+
+        const result = await Review.aggregate(pipeline);
+
+        const totalCount = result[0]?.metadata[0]?.totalCount || 0;
+        const shopRatings = result[0]?.data || [];
+
+        const formattedRatings: IShopRatingSummary[] = shopRatings.map((item: any) => {
+            const ratingBreakdown: IRatingBreakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            item.ratings.forEach((rating: number) => {
+                ratingBreakdown[rating] = (ratingBreakdown[rating] || 0) + 1;
+            });
+
+            return {
+                shopId: item.shopId,
+                shopName: item.shopName,
+                shopLogo: item.shopLogo,
+                averageRating: item.averageRating || 0,
+                totalReviews: item.totalReviews,
+                ratingBreakdown,
+            };
+        });
+
+        return {
+            shopRatings: formattedRatings,
+            totalCount,
+        };
     }
 }

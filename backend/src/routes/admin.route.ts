@@ -79,6 +79,7 @@ router.use(adminDependencies.authMiddleware.authenticate as RequestHandler);
  *         description: Unauthorized
  */
 router.get('/shops', adminDependencies.shopController.getAllShops as RequestHandler);
+router.get('/shops/shops-overview', adminDependencies.shopController.getShopsOverview as RequestHandler);
 
 /**
  * @swagger
@@ -219,6 +220,7 @@ router.patch('/unverified/:shopId/reject', adminDependencies.shopController.reje
  *         description: Unauthorized
  */
 router.get('/users', adminDependencies.userController.getAllUsers as RequestHandler);
+router.get('/users/users-analytics', adminDependencies.userController.getCustomerAnalytics as RequestHandler);
 
 /**
  * @swagger
@@ -626,6 +628,7 @@ router.patch('/service-types/:id/status', adminDependencies.serviceController.up
  *         description: Internal server error
  */
 router.get('/appointments', appointmentDependencies.appointmentController.getAllAppointments.bind(appointmentDependencies.appointmentController) as RequestHandler);
+router.get('/appointments/analytics', appointmentDependencies.appointmentController.getBookingAnalytics.bind(appointmentDependencies.appointmentController) as RequestHandler);
 
 
 
@@ -636,7 +639,7 @@ router.get('/subscriptions', adminDependencies.subscriptionController.getAllSubs
 router.get("/reviews", adminDependencies.reviewController.getAllReviews as RequestHandler);
 router.put("/reviews/:reviewId", adminDependencies.reviewController.adminUpdateReview as RequestHandler);
 router.delete("/reviews/:reviewId", adminDependencies.reviewController.deleteReview as RequestHandler);
-
+router.get("/shops/ratings", adminDependencies.reviewController.getAllShopsRatingSummaries as RequestHandler);
 
 
 export default router;

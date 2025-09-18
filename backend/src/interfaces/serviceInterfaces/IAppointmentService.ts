@@ -11,6 +11,45 @@ interface TimeSlot {
   status: 'booked';
 }
 export interface IAppointmentService {
+  getBookingAnalytics(
+    startDate?: string,
+    endDate?: string,
+    shopId?: string
+  ): Promise<{
+    success: boolean;
+    data?: {
+      overall: {
+        total: number;
+        pending: number;
+        confirmed: number;
+        ongoing: number;
+        completed: number;
+        cancelled: number;
+      };
+      shopWise: Array<{
+        shopId: string;
+        shopName: string;
+        total: number;
+        pending: number;
+        confirmed: number;
+        ongoing: number;
+        completed: number;
+        cancelled: number;
+      }>;
+      serviceTypeBreakdown: Array<{
+        name: string;
+        value: number;
+      }>;
+      dailyBookings: Array<{
+        day: string;
+        bookings: number;
+        completed: number;
+        cancelled: number;
+      }>;
+    };
+    message: string;
+    statusCode: number;
+  }>;
   createAppointment(appointmentData: CreateAppointmentDto): Promise<{
     success: boolean;
     data?: AppointmentDocument;

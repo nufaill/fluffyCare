@@ -1,6 +1,6 @@
-import { Types } from 'mongoose';
+import { PipelineStage, Types } from 'mongoose';
 import { Appointment, AppointmentDocument } from '../../models/appointment.model';
-import { IAppointment, AppointmentStatus } from '../../types/appointment.types';
+import { IAppointment, AppointmentStatus, PaymentStatus } from '../../types/appointment.types';
 import { IAppointmentRepository } from '../../interfaces/repositoryInterfaces/IAppointmentRepository';
 
 export class AppointmentRepository implements IAppointmentRepository {
@@ -164,33 +164,33 @@ export class AppointmentRepository implements IAppointmentRepository {
   }
 
   async getAllAppointments(
-  filter: Partial<IAppointment> = {},
-  page: number = 1,
-  limit: number = 10
-): Promise<{ data: AppointmentDocument[]; total: number; page: number; limit: number }> {
-  try {
-    const query: any = { ...filter };
-    const skip = (page - 1) * limit;
+    filter: Partial<IAppointment> = {},
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: AppointmentDocument[]; total: number; page: number; limit: number }> {
+    try {
+      const query: any = { ...filter };
+      const skip = (page - 1) * limit;
 
-    const [data, total] = await Promise.all([
-      Appointment.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate('petId', 'name breed') 
-        .populate('serviceId', 'name duration') 
-        .populate('staffId', 'name')
-        .populate('userId', 'fullName') 
-        .populate('shopId', 'name') 
-        .exec(),
-      Appointment.countDocuments(query).exec(),
-    ]);
+      const [data, total] = await Promise.all([
+        Appointment.find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .populate('petId', 'name breed')
+          .populate('serviceId', 'name duration')
+          .populate('staffId', 'name')
+          .populate('userId', 'fullName')
+          .populate('shopId', 'name')
+          .exec(),
+        Appointment.countDocuments(query).exec(),
+      ]);
 
-    return { data, total, page, limit };
-  } catch (error) {
-    throw new Error(`Failed to get appointments: ${error}`);
+      return { data, total, page, limit };
+    } catch (error) {
+      throw new Error(`Failed to get appointments: ${error}`);
+    }
   }
-}
 
 
   async getAppointmentsCount(
@@ -267,6 +267,164 @@ export class AppointmentRepository implements IAppointmentRepository {
       return !!existingBooking;
     } catch (error) {
       throw new Error(`Failed to check slot booking status: ${error}`);
+    }
+  }
+
+  async getBookingAnalytics(
+    startDate: Date,
+    endDate: Date,
+    shopId?: Types.ObjectId
+  ): Promise<{
+    overall: {
+      total: number;
+      pending: number;
+      confirmed: number;
+      ongoing: number;
+      completed: number;
+      cancelled: number;
+    };
+    shopWise: Array<{
+      shopId: string;
+      shopName: string;
+      total: number;
+      pending: number;
+      confirmed: number;
+      ongoing: number;
+      completed: number;
+      cancelled: number;
+    }>;
+    serviceTypeBreakdown: Array<{
+      name: string;
+      value: number;
+    }>;
+    dailyBookings: Array<{
+      day: string;
+      bookings: number;
+      completed: number;
+      cancelled: number;
+    }>;
+  }> {
+    try {
+      const matchStage: any = {
+        createdAt: { $gte: startDate, $lte: endDate },
+      };
+      if (shopId) {
+        matchStage.shopId = shopId;
+      }
+
+      // Overall status breakdown
+      const overallPipeline: PipelineStage[] = [
+        { $match: matchStage },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            pending: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Pending] }, 1, 0] } },
+            confirmed: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Confirmed] }, 1, 0] } },
+            ongoing: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Ongoing] }, 1, 0] } },
+            completed: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Completed] }, 1, 0] } },
+            cancelled: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Cancelled] }, 1, 0] } },
+          },
+        },
+      ];
+      const [overallResult] = await Appointment.aggregate(overallPipeline);
+      const overall = overallResult || { total: 0, pending: 0, confirmed: 0, ongoing: 0, completed: 0, cancelled: 0 };
+
+      // Shop-wise breakdown
+      const shopWisePipeline: PipelineStage[] = [
+        { $match: matchStage },
+        {
+          $group: {
+            _id: '$shopId',
+            total: { $sum: 1 },
+            pending: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Pending] }, 1, 0] } },
+            confirmed: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Confirmed] }, 1, 0] } },
+            ongoing: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Ongoing] }, 1, 0] } },
+            completed: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Completed] }, 1, 0] } },
+            cancelled: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Cancelled] }, 1, 0] } },
+          },
+        },
+        {
+          $lookup: {
+            from: 'shops',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'shop',
+          },
+        },
+        { $unwind: '$shop' },
+        {
+          $project: {
+            shopId: '$_id',
+            shopName: '$shop.name',
+            total: 1,
+            pending: 1,
+            confirmed: 1,
+            ongoing: 1,
+            completed: 1,
+            cancelled: 1,
+          },
+        },
+      ];
+      const shopWise = await Appointment.aggregate(shopWisePipeline);
+
+      // Service type breakdown
+      const servicePipeline: PipelineStage[] = [
+        { $match: { ...matchStage, 'paymentDetails.status': PaymentStatus.Completed } },
+        {
+          $group: {
+            _id: '$serviceId',
+            value: { $sum: '$paymentDetails.amount' },
+          },
+        },
+        {
+          $lookup: {
+            from: 'services',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'service',
+          },
+        },
+        { $unwind: '$service' },
+        {
+          $project: {
+            name: '$service.name',
+            value: 1,
+          },
+        },
+      ];
+      const serviceTypeBreakdown = await Appointment.aggregate(servicePipeline);
+
+      // Daily bookings
+      const dailyPipeline: PipelineStage[] = [
+        { $match: matchStage },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            bookings: { $sum: 1 },
+            completed: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Completed] }, 1, 0] } },
+            cancelled: { $sum: { $cond: [{ $eq: ['$appointmentStatus', AppointmentStatus.Cancelled] }, 1, 0] } },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ];
+      const dailyResult = await Appointment.aggregate(dailyPipeline);
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dailyBookings = dailyResult.map((r) => ({
+        day: dayNames[new Date(r._id).getDay()],
+        bookings: r.bookings,
+        completed: r.completed,
+        cancelled: r.cancelled,
+      }));
+
+      return {
+        overall,
+        shopWise,
+        serviceTypeBreakdown,
+        dailyBookings,
+      };
+    } catch (error) {
+      throw new Error(`Failed to get booking analytics: ${error}`);
     }
   }
 }
