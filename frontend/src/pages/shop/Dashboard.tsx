@@ -1,46 +1,590 @@
-"use client"
-
 import { PetCareLayout } from "@/components/layout/PetCareLayout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/Badge"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/Progress"
-import { Separator } from "@/components/ui/separator"
 import {
-  Users,
   DollarSign,
-  Award,
   Activity,
   Star,
   Clock,
   TrendingUp,
-  TrendingDown,
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Eye,
-  Settings,
-  BarChart3,
-  PieChart,
   LineChart,
-  Filter,
+  PlayCircle,
+  TrendingDown,
 } from "lucide-react"
-
+import ShopAxios from "@/api/shop.axios"
 import { Navbar } from "@/components/shop/Navbar"
-import type { RootState } from "@/redux/store"
 import { useSelector } from "react-redux"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import type { RootState } from "@/redux/store"
+import { walletService } from "@/services/walletService"
 
-export default function PetCareDashboard() {
+interface IWalletTransaction {
+  _id?: string;
+  type: 'credit' | 'debit';
+  amount: number;
+  currency: string;
+  description: string;
+  referenceId?: string;
+  createdAt: Date;
+}
+
+interface WalletData {
+  _id: string;
+  balance: number;
+  currency: string;
+  transactions: IWalletTransaction[];
+}
+
+interface User {
+  id: string
+  fullName: string
+  profileImage: string
+}
+
+interface Shop {
+  id: string
+  name: string
+}
+
+interface Review {
+  id: string
+  shopId: Shop
+  userId: User
+  rating: number
+  comment?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+interface RatingSummary {
+  averageRating: number
+  totalReviews: number
+  ratingBreakdown?: { [key: string]: number }
+}
+
+interface BookingInsight {
+  status: string
+  count: number
+  amount: number
+  color: string
+  icon: React.ComponentType<{ className?: string }>
+}
+
+interface Appointment {
+  _id: string
+  shopId: string
+  userId: {
+    _id: string
+    fullName: string
+    phone: string
+  }
+  petId: {
+    _id: string
+    name: string
+    breed: string
+    age: number
+    gender: string
+  }
+  staffId: {
+    _id: string
+    name: string
+  }
+  serviceId: {
+    _id: string
+    name: string
+    price: number
+    durationHour: number
+  }
+  slotDetails: {
+    startTime: string
+    endTime: string
+    date: string
+  }
+  paymentDetails: {
+    paymentIntentId: string
+    amount: number
+    currency: string
+    status: string
+    method: string
+    paidAt: string
+  }
+  appointmentStatus: "pending" | "completed" | "cancelled" | "confirmed" | "ongoing"
+  notes: string
+  createdAt: string
+  updatedAt: string
+  bookingNumber: string
+}
+
+const QuickStatCard: React.FC<{
+  title: string
+  value: string
+  icon: React.ComponentType<{ className?: string }>
+  gradient: string
+  delay: string
+}> = ({ title, value, icon: Icon, gradient, delay }) => (
+  <div className="fade-slide-in" style={{ animationDelay: delay }}>
+    <Card className={`bg-gradient-to-br ${gradient} text-white border-0 shadow-lg`}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-white/80">{title}</p>
+            <p className="text-3xl font-bold">{value}</p>
+          </div>
+          <Icon className="h-8 w-8 text-white/80" />
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+)
+
+const ReviewsAndRatings: React.FC = () => {
   const { shopData: shop } = useSelector((state: RootState) => state.shop)
-  const [selectedTimeframe, setSelectedTimeframe] = useState("monthly")
-  const [selectedVisualization, setSelectedVisualization] = useState("bar")
+  const shopId = shop?.id
+
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [ratingSummary, setRatingSummary] = useState<RatingSummary | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!shopId) {
+      setError("Shop ID not found.")
+      setLoading(false)
+      return
+    }
+
+    const fetchReviews = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const reviewsResponse = await ShopAxios.get(`/shops/${shopId}/reviews`)
+        const reviewsData = Array.isArray(reviewsResponse.data?.data?.reviews)
+          ? reviewsResponse.data.data.reviews
+          : []
+        setReviews(reviewsData)
+
+        const summaryResponse = await ShopAxios.get(`/shops/${shopId}/reviews/summary`)
+        setRatingSummary({
+          ...summaryResponse.data.data,
+        })
+      } catch (err) {
+        console.error("Error fetching reviews:", err)
+        setError("Failed to load reviews and ratings. Please try again later.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchReviews()
+  }, [shopId])
+
+  const renderStars = (rating: number) => {
+    return [1, 2, 3, 4, 5].map((star) => (
+      <Star
+        key={star}
+        className={`h-5 w-5 transition-colors duration-200 ${star <= Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+        aria-label={`Star ${star} ${star <= Math.round(rating) ? "filled" : "empty"}`}
+      />
+    ))
+  }
+
+  const positiveReview = Array.isArray(reviews)
+    ? reviews
+      .filter((review) => review.rating >= 4)
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())[0]
+    : null
+  const needsAttentionReview = Array.isArray(reviews)
+    ? reviews
+      .filter((review) => review.rating <= 2)
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())[0]
+    : null
+
+  const getDaysAgo = (date: string | undefined) => {
+    if (!date) return "Unknown"
+    const diffTime = Math.abs(new Date().getTime() - new Date(date).getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`
+  }
+
+  if (loading) {
+    return (
+      <Card className="bg-white border-0 shadow-lg">
+        <CardContent className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Loading reviews...</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-white border-0 shadow-lg">
+        <CardContent className="p-4 text-center">
+          <AlertTriangle className="h-6 w-6 text-red-500 mx-auto mb-2" />
+          <p className="text-red-600">{error}</p>
+          <Button variant="outline" size="sm" className="mt-2" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!ratingSummary || ratingSummary.totalReviews === 0) {
+    return (
+      <Card className="bg-white border-0 shadow-lg">
+        <CardContent className="p-8 text-center">
+          <Star className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+          <p className="text-muted-foreground">No reviews yet. Be the first to get rated!</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="fade-slide-in" style={{ animationDelay: "0.8s" }}>
+      <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+            <Star className="h-5 w-5 text-yellow-500" />
+            Reviews & Ratings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div className="flex items-center justify-center gap-1 mb-2" role="img" aria-label={`Average rating: ${ratingSummary.averageRating} stars`}>
+              {renderStars(ratingSummary.averageRating)}
+            </div>
+            <p className="text-3xl font-bold text-yellow-900">{ratingSummary.averageRating}</p>
+            <p className="text-sm text-yellow-700">
+              Average Rating ({ratingSummary.totalReviews} reviews)
+            </p>
+          </div>
+          <div className="space-y-4">
+            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+              {positiveReview ? (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-green-800">Recent Positive</span>
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                  </div>
+                  <p className="text-sm text-foreground italic">
+                    &quot;{positiveReview.comment || "No comment provided"}&quot;
+                  </p>
+                  <p className="text-xs text-green-700 mt-1">
+                    - {positiveReview.userId.fullName} ({getDaysAgo(positiveReview.createdAt)})
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center">No recent positive reviews available.</p>
+              )}
+            </div>
+            <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+              {needsAttentionReview ? (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-orange-800">Needs Attention</span>
+                    <AlertTriangle className="h-4 w-4 text-orange-500" />
+                  </div>
+                  <p className="text-sm text-foreground italic">
+                    &quot;{needsAttentionReview.comment || "No comment provided"}&quot;
+                  </p>
+                  <p className="text-xs text-orange-700 mt-1">
+                    - {needsAttentionReview.userId.fullName} ({getDaysAgo(needsAttentionReview.createdAt)})
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center">No reviews needing attention.</p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+const Appointments: React.FC<{
+  appointments: Appointment[]
+  bookingInsights: BookingInsight[]
+  loading: boolean
+  error: string | null
+}> = ({ appointments, bookingInsights, loading, error }) => {
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const formatCurrency = (amount: number, currency: string = "INR") => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return "text-yellow-600 bg-yellow-50 border-yellow-200"
+      case "confirmed":
+        return "text-blue-600 bg-blue-50 border-blue-200"
+      case "ongoing":
+        return "text-purple-600 bg-purple-50 border-purple-200"
+      case "completed":
+        return "text-green-600 bg-green-50 border-green-200"
+      case "cancelled":
+        return "text-red-600 bg-red-50 border-red-200"
+      default:
+        return "text-gray-600 bg-gray-50 border-gray-200"
+    }
+  }
+
+  if (loading) {
+    return (
+      <Card className="bg-white border-0 shadow-lg">
+        <CardContent className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Loading appointments...</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-white border-0 shadow-lg">
+        <CardContent className="p-4 text-center">
+          <AlertTriangle className="h-6 w-6 text-red-500 mx-auto mb-2" />
+          <p className="text-red-600">{error}</p>
+          <Button variant="outline" size="sm" className="mt-2" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (appointments.length === 0) {
+    return (
+      <Card className="bg-white border-0 shadow-lg">
+        <CardContent className="p-8 text-center">
+          <Clock className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+          <p className="text-muted-foreground">No appointments found.</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="fade-slide-in" style={{ animationDelay: "0.9s" }}>
+      <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Recent Appointments
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {appointments.slice(0, 3).map((appt) => (
+            <div
+              key={appt._id}
+              className={`p-4 rounded-lg border ${getStatusColor(appt.appointmentStatus)}`}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-semibold text-foreground">{appt.serviceId.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {appt.userId.fullName} • {appt.petId.name} ({appt.petId.breed})
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDate(appt.slotDetails.date + "T" + appt.slotDetails.startTime)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-foreground">{formatCurrency(appt.paymentDetails.amount)}</p>
+                  <p className={`text-sm font-medium ${getStatusColor(appt.appointmentStatus).split(" ")[0]}`}>
+                    {appt.appointmentStatus}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export default function Dashboard() {
+  const { shopData: shop } = useSelector((state: RootState) => state.shop)
+  const shopId = shop?.id
+
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+  const [wallet, setWallet] = useState<WalletData | null>(null)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [bookingInsights, setBookingInsights] = useState<BookingInsight[]>([])
+
+  // Fetch wallet data
+  const fetchWallet = async () => {
+    if (!shopId) {
+      setError('Missing shop ID')
+      setLoading(false)
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+      const walletData = await walletService.getShopWallet(shopId, 'shop')
+      setWallet(walletService.formatWalletData(walletData))
+    } catch (error: any) {
+      console.error('=== WALLET FETCH ERROR ===')
+      console.error('Error:', error)
+      setError('Failed to fetch wallet')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch appointments and booking insights
+  const fetchDashboardData = async () => {
+    if (!shopId) {
+      setError('Shop ID not found.')
+      setLoading(false)
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Fetch appointments
+      const appointmentsResponse = await ShopAxios.get(`/appointments/shop/${shopId}`)
+      const appointmentsData: Appointment[] = Array.isArray(appointmentsResponse.data?.data)
+        ? appointmentsResponse.data.data
+        : []
+      setAppointments(appointmentsData)
+
+      // Booking insights calculation
+      const statusCounts = appointmentsData.reduce((acc: { [key: string]: { count: number; amount: number } }, appt: Appointment) => {
+        const status = appt.appointmentStatus.toLowerCase()
+        if (!acc[status]) {
+          acc[status] = { count: 0, amount: 0 }
+        }
+        acc[status].count += 1
+        acc[status].amount += appt.paymentDetails.amount
+        return acc
+      }, {})
+
+      const insights: BookingInsight[] = [
+        {
+          status: "Pending",
+          count: statusCounts.pending?.count || 0,
+          amount: statusCounts.pending?.amount || 0,
+          color: "yellow",
+          icon: Clock,
+        },
+        {
+          status: "Confirmed",
+          count: statusCounts.confirmed?.count || 0,
+          amount: statusCounts.confirmed?.amount || 0,
+          color: "blue",
+          icon: CheckCircle,
+        },
+        {
+          status: "Ongoing",
+          count: statusCounts.ongoing?.count || 0,
+          amount: statusCounts.ongoing?.amount || 0,
+          color: "purple",
+          icon: PlayCircle,
+        },
+        {
+          status: "Completed",
+          count: statusCounts.completed?.count || 0,
+          amount: statusCounts.completed?.amount || 0,
+          color: "green",
+          icon: CheckCircle,
+        },
+        {
+          status: "Cancelled",
+          count: statusCounts.cancelled?.count || 0,
+          amount: statusCounts.cancelled?.amount || 0,
+          color: "red",
+          icon: XCircle,
+        },
+      ]
+      setBookingInsights(insights)
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err)
+      setError('Failed to load data. Please try again later.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Format currency helper
+  const formatCurrency = (amount: number, currency: string = "INR") => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  // Effect: fetch wallet on shop change
+  useEffect(() => {
+    if (shop) {
+      fetchWallet()
+    }
+  }, [shop])
+
+  // Effect: fetch dashboard data on shop change
+  useEffect(() => {
+    if (shop) {
+      fetchDashboardData()
+    }
+  }, [shop])
+
+  // Calculate total earnings from wallet balance or sum of credits
+  const totalEarnings = wallet ? wallet.balance : 0
+
+  // Calculate monthly revenue from appointments in current month
+  const monthlyRevenue = appointments
+    .filter((appt) => {
+      const apptDate = new Date(appt.slotDetails.date)
+      const now = new Date()
+      return (
+        apptDate.getMonth() === now.getMonth() &&
+        apptDate.getFullYear() === now.getFullYear() &&
+        appt.paymentDetails.status === "paid"
+      )
+    })
+    .reduce((sum, appt) => sum + appt.paymentDetails.amount, 0)
+
+  // Calculate commission deducted (example: 5% of total earnings)
+  const commissionDeducted = totalEarnings * 0.05
 
   return (
     <PetCareLayout>
       <Navbar />
       <div className="p-8 space-y-8 bg-gradient-to-br from-background via-background to-muted/20">
-        {/* Welcome Header with Quick Stats */}
+        {/* Welcome Header */}
         <div className="fade-slide-in">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -62,459 +606,124 @@ export default function PetCareDashboard() {
           </div>
         </div>
 
-        {/* Revenue & Earnings Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="fade-slide-in" style={{ animationDelay: "0.1s" }}>
-            <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-emerald-100 text-sm font-medium">Total Earnings (Lifetime)</p>
-                    <p className="text-3xl font-bold">$127,450</p>
-                    <p className="text-emerald-100 text-sm mt-1">+15.2% from last year</p>
-                  </div>
-                  <DollarSign className="h-8 w-8 text-emerald-100" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="fade-slide-in" style={{ animationDelay: "0.2s" }}>
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100 text-sm font-medium">Monthly Revenue</p>
-                    <p className="text-3xl font-bold">$24,680</p>
-                    <p className="text-blue-100 text-sm mt-1">+8.5% from last month</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-blue-100" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="fade-slide-in" style={{ animationDelay: "0.3s" }}>
-            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100 text-sm font-medium">Pending Payouts</p>
-                    <p className="text-3xl font-bold">$3,240</p>
-                    <p className="text-purple-100 text-sm mt-1">Processing in 2 days</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-purple-100" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="fade-slide-in" style={{ animationDelay: "0.4s" }}>
-            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-100 text-sm font-medium">Commission Deducted</p>
-                    <p className="text-3xl font-bold">$1,234</p>
-                    <p className="text-orange-100 text-sm mt-1">5% platform fee</p>
-                  </div>
-                  <Activity className="h-8 w-8 text-orange-100" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <QuickStatCard
+            title="Total Earnings (Lifetime)"
+            value={formatCurrency(totalEarnings)}
+            icon={DollarSign}
+            gradient="from-emerald-500 to-emerald-600"
+            delay="0.1s"
+          />
+          <QuickStatCard
+            title="Monthly Revenue"
+            value={formatCurrency(monthlyRevenue)}
+            icon={TrendingUp}
+            gradient="from-blue-500 to-blue-600"
+            delay="0.2s"
+          />
+          <QuickStatCard
+            title="Commission Deducted"
+            value={formatCurrency(commissionDeducted)}
+            icon={Activity}
+            gradient="from-orange-500 to-orange-600"
+            delay="0.4s"
+          />
         </div>
 
-        {/* Earnings by Service Type */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="fade-slide-in" style={{ animationDelay: "0.5s" }}>
-            <Card className="bg-white border-0 shadow-lg">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-bold text-foreground">Earnings by Service Type</CardTitle>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={selectedVisualization === "bar" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedVisualization("bar")}
-                    >
-                      <BarChart3 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={selectedVisualization === "pie" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedVisualization("pie")}
-                    >
-                      <PieChart className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { service: "Grooming", amount: "$12,450", percentage: 45, color: "bg-emerald-500" },
-                    { service: "Daycare", amount: "$8,230", percentage: 30, color: "bg-blue-500" },
-                    { service: "Training", amount: "$4,120", percentage: 15, color: "bg-purple-500" },
-                    { service: "Boarding", amount: "$2,750", percentage: 10, color: "bg-orange-500" },
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded ${item.color}`}></div>
-                        <span className="font-medium text-foreground">{item.service}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="w-32 bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${item.color}`}
-                            style={{ width: `${item.percentage}%` }}
-                          ></div>
-                        </div>
-                        <span className="font-bold text-foreground w-20 text-right">{item.amount}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Booking Insights */}
-          <div className="fade-slide-in" style={{ animationDelay: "0.6s" }}>
-            <Card className="bg-white border-0 shadow-lg">
-              <CardHeader>
+        {/* Booking Insights */}
+        <div className="fade-slide-in" style={{ animationDelay: "0.6s" }}>
+          <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-bold text-foreground">Booking Insights</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <span className="text-sm font-medium text-green-800">Completed</span>
-                    </div>
-                    <p className="text-2xl font-bold text-green-900">156</p>
-                    <p className="text-sm text-green-700">$18,450 earned</p>
-                  </div>
-                  <div className="p-4 bg-red-50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <XCircle className="h-5 w-5 text-red-600" />
-                      <span className="text-sm font-medium text-red-800">Cancelled</span>
-                    </div>
-                    <p className="text-2xl font-bold text-red-900">12</p>
-                    <p className="text-sm text-red-700">$1,240 lost</p>
-                  </div>
+                <Button variant="outline" size="sm" className="text-muted-foreground">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Filter
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {bookingInsights.length === 0 ? (
+                <div className="text-center p-4">
+                  <p className="text-sm text-muted-foreground">Loading booking insights...</p>
                 </div>
-
-                <div className="mt-6">
-                  <h4 className="font-semibold text-foreground mb-3">Peak Booking Hours</h4>
-                  <div className="space-y-2">
-                    {[
-                      { time: "9:00 AM - 11:00 AM", bookings: 45, color: "bg-emerald-500" },
-                      { time: "2:00 PM - 4:00 PM", bookings: 38, color: "bg-blue-500" },
-                      { time: "10:00 AM - 12:00 PM", bookings: 32, color: "bg-purple-500" },
-                    ].map((slot, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">{slot.time}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-20 bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${slot.color}`}
-                              style={{ width: `${(slot.bookings / 45) * 100}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-sm font-medium w-8">{slot.bookings}</span>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {bookingInsights.map((item, index) => {
+                    const Icon = item.icon
+                    const totalCount = bookingInsights.reduce((sum, i) => sum + i.count, 0)
+                    const percentage = totalCount > 0 ? ((item.count / totalCount) * 100).toFixed(1) : "0.0"
+                    return (
+                      <div
+                        key={index}
+                        className={`group relative p-4 bg-${item.color}-50 rounded-lg hover:bg-${item.color}-100 transition-colors duration-200`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <Icon className={`h-5 w-5 text-${item.color}-600`} />
+                          <span className={`text-sm font-medium text-${item.color}-800`}>{item.status}</span>
+                        </div>
+                        <p className={`text-2xl font-bold text-${item.color}-900`}>{item.count}</p>
+                        <p className={`text-sm text-${item.color}-700 mb-2`}>
+                          {formatCurrency(item.amount)} {item.status === "Cancelled" ? "lost" : item.status === "Completed" ? "earned" : item.status.toLowerCase()}
+                        </p>
+                        <Progress
+                          value={parseFloat(percentage)}
+                          className={`h-1.5 bg-${item.color}-200/50`}
+                        />
+                        <div className="absolute invisible group-hover:visible bg-gray-800 text-white text-xs rounded py-1 px-2 bottom-full mb-2">
+                          <div className="absolute h-2 w-2 bg-gray-800 rotate-45 -bottom-1 left-1/2 -translate-x-1/2"></div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )
+                  })}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Customer Insights & Reviews */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="fade-slide-in" style={{ animationDelay: "0.7s" }}>
-            <Card className="bg-white border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Customer Insights
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <p className="text-2xl font-bold text-blue-900">1,247</p>
-                    <p className="text-sm text-blue-700">Total Customers</p>
-                  </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <p className="text-2xl font-bold text-green-900">892</p>
-                    <p className="text-sm text-green-700">Repeat Customers</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">New This Month</span>
-                    <span className="font-bold text-foreground">47</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Retention Rate</span>
-                    <span className="font-bold text-green-600">71.5%</span>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">Top Customers</h4>
-                  <div className="space-y-2">
-                    {[
-                      { name: "Sarah Johnson", bookings: 12, spent: "$1,450" },
-                      { name: "Mike Davis", bookings: 9, spent: "$1,120" },
-                      { name: "Emma Wilson", bookings: 8, spent: "$980" },
-                    ].map((customer, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{customer.name}</p>
-                          <p className="text-xs text-muted-foreground">{customer.bookings} bookings</p>
-                        </div>
-                        <span className="text-sm font-bold text-foreground">{customer.spent}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Reviews & Ratings */}
-          <div className="fade-slide-in" style={{ animationDelay: "0.8s" }}>
-            <Card className="bg-white border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <Star className="h-5 w-5 text-yellow-500" />
-                  Reviews & Ratings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="flex items-center justify-center gap-1 mb-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-3xl font-bold text-yellow-900">4.9</p>
-                  <p className="text-sm text-yellow-700">Average Rating (128 reviews)</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-muted-foreground">Recent Positive</span>
-                      <TrendingUp className="h-4 w-4 text-green-500" />
-                    </div>
-                    <p className="text-sm text-foreground">"Excellent grooming service! My dog looks amazing."</p>
-                    <p className="text-xs text-muted-foreground">- Sarah M. (2 days ago)</p>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-muted-foreground">Needs Attention</span>
-                      <AlertTriangle className="h-4 w-4 text-orange-500" />
-                    </div>
-                    <p className="text-sm text-foreground">
-                      "Service was good but waiting time was longer than expected."
-                    </p>
-                    <p className="text-xs text-muted-foreground">- Mike D. (1 week ago)</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-red-600" />
-                    <span className="text-sm font-medium text-red-800">Flagged Reviews</span>
-                  </div>
-                  <Badge className="bg-red-100 text-red-800 border-red-200">2 pending</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Profile & Availability */}
-          <div className="fade-slide-in" style={{ animationDelay: "0.9s" }}>
-            <Card className="bg-white border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Profile & Availability
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-800">Verification Status</span>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800 border-green-200">Approved</Badge>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-foreground">Profile Completeness</span>
-                    <span className="text-sm font-bold text-foreground">87%</span>
-                  </div>
-                  <Progress value={87} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-1">Add business hours to reach 100%</p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">Next Available Slots</h4>
-                  <div className="space-y-2">
-                    {[
-                      { service: "Grooming", time: "Today 2:30 PM", available: true },
-                      { service: "Training", time: "Tomorrow 10:00 AM", available: true },
-                      { service: "Daycare", time: "Tomorrow 8:00 AM", available: false },
-                    ].map((slot, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{slot.service}</p>
-                          <p className="text-xs text-muted-foreground">{slot.time}</p>
-                        </div>
-                        <Badge className={slot.available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                          {slot.available ? "Available" : "Booked"}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Performance Comparison & Advanced Features */}
+        {/* Reviews & Ratings and Appointments */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="fade-slide-in" style={{ animationDelay: "1.2s" }}>
-            <Card className="bg-white border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <LineChart className="h-5 w-5" />
-                  Performance Comparison
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-700 mb-1">This Month</p>
-                    <p className="text-2xl font-bold text-blue-900">$24,680</p>
-                    <div className="flex items-center justify-center gap-1 mt-1">
-                      <TrendingUp className="h-4 w-4 text-green-500" />
-                      <span className="text-sm text-green-600">+8.5%</span>
-                    </div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-700 mb-1">Last Month</p>
-                    <p className="text-2xl font-bold text-gray-900">$22,750</p>
-                    <div className="flex items-center justify-center gap-1 mt-1">
-                      <TrendingDown className="h-4 w-4 text-red-500" />
-                      <span className="text-sm text-red-600">-2.1%</span>
-                    </div>
+          <ReviewsAndRatings />
+          <Appointments
+            appointments={appointments}
+            bookingInsights={bookingInsights}
+            loading={loading}
+            error={error}
+          />
+        </div>
+
+        {/* Performance Comparison */}
+        <div className="fade-slide-in" style={{ animationDelay: "1.2s" }}>
+          <Card className="bg-white border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                <LineChart className="h-5 w-5" />
+                Performance Comparison
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-700 mb-1">This Month</p>
+                  <p className="text-2xl font-bold text-blue-900">{formatCurrency(monthlyRevenue)}</p>
+                  <div className="flex items-center justify-center gap-1 mt-1">
+                    <TrendingUp className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-green-600">+8.5%</span>
                   </div>
                 </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-3">Most Popular Service</h4>
-                  <div className="p-4 bg-emerald-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-emerald-900">Pet Grooming</p>
-                        <p className="text-sm text-emerald-700">156 bookings this month</p>
-                      </div>
-                      <Award className="h-8 w-8 text-emerald-600" />
-                    </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700 mb-1">Last Month</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(monthlyRevenue * 0.92)}</p>
+                  <div className="flex items-center justify-center gap-1 mt-1">
+                    <TrendingDown className="h-4 w-4 text-red-500" />
+                    <span className="text-sm text-red-600">-2.1%</span>
                   </div>
                 </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-3">Customer Feedback Trend</h4>
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <span className="text-sm font-medium text-green-800">Rating Improvement</span>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-green-600" />
-                      <span className="font-bold text-green-900">+0.3 this month</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="fade-slide-in" style={{ animationDelay: "1.3s" }}>
-            <Card className="bg-white border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Service Availability Heatmap
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">Peak Days & Times</span>
-                    <Button size="sm" variant="outline">
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filter
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-2 text-center">
-                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                      <div key={day} className="text-xs font-medium text-muted-foreground p-2">
-                        {day}
-                      </div>
-                    ))}
-
-                    {[
-                      [85, 90, 95, 88, 92, 78, 65],
-                      [78, 85, 88, 90, 85, 82, 70],
-                      [82, 88, 92, 85, 88, 75, 68],
-                    ].map((week, weekIndex) =>
-                      week.map((intensity, dayIndex) => (
-                        <div
-                          key={`${weekIndex}-${dayIndex}`}
-                          className={`h-8 rounded text-xs flex items-center justify-center font-medium ${
-                            intensity >= 90
-                              ? "bg-emerald-500 text-white"
-                              : intensity >= 80
-                                ? "bg-emerald-400 text-white"
-                                : intensity >= 70
-                                  ? "bg-emerald-300 text-emerald-900"
-                                  : "bg-emerald-100 text-emerald-700"
-                          }`}
-                        >
-                          {intensity}%
-                        </div>
-                      )),
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Less busy</span>
-                    <div className="flex gap-1">
-                      <div className="w-3 h-3 bg-emerald-100 rounded"></div>
-                      <div className="w-3 h-3 bg-emerald-300 rounded"></div>
-                      <div className="w-3 h-3 bg-emerald-400 rounded"></div>
-                      <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-                    </div>
-                    <span>More busy</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </PetCareLayout>

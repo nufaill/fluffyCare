@@ -20,6 +20,9 @@ import { AuthMiddleware } from "../middlewares/auth.middleware";
 import { SubscriptionController } from "../controllers/subscription/subscription.controller";
 import { SubscriptionRepository } from "../repositories/subscription/subscription.repository";
 import { SubscriptionService } from "../services/subscription/subscription.service";
+import { ReviewController } from '../controllers/review/review.controller';
+import { ReviewService } from "../services/review/review.service";
+import { ReviewRepository } from "../repositories/review/review.repository";
 
 // Initialize repositories
 const shopRepository = new ShopRepository();
@@ -28,6 +31,7 @@ const otpRepository = new OtpRepository();
 const staffRepository = new StaffRepository();
 const walletRepository = new WalletRepository();
 const subscriptionRepository = new SubscriptionRepository();
+const reviewRepository = new ReviewRepository();
 
 // Initialize services
 const jwtService = new JwtService();
@@ -44,6 +48,7 @@ const shopAuthService = new ShopAuthService(
 const serviceService = new ServiceService(serviceRepository);
 const staffService = new StaffService(staffRepository);
 const subscriptionService = new SubscriptionService(subscriptionRepository);
+const reviewService = new ReviewService(reviewRepository);
 
 // Initialize middleware
 const authMiddlewareInstance = new AuthMiddleware(jwtService);
@@ -55,6 +60,7 @@ const injectedShopController = new ShopController(shopService, shopAvailabilityS
 const injectedServiceController = new ServiceController(serviceService);
 const injectedStaffController = new StaffController(staffService);
 const injectedSubscriptionController = new SubscriptionController(subscriptionService);
+const reviewController = new ReviewController(reviewService)
 
 const boundShopAuthController = {
   register: injectedShopAuthController.register.bind(injectedShopAuthController),
@@ -95,7 +101,7 @@ export const shopDependencies = {
   shopController: injectedShopController,
   serviceController: boundServiceController,
   staffController: boundStaffController,
-  subscriptionController : injectedSubscriptionController,
+  subscriptionController: injectedSubscriptionController,
   shopAuthService,
   shopService,
   shopAvailabilityService,
@@ -106,4 +112,5 @@ export const shopDependencies = {
   staffRepository,
   jwtService,
   authMiddleware,
+  reviewController
 };
