@@ -1,3 +1,4 @@
+// appointment.controller.ts
 import { Request, Response } from 'express';
 import { IAppointmentService } from '../../interfaces/serviceInterfaces/IAppointmentService';
 import { CreateAppointmentDto, UpdateAppointmentDto } from '../../dto/appointment.dto';

@@ -1,3 +1,4 @@
+// payment.controller.ts
 import { Request, Response } from "express";
 import Stripe from "stripe";
 import { AppointmentService } from "../../services/appointment/appointment.service";
@@ -7,6 +8,7 @@ import { AppointmentStatus, PaymentMethod, PaymentStatus } from "../../types/app
 import { CreateAppointmentDto } from "../../dto/appointment.dto";
 import { Types } from "mongoose";
 import { CreateWalletDto } from "../../dto/wallet.dto";
+import { ProcessPaymentDto } from "../../dto/wallet.dto";
 
 export class PaymentController {
   private appointmentService: AppointmentService;
@@ -26,6 +28,7 @@ export class PaymentController {
 
     this.createPaymentIntent = this.createPaymentIntent.bind(this);
     this.confirmPayment = this.confirmPayment.bind(this);
+    this.payWithWallet = this.payWithWallet.bind(this);
   }
 
   createPaymentIntent = async (req: Request, res: Response): Promise<void> => {
@@ -302,6 +305,185 @@ export class PaymentController {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: `Failed to confirm payment: ${error.message}`,
+        data: null,
+      });
+    }
+  };
+
+  payWithWallet = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const {
+        serviceId,
+        shopId,
+        userId,
+        petId,
+        staffId,
+        date,
+        startTime,
+        endTime,
+        amount,
+        currency,
+      } = req.body;
+
+      // Validate required fields
+      const requiredFields = [
+        { field: 'serviceId', value: serviceId },
+        { field: 'shopId', value: shopId },
+        { field: 'userId', value: userId },
+        { field: 'petId', value: petId },
+        { field: 'staffId', value: staffId },
+        { field: 'date', value: date },
+        { field: 'startTime', value: startTime },
+        { field: 'endTime', value: endTime },
+        { field: 'amount', value: amount },
+        { field: 'currency', value: currency },
+      ];
+
+      const missingField = requiredFields.find(({ value }) =>
+        value === undefined || value === null || value === ""
+      );
+
+      if (missingField) {
+        console.error(`Missing required field: ${missingField.field}`);
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: `Missing required field: ${missingField.field}`,
+          data: null,
+        });
+        return;
+      }
+
+      // Validate ObjectIds
+      const objectIdFields = [
+        { field: 'serviceId', value: serviceId },
+        { field: 'shopId', value: shopId },
+        { field: 'userId', value: userId },
+        { field: 'petId', value: petId },
+        { field: 'staffId', value: staffId },
+      ];
+
+      const invalidObjectIdField = objectIdFields.find(
+        ({ value }) => !Types.ObjectId.isValid(value)
+      );
+
+      if (invalidObjectIdField) {
+        console.error(`Invalid ObjectId for field: ${invalidObjectIdField.field}`);
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: `Invalid ObjectId for field: ${invalidObjectIdField.field}`,
+          data: null,
+        });
+        return;
+      }
+
+      // Check slot availability
+      const slotDetails = { date, startTime, endTime };
+      const availabilityResponse = await this.appointmentService.checkSlotAvailability(slotDetails, staffId);
+
+      if (!availabilityResponse.success || !availabilityResponse.data) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: "Selected slot is no longer available",
+        });
+        return;
+      }
+
+      // Ensure user wallet and check balance
+      const userObjectId = new Types.ObjectId(userId);
+      const userWallet = await this.ensureWalletExists(userObjectId, 'user', currency);
+
+      if (!userWallet) {
+        throw new Error("User wallet could not be created or found");
+      }
+
+      if (userWallet.balance < amount) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: "Insufficient wallet balance",
+          data: null,
+        });
+        return;
+      }
+
+      // Create appointment data
+      const appointmentData: CreateAppointmentDto = {
+        userId,
+        petId,
+        shopId,
+        serviceId,
+        staffId,
+        slotDetails: { date, startTime, endTime },
+        paymentDetails: {
+          amount,
+          currency,
+          status: PaymentStatus.Completed,
+          method: PaymentMethod.Wallet,
+          paidAt: new Date(),
+          paymentIntentId: ""
+        },
+        paymentMethod: PaymentMethod.Wallet,
+        paymentStatus: PaymentStatus.Completed,
+        appointmentStatus: AppointmentStatus.Pending,
+        notes: "",
+      };
+
+      const appointmentResult = await this.appointmentService.createAppointment(appointmentData);
+
+      if (!appointmentResult.success || !appointmentResult.data) {
+        console.error("Failed to create appointment:", appointmentResult.message);
+        res.status(appointmentResult.statusCode).json({
+          success: false,
+          message: appointmentResult.message,
+          data: null,
+        });
+        return;
+      }
+
+      const appointmentObjectId = appointmentResult.data._id as Types.ObjectId;
+
+      try {
+        // Process wallet payment
+        const processPaymentDto = new ProcessPaymentDto(
+          userObjectId,
+          new Types.ObjectId(shopId),
+          amount,
+          currency,
+          appointmentObjectId,
+          `Payment for appointment ${appointmentObjectId}`
+        );
+
+        await this.walletService.processPayment(processPaymentDto);
+
+      } catch (walletError: any) {
+        console.error("=== WALLET PAYMENT ERROR ===");
+        console.error("Error details:", walletError);
+        console.error("Stack trace:", walletError.stack);
+
+        await this.appointmentService.cancelAppointment(
+          appointmentObjectId.toString(),
+          "Wallet payment failed"
+        );
+
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+          success: false,
+          message: `Failed to process wallet payment: ${walletError.message}. Appointment cancelled.`,
+          data: null,
+        });
+        return;
+      }
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: "Payment confirmed with wallet and appointment created successfully",
+        data: appointmentResult.data,
+      });
+    } catch (error: any) {
+      console.error("=== WALLET PAYMENT FAILED ===");
+      console.error("Error:", error);
+      console.error("Stack trace:", error.stack);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: `Failed to process wallet payment: ${error.message}`,
         data: null,
       });
     }

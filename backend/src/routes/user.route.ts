@@ -433,6 +433,7 @@ router.get('/staff', userDependencies.staffController.getAllStaff as RequestHand
 
 router.post("/payment/create-payment-intent", appointmentDependencies.paymentController.createPaymentIntent as RequestHandler);
 router.post('/confirm-payment', appointmentDependencies.paymentController.confirmPayment.bind(appointmentDependencies.paymentController) as RequestHandler);
+router.post('/pay-with-wallet', appointmentDependencies.paymentController.payWithWallet.bind(appointmentDependencies.paymentController) as RequestHandler);
 
 /**
  * @swagger

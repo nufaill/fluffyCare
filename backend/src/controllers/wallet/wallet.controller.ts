@@ -1,3 +1,4 @@
+// wallet.controller.ts
 import { Request, Response } from 'express';
 import { WalletService } from '../../services/wallet/wallet.service';
 import { CreateWalletDto, ProcessPaymentDto, RefundPaymentDto, WalletResponseDto } from '../../dto/wallet.dto';

@@ -165,17 +165,17 @@ export class AppointmentService implements IAppointmentService {
 
       const appointment: AppointmentDocument = await this._appointmentRepository.create(appointmentToCreate);
 
-      if (appointmentData.paymentMethod === PaymentMethod.Wallet && appointmentData.paymentStatus === PaymentStatus.Completed) {
-        const paymentDto = new ProcessPaymentDto(
-          new Types.ObjectId(appointmentData.userId),
-          new Types.ObjectId(appointmentData.shopId),
-          appointmentData.paymentDetails?.amount || 0,
-          appointmentData.paymentDetails?.currency || 'INR',
-          appointment._id as Types.ObjectId,
-          'Payment for appointment'
-        );
-        await this._walletService.processPayment(paymentDto);
-      }
+      // if (appointmentData.paymentMethod === PaymentMethod.Wallet && appointmentData.paymentStatus === PaymentStatus.Completed) {
+      //   const paymentDto = new ProcessPaymentDto(
+      //     new Types.ObjectId(appointmentData.userId),
+      //     new Types.ObjectId(appointmentData.shopId),
+      //     appointmentData.paymentDetails?.amount || 0,
+      //     appointmentData.paymentDetails?.currency || 'INR',
+      //     appointment._id as Types.ObjectId,
+      //     'Payment for appointment'
+      //   );
+      //   await this._walletService.processPayment(paymentDto);
+      // }
 
       try {
         const socketHandler = getSocketHandler();

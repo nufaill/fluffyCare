@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, User } from "lucide-react";
+import { AlertCircle, User, Wallet } from "lucide-react";
 import Useraxios from "@/api/user.axios";
 import { toast } from "react-hot-toast";
 import React from "react";
+import { walletService } from '@/services/walletService';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/Badge";
 
 interface TimeSlot {
   shopId: string;
@@ -20,7 +23,7 @@ interface TimeSlot {
 
 interface PaymentFormProps {
   amount: number;
-  onSuccess: (paymentIntentId: string) => void;
+  onSuccess: (data: any) => void;
   onCancel: () => void;
   serviceId: string;
   shopId: string;
@@ -44,11 +47,32 @@ export function PaymentForm({
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
 
   useEffect(() => {
     // Validate userId when component mounts
     validateFormData();
+
+    // Fetch wallet if user is logged in
+    if (userId && userId.trim() !== "") {
+      fetchWalletBalance();
+    }
   }, [userId, selectedPetId, selectedSlots, serviceId, shopId]);
+
+  const fetchWalletBalance = async () => {
+    try {
+      setWalletLoading(true);
+      const walletData = await walletService.getUserWallet(userId, 'user');
+      setWalletBalance(walletData.balance);
+    } catch (err: any) {
+      console.error('Failed to fetch wallet:', err);
+      setError('Failed to load wallet balance. Please try again.');
+    } finally {
+      setWalletLoading(false);
+    }
+  };
 
   const validateFormData = (): boolean => {
     setValidationError(null);
@@ -106,6 +130,14 @@ export function PaymentForm({
       return;
     }
 
+    if (paymentMethod === 'card') {
+      await handleCardPayment();
+    } else if (paymentMethod === 'wallet') {
+      await handleWalletPayment();
+    }
+  };
+
+  const handleCardPayment = async () => {
     if (!stripe || !elements) {
       setError("Stripe is not initialized. Please try again.");
       toast.error("Stripe is not initialized. Please try again.", {
@@ -140,56 +172,106 @@ export function PaymentForm({
       const response = await Useraxios.post("/payment/create-payment-intent", paymentData);
       const { clientSecret } = response.data;
 
-      const result = await stripe.confirmCardPayment(clientSecret, {
+      const cardElement = elements.getElement(CardElement);
+
+      if (!cardElement) {
+        throw new Error("Card element not found");
+      }
+
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
-          card: elements.getElement(CardElement)!,
-          billing_details: {
-            name: userId || "Guest",
-          },
+          card: cardElement,
         },
       });
 
-      if (result.error) {
-        setError(result.error.message || "Payment failed. Please try again.");
-        toast.error(result.error.message || "Payment failed", {
-          style: { background: "#fef3c7", color: "#92400e" },
+      if (stripeError) {
+        throw new Error(stripeError.message);
+      }
+
+      if (!paymentIntent) {
+        throw new Error("Payment intent not found");
+      }
+
+      // Confirm the booking
+      const confirmData = {
+        paymentIntentId: paymentIntent.id,
+        serviceId,
+        shopId,
+        userId: userId.trim(),
+        petId: selectedPetId.trim(),
+        staffId,
+        date: slot.slotDate,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+      };
+
+      console.log("Confirming payment with data:", confirmData);
+
+      const confirmResponse = await Useraxios.post("/confirm-payment", confirmData);
+
+      if (confirmResponse.data.success) {
+        toast.success("Booking confirmed successfully!", {
+          style: { background: "#dcfce7", color: "#15803d" },
         });
-      } else if (result.paymentIntent?.status === "succeeded") {
-        try {
-          const confirmationData = {
-            paymentIntentId: result.paymentIntent.id,
-            serviceId,
-            shopId,
-            userId: userId.trim(),
-            petId: selectedPetId.trim(),
-            staffId: staffId,
-            date: slot.slotDate,
-            startTime: slot.startTime,
-            endTime: slot.endTime
-          };
-
-          console.log("Confirming payment with data:", confirmationData);
-
-          await Useraxios.post("/confirm-payment", confirmationData);
-
-          onSuccess(result.paymentIntent.id);
-          toast.success("Payment successful!", {
-            style: { background: "#d1fae5", color: "#065f46" },
-          });
-        } catch (confirmError: any) {
-          console.error("Payment confirmation error:", confirmError.response?.data || confirmError);
-          const errorMessage =
-            confirmError.response?.data?.message || "Failed to confirm booking. Please contact support.";
-          setError(errorMessage);
-          toast.error(errorMessage, {
-            style: { background: "#fef3c7", color: "#92400e" },
-          });
-        }
+        onSuccess(confirmResponse.data.data);
+      } else {
+        throw new Error(confirmResponse.data.message || "Failed to confirm booking");
       }
 
     } catch (err: any) {
       console.error("Payment error:", err.response?.data || err);
-      const errorMessage = err.response?.data?.message || "An error occurred during payment. Please try again.";
+      const errorMessage = err.response?.data?.message || err.message || "An error occurred during payment. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage, {
+        style: { background: "#fef3c7", color: "#92400e" },
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleWalletPayment = async () => {
+    if (walletBalance === null || walletBalance < amount) {
+      setError("Insufficient wallet balance");
+      return;
+    }
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      const slot = selectedSlots[0];
+      const staffId = getStaffId(slot.staffId);
+
+      const paymentData = {
+        amount,
+        currency: "inr",
+        serviceId,
+        shopId,
+        userId: userId.trim(),
+        petId: selectedPetId.trim(),
+        staffId,
+        date: slot.slotDate,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+      };
+
+      console.log("Processing wallet payment with data:", paymentData);
+
+      const response = await Useraxios.post("/pay-with-wallet", paymentData);
+
+      if (response.data.success) {
+        toast.success("Booking confirmed successfully with wallet!", {
+          style: { background: "#dcfce7", color: "#15803d" },
+        });
+        onSuccess(response.data.data);
+      } else {
+        throw new Error(response.data.message || "Failed to confirm booking");
+      }
+
+    } catch (err: any) {
+      console.error("Wallet payment error:", err.response?.data || err);
+      const errorMessage = err.response?.data?.message || err.message || "An error occurred during wallet payment. Please try again.";
       setError(errorMessage);
       toast.error(errorMessage, {
         style: { background: "#fef3c7", color: "#92400e" },
@@ -242,28 +324,64 @@ export function PaymentForm({
         </div>
       </div>
 
-      <div className="border-2 border-gray-200 rounded-lg p-4 bg-white">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Card Details
-        </label>
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: "16px",
-                color: "#000",
-                "::placeholder": {
-                  color: "#6b7280",
+      {/* Payment Method Tabs */}
+      <Tabs value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'card' | 'wallet')}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="card">Card</TabsTrigger>
+          <TabsTrigger value="wallet">Wallet</TabsTrigger>
+        </TabsList>
+        <TabsContent value="card" className="space-y-4">
+          <div className="border-2 border-gray-200 rounded-lg p-4 bg-white">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Card Details
+            </label>
+            <CardElement
+              options={{
+                style: {
+                  base: {
+                    fontSize: "16px",
+                    color: "#000",
+                    "::placeholder": {
+                      color: "#6b7280",
+                    },
+                  },
+                  invalid: {
+                    color: "#b91c1c",
+                  },
                 },
-              },
-              invalid: {
-                color: "#b91c1c",
-              },
-            },
-          }}
-          className="p-2 border border-gray-300 rounded-lg"
-        />
-      </div>
+              }}
+              className="p-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+        </TabsContent>
+        <TabsContent value="wallet" className="space-y-4">
+          <div className="border-2 border-gray-200 rounded-lg p-4 bg-white">
+            {walletLoading ? (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Loading wallet...</p>
+              </div>
+            ) : walletBalance !== null ? (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Available Balance</span>
+                  <Badge variant="secondary" className="text-lg font-bold">
+                    ₹{walletBalance.toFixed(2)}
+                  </Badge>
+                </div>
+                {walletBalance < amount && (
+                  <div className="bg-yellow-50 border border-yellow-200 p-2 rounded flex items-center gap-2 text-yellow-800 text-sm">
+                    <AlertCircle className="w-4 h-4" />
+                    Insufficient balance. Need ₹{ (amount - walletBalance).toFixed(2) } more.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-center text-gray-600">Unable to load wallet balance</p>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
       
       {error && (
         <div className="bg-red-50 border-2 border-red-200 p-3 rounded-lg flex items-center gap-2">
@@ -284,10 +402,10 @@ export function PaymentForm({
         </Button>
         <Button
           type="submit"
-          disabled={!stripe || processing}
+          disabled={!stripe || processing || (paymentMethod === 'wallet' && (walletBalance === null || walletBalance < amount || walletLoading))}
           className="bg-black text-white hover:bg-gray-800 font-semibold"
         >
-          {processing ? "Processing..." : `Pay ₹${amount}`}
+          {processing ? "Processing..." : paymentMethod === 'card' ? `Pay ₹${amount} with Card` : `Pay ₹${amount} with Wallet`}
         </Button>
       </div>
     </form>
