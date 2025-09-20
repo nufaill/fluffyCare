@@ -1,4 +1,3 @@
-// userInjection.ts
 import { UserController } from "../controllers/user/user.controller";
 import { UserService } from "../services/user/user.service";
 import { AuthService } from "../services/user/auth.service";
@@ -61,6 +60,7 @@ const boundPetController = {
   getPetsByUserId: petController.getPetsByUserId.bind(petController),
   getPetById: petController.getPetById.bind(petController),
   updatePet: petController.updatePet.bind(petController),
+  getPetWithBookings: petController.getPetWithBookings.bind(petController),
 };
 
 
@@ -69,7 +69,6 @@ const boundStaffController = {
   getAllStaff: injectedStaffController.getAllStaff.bind(injectedStaffController),
 };
 
-// Export for route usage
 export const userDependencies = {
   userController: injectedUserController,
   authService,

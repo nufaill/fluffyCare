@@ -1,9 +1,15 @@
 import { Types } from 'mongoose';
 import { Pet } from '../../models/pet.model';
+import { Appointment } from '../../models/appointment.model';
 import { CreatePetData, PetDocument } from '../../types/Pet.types';
 import { PetTypeDocument } from '../../types/PetType.type';
 import { PetType } from '../../models/petType.model';
 import { IPetRepository } from '../../interfaces/repositoryInterfaces/IPetRepository';
+import { AppointmentDocument } from '../../models/appointment.model';
+
+export interface PetWithBookings extends PetDocument {
+  bookings: AppointmentDocument[];
+}
 
 export class PetRepository implements IPetRepository {
   async createPet(petData: CreatePetData): Promise<PetDocument> {
@@ -53,5 +59,24 @@ export class PetRepository implements IPetRepository {
 
   async getAllPetTypes(): Promise<PetTypeDocument[]> {
     return await PetType.find().sort({ createdAt: -1 });
+  }
+
+  async getPetWithBookingsById(petId: string): Promise<PetWithBookings | null> {
+    const pet = await Pet.findById(petId)
+      .populate('petTypeId', 'name')
+      .populate('userId', 'name email');
+
+    if (!pet) {
+      return null;
+    }
+    const bookings = await Appointment.find({ petId: new Types.ObjectId(petId) })
+      .populate('shopId', 'name')
+      .populate('serviceId', 'name')
+      .populate('staffId', 'name');
+
+    return {
+      ...pet.toObject(),
+      bookings
+    };
   }
 }

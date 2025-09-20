@@ -1,17 +1,46 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/petbadge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
-import { Heart, Users, GraduationCap, Shield, Pill, Edit } from "lucide-react"
+import { Heart, Users, GraduationCap, Shield, Pill, Edit, Calendar } from "lucide-react"
 import type { Pet } from "@/types/pet.type"
 import { Button } from "../ui/button"
 import { useNavigate } from "react-router-dom"
+import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import Useraxios from "@/api/user.axios"
 
 interface PetCardProps {
   pet: Pet
 }
 
+interface Booking {
+  _id: string
+  serviceId: { name: string }
+  shopId: { name: string }
+  slotDetails: {
+    date: string
+    startTime: string
+    endTime: string
+  }
+  appointmentStatus: string
+}
+
 export function PetCard({ pet }: PetCardProps) {
   const navigate = useNavigate()
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  const fetchBookings = async () => {
+    try {
+      setIsLoading(true)
+      const res = await Useraxios.get(`/pet/${pet._id}/with-bookings`)
+      setBookings(res.data.data.bookings)
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <Card className="bg-white dark:bg-black border-2 border-black dark:border-white hover:shadow-2xl hover:shadow-gray-400/20 transition-all duration-300 transform hover:-translate-y-1">
@@ -113,21 +142,87 @@ export function PetCard({ pet }: PetCardProps) {
           )}
         </div>
 
-        <Button
-          onClick={() => {
-            if (!pet._id || typeof pet._id !== "string" || !/^[0-9a-fA-F]{24}$/.test(pet._id)) {
-              console.error("Invalid pet ID:", pet._id)
-              return
-            }
-            navigate(`/edit-pet/${pet._id}`)
-          }}
-          variant="outline"
-          size="sm"
-          className="w-full border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all duration-200 font-mono font-semibold"
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Pet
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => {
+              if (!pet._id || typeof pet._id !== "string" || !/^[0-9a-fA-F]{24}$/.test(pet._id)) {
+                console.error("Invalid pet ID:", pet._id)
+                return
+              }
+              navigate(`/edit-pet/${pet._id}`)
+            }}
+            variant="outline"
+            size="sm"
+            className="flex-1 border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all duration-200 font-mono font-semibold"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Pet
+          </Button>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                onClick={fetchBookings}
+                variant="outline"
+                size="sm"
+                className="flex-1 border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all duration-200 font-mono font-semibold"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Booking History
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-900 border-2 border-black dark:border-white rounded-lg p-6">
+              <DialogHeader>
+                <DialogTitle className="text-xl text-black dark:text-white font-mono font-bold">{pet.name}'s Booking History</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+                {isLoading ? (
+                  <p className="text-gray-600 dark:text-gray-400 font-mono text-center">Loading...</p>
+                ) : bookings.length === 0 ? (
+                  <p className="text-gray-600 dark:text-gray-400 font-mono text-center">No bookings found</p>
+                ) : (
+                  <div className="space-y-4">
+                    {bookings.map((booking) => (
+                      <div
+                        key={booking._id}
+                        className="border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-md p-4 transition-all duration-200 hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        <p className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                          {booking.serviceId.name}
+                        </p>
+                        <p className="text-sm font-mono text-gray-700 dark:text-gray-300">
+                          Shop: <span className="text-green-600 dark:text-green-400">{booking.shopId.name}</span>
+                        </p>
+                        <p className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                          Date: {new Date(booking.slotDetails.date).toLocaleDateString()}
+                        </p>
+                        <p className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                          Time: {booking.slotDetails.startTime} - {booking.slotDetails.endTime}
+                        </p>
+                        <p className="text-xs font-mono">
+                          Status:{' '}
+                          <span
+                            className={`font-semibold ${
+                              booking.appointmentStatus === 'Confirmed'
+                                ? 'text-green-500 dark:text-green-400'
+                                : booking.appointmentStatus === 'Pending'
+                                ? 'text-yellow-500 dark:text-yellow-400'
+                                : booking.appointmentStatus === 'Cancelled'
+                                ? 'text-red-500 dark:text-red-400'
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`}
+                          >
+                            {booking.appointmentStatus}
+                          </span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardContent>
     </Card>
   )

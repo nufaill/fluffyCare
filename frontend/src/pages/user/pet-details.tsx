@@ -32,14 +32,10 @@ export default function PetsPage() {
       try {
         setLoading(true)
         setError(null)
-        
-        // Fetch pets and pet types concurrently
         const [petsResponse, petTypesResponse] = await Promise.all([
           userService.getPetsByUserId(userId),
           userService.getAllPetTypes()
         ])
-
-        // Transform API data to match Pet interface
         const transformedPets: Pet[] = petsResponse.map(pet => ({
           ...pet,
           id: pet._id,
@@ -69,8 +65,6 @@ export default function PetsPage() {
       
       const matchesFilter = (() => {
         if (selectedFilter === "all") return true
-        
-        // Find the pet type name from petTypes array
         const petType = petTypes.find(type => type._id === pet.petTypeId)
         const petTypeName = petType?.name.toLowerCase() || ''
         
@@ -86,8 +80,6 @@ export default function PetsPage() {
 
   const petStats = React.useMemo(() => {
     const total = pets.length
-    
-    // Count pets by type
     const dogs = pets.filter(pet => {
       const petType = petTypes.find(type => type._id === pet.petTypeId)
       return petType?.name.toLowerCase().includes("dog")
@@ -115,15 +107,12 @@ export default function PetsPage() {
         navigate("/add-pets")
         break
       case 'health':
-        // Navigate to health records page
         navigate("/health-records")
         break
       case 'training':
-        // Navigate to training sessions page
         navigate("/training-sessions")
         break
       case 'export':
-        // Handle export functionality
         console.log('Export data functionality to be implemented')
         break
       default:

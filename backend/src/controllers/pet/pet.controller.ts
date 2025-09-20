@@ -3,6 +3,12 @@ import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { CreatePetDTO, UpdatePetDTO } from '../../dto/pet.dto';
 import { IPetService } from '../../interfaces/serviceInterfaces/IPetService';
 import { IPetController } from '../../interfaces/controllerInterfaces/IPetController';
+import { AppointmentDocument } from '../../models/appointment.model';
+import { PetDocument } from '../../types/Pet.types';
+
+export interface PetWithBookings extends PetDocument {
+  bookings: AppointmentDocument[];
+}
 
 export class PetController implements IPetController {
   private _petService: IPetService;
@@ -16,7 +22,6 @@ export class PetController implements IPetController {
       const userId = req.user?.userId || req.params.userId;
       const petData: CreatePetDTO = req.body;
 
-      // Validation
       if (!userId) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
@@ -173,6 +178,30 @@ export class PetController implements IPetController {
         success: true,
         message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
         data: updatedPet
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPetWithBookings(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { petId } = req.params;
+
+      if (!petId) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Pet ID is required'
+        });
+        return;
+      }
+
+      const pet = await this._petService.getPetWithBookingsById(petId);
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.FETCHED_SUCESS,
+        data: pet
       });
     } catch (error) {
       next(error);

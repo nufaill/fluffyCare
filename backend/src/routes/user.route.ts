@@ -421,6 +421,8 @@ router.get('/pets/:petId', userDependencies.petController.getPetById as RequestH
  */
 router.put('/pets/:petId', userDependencies.petController.updatePet as RequestHandler);
 
+router.get('/pet/:petId/with-bookings', userDependencies.petController.getPetWithBookings as RequestHandler);
+
 
 
 

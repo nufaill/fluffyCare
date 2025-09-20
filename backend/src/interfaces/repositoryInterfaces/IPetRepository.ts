@@ -1,5 +1,10 @@
+import { AppointmentDocument } from '@models/appointment.model';
 import { CreatePetData, PetDocument } from '../../types/Pet.types';
 import { PetTypeDocument } from '../../types/PetType.type';
+
+export interface PetWithBookings extends PetDocument {
+  bookings: AppointmentDocument[];
+}
 
 export interface IPetRepository {
   createPet(petData: CreatePetData): Promise<PetDocument>;
@@ -10,4 +15,5 @@ export interface IPetRepository {
   checkPetNameExists(userId: string, name: string, excludePetId?: string): Promise<boolean>;
   getPetsByUserIdAndType(userId: string, petTypeId: string): Promise<PetDocument[]>;
   getAllPetTypes(): Promise<PetTypeDocument[]>;
+  getPetWithBookingsById(petId: string): Promise<PetWithBookings | null>;
 }

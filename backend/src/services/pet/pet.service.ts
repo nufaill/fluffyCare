@@ -4,6 +4,11 @@ import { PetDocument } from '../../types/Pet.types';
 import { CustomError } from '../../util/CustomerError';
 import { IPetRepository } from '../../interfaces/repositoryInterfaces/IPetRepository';
 import { IPetService } from '../../interfaces/serviceInterfaces/IPetService';
+import { AppointmentDocument } from '../../models/appointment.model';
+
+export interface PetWithBookings extends PetDocument {
+  bookings: AppointmentDocument[];
+}
 
 export class PetService implements IPetService {
   private _petRepository: IPetRepository;
@@ -80,5 +85,13 @@ export class PetService implements IPetService {
 
   async getAllPetTypes(): Promise<PetTypeDocument[]> {
     return await this._petRepository.getAllPetTypes();
+  }
+
+  async getPetWithBookingsById(petId: string): Promise<PetWithBookings> {
+    const pet = await this._petRepository.getPetWithBookingsById(petId);
+    if (!pet) {
+      throw new CustomError('Pet not found', 404);
+    }
+    return pet;
   }
 }
