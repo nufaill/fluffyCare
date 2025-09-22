@@ -17,9 +17,6 @@ const Login: React.FC = () => {
       if (response.success) {
         dispatch(addShop(response.shop));
         navigate('/shop/dashboard');
-      } else if (response.message === "You are not allowed") {
-        dispatch(addShop(response.shop));
-        navigate('/shop/shop-verify');
       } else {
         throw new Error(response.message);
       }

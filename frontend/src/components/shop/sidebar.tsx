@@ -7,16 +7,12 @@ import {
   Users,
   Calendar,
   MessageCircle,
-  DollarSign,
   Clock,
   Settings,
   LogOut,
   Dog,
   ChevronRight,
   Award,
-  BarChart3,
-  PieChart,
-  TrendingUp,
   Wallet,
 } from "lucide-react"
 import { Badge } from "@/components/ui/Badge"
@@ -49,26 +45,10 @@ const defaultMenuItems: SidebarItem[] = [
     url: "/shop/dashboard",
   },
   {
-    title: "Pet Owners",
-    icon: Users,
-    url: "/shop/owners",
-    badge: "24",
-    subItems: [
-      { title: "All Owners", icon: Users, url: "/shop/owners/all", badge: "156" },
-      { title: "New Owners", icon: Users, url: "/shop/owners/new", badge: "12" },
-      { title: "VIP Owners", icon: Award, url: "/shop/owners/vip", badge: "8" },
-    ],
-  },
-  {
     title: "Appointments",
     icon: Calendar,
     url: "/shop/appointments",
     badge: "12",
-    // subItems: [
-    //   { title: "Today", icon: Calendar, url: "/shop/appointments/today", badge: "5" },
-    //   { title: "This Week", icon: Calendar, url: "/shop/appointments/week", badge: "12" },
-    //   { title: "Pending", icon: Clock, url: "/shop/appointments/pending", badge: "3" },
-    // ],
   },
   {
     title: "Messages",
@@ -76,16 +56,6 @@ const defaultMenuItems: SidebarItem[] = [
     url: "/shop/messages",
     badge: "5",
     isNew: true,
-  },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    url: "/shop/analytics",
-    subItems: [
-      { title: "Revenue", icon: DollarSign, url: "/shop/analytics/revenue" },
-      { title: "Performance", icon: TrendingUp, url: "/shop/analytics/performance" },
-      { title: "Reports", icon: PieChart, url: "/shop/analytics/reports" },
-    ],
   },
   {
     title: "Pet Services",
@@ -200,18 +170,16 @@ export function PetCareSidebar({
               <div key={item.title}>
                 <Button
                   variant={isActiveRoute(item.url) ? "default" : "ghost"}
-                  className={`w-full justify-between h-11 sm:h-12 px-3 sm:px-4 text-sm sm:text-base ${
-                    isActiveRoute(item.url)
+                  className={`w-full justify-between h-11 sm:h-12 px-3 sm:px-4 text-sm sm:text-base ${isActiveRoute(item.url)
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground"
-                  }`}
+                    }`}
                   onClick={(e) => handleItemClick(item, e)}
                 >
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <div
-                      className={`p-1 sm:p-1.5 rounded-lg flex-shrink-0 ${
-                        isActiveRoute(item.url) ? "bg-white/20" : "bg-sidebar-accent group-hover:bg-sidebar-primary/10"
-                      }`}
+                      className={`p-1 sm:p-1.5 rounded-lg flex-shrink-0 ${isActiveRoute(item.url) ? "bg-white/20" : "bg-sidebar-accent group-hover:bg-sidebar-primary/10"
+                        }`}
                     >
                       <item.icon className="h-4 sm:h-4 w-4 sm:w-4" />
                     </div>
@@ -230,9 +198,8 @@ export function PetCareSidebar({
                     )}
                     {item.subItems && (
                       <ChevronRight
-                        className={`h-4 sm:h-4 w-4 sm:w-4 transition-transform ${
-                          expandedItems.includes(item.title) ? "rotate-90" : ""
-                        }`}
+                        className={`h-4 sm:h-4 w-4 sm:w-4 transition-transform ${expandedItems.includes(item.title) ? "rotate-90" : ""
+                          }`}
                       />
                     )}
                   </div>
@@ -244,11 +211,10 @@ export function PetCareSidebar({
                       <Button
                         key={subItem.title}
                         variant="ghost"
-                        className={`w-full justify-between h-9 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm ${
-                          isActiveRoute(subItem.url)
+                        className={`w-full justify-between h-9 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm ${isActiveRoute(subItem.url)
                             ? "text-sidebar-foreground font-semibold bg-sidebar-accent"
                             : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                        }`}
+                          }`}
                         onClick={() => handleSubItemClick(subItem)}
                       >
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -272,11 +238,10 @@ export function PetCareSidebar({
               <Button
                 key={item.title}
                 variant="ghost"
-                className={`w-full justify-start h-9 sm:h-10 px-3 sm:px-4 text-sm sm:text-base ${
-                  isActiveRoute(item.url)
+                className={`w-full justify-start h-9 sm:h-10 px-3 sm:px-4 text-sm sm:text-base ${isActiveRoute(item.url)
                     ? "bg-primary text-primary-foreground"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
+                  }`}
                 onClick={() => handleItemClick(item)}
               >
                 <div className="flex items-center gap-2 sm:gap-3">

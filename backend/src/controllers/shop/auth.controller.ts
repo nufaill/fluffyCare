@@ -118,14 +118,6 @@ export class ShopAuthController {
 
       const result = await this._authService.login(loginData);
 
-      if (result.shop.isVerified.status !=='approved') {
-        res.status(HTTP_STATUS.OK).json({
-          success: false,
-          message: ERROR_MESSAGES.NOT_ALLOWED,
-        });
-        return;
-      }
-
       setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
 
       res.status(HTTP_STATUS.OK).json({

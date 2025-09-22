@@ -14,6 +14,7 @@ import {
   LineChart,
   PlayCircle,
   TrendingDown,
+  AlertCircle,
 } from "lucide-react"
 import ShopAxios from "@/api/shop.axios"
 import { Navbar } from "@/components/shop/Navbar"
@@ -21,6 +22,8 @@ import { useSelector } from "react-redux"
 import { useState, useEffect } from "react"
 import type { RootState } from "@/redux/store"
 import { walletService } from "@/services/walletService"
+import { shopService } from "@/services/shop/shop.service"
+import type { Shop } from "@/types/shop.type"
 
 interface IWalletTransaction {
   _id?: string;
@@ -45,14 +48,14 @@ interface User {
   profileImage: string
 }
 
-interface Shop {
+interface ShopData {
   id: string
   name: string
 }
 
 interface Review {
   id: string
-  shopId: Shop
+  shopId: ShopData
   userId: User
   rating: number
   comment?: string
@@ -439,6 +442,23 @@ export default function Dashboard() {
   const [wallet, setWallet] = useState<WalletData | null>(null)
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [bookingInsights, setBookingInsights] = useState<BookingInsight[]>([])
+  const [shopVerification, setShopVerification] = useState<Shop | null>(null)
+
+  // Fetch shop verification status
+  const fetchShopVerification = async () => {
+    if (!shopId) {
+      setError('Shop ID not found.')
+      return
+    }
+
+    try {
+      const shopData = await shopService.getShop(shopId)
+      setShopVerification(shopData)
+    } catch (err) {
+      console.error('Error fetching shop verification:', err)
+      setError('Failed to load shop verification status.')
+    }
+  }
 
   // Fetch wallet data
   const fetchWallet = async () => {
@@ -547,24 +567,17 @@ export default function Dashboard() {
     }).format(amount)
   }
 
-  // Effect: fetch wallet on shop change
+  // Effect: fetch shop verification, wallet, and dashboard data on shop change
   useEffect(() => {
-    if (shop) {
+    if (shopId) {
+      fetchShopVerification()
       fetchWallet()
-    }
-  }, [shop])
-
-  // Effect: fetch dashboard data on shop change
-  useEffect(() => {
-    if (shop) {
       fetchDashboardData()
     }
-  }, [shop])
+  }, [shopId])
 
-  // Calculate total earnings from wallet balance or sum of credits
   const totalEarnings = wallet ? wallet.balance : 0
 
-  // Calculate monthly revenue from appointments in current month
   const monthlyRevenue = appointments
     .filter((appt) => {
       const apptDate = new Date(appt.slotDetails.date)
@@ -577,13 +590,45 @@ export default function Dashboard() {
     })
     .reduce((sum, appt) => sum + appt.paymentDetails.amount, 0)
 
-  // Calculate commission deducted (example: 5% of total earnings)
   const commissionDeducted = totalEarnings * 0.05
+
+  const showVerificationBanner = shopVerification && shopVerification.isVerified.status !== "approved"
 
   return (
     <PetCareLayout>
       <Navbar />
       <div className="p-8 space-y-8 bg-gradient-to-br from-background via-background to-muted/20">
+        {/* Verification Status Banner */}
+        {showVerificationBanner && (
+          <div className="fade-slide-in" style={{ animationDelay: "0s" }}>
+            <Card className="bg-red-50 border-red-200 border-0 shadow-lg">
+              <CardContent className="p-4 flex items-center gap-4">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+                <div className="flex-1 overflow-hidden">
+                  <p className="text-red-800 font-semibold">
+                    Verification Status: {shopVerification.isVerified.status.toUpperCase()}
+                  </p>
+                  <div className="relative overflow-hidden">
+                    <p className="text-sm text-red-700 animate-marquee whitespace-nowrap">
+                      {shopVerification.isVerified.reason && shopVerification.isVerified.reason.length > 0
+                        ? `Reason: ${shopVerification.isVerified.reason}`
+                        : "Awaiting verification. Please ensure all required documents are submitted."}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-600 hover:bg-red-100"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Welcome Header */}
         <div className="fade-slide-in">
           <div className="flex items-center justify-between mb-6">

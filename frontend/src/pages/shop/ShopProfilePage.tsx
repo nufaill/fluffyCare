@@ -56,8 +56,8 @@ export default function ShopProfilePage() {
     const [locationAddress, setLocationAddress] = useState<string>('');
 
     const { shopData: shop } = useSelector((state: RootState) => state.shop);
-    const navigate = useNavigate();
     const shopId = shop?._id;
+    const navigate = useNavigate();
     const { register, handleSubmit, formState: { errors }, reset } = useForm<ShopFormData>({
         resolver: zodResolver(shopSchema),
         defaultValues: {

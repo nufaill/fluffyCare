@@ -1,4 +1,3 @@
-// src/services/shopService/shopService.ts
 import shopaxios from "@/api/shop.axios";
 import type { Shop, ShopUpdatePayload, ShopApiResponse } from "@/types/shop.type";
 
@@ -52,8 +51,8 @@ export const shopService = {
         updatedAt: data.updatedAt,
       };
     } catch (error) {
-      console.error('Error in editShop:', error); // Enhanced logging
-      throw error; // Ensure error propagates
+      console.error('Error in editShop:', error); 
+      throw error; 
     }
   }
 };
