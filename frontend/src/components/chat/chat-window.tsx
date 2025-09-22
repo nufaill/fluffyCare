@@ -39,21 +39,22 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
     chatId,
     userId: currentUserId,
     currentRole,
-    autoRefresh: false,  
-    refreshInterval: 15000,  
+    autoRefresh: false,
+    refreshInterval: 15000,
   });
 
-  // Socket connection management
+  // chat-window.tsx
   useEffect(() => {
     let mounted = true;
 
     const initializeSocket = async () => {
       if (!mounted) return;
       try {
-        await connectSocket(currentUserId, currentRole); // Pass userId and role
+        await connectSocket(currentUserId, currentRole);
+        console.log('[ChatWindow] Socket connected:', isSocketConnected());
         if (mounted) setSocketConnected(isSocketConnected());
       } catch (error: any) {
-        console.error('Socket initialization failed:', error.message);
+        console.error('[ChatWindow] Socket initialization failed:', error.message);
         setSocketConnected(false);
         toast({ title: "Connection Failed", description: error.message || "Failed to connect to chat server.", variant: "destructive" });
       }
@@ -68,12 +69,15 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
     };
   }, [toast, currentUserId, currentRole]);
 
-  // Join/leave chat room
   useEffect(() => {
     if (!isValidChat || !currentUserId || !socketConnected) return;
 
+    console.log(`[ChatWindow] Joining chat ${chatId} as ${currentRole} (${currentUserId})`);
     joinChat(chatId, currentUserId, currentRole);
-    return () => leaveChat(chatId, currentUserId);
+    return () => {
+      console.log(`[ChatWindow] Leaving chat ${chatId}`);
+      leaveChat(chatId, currentUserId);
+    };
   }, [socketConnected, chatId, currentUserId, currentRole, isValidChat]);
 
   // File upload

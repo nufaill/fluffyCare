@@ -37,8 +37,6 @@ interface SocketMessage {
 
 export const useMessages = ({
   chatId,
-  autoRefresh = false,
-  refreshInterval = 10000,
   userId,
   currentRole,
 }: UseMessagesOptions) => {
@@ -225,7 +223,7 @@ export const useMessages = ({
     }
   }, [chatId]);
 
-  const markMessagesAsRead = useCallback(async (messageIds: string[], receiverRole : 'User' | 'Shop') => {
+  const markMessagesAsRead = useCallback(async (messageIds: string[], receiverRole: 'User' | 'Shop') => {
     try {
       await messageService.markMultipleAsRead(messageIds, new Date());
     } catch (err: any) {
@@ -284,9 +282,15 @@ export const useMessages = ({
     }
   }, [chatId]);
 
+  // useMessages.ts
   const handleSocketEvent = useCallback((event: string, data: any) => {
-    console.log(`Handling socket event: ${event}`, data);
-    if (data.chatId !== chatId) return;
+    console.log(`[Socket Event] ${event} received:`, JSON.stringify(data, null, 2));
+    // Normalize chatId to handle string or object
+    const receivedChatId = typeof data.chatId === 'object' ? data.chatId._id || data.chatId.id : data.chatId;
+    if (receivedChatId !== chatId && receivedChatId !== (typeof chatId === 'object' ? chatId._id || chatId.id : chatId)) {
+      console.warn(`[Socket Event] Ignored ${event} for chatId ${receivedChatId}, expected ${chatId}`);
+      return;
+    }
 
     switch (event) {
       case 'new-message':
