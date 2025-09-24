@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Minus, Download, CreditCard, TrendingUp, Settings } from 'lucide-react';
+import { useState } from 'react';
+import { Download, TrendingUp } from 'lucide-react';
 
 interface WalletActionButtonsProps {
   role: "user" | "shop" | "admin";
@@ -29,18 +29,6 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
 
   const userActions = [
     {
-      label: 'Add Money',
-      icon: Plus,
-      onClick: () => setIsAddMoneyOpen(true),
-      className: 'bg-green-600 hover:bg-green-700 text-white'
-    },
-    {
-      label: 'Withdraw',
-      icon: Minus,
-      onClick: () => setIsWithdrawOpen(true),
-      className: 'bg-red-600 hover:bg-red-700 text-white'
-    },
-    {
       label: 'Download Statement',
       icon: Download,
       onClick: () => onAction('download_statement'),
@@ -50,18 +38,6 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
 
   const shopActions = [
     {
-      label: 'Withdraw Earnings',
-      icon: Minus,
-      onClick: () => setIsWithdrawOpen(true),
-      className: 'bg-green-600 hover:bg-green-700 text-white'
-    },
-    {
-      label: 'View Earnings Report',
-      icon: TrendingUp,
-      onClick: () => onAction('earnings_report'),
-      className: 'bg-blue-600 hover:bg-blue-700 text-white'
-    },
-    {
       label: 'Download Statement',
       icon: Download,
       onClick: () => onAction('download_statement'),
@@ -70,24 +46,6 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
   ];
 
   const adminActions = [
-    {
-      label: 'Adjust Balance',
-      icon: Settings,
-      onClick: () => onAction('adjust_balance'),
-      className: 'bg-purple-600 hover:bg-purple-700 text-white'
-    },
-    {
-      label: 'Manual Credit',
-      icon: Plus,
-      onClick: () => setIsAddMoneyOpen(true),
-      className: 'bg-green-600 hover:bg-green-700 text-white'
-    },
-    {
-      label: 'Manual Debit',
-      icon: Minus,
-      onClick: () => setIsWithdrawOpen(true),
-      className: 'bg-red-600 hover:bg-red-700 text-white'
-    },
     {
       label: 'Commission Reports',
       icon: TrendingUp,
