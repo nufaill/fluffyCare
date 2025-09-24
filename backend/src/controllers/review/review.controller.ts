@@ -19,7 +19,6 @@ export class ReviewController {
     try {
       const { shopId, rating, comment, userId } = req.body;
 
-      // Validate required fields
       if (!shopId || !rating || !userId) {
         res.status(400).json({
           success: false,
@@ -28,7 +27,6 @@ export class ReviewController {
         return;
       }
 
-      // Validate ObjectIds format
       if (!Types.ObjectId.isValid(shopId) || !Types.ObjectId.isValid(userId)) {
         res.status(400).json({
           success: false,
@@ -37,7 +35,6 @@ export class ReviewController {
         return;
       }
 
-      // Validate rating range
       if (rating < 1 || rating > 5 || !Number.isInteger(rating)) {
         res.status(400).json({
           success: false,
@@ -104,7 +101,6 @@ export class ReviewController {
         return;
       }
 
-      // FIXED: Corrected garbled message text
       if (rating !== undefined && (rating < 1 || rating > 5 || !Number.isInteger(rating))) {
         res.status(400).json({
           success: false,
@@ -216,7 +212,6 @@ export class ReviewController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
 
-      // Validate shopId
       if (!Types.ObjectId.isValid(shopId)) {
         res.status(400).json({
           success: false,
@@ -241,7 +236,6 @@ export class ReviewController {
     try {
       const { shopId } = req.params;
 
-      // Validate shopId
       if (!Types.ObjectId.isValid(shopId)) {
         res.status(400).json({
           success: false,
@@ -290,7 +284,6 @@ export class ReviewController {
       return;
     }
 
-    // Handle Mongoose validation errors
     if (error.name === "ValidationError") {
       res.status(400).json({
         success: false,
@@ -300,7 +293,6 @@ export class ReviewController {
       return;
     }
 
-    // Handle Mongoose cast errors (invalid ObjectId)
     if (error.name === "CastError") {
       res.status(400).json({
         success: false,
@@ -309,7 +301,6 @@ export class ReviewController {
       return;
     }
 
-    // Handle duplicate key errors
     if (error.code === 11000) {
       res.status(409).json({
         success: false,
@@ -318,7 +309,6 @@ export class ReviewController {
       return;
     }
 
-    // Generic error
     res.status(500).json({
       success: false,
       message: "An unexpected error occurred"

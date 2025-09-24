@@ -1,4 +1,3 @@
-// wallet.service.ts 
 import mongoose, { Types } from 'mongoose';
 import { IWalletRepository } from '../../interfaces/repositoryInterfaces/IWalletRepository';
 import { IWalletService } from '../../interfaces/serviceInterfaces/IWalletService';
@@ -18,18 +17,16 @@ const DEFAULT_COMMISSION_RATE = 0.5; // 50% commission
 
 export class WalletService implements IWalletService {
   public walletRepository: IWalletRepository; 
-  private appointmentService?: IAppointmentService;
+  private _appointmentService?: IAppointmentService;
 
   constructor(walletRepository: IWalletRepository) {
     this.walletRepository = walletRepository;
   }
 
-  // Add setter for AppointmentService
   public setAppointmentService(appointmentService: IAppointmentService): void {
-    this.appointmentService = appointmentService;
+    this._appointmentService = appointmentService;
   }
 
-  // Updated method to get commission rate from subscription data
   public async getCommissionRate(shopId: Types.ObjectId): Promise<number> {
     try {
       const shop = await Shop.findById(shopId)
@@ -50,7 +47,6 @@ export class WalletService implements IWalletService {
         }
       }
 
-      // Fallback for old plan names (backward compatibility)
       const planName = shop.subscription.plan?.toLowerCase();
       switch (planName) {
         case 'free':
@@ -72,10 +68,9 @@ export class WalletService implements IWalletService {
       });
       
       if (subscriptionPlan && subscriptionPlan.profitPercentage !== undefined) {
-        return subscriptionPlan.profitPercentage / 100; // Convert percentage to decimal
+        return subscriptionPlan.profitPercentage / 100; 
       }
 
-      // Fallback for unknown plans
       return DEFAULT_COMMISSION_RATE;
     } catch (error: any) {
       console.error(`Error fetching commission rate for plan ${planName}:`, error);
@@ -83,7 +78,6 @@ export class WalletService implements IWalletService {
     }
   }
 
-  // New method to process subscription payments with commission
   public async processSubscriptionPayment(dto: {
     shopId: Types.ObjectId;
     amount: number;
@@ -96,7 +90,6 @@ export class WalletService implements IWalletService {
 
     try {
       await session.withTransaction(async () => {
-        // Get admin ID from environment or use default
         const adminId = process.env.ADMIN_ID || '685ff3212adf35c013419da4';
         const adminWallet = await this.walletRepository.findWalletByOwner(
           new Types.ObjectId(adminId),
@@ -106,19 +99,10 @@ export class WalletService implements IWalletService {
         if (!adminWallet || !adminWallet._id) {
           throw new Error(`Admin wallet not found for ID: ${adminId}`);
         }
-
-        console.log(`Processing subscription payment for shop ${dto.shopId}`);
-        console.log(`Plan: ${dto.planName}, Amount: ${dto.amount} ${dto.currency}`);
-        console.log(`Commission Rate: ${dto.profitPercentage}%`);
-
-        // Calculate commission based on the provided profit percentage
+      
         const commissionRate = dto.profitPercentage / 100;
         const commission = Math.round(dto.amount * commissionRate * 100) / 100;
 
-        console.log(`Commission Amount: ${commission} ${dto.currency}`);
-        console.log(`Pre-transaction Admin balance: ${adminWallet.balance} ${dto.currency}`);
-
-        // Create transaction record for admin commission
         const adminTransaction = new WalletTransactionDto(
           'credit',
           commission,
@@ -127,11 +111,8 @@ export class WalletService implements IWalletService {
           undefined
         );
 
-        // Credit admin wallet with commission
         await this.walletRepository.updateBalance(adminWallet._id!, commission, 'credit');
         await this.walletRepository.addTransaction(adminWallet._id!, adminTransaction);
-
-        console.log(`✓ Admin wallet credited with commission: ${commission} ${dto.currency}`);
       });
 
     } catch (error: any) {
@@ -235,18 +216,15 @@ export class WalletService implements IWalletService {
 
     try {
       await session.withTransaction(async () => {
-        // Fetch wallets
         const userWallet = await this.walletRepository.findWalletByOwner(dto.userId, 'user');
         const shopWallet = await this.walletRepository.findWalletByOwner(dto.shopId, 'shop');
 
-        // Get admin ID from environment or use default
         const adminId = process.env.ADMIN_ID || '685ff3212adf35c013419da4';
         const adminWallet = await this.walletRepository.findWalletByOwner(
           new Types.ObjectId(adminId),
           'admin'
         );
 
-        // Strict type checking
         if (!userWallet || !userWallet._id) {
           throw new Error(`User wallet not found for ID: ${dto.userId}`);
         }
@@ -257,27 +235,15 @@ export class WalletService implements IWalletService {
           throw new Error(`Admin wallet not found for ID: ${adminId}`);
         }
 
-        console.log(`Pre-transaction balances:`);
-        console.log(`User: ${userWallet.balance} ${dto.currency}`);
-        console.log(`Shop: ${shopWallet.balance} ${dto.currency}`);
-        console.log(`Admin: ${adminWallet.balance} ${dto.currency}`);
-
-        // Verify user has sufficient balance
         if (userWallet.balance < dto.amount) {
           throw new Error(`Insufficient balance in user wallet. Required: ${dto.amount}, Available: ${userWallet.balance}`);
         }
 
-        // Get dynamic commission rate based on shop subscription
         const commissionRate = await this.getCommissionRate(dto.shopId);
 
-        // Calculate commission
         const commission = Math.round(dto.amount * commissionRate * 100) / 100;
         const shopAmount = Math.round((dto.amount - commission) * 100) / 100;
 
-        console.log(`Commission calculation: ${dto.amount} * ${commissionRate} = ${commission}`);
-        console.log(`Shop amount after commission: ${shopAmount}`);
-
-        // Create transaction records
         const userTransaction = new WalletTransactionDto(
           'debit',
           dto.amount,
@@ -312,7 +278,6 @@ export class WalletService implements IWalletService {
         await this.walletRepository.updateBalance(adminWallet._id!, commission, 'credit');
         await this.walletRepository.addTransaction(adminWallet._id!, adminTransaction);
 
-        console.log(`✓ Payment processed successfully with dynamic commission`);
       });
 
     } catch (error: any) {
@@ -324,21 +289,20 @@ export class WalletService implements IWalletService {
   }
 
   async refundPayment(dto: RefundPaymentDto): Promise<void> {
-    if (!this.appointmentService) {
+    if (!this._appointmentService) {
       throw new Error('AppointmentService not initialized');
     }
 
     const session = await mongoose.startSession();
 
     try {
-      const appointmentResult = await this.appointmentService.getAppointmentById(dto.appointmentId.toString());
+      const appointmentResult = await this._appointmentService.getAppointmentById(dto.appointmentId.toString());
       if (!appointmentResult.success || !appointmentResult.data) {
         throw new Error('Appointment not found for refund');
       }
       const appointment = appointmentResult.data;
 
       await session.withTransaction(async () => {
-        // Fetch wallets
         const userWallet = await this.walletRepository.findWalletByOwner(appointment.userId, 'user');
         const shopWallet = await this.walletRepository.findWalletByOwner(appointment.shopId, 'shop');
 
@@ -348,27 +312,15 @@ export class WalletService implements IWalletService {
           'admin'
         );
 
-        // Strict type checking
         if (!userWallet || !userWallet._id || !shopWallet || !shopWallet._id || !adminWallet || !adminWallet._id) {
           throw new Error('One or more wallets not found for refund');
         }
 
-        console.log(`Pre-refund balances:`);
-        console.log(`User: ${userWallet.balance} ${dto.currency}`);
-        console.log(`Shop: ${shopWallet.balance} ${dto.currency}`);
-        console.log(`Admin: ${adminWallet.balance} ${dto.currency}`);
-
-        // Get dynamic commission rate based on shop subscription
         const commissionRate = await this.getCommissionRate(appointment.shopId);
 
-        // Calculate commission for reversal
         const commission = Math.round(dto.amount * commissionRate * 100) / 100;
         const shopAmount = Math.round((dto.amount - commission) * 100) / 100;
 
-        console.log(`Refund commission calculation: ${dto.amount} * ${commissionRate} = ${commission}`);
-        console.log(`Shop refund amount: ${shopAmount}`);
-
-        // Verify shop and admin have sufficient balance for reversal
         if (shopWallet.balance < shopAmount) {
           throw new Error(`Insufficient balance in shop wallet for refund. Required: ${shopAmount}, Available: ${shopWallet.balance}`);
         }
@@ -376,7 +328,6 @@ export class WalletService implements IWalletService {
           throw new Error(`Insufficient balance in admin wallet for refund. Required: ${commission}, Available: ${adminWallet.balance}`);
         }
 
-        // Create transaction records
         const userTransaction = new WalletTransactionDto(
           'credit',
           dto.amount,
@@ -401,9 +352,6 @@ export class WalletService implements IWalletService {
           dto.appointmentId
         );
 
-        // Update wallets
-        console.log(`Processing refund transactions...`);
-
         // Credit user wallet
         await this.walletRepository.updateBalance(userWallet._id!, dto.amount, 'credit');
         await this.walletRepository.addTransaction(userWallet._id!, userTransaction);
@@ -415,8 +363,6 @@ export class WalletService implements IWalletService {
         // Debit admin wallet
         await this.walletRepository.updateBalance(adminWallet._id!, commission, 'debit');
         await this.walletRepository.addTransaction(adminWallet._id!, adminTransaction);
-
-        console.log(`✓ Refund processed successfully with dynamic commission reversal`);
       });
 
     } catch (error: any) {

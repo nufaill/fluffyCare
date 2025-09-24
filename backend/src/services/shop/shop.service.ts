@@ -1,4 +1,4 @@
-import { ShopRepository } from '../../repositories/shop/shop.repository';
+import IShopRepository from '../../interfaces/repositoryInterfaces/IShopRepository';
 import { UpdateShopDTO, ShopResponseDTO } from '../../dto/shop.dto';
 import { CustomError } from '../../util/CustomerError';
 import { HTTP_STATUS } from '../../shared/constant';
@@ -6,7 +6,7 @@ import { IShopService } from '../../interfaces/serviceInterfaces/IShopService';
 import { Types } from 'mongoose';
 
 export class ShopService implements IShopService {
-  constructor(private readonly shopRepository: ShopRepository) { }
+  constructor(private readonly _shopRepository: IShopRepository) { }
 
   private validateShopId(shopId: string): void {
     if (!Types.ObjectId.isValid(shopId)) {
@@ -52,7 +52,7 @@ export class ShopService implements IShopService {
 
   async getShopById(shopId: string): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
-    const shop = await this.shopRepository.findById(shopId);
+    const shop = await this._shopRepository.findById(shopId);
     if (!shop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -63,7 +63,7 @@ export class ShopService implements IShopService {
     this.validateShopId(shopId);
     this.validateShopData(updateData);
 
-    const updatedShop = await this.shopRepository.updateShop(shopId, updateData);
+    const updatedShop = await this._shopRepository.updateShop(shopId, updateData);
     if (!updatedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -73,8 +73,8 @@ export class ShopService implements IShopService {
   async getAllShops(page: number = 1, limit: number = 10): Promise<{ shops: ShopResponseDTO[], total: number, page: number, limit: number }> {
     const skip = (page - 1) * limit;
     const [shops, total] = await Promise.all([
-      this.shopRepository.getAllShops(skip, limit),
-      this.shopRepository.countDocuments({})
+      this._shopRepository.getAllShops(skip, limit),
+      this._shopRepository.countDocuments({})
     ]);
 
     return {
@@ -87,7 +87,7 @@ export class ShopService implements IShopService {
 
   async updateShopStatus(shopId: string, isActive: boolean): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
-    const updatedShop = await this.shopRepository.updateShopStatus(shopId, isActive);
+    const updatedShop = await this._shopRepository.updateShopStatus(shopId, isActive);
     if (!updatedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -96,7 +96,7 @@ export class ShopService implements IShopService {
 
   async getShopSubscription(shopId: string): Promise<string> {
     this.validateShopId(shopId);
-    const shop = await this.shopRepository.findById(shopId);
+    const shop = await this._shopRepository.findById(shopId);
     if (!shop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -119,7 +119,7 @@ export class ShopService implements IShopService {
       throw new CustomError('Subscription plan is required', HTTP_STATUS.BAD_REQUEST);
     }
 
-    const updatedShop = await this.shopRepository.updateShopSubscription(shopId, {
+    const updatedShop = await this._shopRepository.updateShopSubscription(shopId, {
       subscriptionId: subscriptionData.subscriptionId || null,
       plan: subscriptionData.plan,
       subscriptionStart: subscriptionData.subscriptionStart,
@@ -136,8 +136,8 @@ export class ShopService implements IShopService {
   async getUnverifiedShops(page: number = 1, limit: number = 10): Promise<{ shops: ShopResponseDTO[], total: number, page: number, limit: number }> {
     const skip = (page - 1) * limit;
     const [shops, total] = await Promise.all([
-      this.shopRepository.getUnverifiedShops(skip, limit),
-      this.shopRepository.countDocuments({ isVerified: 'pending' })
+      this._shopRepository.getUnverifiedShops(skip, limit),
+      this._shopRepository.countDocuments({ isVerified: 'pending' })
     ]);
 
     return {
@@ -150,7 +150,7 @@ export class ShopService implements IShopService {
 
   async approveShop(shopId: string): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
-    const approvedShop = await this.shopRepository.updateShopVerification(shopId, 'approved');
+    const approvedShop = await this._shopRepository.updateShopVerification(shopId, 'approved');
     if (!approvedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -160,7 +160,7 @@ export class ShopService implements IShopService {
   async rejectShop(shopId: string, rejectionReason?: string): Promise<ShopResponseDTO> {
     this.validateShopId(shopId);
 
-    const shop = await this.shopRepository.findById(shopId);
+    const shop = await this._shopRepository.findById(shopId);
     if (!shop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -182,7 +182,7 @@ export class ShopService implements IShopService {
       }
     }
 
-    const updatedShop = await this.shopRepository.updateShopVerification(
+    const updatedShop = await this._shopRepository.updateShopVerification(
       shopId,
       'rejected',
       rejectionReason?.trim()
@@ -199,7 +199,7 @@ export class ShopService implements IShopService {
     this.validateShopId(shopId);
     this.validateShopData(updateData);
 
-    const updatedShop = await this.shopRepository.updateShop(shopId, updateData);
+    const updatedShop = await this._shopRepository.updateShop(shopId, updateData);
     if (!updatedShop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
@@ -207,6 +207,6 @@ export class ShopService implements IShopService {
   }
 
   async getShopsOverview(): Promise<{ totalShops: number; activeShops: number; inactiveShops: number; pendingShops: number }> {
-    return await this.shopRepository.getShopsOverview();
+    return await this._shopRepository.getShopsOverview();
   }
 }

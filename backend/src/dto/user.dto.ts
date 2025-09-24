@@ -34,23 +34,11 @@ export interface UserResponseDTO {
   location?: {
     type: 'Point';
     coordinates: [number, number];
-  }; // Added to match UserProfile
+  }; 
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
-
-// export interface NearbyUsersDTO {
-//   longitude: number;
-//   latitude: number;
-//   maxDistance?: number; 
-// }
-
-// export interface UsersWithinRadiusDTO {
-//   longitude: number;
-//   latitude: number;
-//   radiusInKm: number;
-// }
 
 export interface CustomerAnalytics {
   total: number;

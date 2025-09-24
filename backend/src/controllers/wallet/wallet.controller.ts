@@ -1,21 +1,19 @@
-// wallet.controller.ts
 import { Request, Response } from 'express';
-import { WalletService } from '../../services/wallet/wallet.service';
+import { IWalletService } from '../../interfaces/serviceInterfaces/IWalletService';
 import { CreateWalletDto, ProcessPaymentDto, RefundPaymentDto, WalletResponseDto } from '../../dto/wallet.dto';
 import { IWalletController } from '../../interfaces/controllerInterfaces/IWalletController';
 import { HTTP_STATUS, ERROR_MESSAGES } from '../../shared/constant';
 import { Types } from 'mongoose';
 
-// Define a type guard for ownerType
 function isValidOwnerType(ownerType: string): ownerType is 'user' | 'shop' | 'admin' {
     return ['user', 'shop', 'admin'].includes(ownerType);
 }
 
 export class WalletController implements IWalletController {
-    private walletService: WalletService;
+    private _walletService: IWalletService;
 
-    constructor(walletService: WalletService) {
-        this.walletService = walletService;
+    constructor(walletService: IWalletService) {
+        this._walletService = walletService;
     }
 
     async createWallet(req: Request, res: Response): Promise<void> {
@@ -58,7 +56,7 @@ export class WalletController implements IWalletController {
             }
 
             const dto = new CreateWalletDto(new Types.ObjectId(ownerId), ownerType, currency);
-            const wallet: WalletResponseDto = await this.walletService.createWallet(dto);
+            const wallet: WalletResponseDto = await this._walletService.createWallet(dto);
 
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
@@ -106,7 +104,7 @@ export class WalletController implements IWalletController {
                 return;
             }
 
-            const wallet: WalletResponseDto | null = await this.walletService.getWalletByOwner(
+            const wallet: WalletResponseDto | null = await this._walletService.getWalletByOwner(
                 new Types.ObjectId(ownerId),
                 ownerType
             );
@@ -157,7 +155,7 @@ export class WalletController implements IWalletController {
                 return;
             }
 
-            const wallet: WalletResponseDto | null = await this.walletService.getWalletById(new Types.ObjectId(walletId));
+            const wallet: WalletResponseDto | null = await this._walletService.getWalletById(new Types.ObjectId(walletId));
 
             if (!wallet) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -242,7 +240,7 @@ export class WalletController implements IWalletController {
                 description
             );
 
-            await this.walletService.processPayment(dto);
+            await this._walletService.processPayment(dto);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -306,7 +304,7 @@ export class WalletController implements IWalletController {
                 description
             );
 
-            await this.walletService.refundPayment(dto);
+            await this._walletService.refundPayment(dto);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -349,7 +347,7 @@ export class WalletController implements IWalletController {
             const limitNum = Math.max(1, parseInt(limit as string, 10) || 10);
             const skipNum = Math.max(0, parseInt(skip as string, 10) || 0);
 
-            const transactions = await this.walletService.getTransactionHistory(
+            const transactions = await this._walletService.getTransactionHistory(
                 new Types.ObjectId(walletId),
                 limitNum,
                 skipNum

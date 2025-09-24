@@ -75,14 +75,11 @@ export class ServiceService implements IServiceService {
 
   async getServiceByIdPublic(serviceId: string): Promise<ServiceDocument> {
     try {
-      console.log(`ServiceService: Fetching service with ID: ${serviceId}`);
       const service = await this._serviceRepository.getServiceById(serviceId);
       if (!service) {
-        console.log(`ServiceService: Service with ID ${serviceId} not found`);
         throw new CustomError('Service not found', 404);
       }
       if (!service.isActive) {
-        console.log(`ServiceService: Service with ID ${serviceId} is inactive`);
         throw new CustomError('Service not found', 404);
       }
       return service;

@@ -40,18 +40,15 @@ export class OtpRepository implements IOtpRepository {
     const otpDoc = await OtpModel.findOne({ email: normalizedEmail });
 
     if (!otpDoc) {
-      console.log(`❌ [OtpRepository] No OTP document found for ${normalizedEmail}`);
       return { isValid: false };
     }
 
     if (otpDoc.expiresAt < new Date()) {
-      console.log(`⏰ [OtpRepository] OTP expired for ${normalizedEmail}`);
       await OtpModel.deleteOne({ email: normalizedEmail });
       return { isValid: false, isExpired: true };
     }
 
     if (otpDoc.attempts >= 3) {
-      console.log(`�keyboard_arrow_up🚫 [OtpRepository] Max attempts (${otpDoc.attempts}) reached for ${normalizedEmail}`);
       await OtpModel.deleteOne({ email: normalizedEmail });
       return { isValid: false, maxAttemptsReached: true };
     }
@@ -72,14 +69,12 @@ export class OtpRepository implements IOtpRepository {
   async deleteOtp(email: string): Promise<void> {
     const normalizedEmail = email.toLowerCase().trim();
     const deleteResult = await OtpModel.deleteMany({ email: normalizedEmail });
-    console.log(`✅ [OtpRepository] Deleted ${deleteResult.deletedCount} OTP records for ${normalizedEmail}`);
   }
 
   async cleanupExpired(): Promise<void> {
     const deleteResult = await OtpModel.deleteMany({
       expiresAt: { $lt: new Date() },
     });
-    console.log(`✅ [OtpRepository] Deleted ${deleteResult.deletedCount} expired OTP records`);
   }
 
   async getOtpInfo(email: string): Promise<{ attempts: number; expiresAt: Date; exists: boolean } | null> {

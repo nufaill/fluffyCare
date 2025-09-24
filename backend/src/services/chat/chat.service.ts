@@ -12,19 +12,19 @@ import {
 } from '../../dto/chat.dto';
 
 export class ChatService implements IChatService {
-  private readonly chatRepository: IChatRepository;
-  private readonly dtoMapper: IDtoMapper;
+  private readonly _chatRepository: IChatRepository;
+  private readonly _dtoMapper: IDtoMapper;
 
   constructor(chatRepository: IChatRepository, dtoMapper: IDtoMapper) {
-    this.chatRepository = chatRepository;
-    this.dtoMapper = dtoMapper;
+    this._chatRepository = chatRepository;
+    this._dtoMapper = dtoMapper;
   }
 
   async createChat(dto: CreateChatDTO): Promise<ChatResponseDTO> {
     try {
-      const chatEntity = this.dtoMapper.toCreateChatEntity(dto);
-      const createdChat = await this.chatRepository.createChat(chatEntity);
-      return this.dtoMapper.toChatResponseDto(createdChat);
+      const chatEntity = this._dtoMapper.toCreateChatEntity(dto);
+      const createdChat = await this._chatRepository.createChat(chatEntity);
+      return this._dtoMapper.toChatResponseDto(createdChat);
     } catch (error) {
       throw new Error(`Failed to create chat: ${error}`);
     }
@@ -32,8 +32,8 @@ export class ChatService implements IChatService {
 
   async findChatByUserAndShop(userId: string, shopId: string): Promise<ChatResponseDTO | null> {
     try {
-      const chat = await this.chatRepository.findChatByUserAndShop(userId, shopId);
-      return chat ? this.dtoMapper.toChatResponseDto(chat) : null;
+      const chat = await this._chatRepository.findChatByUserAndShop(userId, shopId);
+      return chat ? this._dtoMapper.toChatResponseDto(chat) : null;
     } catch (error) {
       throw new Error(`Failed to find chat by user and shop: ${error}`);
     }
@@ -42,8 +42,8 @@ export class ChatService implements IChatService {
   async findChatById(chatId: string): Promise<ChatResponseDTO | null> {
     try {
       this.validateObjectId(chatId, 'Chat ID');
-      const chat = await this.chatRepository.findChatById(chatId);
-      return chat ? this.dtoMapper.toChatResponseDto(chat) : null;
+      const chat = await this._chatRepository.findChatById(chatId);
+      return chat ? this._dtoMapper.toChatResponseDto(chat) : null;
     } catch (error) {
       throw new Error(`Failed to find chat by ID: ${error}`);
     }
@@ -54,8 +54,8 @@ export class ChatService implements IChatService {
       this.validateObjectId(userId, 'User ID');
       this.validatePaginationParams(page, limit);
 
-      const result = await this.chatRepository.getUserChats(userId, page, limit);
-      return this.dtoMapper.toChatListResponseDto(
+      const result = await this._chatRepository.getUserChats(userId, page, limit);
+      return this._dtoMapper.toChatListResponseDto(
         result.chats,
         result.total,
         result.hasMore,
@@ -72,8 +72,8 @@ export class ChatService implements IChatService {
       this.validateObjectId(shopId, 'Shop ID');
       this.validatePaginationParams(page, limit);
 
-      const result = await this.chatRepository.getShopChats(shopId, page, limit);
-      return this.dtoMapper.toChatListResponseDto(
+      const result = await this._chatRepository.getShopChats(shopId, page, limit);
+      return this._dtoMapper.toChatListResponseDto(
         result.chats,
         result.total,
         result.hasMore,
@@ -97,8 +97,8 @@ export class ChatService implements IChatService {
       this.validateObjectId(chatId, 'Chat ID');
       this.validateUpdateMessageData(updateData);
 
-      const updatedChat = await this.chatRepository.updateLastMessage(chatId, updateData);
-      return updatedChat ? this.dtoMapper.toChatResponseDto(updatedChat) : null;
+      const updatedChat = await this._chatRepository.updateLastMessage(chatId, updateData);
+      return updatedChat ? this._dtoMapper.toChatResponseDto(updatedChat) : null;
     } catch (error) {
       throw new Error(`Failed to update last message: ${error}`);
     }
@@ -107,8 +107,8 @@ export class ChatService implements IChatService {
   async incrementUnreadCount(chatId: string): Promise<ChatResponseDTO | null> {
     try {
       this.validateObjectId(chatId, 'Chat ID');
-      const updatedChat = await this.chatRepository.incrementUnreadCount(chatId);
-      return updatedChat ? this.dtoMapper.toChatResponseDto(updatedChat) : null;
+      const updatedChat = await this._chatRepository.incrementUnreadCount(chatId);
+      return updatedChat ? this._dtoMapper.toChatResponseDto(updatedChat) : null;
     } catch (error) {
       throw new Error(`Failed to increment unread count: ${error}`);
     }
@@ -117,8 +117,8 @@ export class ChatService implements IChatService {
   async resetUnreadCount(chatId: string): Promise<ChatResponseDTO | null> {
     try {
       this.validateObjectId(chatId, 'Chat ID');
-      const updatedChat = await this.chatRepository.resetUnreadCount(chatId);
-      return updatedChat ? this.dtoMapper.toChatResponseDto(updatedChat) : null;
+      const updatedChat = await this._chatRepository.resetUnreadCount(chatId);
+      return updatedChat ? this._dtoMapper.toChatResponseDto(updatedChat) : null;
     } catch (error) {
       throw new Error(`Failed to reset unread count: ${error}`);
     }
@@ -127,7 +127,7 @@ export class ChatService implements IChatService {
   async deleteChat(chatId: string): Promise<boolean> {
     try {
       this.validateObjectId(chatId, 'Chat ID');
-      return await this.chatRepository.deleteChat(chatId);
+      return await this._chatRepository.deleteChat(chatId);
     } catch (error) {
       throw new Error(`Failed to delete chat: ${error}`);
     }
@@ -138,8 +138,8 @@ export class ChatService implements IChatService {
       this.validateObjectId(userId, 'User ID');
       this.validateObjectId(shopId, 'Shop ID');
 
-      const chat = await this.chatRepository.getOrCreateChat(userId, shopId);
-      return this.dtoMapper.toChatResponseDto(chat);
+      const chat = await this._chatRepository.getOrCreateChat(userId, shopId);
+      return this._dtoMapper.toChatResponseDto(chat);
     } catch (error) {
       throw new Error(`Failed to get or create chat: ${error}`);
     }
@@ -153,7 +153,7 @@ export class ChatService implements IChatService {
       const limit = dto.limit || 20;
       this.validatePaginationParams(page, limit);
 
-      const result = await this.chatRepository.searchChats(
+      const result = await this._chatRepository.searchChats(
         dto.query,
         dto.searcherRole,
         dto.query,
@@ -161,7 +161,7 @@ export class ChatService implements IChatService {
         limit,
       );
 
-      return this.dtoMapper.toChatListResponseDto(
+      return this._dtoMapper.toChatListResponseDto(
         result.chats,
         result.total,
         result.hasMore,
@@ -178,8 +178,8 @@ export class ChatService implements IChatService {
       this.validateObjectId(userId, 'User ID');
       this.validateRole(role);
 
-      const count = await this.chatRepository.getTotalUnreadCount(userId, role);
-      return this.dtoMapper.toUnreadCountResponseDto(count, role);
+      const count = await this._chatRepository.getTotalUnreadCount(userId, role);
+      return this._dtoMapper.toUnreadCountResponseDto(count, role);
     } catch (error) {
       throw new Error(`Failed to get total unread count: ${error}`);
     }

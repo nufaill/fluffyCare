@@ -1,4 +1,5 @@
-import { UserResponseDTO } from '../../dto/user.dto';
+import { CustomerAnalytics, UserResponseDTO } from '../../dto/user.dto';
+import { UserDocument } from '../../types/User.types';
 
 export default interface IUserRepository {
   findByEmail(email: string): Promise<UserResponseDTO | null>;
@@ -13,4 +14,6 @@ export default interface IUserRepository {
   updatePasswordAndClearToken(userId: any, hashedPassword: string): Promise<UserResponseDTO | null>;
   getAllUsers(page?: number, limit?: number): Promise<{ users: UserResponseDTO[]; total: number }>;
   updateUserStatus(userId: string, isActive: boolean): Promise<UserResponseDTO | null>;
+  getCustomerAnalytics(): Promise<CustomerAnalytics>;
+  findByEmailWithPassword(email: string): Promise<UserDocument | null>;
 }

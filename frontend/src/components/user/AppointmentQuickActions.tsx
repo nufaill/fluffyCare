@@ -98,7 +98,6 @@ export default function AppointmentDetailsPage() {
       try {
         setIsLoading(true)
         const response = await Useraxios.get(`/appointments/${appointmentId}`)
-        console.log('Appointment details response:', response.data)
         
         const appointmentData = response.data.data || response.data
         setAppointmentData(appointmentData)

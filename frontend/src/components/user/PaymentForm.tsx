@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, User, Wallet } from "lucide-react";
+import { AlertCircle, User } from "lucide-react";
 import Useraxios from "@/api/user.axios";
 import { toast } from "react-hot-toast";
 import React from "react";
@@ -167,8 +167,6 @@ export function PaymentForm({
         endTime: slot.endTime,
       };
 
-      console.log("Creating payment intent with data:", paymentData);
-
       const response = await Useraxios.post("/payment/create-payment-intent", paymentData);
       const { clientSecret } = response.data;
 
@@ -205,7 +203,6 @@ export function PaymentForm({
         endTime: slot.endTime,
       };
 
-      console.log("Confirming payment with data:", confirmData);
 
       const confirmResponse = await Useraxios.post("/confirm-payment", confirmData);
 
@@ -255,8 +252,6 @@ export function PaymentForm({
         startTime: slot.startTime,
         endTime: slot.endTime,
       };
-
-      console.log("Processing wallet payment with data:", paymentData);
 
       const response = await Useraxios.post("/pay-with-wallet", paymentData);
 

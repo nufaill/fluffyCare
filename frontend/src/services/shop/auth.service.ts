@@ -28,7 +28,6 @@ const getErrorMessage = (error: any): string => {
 }
 
 export const registerShop = async (data: ShopRegisterData): Promise<ShopAuthResponse> => {
-  console.log('[registerShop] Sending registration data:', data);
   const loadingToast = toast.loading('Creating your account...', {
     position: 'top-right',
   });
@@ -39,8 +38,6 @@ export const registerShop = async (data: ShopRegisterData): Promise<ShopAuthResp
         "Content-Type": "application/json"
       }
     });
-
-    console.log('[registerShop] Registration successful:', response.data);
     toast.dismiss(loadingToast);
 
     return response.data;
@@ -64,12 +61,8 @@ export const registerShop = async (data: ShopRegisterData): Promise<ShopAuthResp
 };
 
 export const loginShop = async (data: ShopLoginData): Promise<ShopAuthResponse> => {
-  console.log('[loginShop] Sending login data:', data);
-
   try {
     const response: AxiosResponse<ShopAuthResponse> = await ShopAxios.post('/login', data);
-
-    console.log('[loginShop] Login successful, response:', response.data);
     return response.data;
   } catch (error) {
     const errorMessage = ErrorHandler.extractMessage(error);
@@ -80,16 +73,12 @@ export const loginShop = async (data: ShopLoginData): Promise<ShopAuthResponse> 
 };
 
 export const logoutShop = async (): Promise<{ success: boolean }> => {
-  console.log('[logoutShop] Initiating logout');
   const loadingToast = toast.loading('Signing you out...', {
     position: 'top-right',
   });
 
   try {
-    // Clear shop-specific data using type-safe utilities
     StorageUtils.clearShopAuth();
-    console.log('[logoutShop] Cleared shop localStorage');
-
     toast.dismiss(loadingToast);
     toast.success('Logged out successfully! See you soon!', {
       position: 'top-right',
@@ -105,7 +94,6 @@ export const logoutShop = async (): Promise<{ success: boolean }> => {
   } catch (error) {
     toast.dismiss(loadingToast);
 
-    // Clear localStorage anyway using type-safe utilities
     StorageUtils.clearShopAuth();
     console.warn('[logoutShop] Logout completed with cleanup');
 

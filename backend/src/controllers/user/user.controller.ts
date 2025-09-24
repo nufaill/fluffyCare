@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { IUserController } from '../../interfaces/controllerInterfaces/IUserController';
-import { UserService } from '../../services/user/user.service';
+import { IUserService } from '../../interfaces/serviceInterfaces/IUserService';
 import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import { UpdateUserStatusDTO, UpdateUserDTO, CustomerAnalytics } from '../../dto/user.dto';
@@ -8,8 +8,8 @@ import { NearbyService } from '../../services/user/nearby.service';
 
 export class UserController implements IUserController {
   constructor(
-    private userService: UserService,
-    private nearbyService: NearbyService
+    private _userService: IUserService,
+    private _nearbyService: NearbyService
   ) { }
 
   getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -21,7 +21,7 @@ export class UserController implements IUserController {
         throw new CustomError('Page and limit must be positive integers', HTTP_STATUS.BAD_REQUEST);
       }
 
-      const { users, total, totalPages } = await this.userService.getAllUsers(page, limit);
+      const { users, total, totalPages } = await this._userService.getAllUsers(page, limit);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -54,7 +54,7 @@ export class UserController implements IUserController {
       }
       const updateStatusDTO: UpdateUserStatusDTO = req.body;
 
-      const updatedUser = await this.userService.updateUserStatus(userId, updateStatusDTO.isActive);
+      const updatedUser = await this._userService.updateUserStatus(userId, updateStatusDTO.isActive);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -76,7 +76,7 @@ export class UserController implements IUserController {
   getProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { userId } = req.params;
-      const user = await this.userService.getProfile(userId);
+      const user = await this._userService.getProfile(userId);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -100,7 +100,7 @@ export class UserController implements IUserController {
       const { userId } = req.params;
       const updateUserDTO: UpdateUserDTO = req.body;
 
-      const updatedUser = await this.userService.updateUser(userId, updateUserDTO);
+      const updatedUser = await this._userService.updateUser(userId, updateUserDTO);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -179,7 +179,7 @@ export class UserController implements IUserController {
 
   getCustomerAnalytics = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const analytics: CustomerAnalytics = await this.userService.getCustomerAnalytics();
+      const analytics: CustomerAnalytics = await this._userService.getCustomerAnalytics();
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,

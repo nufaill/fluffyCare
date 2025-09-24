@@ -107,7 +107,6 @@ export default function ShopEditPage() {
       setValue('logo', relativePath);
       setPreviewLogo(cloudinaryUtils.getFullUrl(relativePath));
       setFileError(null);
-      console.log('Uploaded image relative path:', relativePath);
     } catch (error) {
       setFileError('Failed to upload image');
       console.error('Image upload error:', error);
@@ -162,20 +161,17 @@ export default function ShopEditPage() {
 
 const onSubmit = async (data: ShopFormData) => {
   
-  console.log('onSubmit called with:', data);
     if (!shopId) {
         toast.error('Shop ID not found');
         return;
     }
 
-    console.log('Form submitted with data:', data);
     try {
         setLoading(true);
         const payload = {
             ...data,
             logo: data.logo || undefined,
         };
-        console.log('Sending payload to API:', payload);
         const shopData = await shopService.editShop(shopId, payload); 
         dispatch(addShop(shopData));
         toast.success('Profile updated successfully');
@@ -189,7 +185,6 @@ const onSubmit = async (data: ShopFormData) => {
 };
 
   const handleCancel = () => {
-    console.log('Cancel button clicked');
     navigate('/shop/profile');
   };
 

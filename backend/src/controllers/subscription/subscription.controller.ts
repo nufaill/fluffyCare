@@ -1,23 +1,16 @@
 import { Request, Response } from 'express';
-import { SubscriptionService } from '../../services/subscription/subscription.service';
-import { CreateSubscriptionDTO, UpdateSubscriptionDTO, SubscriptionResponseDTO } from '../../dto/subscription.dto';
+import { ISubscriptionService } from '../../interfaces/serviceInterfaces/ISubscriptionService';
+import { CreateSubscriptionDTO, UpdateSubscriptionDTO } from '../../dto/subscription.dto';
 import { HTTP_STATUS } from '../../shared/constant';
 import { Types } from 'mongoose';
 import { ISubscriptionController } from '../../interfaces/controllerInterfaces/ISubscriptionController';
 import { SubscriptionModel } from '@models/subscription.model';
 
-interface PaymentResponseData {
-  success: boolean;
-  clientSecret?: string;
-  paymentIntentId?: string;
-  message?: string;
-}
-
 export class SubscriptionController implements ISubscriptionController {
-  private readonly _subscriptionService: SubscriptionService;
+  private readonly _subscriptionService: ISubscriptionService;
 
   constructor(
-    subscriptionService: SubscriptionService,
+    subscriptionService: ISubscriptionService,
   ) {
     this._subscriptionService = subscriptionService;
 

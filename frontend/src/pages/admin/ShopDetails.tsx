@@ -20,8 +20,6 @@ import {
   Lock,
   Unlock,
   MapPin,
-  Star,
-  Users,
   Settings,
   Phone,
 } from "lucide-react"
@@ -173,7 +171,6 @@ const ShopDetails: React.FC = () => {
   }
 
   const handleToggleActive = async (shopId: string, isActive: boolean): Promise<void> => {
-    console.log('Toggle active called with:', { shopId, isActive })
     setLoading(true)
     try {
       const response = await updateShopStatus(shopId, isActive)

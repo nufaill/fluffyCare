@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useMemo, useEffect } from "react"
 import Navbar from "@/components/admin/Navbar"
-import Sidebar from "@/components/admin/Sidebar"
+import Sidebar from "@/components/admin/sidebar"
 import Footer from "@/components/user/Footer"
 import { Table, type TableColumn } from "@/components/ui/Table"
 import { Pagination } from "@/components/ui/Pagination"
@@ -218,19 +218,6 @@ const CustomerDetails: React.FC = () => {
     }
   }
 
-  const handleExport = (): void => {
-    // Implementation for exporting user data
-    console.log('Exporting user data...')
-    // You can implement CSV/Excel export functionality here
-  }
-
-  const handleFilter = (): void => {
-    // Implementation for additional filters
-    console.log('Opening filter options...')
-    // You can implement advanced filtering here
-  }
-
-  // Define table columns with proper typing
   const columns: TableColumn<User>[] = [
     {
       key: "customer",
@@ -351,7 +338,7 @@ const CustomerDetails: React.FC = () => {
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
-                onClick={handleExport}
+                onClick={()=>({})}
                 className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -435,7 +422,7 @@ const CustomerDetails: React.FC = () => {
                 </div>
                 <Button
                   variant="outline"
-                  onClick={handleFilter}
+                  onClick={()=>({})}
                   className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
                 >
                   <Filter className="h-4 w-4 mr-2" />

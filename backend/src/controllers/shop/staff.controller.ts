@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { IStaffService } from '../../interfaces/serviceInterfaces/IStaffService';
 import { IStaffController } from '../../interfaces/controllerInterfaces/IStaffController';
-import { createStaffDTO, updatesStaffDTO, UpdateStaffStatusDTO, StaffResponseDTO } from '../../dto/staff.dto';
+import { createStaffDTO, updatesStaffDTO, UpdateStaffStatusDTO } from '../../dto/staff.dto';
 import { HTTP_STATUS } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import mongoose from 'mongoose';
@@ -17,7 +17,7 @@ export class StaffController implements IStaffController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const shopId = req.query.shopId as string;
+      const { shopId } = req.params;
 
       if (!shopId) {
         throw new CustomError('Shop ID is required', HTTP_STATUS.BAD_REQUEST);

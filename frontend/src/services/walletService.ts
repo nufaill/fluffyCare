@@ -44,15 +44,8 @@ export class WalletService {
   constructor() {
     this.axios = createBaseAxios('/wallet');
     
-    // Add request interceptor for debugging (similar to wallet.axios.ts)
     this.axios.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        console.log('Wallet API Request:', {
-          method: config.method,
-          url: config.url,
-          baseURL: config.baseURL,
-          withCredentials: config.withCredentials,
-        });
         return config;
       },
       (error) => Promise.reject(error)

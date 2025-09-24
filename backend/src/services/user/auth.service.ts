@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { UserRepository } from '../../repositories/user/user.repository';
+import IUserRepository from '../../interfaces/repositoryInterfaces/IUserRepository';
 import { JwtService } from '../jwt/jwt.service';
 import { GoogleAuthService } from '../googleAuth/google.service';
 import { AuthResponse, JwtPayload } from '../../types/auth.types';
@@ -19,22 +19,20 @@ export class AuthService implements IUserAuthService {
   private readonly saltRounds = 12;
 
   constructor(
-    private userRepository: UserRepository,
-    private jwtService: JwtService,
-    private googleService: GoogleAuthService,
-    private emailService: EmailService,
-    private otpRepository: OtpRepository
+    private _userRepository: IUserRepository,
+    private _jwtService: JwtService,
+    private _googleService: GoogleAuthService,
+    private _emailService: EmailService,
+    private _otpRepository: OtpRepository
   ) { }
 
   generateTokens(id: string, email: string) {
-    return this.jwtService.generateTokens({ id, email });
+    return this._jwtService.generateTokens({ id, email });
   }
 
   async register(userData: RegisterUserDTO): Promise<{ email: string }> {
-    console.log(`🔍 [AuthService] Checking if user exists: ${userData.email}`);
-    const existingUser = await this.userRepository.findByEmail(userData.email);
+    const existingUser = await this._userRepository.findByEmail(userData.email);
     if (existingUser) {
-      console.log(`❌ [AuthService] User already exists: ${userData.email}`);
       throw new CustomError('User with this email already exists', HTTP_STATUS.CONFLICT);
     }
     if (userData.location && !validateGeoLocation(userData.location)) {
@@ -50,34 +48,26 @@ export class AuthService implements IUserAuthService {
       location: userData.location || { type: 'Point', coordinates: [0, 0] },
     };
     const otp = generateOtp();
-    console.log(`🔢 [AuthService] Generated OTP for ${userData.email}`);
-    await this.otpRepository.createOtp(userData.email, otp, tempUserData);
+    await this._otpRepository.createOtp(userData.email, otp, tempUserData);
     await sendOtpEmail(userData.email, otp, userData.fullName);
-    console.log(`📧 [AuthService] OTP sent to ${userData.email}`);
     return { email: userData.email };
   }
 
   async verifyOtpAndCompleteRegistration(data: { email: string; otp: string }): Promise<AuthResponse> {
     const { email, otp } = data;
-    console.log(`🔍 [AuthService] Verifying OTP for ${email}`);
-    const verificationResult = await this.otpRepository.verifyOtp(email, otp);
+    const verificationResult = await this._otpRepository.verifyOtp(email, otp);
     if (!verificationResult.isValid) {
       if (verificationResult.isExpired) {
-        console.log(`⏰ [AuthService] OTP expired for ${email}`);
         throw new CustomError('OTP has expired. Please request a new one.', HTTP_STATUS.BAD_REQUEST);
       }
       if (verificationResult.maxAttemptsReached) {
-        console.log(`🚫 [AuthService] Max attempts reached for ${email}`);
         throw new CustomError('Maximum verification attempts reached. Please request a new OTP.', HTTP_STATUS.BAD_REQUEST);
       }
-      console.log(`❌ [AuthService] Invalid OTP for ${email}`);
       throw new CustomError('Invalid OTP. Please try again.', HTTP_STATUS.BAD_REQUEST);
     }
     const userData = verificationResult.userData!;
-    console.log(`👤 [AuthService] Creating user: ${userData.email}`);
-    const user = await this.userRepository.createUser(userData);
+    const user = await this._userRepository.createUser(userData);
     const tokens = this.generateTokens(user.id, user.email);
-    console.log(`🎟️ [AuthService] Tokens generated for ${user.email}`);
     return {
       success: true,
       user: {
@@ -93,38 +83,29 @@ export class AuthService implements IUserAuthService {
 
   async resendOtp(data: { email: string }): Promise<void> {
     const { email } = data;
-    console.log(`🔄 [AuthService] Resending OTP for ${email}`);
-    const existingOtp = await this.otpRepository.findByEmail(email);
+    const existingOtp = await this._otpRepository.findByEmail(email);
     if (!existingOtp) {
-      console.log(`❌ [AuthService] No pending verification for ${email}`);
       throw new CustomError('No pending verification found for this email. Please start registration again.', HTTP_STATUS.BAD_REQUEST);
     }
     const otp = generateOtp();
-    console.log(`🔢 [AuthService] Generated new OTP for ${email}`);
-    await this.otpRepository.createOtp(email, otp, existingOtp.userData);
+    await this._otpRepository.createOtp(email, otp, existingOtp.userData);
     await sendOtpEmail(email, otp, existingOtp.userData.fullName);
-    console.log(`📧 [AuthService] New OTP sent to ${email}`);
   }
 
   async login(data: LoginUserDTO): Promise<AuthResponse> {
-    console.log(`🔧 [AuthService] Starting login for ${data.email}`);
     const normalizedEmail = data.email.trim().toLowerCase();
-    const user = await this.userRepository.findByEmailWithPassword(normalizedEmail);
+    const user = await this._userRepository.findByEmailWithPassword(normalizedEmail);
     if (!user) {
-      console.log(`❌ [AuthService] No user found: ${normalizedEmail}`);
       throw new CustomError('Invalid email or password', HTTP_STATUS.UNAUTHORIZED);
     }
     if (!user.isActive) {
-      console.log(`❌ [AuthService] Inactive account: ${normalizedEmail}`);
       throw new CustomError('Account is inactive', HTTP_STATUS.FORBIDDEN);
     }
     const isValidPassword = await bcrypt.compare(data.password, user.password || '');
     if (!isValidPassword) {
-      console.log(`❌ [AuthService] Invalid password for ${normalizedEmail}`);
       throw new CustomError('Invalid email or password', HTTP_STATUS.UNAUTHORIZED);
     }
     const tokens = this.generateTokens(user.id, user.email);
-    console.log(`🎟️ [AuthService] Login successful for ${normalizedEmail}`);
     return {
       success: true,
       user: {
@@ -139,12 +120,10 @@ export class AuthService implements IUserAuthService {
   }
 
   async googleLogin(credential: string): Promise<AuthResponse> {
-    console.log(`🔧 [AuthService] Starting Google login`);
-    const googleUser = await this.googleService.verifyIdToken(credential);
+    const googleUser = await this._googleService.verifyIdToken(credential);
     const normalizedEmail = googleUser.email.trim().toLowerCase();
-    let user = await this.userRepository.findByEmail(normalizedEmail);
+    let user = await this._userRepository.findByEmail(normalizedEmail);
     if (!user) {
-      console.log(`📝 [AuthService] Creating new Google user: ${normalizedEmail}`);
       const userData: CreateUserDTO = {
         fullName: googleUser.name,
         email: normalizedEmail,
@@ -156,14 +135,12 @@ export class AuthService implements IUserAuthService {
         isGoogleUser: true,
         location: { type: 'Point', coordinates: [0, 0] },
       };
-      user = await this.userRepository.createUser(userData);
+      user = await this._userRepository.createUser(userData);
     }
     if (!user.isActive) {
-      console.log(`❌ [AuthService] Inactive Google account: ${normalizedEmail}`);
       throw new CustomError('Account is inactive', HTTP_STATUS.FORBIDDEN);
     }
     const tokens = this.generateTokens(user.id, user.email);
-    console.log(`🎟️ [AuthService] Google login successful for ${normalizedEmail}`);
     return {
       success: true,
       user: {
@@ -178,60 +155,48 @@ export class AuthService implements IUserAuthService {
   }
 
   async refreshToken(refreshToken: string): Promise<string> {
-    console.log(`🔧 [AuthService] Refreshing token`);
-    const payload = this.jwtService.verifyRefreshToken(refreshToken);
+    const payload = this._jwtService.verifyRefreshToken(refreshToken);
     if (!payload || typeof payload === 'string') {
-      console.log(`❌ [AuthService] Invalid refresh token`);
       throw new CustomError('Invalid refresh token', HTTP_STATUS.UNAUTHORIZED);
     }
-    const user = await this.userRepository.findById((payload as JwtPayload).id);
+    const user = await this._userRepository.findById((payload as JwtPayload).id);
     if (!user || !user.isActive) {
-      console.log(`❌ [AuthService] User not found or inactive`);
       throw new CustomError('User not found or inactive', HTTP_STATUS.UNAUTHORIZED);
     }
-    const newAccessToken = this.jwtService.generateAccessToken({
+    const newAccessToken = this._jwtService.generateAccessToken({
       id: user.id,
       email: user.email
     });
-    console.log(`✅ [AuthService] Token refreshed for ${user.email}`);
     return newAccessToken;
   }
 
   async sendResetLink(data: { email: string }): Promise<void> {
     const { email } = data;
-    console.log(`🔧 [AuthService] Sending reset link for ${email}`);
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this._userRepository.findByEmail(email);
     if (!user) {
-      console.log(`❌ [AuthService] User not found: ${email}`);
       throw new CustomError('User not found with this email address', HTTP_STATUS.NOT_FOUND);
     }
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 3600000);
-    await this.userRepository.setResetToken(email, token, expires);
+    await this._userRepository.setResetToken(email, token, expires);
     const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
     const emailContent = PASSWORD_RESET_MAIL_CONTENT(resetLink);
-    await this.emailService.sendOtpEmail(email, 'Reset Your Password', emailContent);
-    console.log(`✅ [AuthService] Reset link sent to ${email}`);
+    await this._emailService.sendOtpEmail(email, 'Reset Your Password', emailContent);
   }
 
   async resetPassword(data: ResetPasswordDTO): Promise<void> {
     const { token, password: newPassword, confirmPassword } = data;
-    console.log(`🔧 [AuthService] Processing password reset`);
     if (newPassword !== confirmPassword) {
-      console.log(`❌ [AuthService] Passwords do not match`);
       throw new CustomError('Passwords do not match', HTTP_STATUS.BAD_REQUEST);
     }
     if (newPassword.length < 8) {
-      console.log(`❌ [AuthService] Password too short`);
       throw new CustomError('Password must be at least 8 characters long', HTTP_STATUS.BAD_REQUEST);
     }
-    const user = await this.userRepository.findByResetToken(token);
+    const user = await this._userRepository.findByResetToken(token);
     if (!user) {
-      console.log(`❌ [AuthService] Invalid or expired reset token`);
       throw new CustomError('Invalid or expired reset token', HTTP_STATUS.BAD_REQUEST);
     }
     const hashedPassword = await bcrypt.hash(newPassword, this.saltRounds);
-    await this.userRepository.updatePasswordAndClearToken(new Types.ObjectId(user.id), hashedPassword);
-    console.log(`✅ [AuthService] Password reset for ${user.email}`);
+    await this._userRepository.updatePasswordAndClearToken(new Types.ObjectId(user.id), hashedPassword);
   }
 }

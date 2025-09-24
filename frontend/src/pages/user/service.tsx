@@ -37,7 +37,6 @@ export const Services = () => {
 
   const handleLocationUpdate = (location: UserLocation) => {
     userService.setUserLocation(location, true);
-    console.log("Location updated:", location);
   };
 
   useEffect(() => {
@@ -49,7 +48,7 @@ export const Services = () => {
   const handlePageChange = (page: number, newPageSize?: number) => {
     if (newPageSize && newPageSize !== pageSize) {
       setPageSize(newPageSize);
-      setCurrentPage(1); // Reset to first page when page size changes
+      setCurrentPage(1); 
     } else {
       setCurrentPage(page);
     }

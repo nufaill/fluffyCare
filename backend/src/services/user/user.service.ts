@@ -1,15 +1,15 @@
-import { UserRepository } from '../../repositories/user/user.repository';
+import IUserRepository from '../../interfaces/repositoryInterfaces/IUserRepository';
 import { UserResponseDTO, UpdateUserDTO, CustomerAnalytics } from '../../dto/user.dto';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { IUserService } from '../../interfaces/serviceInterfaces/IUserService';
 
 export class UserService implements IUserService {
-  constructor(private userRepository: UserRepository) { }
+  constructor(private _userRepository: IUserRepository) { }
 
   async getAllUsers(page: number = 1, limit: number = 10): Promise<{ users: UserResponseDTO[], total: number, totalPages: number }> {
     try {
-      const { users, total } = await this.userRepository.getAllUsers(page, limit);
+      const { users, total } = await this._userRepository.getAllUsers(page, limit);
       const totalPages = Math.ceil(total / limit);
       return { users, total, totalPages };
     } catch (error) {
@@ -36,7 +36,7 @@ export class UserService implements IUserService {
         );
       }
 
-      const updatedUser = await this.userRepository.updateUserStatus(userId, isActive);
+      const updatedUser = await this._userRepository.updateUserStatus(userId, isActive);
 
       if (!updatedUser) {
         throw new CustomError(
@@ -64,7 +64,7 @@ export class UserService implements IUserService {
         );
       }
 
-      const user = await this.userRepository.findById(userId);
+      const user = await this._userRepository.findById(userId);
 
       if (!user) {
         throw new CustomError(
@@ -100,7 +100,7 @@ export class UserService implements IUserService {
         );
       }
 
-      const updatedUser = await this.userRepository.updateUser(userId, updateData);
+      const updatedUser = await this._userRepository.updateUser(userId, updateData);
 
       if (!updatedUser) {
         throw new CustomError(
@@ -120,7 +120,7 @@ export class UserService implements IUserService {
 
   async findById(userId: string): Promise<UserResponseDTO | null> {
     try {
-      return await this.userRepository.findById(userId);
+      return await this._userRepository.findById(userId);
     } catch (error) {
       throw error instanceof CustomError ? error : new CustomError(
         'Failed to find user',
@@ -131,7 +131,7 @@ export class UserService implements IUserService {
 
   async findUserByEmail(email: string): Promise<UserResponseDTO | null> {
     try {
-      return await this.userRepository.findByEmail(email);
+      return await this._userRepository.findByEmail(email);
     } catch (error) {
       throw error instanceof CustomError ? error : new CustomError(
         'Failed to find user by email',
@@ -142,7 +142,7 @@ export class UserService implements IUserService {
 
   async getCustomerAnalytics(): Promise<CustomerAnalytics> {
     try {
-      return await this.userRepository.getCustomerAnalytics();
+      return await this._userRepository.getCustomerAnalytics();
     } catch (error) {
       throw error instanceof CustomError ? error : new CustomError(
         'Failed to fetch customer analytics',

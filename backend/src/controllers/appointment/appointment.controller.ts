@@ -1,4 +1,3 @@
-// appointment.controller.ts
 import { Request, Response } from 'express';
 import { IAppointmentService } from '../../interfaces/serviceInterfaces/IAppointmentService';
 import { CreateAppointmentDto, UpdateAppointmentDto } from '../../dto/appointment.dto';
@@ -17,7 +16,6 @@ export class AppointmentController implements IAppointmentController {
     try {
       const appointmentData: CreateAppointmentDto = req.body;
 
-      // Validate required fields with detailed logging
       const requiredFields = [
         { field: 'userId', value: appointmentData.userId },
         { field: 'petId', value: appointmentData.petId },
@@ -37,7 +35,6 @@ export class AppointmentController implements IAppointmentController {
         { field: 'paymentMethod', value: appointmentData.paymentMethod },
       ];
 
-      // Log each field check
       for (const { field, value } of requiredFields) {
         const isEmpty = value === undefined || value === null || value === "";
       }
@@ -597,7 +594,6 @@ export class AppointmentController implements IAppointmentController {
       const { shopId } = req.params;
       const { date, staffId } = req.query;
 
-      // Validate required parameters
       if (!shopId || !Types.ObjectId.isValid(shopId)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
@@ -616,7 +612,6 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      // Validate date format
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(date)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -627,7 +622,6 @@ export class AppointmentController implements IAppointmentController {
         return;
       }
 
-      // Validate staffId if provided
       if (staffId && !Types.ObjectId.isValid(staffId as string)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,

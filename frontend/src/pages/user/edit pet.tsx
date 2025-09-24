@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ModernSidebar } from "@/components/user/app-sidebar"
+import { ModernSidebar } from "@/components/user/App-sidebar"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { Upload, Save, X, Heart, Camera, Loader2, AlertCircle } from "lucide-react"
@@ -55,15 +55,9 @@ export default function EditPetPage() {
             try {
                 setIsLoading(true);
                 setLoadingError(null);
-                console.log('Fetching data for petId:', petId);
-
                 const petTypesData = await userService.getAllPetTypes();
-                console.log('Fetched pet types:', petTypesData);
                 setPetTypes(petTypesData);
-
                 const petData: Pet = await userService.getPetById(petId);
-                console.log('Fetched pet data:', petData);
-
                 if (!petData || !petData._id) {
                     throw new Error('Invalid pet data received from server');
                 }
@@ -85,7 +79,6 @@ export default function EditPetPage() {
                     userId: typeof petData.userId === 'object' ? petData.userId._id : petData.userId || ""
                 });
 
-                console.log('Form data set successfully');
             } catch (error: any) {
                 console.error('Error fetching pet data:', error);
                 let errorMessage = 'Failed to load pet data. Please try again.';
@@ -172,9 +165,6 @@ export default function EditPetPage() {
 
         try {
             const { userId, ...updateData } = formData;
-
-            console.log('Submitting update for petId:', petId, 'with data:', updateData);
-
             await userService.updatePet(petId, updateData);
             navigate("/pets");
         } catch (error: any) {

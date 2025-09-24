@@ -189,8 +189,7 @@ export default function ShopWalletPage() {
         balance={wallet?.balance ?? 0}
         currency={wallet?.currency ?? 'INR'}
         transactions={wallet?.transactions ?? []}
-        onAction={(actionType, data) => {
-          console.log(`Action: ${actionType}`, data);
+        onAction={() => {
         }}
         isLoading={isLoading}
       />

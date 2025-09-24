@@ -22,7 +22,6 @@ export class ServiceController implements IServiceController {
 
       const serviceData: CreateServiceDTO = req.body;
 
-      // Validate required fields
       if (!serviceData.name || typeof serviceData.name !== 'string' || serviceData.name.trim().length === 0) {
         throw new CustomError('Service name is required and must be a non-empty string', HTTP_STATUS.BAD_REQUEST);
       }
@@ -94,7 +93,6 @@ export class ServiceController implements IServiceController {
         throw new CustomError('Invalid Service ID format', HTTP_STATUS.BAD_REQUEST);
       }
 
-      console.log(`Fetching service with ID: ${serviceId}`);
       const service = await this._serviceService.getServiceByIdPublic(serviceId);
       res.status(HTTP_STATUS.OK).json({
         success: true,

@@ -225,7 +225,6 @@ const ShopVerification: React.FC = () => {
   };
 
   const handleViewDetails = (shop: Shop): void => {
-    console.log("Selected Shop for Review:", shop); // Debug: Log selected shop
     setSelectedShop(shop);
     setShowDetailsModal(true);
   };

@@ -84,7 +84,6 @@ export const SlotCalendar: React.FC = () => {
     const { shopData: shop } = useSelector((state: RootState) => state.shop);
 
     useEffect(() => {
-        console.log('Shop data from Redux:', shop);
         if (shop?.id) {
             const fetchAvailability = async () => {
                 setIsLoading(true);

@@ -22,10 +22,8 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ role, onBack })
     try {
        await (role === 'user' ? userSendResetLink : shopSendResetLink)(email);
         setIsSubmitted(true);
-        console.log('Reset link sent for:', { email, role });
     } catch (error) {
         console.error('Failed to send reset link:', error);
-        // Error handling is done in the service with toast
     } finally {
         setIsLoading(false);
     }

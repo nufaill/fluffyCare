@@ -17,20 +17,20 @@ import {
 } from '../../dto/message.dto';
 
 export class MessageService implements IMessageService {
-  private readonly messageRepository: IMessageRepository;
-  private readonly dtoMapper: IDtoMapper;
+  private readonly _messageRepository: IMessageRepository;
+  private readonly _dtoMapper: IDtoMapper;
 
   constructor(messageRepository: IMessageRepository, dtoMapper: IDtoMapper) {
-    this.messageRepository = messageRepository;
-    this.dtoMapper = dtoMapper;
+    this._messageRepository = messageRepository;
+    this._dtoMapper = dtoMapper;
   }
 
   async createMessage(dto: CreateMessageDTO): Promise<MessageResponseDTO> {
     try {
       this.validateCreateMessageDto(dto);
-      const messageEntity = this.dtoMapper.toCreateMessageEntity(dto);
-      const createdMessage = await this.messageRepository.createMessage(messageEntity);
-      return this.dtoMapper.toMessageResponseDto(createdMessage);
+      const messageEntity = this._dtoMapper.toCreateMessageEntity(dto);
+      const createdMessage = await this._messageRepository.createMessage(messageEntity);
+      return this._dtoMapper.toMessageResponseDto(createdMessage);
     } catch (error) {
       throw new Error(`Failed to create message: ${error}`);
     }
@@ -39,8 +39,8 @@ export class MessageService implements IMessageService {
   async findMessageById(messageId: string): Promise<MessageResponseDTO | null> {
     try {
       this.validateObjectId(messageId, 'Message ID');
-      const message = await this.messageRepository.findMessageById(messageId);
-      return message ? this.dtoMapper.toMessageResponseDto(message) : null;
+      const message = await this._messageRepository.findMessageById(messageId);
+      return message ? this._dtoMapper.toMessageResponseDto(message) : null;
     } catch (error) {
       throw new Error(`Failed to find message by ID: ${error}`);
     }
@@ -54,11 +54,11 @@ export class MessageService implements IMessageService {
       const safePage = Math.max(1, page);
       this.validatePaginationParams(safePage, limit);
 
-      const result = await this.messageRepository.getChatMessages(chatId, safePage, limit);
+      const result = await this._messageRepository.getChatMessages(chatId, safePage, limit);
 
       if (!result || !Array.isArray(result.messages)) {
         console.warn(`MessageService: Invalid result structure for chat ${chatId}`, result);
-        return this.dtoMapper.toMessageListResponseDto([], 0, false, safePage, limit);
+        return this._dtoMapper.toMessageListResponseDto([], 0, false, safePage, limit);
       }
 
       const validMessages = this.filterValidMessages(result.messages);
@@ -80,11 +80,11 @@ export class MessageService implements IMessageService {
         if (safePage === 1) {
           console.error(`MessageService: Attempting to fetch with page=0 as fallback`);
           try {
-            const fallbackResult = await this.messageRepository.getChatMessages(chatId, 0, limit);
+            const fallbackResult = await this._messageRepository.getChatMessages(chatId, 0, limit);
             if (fallbackResult && fallbackResult.messages && fallbackResult.messages.length > 0) {
               console.log(`MessageService: Fallback successful - found ${fallbackResult.messages.length} messages with page=0`);
               const fallbackValidMessages = this.filterValidMessages(fallbackResult.messages);
-              return this.dtoMapper.toMessageListResponseDto(
+              return this._dtoMapper.toMessageListResponseDto(
                 fallbackValidMessages,
                 fallbackResult.total || fallbackValidMessages.length,
                 fallbackResult.hasMore || false,
@@ -98,7 +98,7 @@ export class MessageService implements IMessageService {
         }
       }
 
-      return this.dtoMapper.toMessageListResponseDto(
+      return this._dtoMapper.toMessageListResponseDto(
         validMessages,
         result.total || validMessages.length,
         result.hasMore || false,
@@ -114,7 +114,7 @@ export class MessageService implements IMessageService {
   async getLatestMessage(chatId: string): Promise<MessageResponseDTO | null> {
     try {
       this.validateObjectId(chatId, 'Chat ID');
-      const message = await this.messageRepository.getLatestMessage(chatId);
+      const message = await this._messageRepository.getLatestMessage(chatId);
 
       if (!message) {
         return null;
@@ -125,7 +125,7 @@ export class MessageService implements IMessageService {
         return null;
       }
 
-      return this.dtoMapper.toMessageResponseDto(message);
+      return this._dtoMapper.toMessageResponseDto(message);
     } catch (error) {
       throw new Error(`Failed to get latest message: ${error}`);
     }
@@ -134,8 +134,8 @@ export class MessageService implements IMessageService {
   async markAsDelivered(messageId: string, deliveredAt: Date = new Date()): Promise<MessageResponseDTO | null> {
     try {
       this.validateObjectId(messageId, 'Message ID');
-      const message = await this.messageRepository.markAsDelivered(messageId, deliveredAt);
-      return message ? this.dtoMapper.toMessageResponseDto(message) : null;
+      const message = await this._messageRepository.markAsDelivered(messageId, deliveredAt);
+      return message ? this._dtoMapper.toMessageResponseDto(message) : null;
     } catch (error) {
       throw new Error(`Failed to mark message as delivered: ${error}`);
     }
@@ -144,8 +144,8 @@ export class MessageService implements IMessageService {
   async markAsRead(messageId: string, readAt: Date = new Date()): Promise<MessageResponseDTO | null> {
     try {
       this.validateObjectId(messageId, 'Message ID');
-      const message = await this.messageRepository.markAsRead(messageId, readAt);
-      return message ? this.dtoMapper.toMessageResponseDto(message) : null;
+      const message = await this._messageRepository.markAsRead(messageId, readAt);
+      return message ? this._dtoMapper.toMessageResponseDto(message) : null;
     } catch (error) {
       throw new Error(`Failed to mark message as read: ${error}`);
     }
@@ -154,7 +154,7 @@ export class MessageService implements IMessageService {
   async markMultipleAsRead(messageIds: string[], readAt: Date = new Date()): Promise<number> {
     try {
       this.validateMessageIds(messageIds);
-      return await this.messageRepository.markMultipleAsRead(messageIds, readAt);
+      return await this._messageRepository.markMultipleAsRead(messageIds, readAt);
     } catch (error) {
       throw new Error(`Failed to mark multiple messages as read: ${error}`);
     }
@@ -163,7 +163,7 @@ export class MessageService implements IMessageService {
   async markChatMessagesAsRead(dto: MarkMessagesAsReadDTO, readAt: Date = new Date()): Promise<number> {
     try {
       this.validateMarkMessagesAsReadDto(dto);
-      return await this.messageRepository.markChatMessagesAsRead(dto, readAt);
+      return await this._messageRepository.markChatMessagesAsRead(dto, readAt);
     } catch (error) {
       throw new Error(`Failed to mark chat messages as read: ${error}`);
     }
@@ -172,8 +172,8 @@ export class MessageService implements IMessageService {
   async addReaction(dto: AddReactionDTO): Promise<MessageResponseDTO | null> {
     try {
       this.validateAddReactionDto(dto);
-      const message = await this.messageRepository.addReaction(dto);
-      return message ? this.dtoMapper.toMessageResponseDto(message) : null;
+      const message = await this._messageRepository.addReaction(dto);
+      return message ? this._dtoMapper.toMessageResponseDto(message) : null;
     } catch (error) {
       throw new Error(`Failed to add reaction: ${error}`);
     }
@@ -182,8 +182,8 @@ export class MessageService implements IMessageService {
   async removeReaction(dto: RemoveReactionDTO): Promise<MessageResponseDTO | null> {
     try {
       this.validateRemoveReactionDto(dto);
-      const message = await this.messageRepository.removeReaction(dto.messageId, dto.userId);
-      return message ? this.dtoMapper.toMessageResponseDto(message) : null;
+      const message = await this._messageRepository.removeReaction(dto.messageId, dto.userId);
+      return message ? this._dtoMapper.toMessageResponseDto(message) : null;
     } catch (error) {
       throw new Error(`Failed to remove reaction: ${error}`);
     }
@@ -192,7 +192,7 @@ export class MessageService implements IMessageService {
   async searchMessages(dto: MessageSearchDTO): Promise<MessageListResponseDTO> {
     try {
       this.validateMessageSearchDto(dto);
-      const result = await this.messageRepository.searchMessages(
+      const result = await this._messageRepository.searchMessages(
         dto.chatId,
         dto.query,
         dto.messageType,
@@ -202,7 +202,7 @@ export class MessageService implements IMessageService {
 
       const validMessages = this.filterValidMessages(result.messages);
 
-      return this.dtoMapper.toMessageListResponseDto(
+      return this._dtoMapper.toMessageListResponseDto(
         validMessages,
         validMessages.length,
         result.hasMore,
@@ -217,7 +217,7 @@ export class MessageService implements IMessageService {
   async deleteMessage(messageId: string): Promise<boolean> {
     try {
       this.validateObjectId(messageId, 'Message ID');
-      return await this.messageRepository.deleteMessage(messageId);
+      return await this._messageRepository.deleteMessage(messageId);
     } catch (error) {
       throw new Error(`Failed to delete message: ${error}`);
     }
@@ -226,7 +226,7 @@ export class MessageService implements IMessageService {
   async deleteChatMessages(chatId: string): Promise<number> {
     try {
       this.validateObjectId(chatId, 'Chat ID');
-      return await this.messageRepository.deleteChatMessages(chatId);
+      return await this._messageRepository.deleteChatMessages(chatId);
     } catch (error) {
       throw new Error(`Failed to delete chat messages: ${error}`);
     }
@@ -235,7 +235,7 @@ export class MessageService implements IMessageService {
   async getMessagesByType(dto: MessagesByTypeDTO): Promise<MessageListResponseDTO> {
     try {
       this.validateMessagesByTypeDto(dto);
-      const result = await this.messageRepository.getMessagesByType(
+      const result = await this._messageRepository.getMessagesByType(
         dto.chatId,
         dto.messageType,
         dto.page || 1,
@@ -244,7 +244,7 @@ export class MessageService implements IMessageService {
 
       const validMessages = this.filterValidMessages(result.messages);
 
-      return this.dtoMapper.toMessageListResponseDto(
+      return this._dtoMapper.toMessageListResponseDto(
         validMessages,
         validMessages.length,
         result.hasMore,
@@ -259,8 +259,8 @@ export class MessageService implements IMessageService {
   async getChatMessageStats(chatId: string): Promise<MessageStatsResponseDTO> {
     try {
       this.validateObjectId(chatId, 'Chat ID');
-      const stats = await this.messageRepository.getChatMessageStats(chatId);
-      return this.dtoMapper.toMessageStatsResponseDto(stats);
+      const stats = await this._messageRepository.getChatMessageStats(chatId);
+      return this._dtoMapper.toMessageStatsResponseDto(stats);
     } catch (error) {
       throw new Error(`Failed to get chat message stats: ${error}`);
     }
@@ -296,7 +296,7 @@ export class MessageService implements IMessageService {
   async getUnreadCount(dto: UnreadCountDTO): Promise<number> {
     try {
       this.validateUnreadCountDto(dto);
-      return await this.messageRepository.getUnreadCount(dto.chatId, dto.receiverRole);
+      return await this._messageRepository.getUnreadCount(dto.chatId, dto.receiverRole);
     } catch (error) {
       throw new Error(`Failed to get unread count: ${error}`);
     }

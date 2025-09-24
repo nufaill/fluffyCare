@@ -15,9 +15,7 @@ interface ResetPasswordFormProps {
 const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     role,
     token,
-    onBack,
-    onSuccess
-}) => {
+    onBack}) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +26,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const tokenFromUrl = searchParams.get('token');
-    const finalToken = token || tokenFromUrl;
 
     // Password validation
     const validatePassword = (pwd: string): string[] => {
@@ -74,7 +71,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
             });
 
             setIsSuccess(true);
-            console.log('Password reset successful:', { token, role });
         } catch (error) {
             setErrors(['Failed to reset password. Please try again.']);
             console.error('Password reset failed:', error);

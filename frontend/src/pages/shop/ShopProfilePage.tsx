@@ -103,7 +103,6 @@ export default function ShopProfilePage() {
     }, [shop, reset]);
 
     const onSubmit = async (data: ShopFormData) => {
-        console.log('onSubmit called with:', data);
         if (!shopId) { 
             toast.error('Shop ID not found');
             return;

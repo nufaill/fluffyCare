@@ -169,7 +169,6 @@ export default function AppointmentsPage() {
             status: statusFilter === "all" ? undefined : statusFilter,
           },
         })
-        console.log("Appointments API response:", appointmentsResponse.data);
         const { data, meta } = appointmentsResponse.data
         setAppointments(Array.isArray(data) ? data : [])
         setTotalAppointments(meta?.total || 0)
@@ -351,9 +350,6 @@ export default function AppointmentsPage() {
   }
 
   const handleSubmitReview = async (appointmentId: string, shopId: string) => {
-    console.log("Submitting review with shopId:", shopId);
-    console.log("User ID:", userId);
-
     try {
       if (!userId) {
         ToasterSetup({
@@ -395,13 +391,6 @@ export default function AppointmentsPage() {
         });
         return;
       }
-
-      console.log("Sending review data:", {
-        shopId,
-        userId,
-        rating: reviewRating,
-        comment: reviewComment.trim(),
-      });
 
       const response = await Useraxios.post(`/reviews`, {
         shopId,

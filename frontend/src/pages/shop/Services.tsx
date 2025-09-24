@@ -381,7 +381,6 @@ function ServiceForm({
           return;
         }
       }
-      console.log("Frontend sending durationHour:", formData.durationHour, "Parsed:", Number.parseFloat(formData.durationHour));
       await onSubmit({ ...formData, image: imageUrl });
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -677,8 +676,6 @@ export default function Services() {
         image: data.image,
       };
 
-      console.log("Sending service data:", serviceData);
-
       const newService = await serviceService.createService(shopId, serviceData); 
       setServices((prev) => [...prev, newService]);
       setShowAddForm(false);
@@ -714,8 +711,6 @@ export default function Services() {
         durationHour: durationValue,
         image: data.image,
       };
-
-      console.log("Updating service data:", updateData);
 
       const updatedService = await serviceService.updateService(editingService._id, updateData);
       setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));

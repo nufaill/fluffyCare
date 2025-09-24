@@ -22,14 +22,10 @@ export class ServiceRepository implements IServiceRepository {
 
   async getServiceById(serviceId: string): Promise<ServiceDocument | null> {
     try {
-      console.log(`ServiceRepository: Querying service with ID: ${serviceId}`);
       const service = await Service.findById(serviceId)
         .populate('serviceTypeId', 'name')
         .populate('petTypeIds', 'name')
         .populate('shopId', 'name email logo phone city streetAddress location');
-      if (!service) {
-        console.log(`ServiceRepository: No service found for ID: ${serviceId}`);
-      }
       return service;
     } catch (error: any) {
       console.error(`Error in getServiceById [Repository]: ${error.message}`, error);

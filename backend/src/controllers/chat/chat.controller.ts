@@ -6,13 +6,13 @@ import { CreateChatDTO, ChatSearchDTO } from '../../dto/chat.dto';
 import { BaseController } from './base.controller';
 
 export class ChatController extends BaseController implements IChatController {
-  private readonly chatService: IChatService;
-  private readonly socketService: ISocketService;
+  private readonly _chatService: IChatService;
+  private readonly _socketService: ISocketService;
 
   constructor(chatService: IChatService, socketService: ISocketService) {
     super();
-    this.chatService = chatService;
-    this.socketService = socketService;
+    this._chatService = chatService;
+    this._socketService = socketService;
   }
 
   async createChat(req: Request, res: Response): Promise<void> {
@@ -26,10 +26,9 @@ export class ChatController extends BaseController implements IChatController {
       }
 
       const createChatDto: CreateChatDTO = { userId, shopId };
-      const chat = await this.chatService.createChat(createChatDto);
+      const chat = await this._chatService.createChat(createChatDto);
 
-      // Emit socket event for new chat creation
-      this.socketService.emitChatUpdate(chat.id, {
+      this._socketService.emitChatUpdate(chat.id, {
         type: 'chat-created',
         chat,
       });
@@ -49,7 +48,7 @@ export class ChatController extends BaseController implements IChatController {
         return;
       }
 
-      const chat = await this.chatService.findChatById(chatId);
+      const chat = await this._chatService.findChatById(chatId);
 
       if (!chat) {
         this.sendErrorResponse(res, 404, 'Chat not found');
@@ -73,7 +72,7 @@ export class ChatController extends BaseController implements IChatController {
         return;
       }
 
-      const chatList = await this.chatService.getUserChats(userId, page, limit);
+      const chatList = await this._chatService.getUserChats(userId, page, limit);
 
       this.sendSuccessResponse(res, 200, 'User chats retrieved successfully', chatList);
     } catch (error) {
@@ -92,7 +91,7 @@ export class ChatController extends BaseController implements IChatController {
         return;
       }
 
-      const chatList = await this.chatService.getShopChats(shopId, page, limit);
+      const chatList = await this._chatService.getShopChats(shopId, page, limit);
 
       this.sendSuccessResponse(res, 200, 'Shop chats retrieved successfully', chatList);
     } catch (error) {
@@ -110,7 +109,7 @@ export class ChatController extends BaseController implements IChatController {
         return;
       }
 
-      const chat = await this.chatService.getOrCreateChat(userId, shopId);
+      const chat = await this._chatService.getOrCreateChat(userId, shopId);
 
       this.sendSuccessResponse(res, 200, 'Chat retrieved or created successfully', chat);
     } catch (error) {
@@ -128,7 +127,7 @@ export class ChatController extends BaseController implements IChatController {
         return;
       }
 
-      const updatedChat = await this.chatService.updateLastMessage(chatId, {
+      const updatedChat = await this._chatService.updateLastMessage(chatId, {
         lastMessage: lastMessage || '',
         lastMessageType: lastMessageType || 'Text',
         lastMessageAt: lastMessageAt ? new Date(lastMessageAt) : new Date(),
@@ -154,14 +153,14 @@ export class ChatController extends BaseController implements IChatController {
         return;
       }
 
-      const updatedChat = await this.chatService.incrementUnreadCount(chatId);
+      const updatedChat = await this._chatService.incrementUnreadCount(chatId);
 
       if (!updatedChat) {
         this.sendErrorResponse(res, 404, 'Chat not found');
         return;
       }
 
-      this.socketService.emitChatUpdate(chatId, {
+      this._socketService.emitChatUpdate(chatId, {
         type: 'unread-count-incremented',
         unreadCount: updatedChat.unreadCount,
       });
@@ -181,14 +180,14 @@ export class ChatController extends BaseController implements IChatController {
         return;
       }
 
-      const updatedChat = await this.chatService.resetUnreadCount(chatId);
+      const updatedChat = await this._chatService.resetUnreadCount(chatId);
 
       if (!updatedChat) {
         this.sendErrorResponse(res, 404, 'Chat not found');
         return;
       }
 
-      this.socketService.emitChatUpdate(chatId, {
+      this._socketService.emitChatUpdate(chatId, {
         type: 'unread-count-reset',
         unreadCount: 0,
       });
@@ -208,14 +207,14 @@ export class ChatController extends BaseController implements IChatController {
         return;
       }
 
-      const deleted = await this.chatService.deleteChat(chatId);
+      const deleted = await this._chatService.deleteChat(chatId);
 
       if (!deleted) {
         this.sendErrorResponse(res, 404, 'Chat not found');
         return;
       }
 
-      this.socketService.emitChatUpdate(chatId, {
+      this._socketService.emitChatUpdate(chatId, {
         type: 'chat-deleted',
       });
 
@@ -253,7 +252,7 @@ export class ChatController extends BaseController implements IChatController {
         limit,
       };
 
-      const searchResults = await this.chatService.searchChats(searchDto);
+      const searchResults = await this._chatService.searchChats(searchDto);
 
       this.sendSuccessResponse(res, 200, 'Chats searched successfully', searchResults);
     } catch (error) {
@@ -276,7 +275,7 @@ export class ChatController extends BaseController implements IChatController {
         return;
       }
 
-      const unreadCount = await this.chatService.getTotalUnreadCount(
+      const unreadCount = await this._chatService.getTotalUnreadCount(
         userId,
         role as 'User' | 'Shop',
       );

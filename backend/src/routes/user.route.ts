@@ -429,7 +429,7 @@ router.get('/pet/:petId/with-bookings', userDependencies.petController.getPetWit
 
 
 router.get('/:shopId/availability', userDependencies.shopController.getShopAvailability as RequestHandler);
-router.get('/staff', userDependencies.staffController.getAllStaff as RequestHandler);
+router.get('/staff/:shopId', userDependencies.staffController.getAllStaff as RequestHandler);
 
 
 

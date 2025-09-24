@@ -1,8 +1,7 @@
-// payment.controller.ts
 import { Request, Response } from "express";
 import Stripe from "stripe";
-import { AppointmentService } from "../../services/appointment/appointment.service";
-import { WalletService } from "../../services/wallet/wallet.service";
+import { IAppointmentService } from '../../interfaces/serviceInterfaces/IAppointmentService';
+import { IWalletService } from '../../interfaces/serviceInterfaces/IWalletService';
 import { HTTP_STATUS } from "../../shared/constant";
 import { AppointmentStatus, PaymentMethod, PaymentStatus } from "../../types/appointment.types";
 import { CreateAppointmentDto } from "../../dto/appointment.dto";
@@ -11,13 +10,13 @@ import { CreateWalletDto } from "../../dto/wallet.dto";
 import { ProcessPaymentDto } from "../../dto/wallet.dto";
 
 export class PaymentController {
-  private appointmentService: AppointmentService;
-  private walletService: WalletService;
+  private _appointmentService: IAppointmentService;
+  private _walletService: IWalletService;
   private stripe: Stripe;
 
-  constructor(appointmentService: AppointmentService, walletService: WalletService) {
-    this.appointmentService = appointmentService;
-    this.walletService = walletService;
+  constructor(appointmentService: IAppointmentService, walletService: IWalletService) {
+    this._appointmentService = appointmentService;
+    this._walletService = walletService;
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
       throw new Error("STRIPE_SECRET_KEY is not defined in environment variables");
@@ -60,7 +59,7 @@ export class PaymentController {
       }
 
       const slotDetails = { date, startTime, endTime };
-      const availabilityResponse = await this.appointmentService.checkSlotAvailability(slotDetails, staffId);
+      const availabilityResponse = await this._appointmentService.checkSlotAvailability(slotDetails, staffId);
 
       if (!availabilityResponse.success || !availabilityResponse.data) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -101,11 +100,11 @@ export class PaymentController {
 
   private async ensureWalletExists(ownerId: Types.ObjectId, ownerType: 'user' | 'shop' | 'admin', currency: string): Promise<any> {
     try {
-      let wallet = await this.walletService.getWalletByOwner(ownerId, ownerType);
+      let wallet = await this._walletService.getWalletByOwner(ownerId, ownerType);
 
       if (!wallet) {
         const createWalletDto = new CreateWalletDto(ownerId, ownerType, currency);
-        wallet = await this.walletService.createWallet(createWalletDto);
+        wallet = await this._walletService.createWallet(createWalletDto);
       }
 
       return wallet;
@@ -130,7 +129,6 @@ export class PaymentController {
         endTime,
       } = req.body;
 
-      // Validate required fields
       const requiredFields = [
         { field: 'paymentIntentId', value: paymentIntentId },
         { field: 'serviceId', value: serviceId },
@@ -157,7 +155,6 @@ export class PaymentController {
         return;
       }
 
-      // Validate ObjectIds
       const objectIdFields = [
         { field: 'serviceId', value: serviceId },
         { field: 'shopId', value: shopId },
@@ -193,7 +190,7 @@ export class PaymentController {
         slotDetails: { date, startTime, endTime },
         paymentDetails: {
           paymentIntentId,
-          amount: paymentAmount / 100, // Convert Stripe amount (in cents) to main unit
+          amount: paymentAmount / 100, 
           currency,
           status: PaymentStatus.Completed,
           method: PaymentMethod.Card,
@@ -205,7 +202,7 @@ export class PaymentController {
         notes: "",
       };
 
-      const appointmentResult = await this.appointmentService.createAppointment(appointmentData);
+      const appointmentResult = await this._appointmentService.createAppointment(appointmentData);
 
       if (!appointmentResult.success || !appointmentResult.data) {
         console.error("Failed to create appointment:", appointmentResult.message);
@@ -223,7 +220,6 @@ export class PaymentController {
         const userObjectId = new Types.ObjectId(userId);
         const shopObjectId = new Types.ObjectId(shopId);
 
-        // Get admin ID from environment or use default
         const adminIdEnv = process.env.ADMIN_ID;
         let adminObjectId: Types.ObjectId;
 
@@ -241,16 +237,14 @@ export class PaymentController {
           throw new Error("One or more wallets could not be ensured");
         }
 
-        // Get dynamic commission rate based on shop subscription
-        const commissionRate = await this.walletService.getCommissionRate(shopObjectId);
+        const commissionRate = await this._walletService.getCommissionRate(shopObjectId);
 
-        // Calculate commission
         const adminCommission = Math.round((paymentAmount / 100) * commissionRate * 100) / 100;
         const shopAmount = Math.round((paymentAmount / 100 - adminCommission) * 100) / 100;
 
 
-        await this.walletService.walletRepository.updateBalance(adminWallet._id, adminCommission, 'credit');
-        await this.walletService.walletRepository.addTransaction(adminWallet._id, {
+        await this._walletService.walletRepository.updateBalance(adminWallet._id, adminCommission, 'credit');
+        await this._walletService.walletRepository.addTransaction(adminWallet._id, {
           type: 'credit',
           amount: adminCommission,
           currency: currency,
@@ -258,8 +252,8 @@ export class PaymentController {
           referenceId: appointmentObjectId,
         });
 
-        await this.walletService.walletRepository.updateBalance(shopWallet._id, shopAmount, 'credit');
-        await this.walletService.walletRepository.addTransaction(shopWallet._id, {
+        await this._walletService.walletRepository.updateBalance(shopWallet._id, shopAmount, 'credit');
+        await this._walletService.walletRepository.addTransaction(shopWallet._id, {
           type: 'credit',
           amount: shopAmount,
           currency: currency,
@@ -268,8 +262,8 @@ export class PaymentController {
         });
 
         // Verify wallet balances after transaction
-        const updatedAdminWallet = await this.walletService.getWalletByOwner(adminObjectId, 'admin');
-        const updatedShopWallet = await this.walletService.getWalletByOwner(shopObjectId, 'shop');
+        const updatedAdminWallet = await this._walletService.getWalletByOwner(adminObjectId, 'admin');
+        const updatedShopWallet = await this._walletService.getWalletByOwner(shopObjectId, 'shop');
 
         if (!updatedShopWallet || updatedShopWallet.balance < shopAmount) {
           throw new Error(`Shop wallet balance verification failed. Expected at least ${shopAmount}, got ${updatedShopWallet?.balance || 'N/A'}`);
@@ -280,7 +274,7 @@ export class PaymentController {
         console.error("Error details:", walletError);
         console.error("Stack trace:", walletError.stack);
 
-        await this.appointmentService.cancelAppointment(
+        await this._appointmentService.cancelAppointment(
           appointmentObjectId.toString(),
           "Wallet transaction failed during payment confirmation"
         );
@@ -378,7 +372,7 @@ export class PaymentController {
 
       // Check slot availability
       const slotDetails = { date, startTime, endTime };
-      const availabilityResponse = await this.appointmentService.checkSlotAvailability(slotDetails, staffId);
+      const availabilityResponse = await this._appointmentService.checkSlotAvailability(slotDetails, staffId);
 
       if (!availabilityResponse.success || !availabilityResponse.data) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -427,7 +421,7 @@ export class PaymentController {
         notes: "",
       };
 
-      const appointmentResult = await this.appointmentService.createAppointment(appointmentData);
+      const appointmentResult = await this._appointmentService.createAppointment(appointmentData);
 
       if (!appointmentResult.success || !appointmentResult.data) {
         console.error("Failed to create appointment:", appointmentResult.message);
@@ -452,14 +446,14 @@ export class PaymentController {
           `Payment for appointment ${appointmentObjectId}`
         );
 
-        await this.walletService.processPayment(processPaymentDto);
+        await this._walletService.processPayment(processPaymentDto);
 
       } catch (walletError: any) {
         console.error("=== WALLET PAYMENT ERROR ===");
         console.error("Error details:", walletError);
         console.error("Stack trace:", walletError.stack);
 
-        await this.appointmentService.cancelAppointment(
+        await this._appointmentService.cancelAppointment(
           appointmentObjectId.toString(),
           "Wallet payment failed"
         );

@@ -113,7 +113,6 @@ export default function PetsPage() {
         navigate("/training-sessions")
         break
       case 'export':
-        console.log('Export data functionality to be implemented')
         break
       default:
         break

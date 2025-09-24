@@ -31,9 +31,7 @@ export const shopService = {
 
   async editShop(shopId: string, updateData: ShopUpdatePayload): Promise<Shop> {
     try {
-      console.log('Sending PATCH to:', `/profile/update/${shopId}`, 'with data:', updateData);
       const response = await shopaxios.patch<ShopApiResponse>(`/profile/update/${shopId}`, updateData);
-      console.log('API response:', response.data);
       const data = response.data.data;
       return {
         _id: data.id,

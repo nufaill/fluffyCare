@@ -1,18 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import { IAuthController } from '../../interfaces/controllerInterfaces/IAuthController';
-import { AuthService } from '../../services/user/auth.service';
+import { IUserAuthService } from '../../interfaces/serviceInterfaces/IAuthService';
 import { setAuthCookies, clearAuthCookies, updateAccessTokenCookie } from '../../util/cookie-helper';
 import { HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import { RegisterUserDTO, LoginUserDTO } from '../../dto/auth.dto';
 
 export class AuthController implements IAuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private _authService: IUserAuthService) { }
 
   register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: RegisterUserDTO = req.body;
-      const result = await this.authService.register(userData);
+      const result = await this._authService.register(userData);
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: 'OTP sent to your email. Please verify to complete registration.',
@@ -41,8 +41,8 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-      const result = await this.authService.verifyOtpAndCompleteRegistration({ email, otp }); // Pass as object
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, "user");
+      const result = await this._authService.verifyOtpAndCompleteRegistration({ email, otp }); 
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
       res.status(HTTP_STATUS.CREATED || 201).json({
         success: true,
         message: 'Email verified successfully! Your account has been created.',
@@ -62,7 +62,6 @@ export class AuthController implements IAuthController {
 
   resendOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      console.log(`🔍 [AuthController] Request body:`, req.body);
       const { email } = req.body;
       if (!email) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -71,7 +70,7 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-      await this.authService.resendOtp({ email });
+      await this._authService.resendOtp({ email });
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: 'New OTP sent to your email',
@@ -91,8 +90,8 @@ export class AuthController implements IAuthController {
   login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const loginData: LoginUserDTO = req.body;
-      const result = await this.authService.login(loginData);
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, "user");
+      const result = await this._authService.login(loginData);
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: 'Login successful',
@@ -120,8 +119,8 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-      const result = await this.authService.googleLogin(credential);
-      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, "user");
+      const result = await this._authService.googleLogin(credential);
+      setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: 'Google login successful',
@@ -149,8 +148,8 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-      const newAccessToken = await this.authService.refreshToken(refreshToken);
-      updateAccessTokenCookie(res, newAccessToken, 'user');
+      const newAccessToken = await this._authService.refreshToken(refreshToken);
+      updateAccessTokenCookie(res, newAccessToken);
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: 'Token refreshed successfully',
@@ -169,7 +168,6 @@ export class AuthController implements IAuthController {
 
   sendResetLink = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      console.log(`🔍 [AuthController] Request body:`, req.body);
       const { email } = req.body;
       if (!email) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -178,7 +176,7 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-     await this.authService.sendResetLink({email});
+     await this._authService.sendResetLink({email});
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: SUCCESS_MESSAGES.OTP_SEND_SUCCESS || 'Reset link sent successfully',
@@ -205,7 +203,7 @@ export class AuthController implements IAuthController {
         });
         return;
       }
-      await this.authService.resetPassword({token, password, confirmPassword});
+      await this._authService.resetPassword({token, password, confirmPassword});
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
         message: SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS || 'Password reset successful',

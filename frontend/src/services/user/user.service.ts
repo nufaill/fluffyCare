@@ -85,9 +85,7 @@ export const userService = {
   },
 
   async getPetById(petId: string): Promise<Pet> {
-    console.log('Fetching pet with ID:', petId);
     const res = await Useraxios.get(`/pets/${petId}`);
-    console.log('Pet API response:', res.data);
     let data = res.data.data;
     if (Array.isArray(data)) {
       if (data.length === 0) {
@@ -107,7 +105,6 @@ export const userService = {
   async updatePet(petId: string, updateData: Partial<CreatePetData>): Promise<Pet> {
     try {
       const res = await Useraxios.put(`/pets/${petId}`, updateData);
-      console.log('Update pet response:', res.data);
       const data = res.data.data;
       return {
         ...data,

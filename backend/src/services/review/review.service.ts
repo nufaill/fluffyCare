@@ -28,7 +28,6 @@ export class ReviewService implements IReviewService {
     constructor(private _reviewRepository: IReviewRepository) { }
 
     async createReview(reviewData: CreateReviewDTO): Promise<ReviewResponseDTO> {
-        // Validate rating
         if (reviewData.rating < 1 || reviewData.rating > 5) {
             throw new CustomError("Rating must be between 1 and 5");
         }
@@ -36,7 +35,6 @@ export class ReviewService implements IReviewService {
         const shopObjectId = new Types.ObjectId(reviewData.shopId);
         const userObjectId = new Types.ObjectId(reviewData.userId);
 
-        // Check if user already has a review for this shop
         const existingReview = await this._reviewRepository.checkUserReviewExists(
             shopObjectId,
             userObjectId
@@ -57,7 +55,6 @@ export class ReviewService implements IReviewService {
     }
 
     async updateReview(reviewId: string, userId: string, updateData: UpdateReviewDTO): Promise<ReviewResponseDTO> {
-        // Validate rating if provided
         if (updateData.rating !== undefined && (updateData.rating < 1 || updateData.rating > 5)) {
             throw new CustomError("Rating must be between 1 and 5");
         }
@@ -65,7 +62,6 @@ export class ReviewService implements IReviewService {
         const reviewObjectId = new Types.ObjectId(reviewId);
         const userObjectId = new Types.ObjectId(userId);
 
-        // Prepare update data
         const updatePayload: any = {};
         if (updateData.rating !== undefined) updatePayload.rating = updateData.rating;
         if (updateData.comment !== undefined) updatePayload.comment = updateData.comment?.trim();
@@ -84,14 +80,12 @@ export class ReviewService implements IReviewService {
     }
 
     async adminUpdateReview(reviewId: string, updateData: UpdateReviewDTO): Promise<ReviewResponseDTO> {
-        // Validate rating if provided
         if (updateData.rating !== undefined && (updateData.rating < 1 || updateData.rating > 5)) {
             throw new CustomError("Rating must be between 1 and 5");
         }
 
         const reviewObjectId = new Types.ObjectId(reviewId);
 
-        // Prepare update data
         const updatePayload: any = {};
         if (updateData.rating !== undefined) updatePayload.rating = updateData.rating;
         if (updateData.comment !== undefined) updatePayload.comment = updateData.comment?.trim();
@@ -105,7 +99,6 @@ export class ReviewService implements IReviewService {
         return new ReviewResponseDTO(updatedReview);
     }
 
-    // FIXED: Removed duplicated delete call and incorrect if-else logic. Now single call with 404 if not found.
     async deleteReview(reviewId: string): Promise<void> {
         const reviewObjectId = new Types.ObjectId(reviewId);
 
@@ -120,12 +113,10 @@ export class ReviewService implements IReviewService {
         page: number,
         limit: number
     ): Promise<PaginatedReviewsResponseDTO> {
-        // Validate shopId
         if (!Types.ObjectId.isValid(shopId)) {
             throw new CustomError("Invalid shop ID");
         }
 
-        // Validate pagination parameters
         if (page < 1) page = 1;
         if (limit < 1) limit = 10;
         if (limit > 100) limit = 100;
@@ -150,7 +141,6 @@ export class ReviewService implements IReviewService {
     }
 
     async getShopRatingSummary(shopId: string): Promise<RatingSummaryDTO> {
-        // Validate shopId
         if (!Types.ObjectId.isValid(shopId)) {
             throw new CustomError("Invalid shop ID");
         }
@@ -162,10 +152,9 @@ export class ReviewService implements IReviewService {
     }
 
     async getAllReviews(page: number, limit: number): Promise<PaginatedReviewsResponseDTO> {
-        // Validate pagination parameters
         if (page < 1) page = 1;
         if (limit < 1) limit = 10;
-        if (limit > 100) limit = 100; // Max limit to prevent performance issues
+        if (limit > 100) limit = 100; 
 
         const { reviews, totalCount } = await this._reviewRepository.getAllReviews(page, limit);
 

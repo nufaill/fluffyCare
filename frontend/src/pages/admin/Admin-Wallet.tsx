@@ -47,15 +47,12 @@ export default function AdminWalletPage() {
 
     try {
       setIsCreating(true);
-      console.log('Creating admin wallet...');
       
       const walletData = await walletService.createAdminWallet({
         ownerId: adminId,
         ownerType: 'admin',
         currency: 'INR',
       });
-
-      console.log('Wallet created successfully!');
       setWallet(walletService.formatWalletData(walletData));
       setError(null);
     } catch (error: any) {
@@ -84,8 +81,6 @@ export default function AdminWalletPage() {
       setIsLoading(true);
       setError(null);
       
-      console.log('Fetching admin wallet...');
-      
       const walletData = await walletService.getAdminWallet(adminId, 'admin');
       setWallet(walletService.formatWalletData(walletData));
     } catch (error: any) {
@@ -96,9 +91,7 @@ export default function AdminWalletPage() {
       if (error.message) {
         errorMessage = error.message;
         
-        // If wallet doesn't exist, try to create it
         if (error.message.includes('Wallet not found') || error.message.includes('404')) {
-          console.log('Wallet not found, attempting to create...');
           await createWallet();
           return;
         }
@@ -115,10 +108,9 @@ export default function AdminWalletPage() {
       fetchWallet();
     }
 
-    // Socket listeners for real-time updates
     socket.on('walletUpdated', (data) => {
       if (data.walletId === wallet?._id) {
-        fetchWallet(); // Refresh wallet data
+        fetchWallet(); 
       }
     });
 
@@ -128,27 +120,20 @@ export default function AdminWalletPage() {
   }, [adminId]);
 
   const handleAction = (actionType: string, data?: any) => {
-    console.log("Admin action triggered:", actionType, data);
     
-    // Implement admin-specific actions
     switch (actionType) {
       case 'adjust_balance':
-        console.log('Adjusting balance:', data);
         break;
       case 'manual_credit':
-        console.log('Manual credit:', data);
         break;
       case 'manual_debit':
-        console.log('Manual debit:', data);
         break;
       case 'commission_reports':
-        console.log('Generating commission reports');
         break;
       case 'download_statement':
         generateStatement();
         break;
       default:
-        console.log("Unknown action:", actionType, data);
     }
   };
 
@@ -177,7 +162,6 @@ export default function AdminWalletPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  // If no admin ID, show login message
   if (!adminId) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -202,7 +186,6 @@ export default function AdminWalletPage() {
     );
   }
 
-  // If creating wallet, show loading
   if (isCreating) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -228,7 +211,6 @@ export default function AdminWalletPage() {
     );
   }
 
-  // If error and no wallet, show clean create option
   if (error && !wallet) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -260,7 +242,6 @@ export default function AdminWalletPage() {
     );
   }
 
-  // If error but wallet exists, show error with retry
   if (error && wallet) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -293,7 +274,6 @@ export default function AdminWalletPage() {
     );
   }
 
-  // Main admin wallet view
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <div className="fixed top-0 left-0 right-0 z-50">

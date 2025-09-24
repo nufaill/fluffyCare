@@ -16,7 +16,6 @@ import { useSelector } from "react-redux"
 import type { RootState } from "@/redux/store"
 import { SlotCalendar } from "@/components/user/slot-calendar"
 import { EnhancedTimeSlotGenerator } from "@/components/user/TimeSlotGenerator"
-import { Badge } from "@/components/ui/Badge"
 import { useSocket } from "@/hooks/useSocket"
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -26,15 +25,15 @@ interface TimeSlotCategory {
   startHour: number
   endHour: number
 }
-interface BookingSuccessData {
-  appointmentId: string;
-  slotDetails: {
-    date: string;
-    startTime: string;
-    endTime: string;
-  };
-  staffId: string;
-}
+// interface BookingSuccessData {
+//   appointmentId: string;
+//   slotDetails: {
+//     date: string;
+//     startTime: string;
+//     endTime: string;
+//   };
+//   staffId: string;
+// }
 interface Staff {
   id: string
   name: string
@@ -123,9 +122,6 @@ export default function UserSlot() {
   const { socket, isConnected } = useSocket({
     shopId: shopId || '',
     onSlotBooked: (data) => {
-      console.log('Real-time slot booked:', data);
-
-      // If the booked slot matches currently selected slots, clear the selection
       setSelectedSlots(prev =>
         prev.filter(slot =>
           !(slot.staffId === data.staffId &&
@@ -136,11 +132,10 @@ export default function UserSlot() {
 
       toast('A slot was just booked by another user', {
         duration: 3000,
-        style: { background: '#2196f3', color: '#fff' }, // Blue background for info style
+        style: { background: '#2196f3', color: '#fff' }, 
       });
     },
     onSlotCanceled: (data) => {
-      console.log('Real-time slot canceled:', data);
       toast.success('A slot just became available!', { duration: 3000 });
     },
     enabled: !!shopId
@@ -163,7 +158,7 @@ export default function UserSlot() {
         const availabilityResponse = await Useraxios.get(`/${shopId}/availability`)
         setShopAvailability(availabilityResponse.data.data)
 
-        const staffResponse = await Useraxios.get(`/staff?shopId=${shopId}`)
+        const staffResponse = await Useraxios.get(`/staff/${shopId}`)
         const staffData = staffResponse.data.data.staff
 
         const enhancedStaff = staffData.map((member: any, index: number) => {
@@ -271,22 +266,12 @@ export default function UserSlot() {
     toast.success("Payment successful!");
     setIsPaymentModalOpen(false);
 
-    // Clear selected slots immediately (optimistic update)
     if (selectedSlots.length > 0) {
       const bookedSlot = selectedSlots[0];
       setSelectedSlots([]);
-
-      console.log('Booking successful, slot removed from UI:', {
-        staffId: bookedSlot.staffId,
-        date: bookedSlot.slotDate,
-        startTime: bookedSlot.startTime,
-      });
     }
-
-    // Clear any pending booking state
     localStorage.removeItem('pendingBooking');
 
-    // Navigate to appointments with a slight delay to show the success message
     setTimeout(() => {
       navigate("/appointments");
     }, 1000);

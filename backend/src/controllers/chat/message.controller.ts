@@ -15,9 +15,9 @@ import {
 import { BaseController } from './base.controller';
 
 export class MessageController extends BaseController implements IMessageController {
-  private readonly messageService: IMessageService;
-  private readonly chatService: IChatService;
-  private readonly socketService: ISocketService;
+  private readonly _messageService: IMessageService;
+  private readonly _chatService: IChatService;
+  private readonly _socketService: ISocketService;
 
   constructor(
     messageService: IMessageService,
@@ -25,9 +25,9 @@ export class MessageController extends BaseController implements IMessageControl
     socketService: ISocketService
   ) {
     super();
-    this.messageService = messageService;
-    this.chatService = chatService;
-    this.socketService = socketService;
+    this._messageService = messageService;
+    this._chatService = chatService;
+    this._socketService = socketService;
   }
 
   async createMessage(req: Request, res: Response): Promise<void> {
@@ -53,7 +53,7 @@ export class MessageController extends BaseController implements IMessageControl
         mediaUrl: mediaUrl || '',
       };
 
-      const message = await this.messageService.createMessage(createMessageDto);
+      const message = await this._messageService.createMessage(createMessageDto);
 
       const updateData = {
         lastMessage: content || (mediaUrl ? `[${messageType || 'Text'}]` : 'New message'),
@@ -61,10 +61,9 @@ export class MessageController extends BaseController implements IMessageControl
         lastMessageAt: message.createdAt,
       };
 
-      await this.chatService.updateLastMessage(chatId, updateData);
+      await this._chatService.updateLastMessage(chatId, updateData);
 
-      // Emit socket events
-      this.socketService.emitNewMessage({
+      this._socketService.emitNewMessage({
         chatId,
         messageId: message.id,
         senderId: senderId || 'unknown',
@@ -76,7 +75,7 @@ export class MessageController extends BaseController implements IMessageControl
         timestamp: message.createdAt.toISOString(),
       });
 
-      this.socketService.emitChatUpdate(chatId, {
+      this._socketService.emitChatUpdate(chatId, {
         type: 'chat-updated',
         lastMessage: updateData.lastMessage,
         lastMessageType: updateData.lastMessageType,
@@ -98,7 +97,7 @@ export class MessageController extends BaseController implements IMessageControl
         return;
       }
 
-      const message = await this.messageService.findMessageById(messageId);
+      const message = await this._messageService.findMessageById(messageId);
 
       if (!message) {
         this.sendErrorResponse(res, 404, 'Message not found');
@@ -122,14 +121,14 @@ export class MessageController extends BaseController implements IMessageControl
       }
 
       const deliveredDate = deliveredAt ? new Date(deliveredAt) : new Date();
-      const message = await this.messageService.markAsDelivered(messageId, deliveredDate);
+      const message = await this._messageService.markAsDelivered(messageId, deliveredDate);
 
       if (!message) {
         this.sendErrorResponse(res, 404, 'Message not found');
         return;
       }
 
-      this.socketService.emitMessageStatus({
+      this._socketService.emitMessageStatus({
         messageId,
         chatId: message.chatId,
         status: 'delivered',
@@ -154,14 +153,14 @@ export class MessageController extends BaseController implements IMessageControl
       }
 
       const readDate = readAt ? new Date(readAt) : new Date();
-      const message = await this.messageService.markAsRead(messageId, readDate);
+      const message = await this._messageService.markAsRead(messageId, readDate);
 
       if (!message) {
         this.sendErrorResponse(res, 404, 'Message not found');
         return;
       }
 
-      this.socketService.emitMessageStatus({
+      this._socketService.emitMessageStatus({
         messageId,
         chatId: message.chatId,
         status: 'read',
@@ -185,10 +184,10 @@ export class MessageController extends BaseController implements IMessageControl
       }
 
       const readDate = readAt ? new Date(readAt) : new Date();
-      const modifiedCount = await this.messageService.markMultipleAsRead(messageIds, readDate);
+      const modifiedCount = await this._messageService.markMultipleAsRead(messageIds, readDate);
 
       if (chatId) {
-        this.socketService.emitMessageStatus({
+        this._socketService.emitMessageStatus({
           messageId: 'multiple',
           chatId,
           status: 'read',
@@ -231,9 +230,9 @@ export class MessageController extends BaseController implements IMessageControl
       };
 
       const readDate = readAt ? new Date(readAt) : new Date();
-      const modifiedCount = await this.messageService.markChatMessagesAsRead(markMessagesDto, readDate);
+      const modifiedCount = await this._messageService.markChatMessagesAsRead(markMessagesDto, readDate);
 
-      this.socketService.emitMessageStatus({
+      this._socketService.emitMessageStatus({
         messageId: 'chat-messages',
         chatId,
         status: 'read',
@@ -273,7 +272,7 @@ export class MessageController extends BaseController implements IMessageControl
         receiverRole: receiverRole as 'User' | 'Shop',
       };
 
-      const unreadCount = await this.messageService.getUnreadCount(unreadCountDto);
+      const unreadCount = await this._messageService.getUnreadCount(unreadCountDto);
 
       this.sendSuccessResponse(res, 200, 'Unread count retrieved successfully', { unreadCount });
     } catch (error) {
@@ -298,14 +297,14 @@ export class MessageController extends BaseController implements IMessageControl
         emoji,
       };
 
-      const message = await this.messageService.addReaction(addReactionDto);
+      const message = await this._messageService.addReaction(addReactionDto);
 
       if (!message) {
         this.sendErrorResponse(res, 404, 'Message not found');
         return;
       }
 
-      this.socketService.emitMessageReaction({
+      this._socketService.emitMessageReaction({
         messageId,
         chatId: message.chatId,
         userId,
@@ -336,14 +335,14 @@ export class MessageController extends BaseController implements IMessageControl
         userId,
       };
 
-      const message = await this.messageService.removeReaction(removeReactionDto);
+      const message = await this._messageService.removeReaction(removeReactionDto);
 
       if (!message) {
         this.sendErrorResponse(res, 404, 'Message not found');
         return;
       }
 
-      this.socketService.emitMessageReaction({
+      this._socketService.emitMessageReaction({
         messageId,
         chatId: message.chatId,
         userId,
@@ -379,7 +378,7 @@ export class MessageController extends BaseController implements IMessageControl
         limit,
       };
 
-      const searchResults = await this.messageService.searchMessages(searchDto);
+      const searchResults = await this._messageService.searchMessages(searchDto);
 
       this.sendSuccessResponse(res, 200, 'Messages searched successfully', searchResults);
     } catch (error) {
@@ -397,7 +396,7 @@ export class MessageController extends BaseController implements IMessageControl
         return;
       }
 
-      const deleted = await this.messageService.deleteMessage(messageId);
+      const deleted = await this._messageService.deleteMessage(messageId);
 
       if (!deleted) {
         this.sendErrorResponse(res, 404, 'Message not found');
@@ -405,7 +404,7 @@ export class MessageController extends BaseController implements IMessageControl
       }
 
       if (chatId) {
-        this.socketService.emitChatUpdate(chatId, {
+        this._socketService.emitChatUpdate(chatId, {
           type: 'message-deleted',
           messageId
         });
@@ -426,9 +425,9 @@ export class MessageController extends BaseController implements IMessageControl
         return;
       }
 
-      const deletedCount = await this.messageService.deleteChatMessages(chatId);
+      const deletedCount = await this._messageService.deleteChatMessages(chatId);
 
-      this.socketService.emitChatUpdate(chatId, {
+      this._socketService.emitChatUpdate(chatId, {
         type: 'chat-messages-deleted',
         deletedCount
       });
@@ -473,7 +472,7 @@ export class MessageController extends BaseController implements IMessageControl
         limit,
       };
 
-      const messageList = await this.messageService.getMessagesByType(messagesByTypeDto);
+      const messageList = await this._messageService.getMessagesByType(messagesByTypeDto);
 
       this.sendSuccessResponse(res, 200, `${messageType} messages retrieved successfully`, messageList);
     } catch (error) {
@@ -490,7 +489,7 @@ export class MessageController extends BaseController implements IMessageControl
         return;
       }
 
-      const stats = await this.messageService.getChatMessageStats(chatId);
+      const stats = await this._messageService.getChatMessageStats(chatId);
 
       this.sendSuccessResponse(res, 200, 'Chat message statistics retrieved successfully', stats);
     } catch (error) {
@@ -509,13 +508,12 @@ export class MessageController extends BaseController implements IMessageControl
         return;
       }
 
-      // Handle edge case where page=0 is sent (treat as page=1)
       if (page <= 0) {
         console.log(`getChatMessages: Adjusting page from ${page} to 1`);
         page = 1;
       }
 
-      const messageList = await this.messageService.getChatMessages(chatId, page, limit);
+      const messageList = await this._messageService.getChatMessages(chatId, page, limit);
 
       if (messageList.totalMessages > 0 && (!messageList.messages || messageList.messages.length === 0)) {
         console.warn(`getChatMessages: Data inconsistency detected - total=${messageList.totalMessages} but messages array is empty`);
@@ -537,7 +535,7 @@ export class MessageController extends BaseController implements IMessageControl
         return;
       }
 
-      const message = await this.messageService.getLatestMessage(chatId);
+      const message = await this._messageService.getLatestMessage(chatId);
 
       if (!message) {
         this.sendErrorResponse(res, 404, 'No messages found in this chat');

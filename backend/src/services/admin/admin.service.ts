@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { AdminRepository } from '../../repositories/admin/admin.repository';
+import { IAdminRepository } from '../../interfaces/repositoryInterfaces/IAdminRepository';
 import { JwtService } from '../jwt/jwt.service';
 import { LoginDto, AuthResponseDto, AdminResponseDto } from '../../dto/admin.dto';
 import { AdminDocument } from '../../models/admin.model';
@@ -9,21 +9,25 @@ import { IAdminService } from '../../interfaces/serviceInterfaces/IAdminService'
 
 export class AuthService implements IAdminService {
   constructor(
-    private adminRepository: AdminRepository,
+    private _adminRepository: IAdminRepository,
     private jwtService: JwtService
-  ) {}
+  ) { }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
-    const admin = await this.adminRepository.findByEmail(email);
+    const admin = await this._adminRepository.findByEmail(email);
     if (!admin) {
       throw new CustomError(ERROR_MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
     }
 
     const isPasswordValid = await bcrypt.compare(password, admin.password);
-    if (!admin) {
+    if (!isPasswordValid) {
       throw new CustomError(ERROR_MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
+    }
+
+    if (!admin._id) {
+      throw new CustomError('Admin document missing ID', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
     const tokens = this.generateTokens(admin._id.toString(), admin.email);

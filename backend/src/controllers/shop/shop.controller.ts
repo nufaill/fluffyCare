@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from '../../shared/constant';
-import { ShopService } from "../../services/shop/shop.service";
-import { ShopAvailabilityService } from "../../services/shop/shopAvailability.service";
-import { WalletService } from "../../services/wallet/wallet.service";
+import { IShopService } from '../../interfaces/serviceInterfaces/IShopService';
+import { IShopAvailabilityService } from '../../interfaces/serviceInterfaces/IShopAvailabilityService';
+import { IWalletService } from '../../interfaces/serviceInterfaces/IWalletService';
 import { CustomError } from '../../util/CustomerError';
 import { CreateShopData } from 'types/Shop.types';
 import { UpdateShopStatusDTO, UpdateShopDTO, RejectShopDTO, ShopResponseDTO, ShopAvailabilityDTO } from '../../dto/shop.dto';
@@ -16,9 +16,9 @@ export class ShopController implements IShopController {
   private stripe: Stripe;
 
   constructor(
-    private shopService: ShopService,
-    private shopAvailabilityService: ShopAvailabilityService,
-    private walletService: WalletService
+    private _shopService: IShopService,
+    private _shopAvailabilityService: IShopAvailabilityService,
+    private _walletService: IWalletService
   ) {
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
@@ -42,7 +42,7 @@ export class ShopController implements IShopController {
         return;
       }
 
-      const { shops, total, page: currentPage, limit: currentLimit } = await this.shopService.getAllShops(page, limit);
+      const { shops, total, page: currentPage, limit: currentLimit } = await this._shopService.getAllShops(page, limit);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -94,7 +94,7 @@ export class ShopController implements IShopController {
         return;
       }
 
-      const updatedShop = await this.shopService.updateShopStatus(shopId, body.isActive);
+      const updatedShop = await this._shopService.updateShopStatus(shopId, body.isActive);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -131,7 +131,7 @@ export class ShopController implements IShopController {
         return;
       }
 
-      const planName = await this.shopService.getShopSubscription(shopId);
+      const planName = await this._shopService.getShopSubscription(shopId);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -234,7 +234,7 @@ export class ShopController implements IShopController {
 
       const session = await mongoose.startSession();
       await session.withTransaction(async () => {
-        const updatedShop = await this.shopService.updateShopSubscription(shopId, {
+        const updatedShop = await this._shopService.updateShopSubscription(shopId, {
           subscriptionId: subscriptionId,
           plan: planName,
           subscriptionStart: subscriptionStart ? new Date(subscriptionStart) : new Date(),
@@ -243,7 +243,7 @@ export class ShopController implements IShopController {
         });
 
         const adminId = process.env.ADMIN_ID || '685ff3212adf35c013419da4';
-        const adminWallet = await this.walletService.getWalletByOwner(new Types.ObjectId(adminId), 'admin', session);
+        const adminWallet = await this._walletService.getWalletByOwner(new Types.ObjectId(adminId), 'admin', session);
         if (!adminWallet) {
           throw new CustomError('Admin wallet not found', HTTP_STATUS.NOT_FOUND);
         }
@@ -256,12 +256,12 @@ export class ShopController implements IShopController {
           referenceId: undefined,
         };
 
-        await this.walletService.walletRepository.updateBalance(
+        await this._walletService.walletRepository.updateBalance(
           new Types.ObjectId(adminWallet._id),
           adminTransaction.amount,
           'credit'
         );
-        await this.walletService.walletRepository.addTransaction(
+        await this._walletService.walletRepository.addTransaction(
           new Types.ObjectId(adminWallet._id),
           adminTransaction
         );
@@ -281,7 +281,6 @@ export class ShopController implements IShopController {
       });
     }
   };
-
   updateShopSubscription = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { shopId } = req.params;
@@ -303,7 +302,7 @@ export class ShopController implements IShopController {
         return;
       }
 
-      const updatedShop = await this.shopService.updateShopSubscription(shopId, {
+      const updatedShop = await this._shopService.updateShopSubscription(shopId, {
         subscriptionId,
         plan: planName,
         subscriptionStart: subscriptionStart ? new Date(subscriptionStart) : undefined,
@@ -346,7 +345,7 @@ export class ShopController implements IShopController {
         return;
       }
 
-      const { shops, total, page: currentPage, limit: currentLimit } = await this.shopService.getUnverifiedShops(page, limit);
+      const { shops, total, page: currentPage, limit: currentLimit } = await this._shopService.getUnverifiedShops(page, limit);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -389,7 +388,7 @@ export class ShopController implements IShopController {
         return;
       }
 
-      const approvedShop = await this.shopService.approveShop(shopId);
+      const approvedShop = await this._shopService.approveShop(shopId);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -428,7 +427,6 @@ export class ShopController implements IShopController {
         return;
       }
 
-      // Validate rejection reason
       if (body.rejectionReason !== undefined) {
         if (typeof body.rejectionReason !== 'string') {
           res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -463,7 +461,7 @@ export class ShopController implements IShopController {
         }
       }
 
-      const shop = await this.shopService.rejectShop(shopId, body.rejectionReason);
+      const shop = await this._shopService.rejectShop(shopId, body.rejectionReason);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -503,7 +501,7 @@ export class ShopController implements IShopController {
         return;
       }
 
-      const shop = await this.shopService.getShopById(shopId);
+      const shop = await this._shopService.getShopById(shopId);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -620,7 +618,7 @@ export class ShopController implements IShopController {
       if (body.streetAddress) updateData.streetAddress = body.streetAddress;
       if (body.description) updateData.description = body.description;
 
-      const updatedShop = await this.shopService.updateShopProfile(shopId, updateData);
+      const updatedShop = await this._shopService.updateShopProfile(shopId, updateData);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
@@ -648,7 +646,7 @@ export class ShopController implements IShopController {
   public getShopAvailability = async (req: Request, res: Response): Promise<void> => {
     try {
       const { shopId } = req.params;
-      const availability = await this.shopAvailabilityService.getShopAvailability(shopId);
+      const availability = await this._shopAvailabilityService.getShopAvailability(shopId);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: availability,
@@ -668,7 +666,7 @@ export class ShopController implements IShopController {
     try {
       const { shopId } = req.params;
       const availabilityData = req.body;
-      const updatedShop = await this.shopAvailabilityService.updateShopAvailability(shopId, availabilityData);
+      const updatedShop = await this._shopAvailabilityService.updateShopAvailability(shopId, availabilityData);
       res.status(HTTP_STATUS.OK).json({
         success: true,
         data: updatedShop,
@@ -686,7 +684,7 @@ export class ShopController implements IShopController {
 
   getShopsOverview = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const overview = await this.shopService.getShopsOverview();
+      const overview = await this._shopService.getShopsOverview();
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,

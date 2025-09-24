@@ -188,7 +188,6 @@ export class AppointmentService implements IAppointmentService {
           appointmentId: appointment._id.toString(),
           userId: appointmentData.userId,
         });
-        console.log('Socket event emitted for slot booking');
       } catch (socketError) {
         console.error('Failed to emit socket event for slot booking:', socketError);
       }
@@ -444,7 +443,6 @@ export class AppointmentService implements IAppointmentService {
             appointmentId: updatedAppointment._id.toString(),
             userId: updatedAppointment.userId.toString()
           });
-          console.log('Socket event emitted for slot update');
         } catch (socketError) {
           console.error('Failed to emit socket event for slot update:', socketError);
         }

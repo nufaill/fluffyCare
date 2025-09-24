@@ -77,7 +77,6 @@ export class AuthService implements IShopAuthService {
 
     const existingShop = await this._shopRepository.findByEmail(email);
     if (existingShop) {
-      console.log(`❌ [AuthService] Shop already exists: ${email}`);
       throw new CustomError('Shop with this email already exists', HTTP_STATUS.CONFLICT);
     }
     const hashedPassword = await bcrypt.hash(password, this._saltRounds);
@@ -94,57 +93,37 @@ export class AuthService implements IShopAuthService {
     };
 
     const otp = generateOtp();
-    console.log(`🔢 [AuthService] Generated OTP: ${otp} for ${email}`);
     await this._otpRepository.createOtp(email, otp, tempShopData);
 
     const shopName = shopData.name;
     await sendOtpEmail(email, otp, shopName);
-
-    console.log(`📧 [AuthService] OTP sent to ${email}`);
     return { email };
   }
 
   async verifyOtpAndCompleteRegistration(data: VerifyOtpDTO): Promise<ShopAuthResponse> {
     const { email, otp } = data;
-    console.log(`🔍 [AuthService] Verifying OTP for email: ${email}`);
 
     const verificationResult = await this._otpRepository.verifyOtp(email, otp);
 
     if (!verificationResult.isValid) {
       if (verificationResult.isExpired) {
-        console.log(`⏰ [AuthService] OTP expired for ${email}`);
         throw new CustomError('OTP has expired. Please request a new one.', HTTP_STATUS.BAD_REQUEST);
       }
       if (verificationResult.maxAttemptsReached) {
-        console.log(`🚫 [AuthService] Max attempts reached for ${email}`);
         throw new CustomError('Maximum verification attempts reached. Please request a new OTP.', HTTP_STATUS.BAD_REQUEST);
       }
-      console.log(`❌ [AuthService] Invalid OTP for ${email}`);
       throw new CustomError('Invalid OTP. Please try again.', HTTP_STATUS.BAD_REQUEST);
     }
 
-    console.log(`✅ [AuthService] OTP verified successfully for ${email}`);
     const shopData = verificationResult.userData as unknown as CreateShopData;
 
     if (shopData.location) {
       this._geoValidator.validate(shopData.location);
     }
 
-    console.log(`🏪 [AuthService] Creating shop with data:`, {
-      email: shopData.email,
-      name: shopData.name,
-      location: shopData.location,
-    });
-
     const shop = await this._shopRepository.createShop({ ...shopData, isVerified: { status: 'pending', reason: null } });
-    console.log(`✅ [AuthService] Shop created successfully:`, {
-      id: shop.id,
-      email: shop.email,
-    });
 
     const tokens = this._generateTokens(shop.id, shop.email);
-
-    console.log(`🎟️ [AuthService] Tokens generated successfully for ${email}`);
 
     return {
       success: true,
@@ -170,15 +149,11 @@ export class AuthService implements IShopAuthService {
 
   async resendOtp(data: ResendOtpDTO): Promise<void> {
     const { email } = data;
-    console.log(`🔄 [AuthService] Resending OTP for email: ${email}`);
 
     const existingOtp = await this._otpRepository.findByEmail(email);
     if (!existingOtp) {
-      console.log(`❌ [AuthService] No pending verification found for ${email}`);
       throw new CustomError('No pending verification found for this email. Please start registration again.', HTTP_STATUS.BAD_REQUEST);
     }
-
-    console.log(`✅ [AuthService] Found existing OTP record for ${email}`);
 
     const userData = existingOtp.userData as unknown as CreateShopData;
     if (!userData.location) {
@@ -187,19 +162,15 @@ export class AuthService implements IShopAuthService {
     this._geoValidator.validate(userData.location);
 
     const otp = generateOtp();
-    console.log(`🔢 [AuthService] Generated new OTP for ${email}`);
 
     await this._otpRepository.createOtp(email, otp, existingOtp.userData);
 
     const shopName = userData?.name || 'Shop';
     await sendOtpEmail(email, otp, shopName);
-
-    console.log(`📧 [AuthService] New OTP sent to ${email}`);
   }
 
   async login(data: LoginUserDTO): Promise<ShopAuthResponse> {
     try {
-      console.log('🔧 [AuthService] Starting login process...');
 
       const normalizedEmail = data.email.trim().toLowerCase();
       const shop = await this._shopRepository.findByEmailWithPassword(normalizedEmail);
@@ -214,7 +185,6 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Shop account is inactive', HTTP_STATUS.FORBIDDEN);
       }
 
-      console.log('🔍 [AuthService] Verifying password...');
       const isValidPassword = await bcrypt.compare(data.password, shop.password);
 
       if (!isValidPassword) {
@@ -222,8 +192,6 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Invalid email or password', HTTP_STATUS.UNAUTHORIZED);
       }
 
-      // Generate tokens regardless of verification status
-      console.log('🎟️ [AuthService] Generating JWT tokens...');
       const tokens = this._generateTokens(shop.id, shop.email);
 
       return {
@@ -257,7 +225,6 @@ export class AuthService implements IShopAuthService {
 
   async refreshToken(refreshToken: string): Promise<string> {
     try {
-      console.log('🔧 [AuthService] Refreshing token...');
 
       const payload = this._jwtService.verifyRefreshToken(refreshToken);
 
@@ -283,7 +250,6 @@ export class AuthService implements IShopAuthService {
         role: 'shop',
       });
 
-      console.log('✅ [AuthService] Token refreshed successfully');
       return newAccessToken;
     } catch (error) {
       console.error('❌ [AuthService] Token refresh error:', error);
@@ -297,7 +263,6 @@ export class AuthService implements IShopAuthService {
   async sendResetLink(data: SendResetLinkDTO): Promise<void> {
     try {
       const { email } = data;
-      console.log('🔧 [AuthService] Sending reset link for email:', email);
 
       const shop = await this._shopRepository.findByEmail(email);
       if (!shop) {
@@ -314,7 +279,6 @@ export class AuthService implements IShopAuthService {
       const emailContent = PASSWORD_RESET_MAIL_CONTENT(resetLink);
       await this._emailService.sendOtpEmail(email, 'Reset Your Shop Password', emailContent);
 
-      console.log('✅ [AuthService] Reset link sent successfully');
     } catch (error) {
       console.error('❌ [AuthService] Send reset link error:', error);
       throw error instanceof CustomError ? error : new CustomError('Failed to send reset link', HTTP_STATUS.INTERNAL_SERVER_ERROR);
@@ -324,7 +288,6 @@ export class AuthService implements IShopAuthService {
   async resetPassword(data: ResetPasswordDTO): Promise<void> {
     try {
       const { token, password, confirmPassword } = data;
-      console.log('🔧 [AuthService] Processing password reset with token');
 
       if (password !== confirmPassword) {
         throw new CustomError('Passwords do not match', HTTP_STATUS.BAD_REQUEST);
@@ -334,7 +297,6 @@ export class AuthService implements IShopAuthService {
         throw new CustomError('Password must be at least 8 characters long', HTTP_STATUS.BAD_REQUEST);
       }
 
-      console.log('🔍 [AuthService] Checking reset token:', token);
       const shop = await this._shopRepository.findByResetToken(token);
 
       if (!shop) {
@@ -345,7 +307,6 @@ export class AuthService implements IShopAuthService {
 
       await this._shopRepository.updatePasswordAndClearToken(new Types.ObjectId(shop.id), hashedPassword);
 
-      console.log('✅ [AuthService] Password reset successfully');
     } catch (error) {
       console.error('❌ [AuthService] Reset password error:', error);
       throw error instanceof CustomError ? error : new CustomError('Failed to reset password', HTTP_STATUS.INTERNAL_SERVER_ERROR);
@@ -354,7 +315,6 @@ export class AuthService implements IShopAuthService {
 
   async getShopById(id: string): Promise<ShopResponseDTO | null> {
     try {
-      console.log('🔧 [AuthService] Fetching shop by ID:', id);
 
       const shop = await this._shopRepository.findById(id);
       if (!shop) {

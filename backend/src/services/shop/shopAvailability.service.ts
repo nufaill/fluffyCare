@@ -1,4 +1,4 @@
-import { ShopRepository } from '../../repositories/shop.repository';
+import IShopRepository from '../../interfaces/repositoryInterfaces/IShopRepository';
 import { CustomError } from '../../util/CustomerError';
 import { HTTP_STATUS } from '../../shared/constant';
 import { ShopAvailabilityDTO, ShopResponseDTO } from '../../dto/shop.dto';
@@ -6,7 +6,7 @@ import { IShopAvailabilityService } from '../../interfaces/serviceInterfaces/ISh
 import { ShopAvailability } from '../../types/Shop.types';
 
 export class ShopAvailabilityService implements IShopAvailabilityService {
-    constructor(private readonly shopRepository: ShopRepository) { }
+    constructor(private readonly _shopRepository: IShopRepository) { }
 
     private validateAvailabilityData(data: ShopAvailabilityDTO): void {
         if (!data.workingDays || !Array.isArray(data.workingDays) || data.workingDays.length === 0) {
@@ -43,7 +43,7 @@ export class ShopAvailabilityService implements IShopAvailabilityService {
             throw new CustomError('Invalid shop ID', HTTP_STATUS.BAD_REQUEST);
         }
 
-        const shop = await this.shopRepository.findById(shopId);
+        const shop = await this._shopRepository.findById(shopId);
         if (!shop) {
             throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
         }
@@ -87,7 +87,7 @@ export class ShopAvailabilityService implements IShopAvailabilityService {
             throw new CustomError('Invalid shop ID', HTTP_STATUS.BAD_REQUEST);
         }
 
-        const shop = await this.shopRepository.findById(shopId);
+        const shop = await this._shopRepository.findById(shopId);
         if (!shop) {
             throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
         }
@@ -101,7 +101,7 @@ export class ShopAvailabilityService implements IShopAvailabilityService {
             customHolidays: data.customHolidays || [],
         };
 
-        const updatedShop = await this.shopRepository.updateShop(shopId, { shopAvailability: updatedAvailability });
+        const updatedShop = await this._shopRepository.updateShop(shopId, { shopAvailability: updatedAvailability });
         if (!updatedShop) {
             throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
         }

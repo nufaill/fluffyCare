@@ -8,7 +8,6 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
-// Retention period (in days)
 const RETENTION_DAYS = 7;
 
 const cleanupOldLogs = () => {

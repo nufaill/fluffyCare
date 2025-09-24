@@ -82,7 +82,6 @@ export default function UserWalletPage() {
 
       const walletData = await walletService.getUserWallet(userId, 'user');
       setWallet(walletService.formatWalletData(walletData));
-      console.log('Fetched transactions:', walletData.transactions.length); // Debug log
     } catch (error: any) {
       console.error('Wallet fetch error:', error);
 
@@ -139,7 +138,6 @@ export default function UserWalletPage() {
           break;
 
         default:
-          console.log("Action triggered:", actionType, data);
       }
     } catch (error) {
       console.error('Action error:', error);
