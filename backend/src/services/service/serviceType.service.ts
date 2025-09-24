@@ -1,3 +1,4 @@
+import { FilterQuery, SortOrder } from 'mongoose';
 import { IServiceTypeRepository } from '../../interfaces/repositoryInterfaces/IServiceTypeRepository';
 import { CreateServiceTypeDTO, UpdateServiceTypeDTO, UpdateServiceTypeStatusDTO } from '../../dto/serviceType.dto';
 import { ServiceTypeDocument } from '../../types/serviceType.type';
@@ -29,8 +30,8 @@ export class ServiceTypeService implements IServiceTypeService {
         return newServiceType;
     }
 
-    async getAllServiceTypes(): Promise<ServiceTypeDocument[]> {
-        return await this._repository.getAllServiceTypes();
+    async getAllServiceTypes(options: { filter?: FilterQuery<ServiceTypeDocument>; sort?: Record<string, SortOrder> } = {}): Promise<ServiceTypeDocument[]> {
+        return await this._repository.getAllServiceTypes(options.filter, options.sort);
     }
 
     async getServiceTypeById(id: string): Promise<ServiceTypeDocument> {

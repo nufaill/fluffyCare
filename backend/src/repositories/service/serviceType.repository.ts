@@ -1,3 +1,4 @@
+import { FilterQuery, SortOrder } from 'mongoose';
 import { ServiceType } from '../../models/serviceType.model';
 import { CreateServiceType, ServiceTypeDocument } from '../../types/serviceType.type';
 import { IServiceTypeRepository } from '../../interfaces/repositoryInterfaces/IServiceTypeRepository';
@@ -14,8 +15,12 @@ export class ServiceTypeRepository implements IServiceTypeRepository {
         return await serviceType.save();
     }
 
-    async getAllServiceTypes(): Promise<ServiceTypeDocument[]> {
-        return await this._model.find().sort({ createdAt: -1 });
+    async getAllServiceTypes(filter?: FilterQuery<ServiceTypeDocument>, sort?: Record<string, SortOrder>): Promise<ServiceTypeDocument[]> {
+        let query = this._model.find(filter || {});
+        if (sort) {
+            query = query.sort(sort);
+        }
+        return await query;
     }
 
     async getServiceTypeById(id: string): Promise<ServiceTypeDocument | null> {
@@ -31,7 +36,7 @@ export class ServiceTypeRepository implements IServiceTypeRepository {
     }
 
     async checkServiceTypeExists(name: string, excludeId?: string): Promise<boolean> {
-        const query: any = { name: { $regex: new RegExp(`^${name}$`, 'i') } };
+        const query: FilterQuery<ServiceTypeDocument> = { name: name };
         if (excludeId) {
             query._id = { $ne: excludeId };
         }

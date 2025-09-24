@@ -14,11 +14,12 @@ export class ServiceTypeController implements IServiceTypeController {
     async createServiceType(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const serviceTypeData: CreateServiceTypeDTO = req.body;
-
-            if (!serviceTypeData.name || typeof serviceTypeData.name !== 'string' || serviceTypeData.name.trim().length === 0) {
+            
+            const nameValidation = this.validateName(serviceTypeData.name);
+            if (!nameValidation.isValid) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: 'Service type name is required and must be a non-empty string'
+                    message: nameValidation.message
                 });
                 return;
             }
@@ -37,7 +38,29 @@ export class ServiceTypeController implements IServiceTypeController {
 
     async getAllServiceTypes(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const serviceTypes = await this._service.getAllServiceTypes();
+            const { search, isActive, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+            
+            const filter: Record<string, unknown> = {};
+            if (typeof search === 'string' && search.trim()) {
+                filter.name = { $regex: search.trim(), $options: 'i' };
+            }
+            if (typeof isActive === 'string' && ['true', 'false'].includes(isActive)) {
+                filter.isActive = isActive === 'true';
+            }
+
+            const validSortFields = ['name', 'createdAt', 'updatedAt', 'isActive'] as const;
+            type SortField = typeof validSortFields[number];
+
+            const validatedSortBy: SortField = validSortFields.includes(sortBy as SortField)
+                ? sortBy as SortField
+                : 'createdAt';
+
+            const validatedSortOrder = sortOrder === 'asc' ? 1 : -1;
+
+            const serviceTypes = await this._service.getAllServiceTypes({
+                filter,
+                sort: { [validatedSortBy]: validatedSortOrder }
+            });
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -86,10 +109,11 @@ export class ServiceTypeController implements IServiceTypeController {
                 return;
             }
 
-            if (!serviceTypeData.name || typeof serviceTypeData.name !== 'string' || serviceTypeData.name.trim().length === 0) {
+            const nameValidation = this.validateName(serviceTypeData.name);
+            if (!nameValidation.isValid) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: 'Service type name is required and must be a non-empty string'
+                    message: nameValidation.message
                 });
                 return;
             }
@@ -137,5 +161,25 @@ export class ServiceTypeController implements IServiceTypeController {
         } catch (error) {
             next(error);
         }
+    }
+
+    private validateName(name: string): { isValid: boolean; message: string } {
+        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+            return { isValid: false, message: 'Service type name is required' };
+        }
+
+        if (name.includes(' ')) {
+            return { isValid: false, message: 'Service type name cannot contain spaces' };
+        }
+
+        if (name.length < 3 || name.length > 20) {
+            return { isValid: false, message: 'Service type name must be between 3 and 20 characters' };
+        }
+
+        if (!/^[a-zA-Z0-9]+$/.test(name)) {
+            return { isValid: false, message: 'Service type name can only contain alphanumeric characters' };
+        }
+
+        return { isValid: true, message: '' };
     }
 }

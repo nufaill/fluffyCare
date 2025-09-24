@@ -508,9 +508,14 @@ export const createServiceType = async (data: { name: string }) => {
   }
 };
 
-export const getAllServiceTypes = async () => {
+export const getAllServiceTypes = async (params: {
+  search?: string;
+  isActive?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+} = {}) => {
   try {
-    const response = await AdminAxios.get('/service-types');
+    const response = await AdminAxios.get('/service-types',{ params });
 
     if (response.status !== 200) {
       throw new Error(`HTTP error! status: ${response.status}`);
