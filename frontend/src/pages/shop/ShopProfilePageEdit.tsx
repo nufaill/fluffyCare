@@ -1,4 +1,3 @@
-// src/pages/shop/ShopProfilePageEdit.tsx
 import { useEffect, useState } from 'react';
 import { PetCareLayout } from '@/components/layout/PetCareLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +19,6 @@ import { cloudinaryUtils } from '@/utils/cloudinary/cloudinary';
 import type { RootState } from '@/redux/store';
 import { addShop } from '@/redux/slices/shop.slice';
 
-// Validation schema
 const shopSchema = z.object({
   name: z.string().min(3, 'Shop name must be at least 3 characters').max(100, 'Shop name must be less than 100 characters'),
   phone: z.string().regex(/^\+?[\d\s-]{10,}$/, 'Please enter a valid phone number'),
@@ -40,14 +38,14 @@ export default function ShopEditPage() {
   const { shopData: shop } = useSelector((state: RootState) => state.shop);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [, setPreviewLogo] = useState<string | null>(null);
+  const [previewLogo, setPreviewLogo] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [locationAddress, setLocationAddress] = useState<string>('');
   const [loadingLocation, setLoadingLocation] = useState(false);
   
-  const shopId = shop?._id;
+  const shopId = shop?.id;
 
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<ShopFormData>({
     resolver: zodResolver(shopSchema),
@@ -58,30 +56,33 @@ export default function ShopEditPage() {
       streetAddress: '',
       description: '',
       logo: '',
+      location: undefined 
     },
   });
 
   useEffect(() => {
     if (shop) {
       reset({
-        name: shop.name,
-        phone: shop.phone,
-        city: shop.city,
-        streetAddress: shop.streetAddress,
-        description: shop.description,
+        name: shop.name || '',
+        phone: shop.phone || '',
+        city: shop.city || '',
+        streetAddress: shop.streetAddress || '',
+        description: shop.description || '',
         logo: shop.logo || '',
+        location: shop.location || undefined
       });
       setPreviewLogo(shop.logo ? cloudinaryUtils.getFullUrl(shop.logo) : null);
 
-      // Set current location if available
       if (shop.location?.coordinates) {
         setCurrentLocation({
           lat: shop.location.coordinates[1],
           lng: shop.location.coordinates[0]
         });
       }
+    } else {
+      console.warn('No shop data available');
     }
-  }, [shop, reset, navigate]);
+  }, [shop, reset]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -107,13 +108,16 @@ export default function ShopEditPage() {
       setValue('logo', relativePath);
       setPreviewLogo(cloudinaryUtils.getFullUrl(relativePath));
       setFileError(null);
+      toast.success('Logo uploaded successfully');
     } catch (error) {
       setFileError('Failed to upload image');
       console.error('Image upload error:', error);
+      toast.error('Failed to upload logo');
     } finally {
       setLoading(false);
     }
   };
+
   const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
     try {
       const response = await fetch(
@@ -126,6 +130,7 @@ export default function ShopEditPage() {
       return `${lat}, ${lng}`;
     }
   };
+
   const getCurrentLocation = () => {
     setLoadingLocation(true);
     if (navigator.geolocation) {
@@ -138,18 +143,19 @@ export default function ShopEditPage() {
             coordinates: [longitude, latitude]
           });
 
-          // Get address from coordinates
           try {
             const address = await reverseGeocode(latitude, longitude);
             setLocationAddress(address);
+            toast.success('Location retrieved successfully');
           } catch (error) {
             console.error('Error getting address:', error);
+            toast.error('Failed to retrieve address');
           }
           setLoadingLocation(false);
         },
         (error) => {
           console.error('Error getting location:', error);
-          toast.error('Unable to get current location');
+          toast.error(`Unable to get current location: ${error.message}`);
           setLoadingLocation(false);
         }
       );
@@ -159,30 +165,34 @@ export default function ShopEditPage() {
     }
   };
 
-const onSubmit = async (data: ShopFormData) => {
-  
+  const onSubmit = async (data: ShopFormData) => {
     if (!shopId) {
-        toast.error('Shop ID not found');
-        return;
+      toast.error('Shop ID not found');
+      console.error('Shop ID is undefined');
+      return;
     }
 
     try {
-        setLoading(true);
-        const payload = {
-            ...data,
-            logo: data.logo || undefined,
-        };
-        const shopData = await shopService.editShop(shopId, payload); 
-        dispatch(addShop(shopData));
-        toast.success('Profile updated successfully');
-        navigate('/shop/profile');
-    } catch (error) {
-        console.error('API error details:', error);
-        toast.error('Failed to update profile: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      setLoading(true);
+      const payload = {
+        ...data,
+        logo: data.logo || undefined,
+        location: data.location || undefined 
+      };
+      const shopData = await shopService.editShop(shopId, payload);
+      if (!shopData) {
+        throw new Error('No shop data returned from API');
+      }
+      dispatch(addShop(shopData));
+      toast.success('Profile updated successfully');
+      navigate('/shop/profile');
+    } catch (error: any) {
+      console.error('API error details:', error.response?.data || error.message);
+      toast.error(`Failed to update profile: ${error.message || 'Unknown error'}`);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   const handleCancel = () => {
     navigate('/shop/profile');
@@ -218,7 +228,7 @@ const onSubmit = async (data: ShopFormData) => {
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <Avatar className="h-24 w-24 border-4 border-gray-100 shadow-lg">
-                      <AvatarImage src={cloudinaryUtils.getFullUrl(shop.logo ?? "")} alt={shop.name} />
+                      <AvatarImage src={previewLogo || cloudinaryUtils.getFullUrl(shop.logo ?? "")} alt={shop.name} />
                       <AvatarFallback className="bg-black text-white text-2xl font-bold">
                         {shop.name.charAt(0)}
                       </AvatarFallback>
@@ -279,6 +289,7 @@ const onSubmit = async (data: ShopFormData) => {
                 {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
               </div>
 
+              {/* Location */}
               <div className="space-y-4">
                 <Label>Location</Label>
                 <div className="space-y-3">
@@ -306,6 +317,7 @@ const onSubmit = async (data: ShopFormData) => {
                   )}
                 </div>
               </div>
+
               {/* Form Actions */}
               <div className="flex items-center gap-2">
                 <Button

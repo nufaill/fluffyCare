@@ -528,15 +528,7 @@ export class ShopController implements IShopController {
 
   updateShopProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.shop) {
-        res.status(HTTP_STATUS.UNAUTHORIZED || 401).json({
-          success: false,
-          message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS
-        });
-        return;
-      }
-
-      const { shopId } = req.shop;
+      const { shopId } = req.params;
       if (!shopId) {
         res.status(HTTP_STATUS.UNAUTHORIZED || 401).json({
           success: false,
