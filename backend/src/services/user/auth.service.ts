@@ -16,7 +16,7 @@ import { Types } from 'mongoose';
 import { validateGeoLocation } from '../../validations/geo.validation';
 
 export class AuthService implements IUserAuthService {
-  private readonly saltRounds = 12;
+  private readonly saltRounds: number;
 
   constructor(
     private _userRepository: IUserRepository,
@@ -24,7 +24,12 @@ export class AuthService implements IUserAuthService {
     private _googleService: GoogleAuthService,
     private _emailService: EmailService,
     private _otpRepository: OtpRepository
-  ) { }
+  ) {
+    this.saltRounds = Number(process.env.SALT_ROUNDS ?? "12");
+    if (isNaN(this.saltRounds) || this.saltRounds < 4) {
+      this.saltRounds = 12;
+    }
+  }
 
   generateTokens(id: string, email: string) {
     return this._jwtService.generateTokens({ id, email });

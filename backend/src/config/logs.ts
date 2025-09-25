@@ -8,13 +8,13 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
-const RETENTION_DAYS = 7;
+const retentionDays = Number(process.env.RETENTION_DAYS ?? "7");
 
 const cleanupOldLogs = () => {
   const files = fs.readdirSync(logsDir);
 
   const now = Date.now();
-  const retentionMs = RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const retentionMs = retentionDays * 24 * 60 * 60 * 1000;
 
   files.forEach((file) => {
     const filePath = path.join(logsDir, file);

@@ -47,7 +47,7 @@ class GeoLocationValidator {
 }
 
 export class AuthService implements IShopAuthService {
-  private readonly _saltRounds = 12;
+    private readonly _saltRounds: number;
   private readonly _geoValidator: GeoLocationValidator;
 
   constructor(
@@ -57,6 +57,10 @@ export class AuthService implements IShopAuthService {
     private readonly _otpRepository: IOtpRepository
   ) {
     this._geoValidator = new GeoLocationValidator();
+     this._saltRounds = Number(process.env.SALT_ROUNDS ?? "12");
+    if (isNaN(this._saltRounds) || this._saltRounds < 4) {
+      this._saltRounds = 12;
+    }
   }
 
   private _generateTokens(id: string, email: string): TokenPair {

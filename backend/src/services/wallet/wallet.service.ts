@@ -13,7 +13,7 @@ import { IWallet, IWalletTransaction } from '../../types/Wallet.types';
 import { Shop } from '../../models/shop.model';
 import { SubscriptionModel } from '../../models/subscription.model';
 
-const DEFAULT_COMMISSION_RATE = 0.5; // 50% commission
+const DEFAULT_COMMISSION_RATE = Number(process.env.DEFAULT_COMMISSION_RATE||'0.5')
 
 export class WalletService implements IWalletService {
   public walletRepository: IWalletRepository; 
