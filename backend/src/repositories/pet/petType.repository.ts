@@ -8,8 +8,9 @@ export class PetTypeRepository implements IPetTypeRepository {
     return await petType.save();
   }
 
-  async getAllPetTypes(): Promise<PetTypeDocument[]> {
-    return await PetType.find().sort({ createdAt: -1 });
+  async getAllPetTypes(filter?: string): Promise<PetTypeDocument[]> {
+    const query = filter ? { name: { $regex: filter, $options: 'i' } } : {};
+    return await PetType.find(query).sort({ createdAt: -1 });
   }
 
   async getPetTypeById(id: string): Promise<PetTypeDocument | null> {

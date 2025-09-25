@@ -1,141 +1,200 @@
-import { useState, useEffect } from "react"
-import { PawPrint, Search, Edit2, Shield, ShieldCheck } from "lucide-react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/Badge"
-import { Switch } from "@/components/ui/switch"
-import { Table } from "@/components/ui/Table"
-import { Pagination } from "@/components/ui/Pagination"
-import AdminSidebar from "@/components/admin/sidebar"
-import AdminNavbar from "@/components/admin/Navbar"
-import { AddItemForm } from "@/components/admin/add-item-form"
-import { StatsCards } from "@/components/admin/stats-cards"
-import { createPetType, getAllPetTypes, updatePetType, updatePetTypeStatus } from "@/services/admin/admin.service"
-import toast from 'react-hot-toast'
+import { useState, useEffect, useCallback } from "react";
+import { PawPrint, Search, Edit2, Shield, ShieldCheck } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/Badge";
+import { Switch } from "@/components/ui/switch";
+import { Table } from "@/components/ui/Table";
+import { Pagination } from "@/components/ui/Pagination";
+import AdminSidebar from "@/components/admin/sidebar";
+import AdminNavbar from "@/components/admin/Navbar";
+import { AddItemForm } from "@/components/admin/add-item-form";
+import { StatsCards } from "@/components/admin/stats-cards";
+import { createPetType, getAllPetTypes, updatePetType, updatePetTypeStatus } from "@/services/admin/admin.service";
+import toast from 'react-hot-toast';
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface PetType {
-  _id: string
-  name: string
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
+  _id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function PetCategoryPage() {
-  const [petTypes, setPetTypes] = useState<PetType[]>([])
-  const [searchTerm, setSearchTerm] = useState<string>("")
-  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(undefined)
-  const [loading, setLoading] = useState(true)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingName, setEditingName] = useState<string>("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [petTypes, setPetTypes] = useState<PetType[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | undefined>(undefined);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [nameError, setNameError] = useState<string>("");
 
-  // Fetch pet types on component mount
-  useEffect(() => {
-    fetchPetTypes()
-  }, [])
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const fetchPetTypes = async () => {
+  const validateName = (name: string): string => {
+    const nameRegex = /^[a-zA-Z0-9]+$/;
+    if (!name) return "Pet type name is required";
+    if (name.length > 20) return "Pet type name must be 20 characters or less";
+    if (name.includes(" ")) return "Pet type name cannot contain spaces";
+    if (!nameRegex.test(name)) return "Pet type name can only contain alphanumeric characters";
+    return "";
+  };
+
+  const fetchPetTypes = useCallback(async (term: string, retryCount = 0) => {
     try {
-      setLoading(true)
-      const response = await getAllPetTypes()
+      setLoading(true);
+      const response = await getAllPetTypes(term);
       if (response.success) {
-        setPetTypes(response.data)
+        setPetTypes(response.data);
       }
     } catch (error) {
-      console.error('Failed to fetch pet types:', error)
-      toast.error('Failed to fetch pet types')
+      console.error('Failed to fetch pet types:', error);
+      if (retryCount < 3) {
+        setTimeout(() => fetchPetTypes(term, retryCount + 1), 1000);
+      } else {
+        toast.error('Failed to fetch pet types after retries');
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, []);
 
-  const filteredPetTypes = petTypes.filter((petType) =>
-    petType.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchPetTypes(debouncedSearchTerm);
+  }, [debouncedSearchTerm, fetchPetTypes]);
 
-  const activePetTypes = petTypes.filter((pet) => pet.isActive).length
-  const blockedPetTypes = petTypes.filter((pet) => !pet.isActive).length
+  const activePetTypes = petTypes.filter((pet) => pet.isActive).length;
+  const blockedPetTypes = petTypes.filter((pet) => !pet.isActive).length;
 
   const handleAddPetType = async (name: string) => {
-    try {
-      const response = await createPetType({ name })
-      if (response.success) {
-        setPetTypes((prev) => [response.data, ...prev])
-        setCurrentPage(1) 
-      }
-    } catch (error: any) {
-      console.error('Failed to create pet type:', error)
+    const error = validateName(name);
+    if (error) {
+      toast.error(error);
+      return;
     }
-  }
+
+    try {
+      const response = await createPetType({ name });
+      if (response.success) {
+        setPetTypes((prev) => [response.data, ...prev]);
+        setCurrentPage(1);
+        toast.success('Pet type created successfully');
+      }
+    } catch (error) {
+      console.error('Failed to create pet type:', error);
+      toast.error('Failed to create pet type');
+    }
+  };
 
   const handleToggleStatus = async (petTypeId: string, currentStatus: boolean) => {
     try {
-      const response = await updatePetTypeStatus(petTypeId, !currentStatus)
+      const response = await updatePetTypeStatus(petTypeId, !currentStatus);
       if (response.success) {
         setPetTypes((prev) =>
           prev.map((pet) =>
             pet._id === petTypeId ? { ...pet, isActive: !currentStatus } : pet,
           ),
-        )
+        );
+        toast.success(`Pet type ${currentStatus ? 'blocked' : 'unblocked'} successfully`);
       }
-    } catch (error: any) {
-      console.error('Failed to update pet type status:', error)
+    } catch (error) {
+      console.error('Failed to update pet type status:', error);
+      toast.error('Failed to update pet type status');
     }
-  }
+  };
 
   const handleStartEdit = (petType: PetType) => {
-    setEditingId(petType._id)
-    setEditingName(petType.name)
-  }
+    setEditingId(petType._id);
+    setEditingName(petType.name);
+    setNameError("");
+  };
 
   const handleSaveEdit = async () => {
-    if (!editingId || !editingName.trim()) return
+    if (!editingId || !editingName.trim()) {
+      toast.error('Pet type name is required');
+      return;
+    }
+
+    const error = validateName(editingName);
+    if (error) {
+      setNameError(error);
+      toast.error(error);
+      return;
+    }
 
     try {
-      const response = await updatePetType(editingId, { name: editingName.trim() })
+      const response = await updatePetType(editingId, { name: editingName });
       if (response.success) {
         setPetTypes((prev) =>
           prev.map((pet) =>
-            pet._id === editingId ? { ...pet, name: editingName.trim() } : pet,
+            pet._id === editingId ? { ...pet, name: editingName } : pet,
           ),
-        )
-        setEditingId(null)
-        setEditingName("")
+        );
+        setEditingId(null);
+        setEditingName("");
+        setNameError("");
+        toast.success('Pet type updated successfully');
       }
-    } catch (error: any) {
-      console.error('Failed to update pet type:', error)
+    } catch (error) {
+      console.error('Failed to update pet type:', error);
+      toast.error('Failed to update pet type');
     }
-  }
+  };
 
   const handleCancelEdit = () => {
-    setEditingId(null)
-    setEditingName("")
-  }
+    setEditingId(null);
+    setEditingName("");
+    setNameError("");
+  };
 
   const handleSort = (key: string, order: "asc" | "desc") => {
-    setSortBy(key)
-    setSortOrder(order)
-  }
+    setSortBy(key);
+    setSortOrder(order);
+  };
 
   const handlePageChange = (page: number, newPageSize?: number) => {
-    setCurrentPage(page)
+    setCurrentPage(page);
     if (newPageSize) {
-      setPageSize(newPageSize)
+      setPageSize(newPageSize);
     }
-  }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
 
   const statsData = [
     { label: "Active Categories", value: activePetTypes, color: "text-green-600 dark:text-green-400" },
     { label: "Blocked Categories", value: blockedPetTypes, color: "text-red-600 dark:text-red-400" },
-  ]
+  ];
 
-  const startIndex = (currentPage - 1) * pageSize
-  const endIndex = startIndex + pageSize
-  const paginatedPetTypes = filteredPetTypes.slice(startIndex, endIndex)
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedPetTypes = petTypes.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -145,7 +204,7 @@ export default function PetCategoryPage() {
           <p className="mt-4 text-gray-600 dark:text-gray-400">Loading pet types...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -154,7 +213,6 @@ export default function PetCategoryPage() {
       <AdminNavbar userName="NUFAIL" onSearch={setSearchTerm} />
 
       <main className="ml-64 pt-16 p-6 space-y-6">
-        {/* Page Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center space-x-3">
             <div className="p-3 bg-black dark:bg-white rounded-lg">
@@ -166,7 +224,7 @@ export default function PetCategoryPage() {
             </div>
           </div>
         </div>
-        {/* Add Category Section */}
+
         <AddItemForm
           title="Add New Pet Category"
           placeholder="Enter category name (e.g., Dogs, Cats, Birds)"
@@ -174,7 +232,6 @@ export default function PetCategoryPage() {
           icon={<PawPrint className="h-4 w-4 text-white dark:text-black" />}
         />
 
-        {/* Search and Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-4">
@@ -184,9 +241,8 @@ export default function PetCategoryPage() {
                   placeholder="Search categories..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-white
-
- dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  onKeyDown={handleSearchKeyDown}
+                  className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </CardContent>
@@ -195,13 +251,12 @@ export default function PetCategoryPage() {
           <StatsCards stats={statsData} />
         </div>
 
-        {/* Categories Table */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
               <span>Categories List</span>
               <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                {filteredPetTypes.length} categories
+                {petTypes.length} categories
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -216,16 +271,24 @@ export default function PetCategoryPage() {
                   align: "left",
                   render: (value: string, record: PetType) => (
                     editingId === record._id ? (
-                      <Input
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        onBlur={handleSaveEdit}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') handleSaveEdit()
-                          if (e.key === 'Escape') handleCancelEdit()
-                        }}
-                        className="w-full"
-                      />
+                      <>
+                        <Input
+                          value={editingName}
+                          onChange={(e) => {
+                            setEditingName(e.target.value);
+                            setNameError(validateName(e.target.value));
+                          }}
+                          onBlur={handleSaveEdit}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit();
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                          className="w-full"
+                        />
+                        {nameError && (
+                          <p className="text-red-500 text-xs mt-1">{nameError}</p>
+                        )}
+                      </>
                     ) : (
                       <span>{value}</span>
                     )
@@ -321,25 +384,25 @@ export default function PetCategoryPage() {
               sortBy={sortBy}
               sortOrder={sortOrder}
               onSort={handleSort}
-              emptyText={searchTerm ? "No categories found matching your search." : "No categories available."}
+              emptyText={debouncedSearchTerm ? "No categories found matching your search." : "No categories available."}
             />
           </CardContent>
         </Card>
-            <Pagination
-              current={currentPage}
-              total={filteredPetTypes.length}
-              pageSize={pageSize}
-              onChange={handlePageChange}
-              showSizeChanger={true}
-              showQuickJumper={true}
-              showTotal={(total, range) => (
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Showing {range[0]} to {range[1]} of {total} entries
-                </span>
-              )}
-              pageSizeOptions={[10, 20, 50, 100]}
-            />
+        <Pagination
+          current={currentPage}
+          total={petTypes.length}
+          pageSize={pageSize}
+          onChange={handlePageChange}
+          showSizeChanger={true}
+          showQuickJumper={true}
+          showTotal={(total, range) => (
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Showing {range[0]} to {range[1]} of {total} entries
+            </span>
+          )}
+          pageSizeOptions={[10, 20, 50, 100]}
+        />
       </main>
     </div>
-  )
+  );
 }

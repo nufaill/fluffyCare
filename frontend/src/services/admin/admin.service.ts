@@ -324,9 +324,11 @@ export const createPetType = async (data: { name: string }) => {
   }
 };
 
-export const getAllPetTypes = async () => {
+export const getAllPetTypes = async (filter?: string) => {
   try {
-    const response = await AdminAxios.get('/pet-types');
+    const response = await AdminAxios.get('/pet-types', {
+      params: { filter }
+    });
 
     if (response.status !== 200) {
       throw new Error(`HTTP error! status: ${response.status}`);

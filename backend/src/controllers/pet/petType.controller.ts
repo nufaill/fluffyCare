@@ -5,7 +5,7 @@ import { CreatePetTypeDTO, UpdatePetTypeDTO, UpdatePetTypeStatusDTO } from '../.
 import { IPetTypeController } from '../../interfaces/controllerInterfaces/IPetTypeController';
 
 export class PetTypeController implements IPetTypeController {
-  private _petService: IPetTypeService; 
+  private _petService: IPetTypeService;
 
   constructor(petService: IPetTypeService) {
     this._petService = petService;
@@ -18,7 +18,7 @@ export class PetTypeController implements IPetTypeController {
       if (!petTypeData.name || typeof petTypeData.name !== 'string' || petTypeData.name.trim().length === 0) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'Pet type name is required and must be a non-empty string'
+          message: 'Pet type name is required and must be a non-empty string',
         });
         return;
       }
@@ -28,7 +28,7 @@ export class PetTypeController implements IPetTypeController {
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
         message: SUCCESS_MESSAGES.CREATED,
-        data: newPetType
+        data: newPetType,
       });
     } catch (error) {
       next(error);
@@ -37,12 +37,13 @@ export class PetTypeController implements IPetTypeController {
 
   async getAllPetTypes(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const petTypes = await this._petService.getAllPetTypes();
+      const filter = req.query.filter as string | undefined;
+      const petTypes = await this._petService.getAllPetTypes(filter);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.FETCHED_SUCESS,
-        data: petTypes
+        data: petTypes,
       });
     } catch (error) {
       next(error);
@@ -56,7 +57,7 @@ export class PetTypeController implements IPetTypeController {
       if (!id) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'Pet type ID is required'
+          message: 'Pet type ID is required',
         });
         return;
       }
@@ -66,7 +67,7 @@ export class PetTypeController implements IPetTypeController {
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.FETCHED_SUCESS,
-        data: petType
+        data: petType,
       });
     } catch (error) {
       next(error);
@@ -81,7 +82,7 @@ export class PetTypeController implements IPetTypeController {
       if (!id) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'Pet type ID is required'
+          message: 'Pet type ID is required',
         });
         return;
       }
@@ -89,7 +90,7 @@ export class PetTypeController implements IPetTypeController {
       if (!petTypeData.name || typeof petTypeData.name !== 'string' || petTypeData.name.trim().length === 0) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'Pet type name is required and must be a non-empty string'
+          message: 'Pet type name is required and must be a non-empty string',
         });
         return;
       }
@@ -99,7 +100,7 @@ export class PetTypeController implements IPetTypeController {
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
-        data: updatedPetType
+        data: updatedPetType,
       });
     } catch (error) {
       next(error);
@@ -114,7 +115,7 @@ export class PetTypeController implements IPetTypeController {
       if (!id) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'Pet type ID is required'
+          message: 'Pet type ID is required',
         });
         return;
       }
@@ -122,7 +123,7 @@ export class PetTypeController implements IPetTypeController {
       if (typeof statusData.isActive !== 'boolean') {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          message: 'isActive must be a boolean value'
+          message: 'isActive must be a boolean value',
         });
         return;
       }
@@ -132,7 +133,7 @@ export class PetTypeController implements IPetTypeController {
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
-        data: updatedPetType
+        data: updatedPetType,
       });
     } catch (error) {
       next(error);
