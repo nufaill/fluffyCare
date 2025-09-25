@@ -128,7 +128,6 @@ export class ReviewController {
 
   adminUpdateReview = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-
       const { reviewId } = req.params;
 
       if (!reviewId) {
@@ -193,7 +192,6 @@ export class ReviewController {
         });
         return;
       }
-
 
       await this._reviewService.deleteReview(reviewId);
 
@@ -260,8 +258,21 @@ export class ReviewController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
+      const searchTerm = req.query.searchTerm as string | undefined;
+      const rating = req.query.rating ? parseInt(req.query.rating as string) : undefined;
+      const shopId = req.query.shopId as string | undefined;
+      const sortBy = req.query.sortBy as string | undefined;
+      const sortOrder = req.query.sortOrder as 'asc' | 'desc' | undefined;
 
-      const reviews = await this._reviewService.getAllReviews(page, limit);
+      const filters = {
+        searchTerm,
+        rating,
+        shopId,
+        sortBy,
+        sortOrder
+      };
+
+      const reviews = await this._reviewService.getAllReviews(page, limit, filters);
 
       res.status(200).json({
         success: true,

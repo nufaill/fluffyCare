@@ -14,6 +14,14 @@ export interface IReviewService {
     deleteReview(reviewId: string): Promise<void>;
     getReviewsByShop(shopId: string, page: number, limit: number): Promise<PaginatedReviewsResponseDTO>;
     getShopRatingSummary(shopId: string): Promise<RatingSummaryDTO>;
-    getAllReviews(page: number, limit: number): Promise<PaginatedReviewsResponseDTO>;
+    getAllReviews(  page: number,
+        limit: number,
+        filters: {
+            searchTerm?: string;
+            rating?: number;
+            shopId?: string;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+        }): Promise<PaginatedReviewsResponseDTO>;
     getAllShopsRatingSummaries(page: number, limit: number): Promise<PaginatedShopRatingsResponseDTO>;
 }

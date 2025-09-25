@@ -11,6 +11,7 @@ import {
     ShopRatingSummaryDTO
 } from "../../dto/review.dto";
 import { CustomError } from '../../util/CustomerError';
+
 export interface IShopRatingSummary {
     shopId: Types.ObjectId;
     shopName: string;
@@ -24,6 +25,7 @@ export interface IPaginatedShopRatings {
     shopRatings: IShopRatingSummary[];
     totalCount: number;
 }
+
 export class ReviewService implements IReviewService {
     constructor(private _reviewRepository: IReviewRepository) { }
 
@@ -151,12 +153,38 @@ export class ReviewService implements IReviewService {
         return new RatingSummaryDTO(summary);
     }
 
-    async getAllReviews(page: number, limit: number): Promise<PaginatedReviewsResponseDTO> {
+    async getAllReviews(
+        page: number,
+        limit: number,
+        filters: {
+            searchTerm?: string;
+            rating?: number;
+            shopId?: string;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+        }
+    ): Promise<PaginatedReviewsResponseDTO> {
         if (page < 1) page = 1;
         if (limit < 1) limit = 10;
-        if (limit > 100) limit = 100; 
+        if (limit > 100) limit = 100;
 
-        const { reviews, totalCount } = await this._reviewRepository.getAllReviews(page, limit);
+        const repositoryFilters: {
+            searchTerm?: string;
+            rating?: number;
+            shopId?: Types.ObjectId;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+        } = {};
+
+        if (filters.searchTerm) repositoryFilters.searchTerm = filters.searchTerm;
+        if (filters.rating) repositoryFilters.rating = filters.rating;
+        if (filters.shopId && Types.ObjectId.isValid(filters.shopId)) {
+            repositoryFilters.shopId = new Types.ObjectId(filters.shopId);
+        }
+        if (filters.sortBy) repositoryFilters.sortBy = filters.sortBy;
+        if (filters.sortOrder) repositoryFilters.sortOrder = filters.sortOrder;
+
+        const { reviews, totalCount } = await this._reviewRepository.getAllReviews(page, limit, repositoryFilters);
 
         const reviewDTOs = reviews.map(review => new ReviewResponseDTO(review));
         const totalPages = Math.ceil(totalCount / limit);
@@ -169,7 +197,6 @@ export class ReviewService implements IReviewService {
             limit
         });
     }
-
 
     async getAllShopsRatingSummaries(
         page: number,

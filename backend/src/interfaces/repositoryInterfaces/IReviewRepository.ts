@@ -39,6 +39,14 @@ export interface IReviewRepository {
     getReviewById(reviewId: Types.ObjectId): Promise<IReview | null>;
     getReviewsByShop(shopId: Types.ObjectId, page: number, limit: number): Promise<IPaginatedReviews>;
     getAverageRatingByShop(shopId: Types.ObjectId): Promise<IRatingSummary>;
-    getAllReviews(page: number, limit: number): Promise<IPaginatedReviews>;
+    getAllReviews(page: number,
+        limit: number,
+        filters: {
+            searchTerm?: string;
+            rating?: number;
+            shopId?: Types.ObjectId;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+        }): Promise<IPaginatedReviews>;
     checkUserReviewExists(shopId: Types.ObjectId, userId: Types.ObjectId): Promise<IReview | null>;
 }

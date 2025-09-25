@@ -121,18 +121,49 @@ export class ReviewRepository implements IReviewRepository {
         };
     }
 
-    async getAllReviews(page: number, limit: number): Promise<IPaginatedReviews> {
+    async getAllReviews(
+        page: number,
+        limit: number,
+        filters: {
+            searchTerm?: string;
+            rating?: number;
+            shopId?: Types.ObjectId;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+        }
+    ): Promise<IPaginatedReviews> {
         const skip = (page - 1) * limit;
+        const query: any = {};
+
+        if (filters.searchTerm) {
+            query.$or = [
+                { comment: { $regex: filters.searchTerm, $options: 'i' } },
+                { 'userId.fullName': { $regex: filters.searchTerm, $options: 'i' } },
+                { 'shopId.name': { $regex: filters.searchTerm, $options: 'i' } }
+            ];
+        }
+
+        if (filters.rating) {
+            query.rating = filters.rating;
+        }
+
+        if (filters.shopId) {
+            query.shopId = filters.shopId;
+        }
+
+        const sortField = filters.sortBy || 'createdAt';
+        const sortOrder = filters.sortOrder === 'asc' ? 1 : -1;
+        const sort: any = { [sortField]: sortOrder };
 
         const [reviews, totalCount] = await Promise.all([
-            Review.find({})
-                .sort({ createdAt: -1 })
+            Review.find(query)
+                .sort(sort)
                 .populate('userId', 'fullName profileImage')
                 .populate('shopId', 'name logo')
                 .skip(skip)
                 .limit(limit)
                 .lean(),
-            Review.countDocuments({})
+            Review.countDocuments(query)
         ]);
 
         return {
