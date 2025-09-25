@@ -689,6 +689,10 @@ export default function Services() {
     if (!editingService) return;
 
     try {
+      if (!shopId) {
+        console.error("Shop ID is undefined");
+        return;
+      }
       const durationValue = Number.parseFloat(data.durationHour);
       const priceValue = Number.parseFloat(data.price);
 
@@ -712,7 +716,7 @@ export default function Services() {
         image: data.image,
       };
 
-      const updatedService = await serviceService.updateService(editingService._id, updateData);
+      const updatedService = await serviceService.updateService(shopId, editingService._id, updateData);
       setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));
       setEditingService(null);
       showSuccess("Service updated successfully!");
@@ -722,8 +726,12 @@ export default function Services() {
   };
 
   const handleToggleStatus = async (serviceId: string) => {
+    if (!shopId) {
+      console.error("Shop ID is undefined");
+      return;
+    }
     try {
-      const updatedService = await serviceService.toggleServiceStatus(serviceId);
+      const updatedService = await serviceService.toggleServiceStatus(shopId, serviceId);
       setServices((prev) => prev.map((service) => (service._id === serviceId ? updatedService : service)));
       showSuccess("Service status updated!");
     } catch (error) {
@@ -739,6 +747,19 @@ export default function Services() {
       <PetCareLayout>
         <div className="container mx-auto p-6">
           <p className="text-gray-900 dark:text-gray-100">Loading...</p>
+        </div>
+      </PetCareLayout>
+    );
+  }
+
+  if (!shopId) {
+    return (
+      <PetCareLayout>
+        <div className="container mx-auto p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>Shop data is not available. Please try again later.</AlertDescription>
+          </Alert>
         </div>
       </PetCareLayout>
     );
@@ -933,7 +954,10 @@ export default function Services() {
                         <div className="space-y-2">
                           <div className="flex items-start justify-between">
                             <h3 className="font-semibold text-lg leading-tight text-gray-900 dark:text-gray-100">{service.name}</h3>
-                            <StatusToggle isActive={service.isActive} onToggle={() => handleToggleStatus(service._id)} />
+                            <StatusToggle
+                              isActive={service.isActive}
+                              onToggle={() => shopId && handleToggleStatus(service._id)}
+                            />
                           </div>
                           <Badge className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                             {typeof service.serviceTypeId === 'object' && service.serviceTypeId?.name

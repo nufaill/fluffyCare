@@ -22,9 +22,9 @@ export const serviceService = {
     }
   },
 
-  async getServiceById(serviceId: string): Promise<Service> {
+  async getServiceById(shopId: string,serviceId: string): Promise<Service> {
     try {
-      const response = await shopaxios.get<ServiceApiResponse>(`/service/${serviceId}`);
+      const response = await shopaxios.get<ServiceApiResponse>(`/service/${shopId}/${serviceId}`);
       return response.data.data as Service;
     } catch (error) {
       console.error('Error fetching service:', error);
@@ -32,9 +32,9 @@ export const serviceService = {
     }
   },
 
-  async updateService(serviceId: string, updateData: UpdateServiceData): Promise<Service> {
+  async updateService(shopId: string,serviceId: string, updateData: UpdateServiceData): Promise<Service> {
     try {
-      const response = await shopaxios.patch<ServiceApiResponse>(`/service/${serviceId}`, updateData);
+      const response = await shopaxios.patch<ServiceApiResponse>(`/service/${shopId}/${serviceId}`, updateData);
       return response.data.data as Service;
     } catch (error) {
       console.error('Error updating service:', error);
@@ -42,9 +42,9 @@ export const serviceService = {
     }
   },
 
-  async toggleServiceStatus(serviceId: string): Promise<Service> {
+  async toggleServiceStatus(shopId: string,serviceId: string): Promise<Service> {
     try {
-      const response = await shopaxios.patch<ServiceApiResponse>(`/service/${serviceId}/toggle-status`);
+      const response = await shopaxios.patch<ServiceApiResponse>(`/service/${shopId}/${serviceId}/toggle-status`);
       return response.data.data as Service;
     } catch (error) {
       console.error('Error toggling service status:', error);

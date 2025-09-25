@@ -537,7 +537,7 @@ router.get('/service-list/:shopId', shopDependencies.serviceController.getServic
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/service/:serviceId', shopDependencies.serviceController.getServiceById as RequestHandler);
+router.get('/service/:shopId/:serviceId', shopDependencies.serviceController.getServiceById as RequestHandler);
 
 /**
  * @swagger
@@ -586,7 +586,7 @@ router.get('/service/:serviceId', shopDependencies.serviceController.getServiceB
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/service/:serviceId', validateCreateService, shopDependencies.serviceController.updateService as RequestHandler);
+router.patch('/service/:shopId/:serviceId', validateCreateService, shopDependencies.serviceController.updateService as RequestHandler);
 
 /**
  * @swagger
@@ -623,7 +623,7 @@ router.patch('/service/:serviceId', validateCreateService, shopDependencies.serv
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/service/:serviceId/toggle-status', shopDependencies.serviceController.toggleServiceStatus as RequestHandler);
+router.patch('/service/:shopId/:serviceId/toggle-status', shopDependencies.serviceController.toggleServiceStatus as RequestHandler);
 
 /**
  * @swagger
