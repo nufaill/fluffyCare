@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types, FilterQuery } from "mongoose";
 import { ISubscriptionRepository } from "../../interfaces/repositoryInterfaces/ISubscriptionRepository";
 import { CreateSubscriptionDTO, UpdateSubscriptionDTO, SubscriptionResponseDTO } from "../../dto/subscription.dto";
 import { ISubscription } from "../../types/subscription.type";
@@ -17,8 +17,22 @@ export class SubscriptionService implements ISubscriptionService {
         this._subscriptionRepository = subscriptionRepository;
     }
 
+    async validatePlanName(plan: string, excludeId?: string): Promise<void> {
+        const planRegex = /^[a-zA-Z0-9]{3,20}$/;
+        if (!planRegex.test(plan)) {
+            throw new Error("Plan name must be 3-20 characters, alphanumeric only, no spaces or special characters");
+        }
+
+        const existing = await this._subscriptionRepository.findByPlanName(plan);
+        if (existing && (!excludeId || existing._id.toString() !== excludeId)) {
+            throw new Error("Plan name already exists");
+        }
+    }
+
     async createSubscription(dto: CreateSubscriptionDTO): Promise<ServiceResponse<SubscriptionResponseDTO>> {
         try {
+            await this.validatePlanName(dto.plan);
+
             const subscriptionData: Partial<ISubscription> = {
                 ...dto
             };
@@ -28,10 +42,10 @@ export class SubscriptionService implements ISubscriptionService {
                 data: new SubscriptionResponseDTO(subscription),
                 message: "Subscription created successfully",
             };
-        } catch (error: any) {
+        } catch (error) {
             return {
                 success: false,
-                message: error.message || "Failed to create subscription",
+                message: error instanceof Error ? error.message : "Failed to create subscription",
             };
         }
     }
@@ -40,6 +54,9 @@ export class SubscriptionService implements ISubscriptionService {
         try {
             if (!Types.ObjectId.isValid(subscriptionId)) {
                 throw new Error("Invalid subscription ID");
+            }
+            if (dto.plan) {
+                await this.validatePlanName(dto.plan, subscriptionId);
             }
             const updateData: Partial<ISubscription> = {
                 ...dto,
@@ -58,16 +75,17 @@ export class SubscriptionService implements ISubscriptionService {
                 data: new SubscriptionResponseDTO(updatedSubscription),
                 message: "Subscription updated successfully",
             };
-        } catch (error: any) {
+        } catch (error) {
             return {
                 success: false,
-                message: error.message || "Failed to update subscription",
+                message: error instanceof Error ? error.message : "Failed to update subscription",
             };
         }
     }
 
     async getAllSubscriptions(query: {
         plan?: string;
+        search?: string;
         page?: number;
         limit?: number;
     }): Promise<ServiceResponse<{
@@ -77,8 +95,14 @@ export class SubscriptionService implements ISubscriptionService {
         limit: number;
     }>> {
         try {
-            const filter: any = {};
+            const filter: FilterQuery<ISubscription> = {};
             if (query.plan) filter.plan = query.plan;
+            if (query.search) {
+                filter.$or = [
+                    { plan: { $regex: query.search, $options: 'i' } },
+                    { description: { $regex: query.search, $options: 'i' } }
+                ];
+            }
 
             const page = query.page || 1;
             const limit = query.limit || 10;
@@ -97,10 +121,10 @@ export class SubscriptionService implements ISubscriptionService {
                 },
                 message: `Retrieved ${result.total} subscriptions`,
             };
-        } catch (error: any) {
+        } catch (error) {
             return {
                 success: false,
-                message: error.message || "Failed to retrieve subscriptions",
+                message: error instanceof Error ? error.message : "Failed to retrieve subscriptions",
             };
         }
     }
@@ -108,6 +132,7 @@ export class SubscriptionService implements ISubscriptionService {
     async getAllActiveSubscriptions(query: {
         page?: number;
         limit?: number;
+        search?: string;
     }): Promise<ServiceResponse<{
         subscriptions: SubscriptionResponseDTO[];
         total: number;
@@ -118,7 +143,15 @@ export class SubscriptionService implements ISubscriptionService {
             const page = query.page || 1;
             const limit = query.limit || 10;
 
-            const result = await this._subscriptionRepository.getAllSubscriptions({ isActive: true }, page, limit);
+            const filter: FilterQuery<ISubscription> = { isActive: true };
+            if (query.search) {
+                filter.$or = [
+                    { plan: { $regex: query.search, $options: 'i' } },
+                    { description: { $regex: query.search, $options: 'i' } }
+                ];
+            }
+
+            const result = await this._subscriptionRepository.getAllSubscriptions(filter, page, limit);
 
             const subscriptionDTOs = result.subscriptions.map((sub) => new SubscriptionResponseDTO(sub));
 
@@ -132,10 +165,10 @@ export class SubscriptionService implements ISubscriptionService {
                 },
                 message: `Retrieved ${result.total} active subscriptions`,
             };
-        } catch (error: any) {
+        } catch (error) {
             return {
                 success: false,
-                message: error.message || "Failed to retrieve active subscriptions",
+                message: error instanceof Error ? error.message : "Failed to retrieve active subscriptions",
             };
         }
     }

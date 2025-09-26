@@ -18,6 +18,7 @@ export class SubscriptionController implements ISubscriptionController {
     this.updateSubscription = this.updateSubscription.bind(this);
     this.getAllSubscriptions = this.getAllSubscriptions.bind(this);
     this.getAllActiveSubscriptions = this.getAllActiveSubscriptions.bind(this);
+    this.getSubscriptionByName = this.getSubscriptionByName.bind(this);
   }
 
   async createSubscription(req: Request, res: Response): Promise<void> {
@@ -46,26 +47,16 @@ export class SubscriptionController implements ISubscriptionController {
       }
 
       const result = await this._subscriptionService.createSubscription(subscriptionData);
-      if (result.success) {
-        res.status(HTTP_STATUS.CREATED).json({
-          success: true,
-          message: result.message || 'Subscription created successfully',
-          data: result.data,
-        });
-      } else {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          message: result.message,
-          data: null,
-        });
-      }
-
-
-    } catch (error: any) {
+      res.status(result.success ? HTTP_STATUS.CREATED : HTTP_STATUS.BAD_REQUEST).json({
+        success: result.success,
+        message: result.message || (result.success ? 'Subscription created successfully' : 'Failed to create subscription'),
+        data: result.data || null,
+      });
+    } catch (error) {
       console.error('Create subscription error:', error);
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: `Failed to create subscription: ${error.message}`,
+        message: error instanceof Error ? error.message : 'Failed to create subscription',
         data: null,
       });
     }
@@ -75,8 +66,6 @@ export class SubscriptionController implements ISubscriptionController {
     try {
       const { id } = req.params;
       const updateData = new UpdateSubscriptionDTO(req.body);
-
-
 
       if (!id || !Types.ObjectId.isValid(id)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -103,11 +92,11 @@ export class SubscriptionController implements ISubscriptionController {
         message: result.message,
         data: result.data || null,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Update subscription error:', error);
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: `Failed to update subscription: ${error.message}`,
+        message: error instanceof Error ? `Failed to update subscription: ${error.message}` : 'Failed to update subscription',
         data: null,
       });
     }
@@ -115,10 +104,11 @@ export class SubscriptionController implements ISubscriptionController {
 
   async getAllSubscriptions(req: Request, res: Response): Promise<void> {
     try {
-      const { plan, page, limit } = req.query;
+      const { plan, search, page, limit } = req.query;
 
       const query = {
-        plan: plan as string,
+        plan: plan as string | undefined,
+        search: search as string | undefined,
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
       };
@@ -130,24 +120,24 @@ export class SubscriptionController implements ISubscriptionController {
         message: result.message,
         data: result.data || [],
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Get all subscriptions error:', error);
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: `Failed to retrieve subscriptions: ${error.message}`,
+        message: error instanceof Error ? `Failed to retrieve subscriptions: ${error.message}` : 'Failed to retrieve subscriptions',
         data: null,
       });
     }
   }
 
-
   async getAllActiveSubscriptions(req: Request, res: Response): Promise<void> {
     try {
-      const { page, limit } = req.query;
+      const { page, limit, search } = req.query;
 
       const query = {
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
+        search: search as string | undefined,
       };
 
       const result = await this._subscriptionService.getAllActiveSubscriptions(query);
@@ -157,17 +147,17 @@ export class SubscriptionController implements ISubscriptionController {
         message: result.message,
         data: result.data || [],
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Get all active subscriptions error:', error);
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: `Failed to retrieve active subscriptions: ${error.message}`,
+        message: error instanceof Error ? `Failed to retrieve active subscriptions: ${error.message}` : 'Failed to retrieve active subscriptions',
         data: null,
       });
     }
   }
-  
-  getSubscriptionByName = async (req: Request, res: Response): Promise<void> => {
+
+  async getSubscriptionByName(req: Request, res: Response): Promise<void> {
     try {
       const { planName } = req.params;
       const subscription = await SubscriptionModel.findOne({
@@ -176,23 +166,26 @@ export class SubscriptionController implements ISubscriptionController {
       });
 
       if (!subscription) {
-        res.status(404).json({
+        res.status(HTTP_STATUS.NOT_FOUND).json({
           success: false,
-          message: 'Subscription plan not found'
+          message: 'Subscription plan not found',
+          data: null,
         });
         return;
       }
 
-      res.json({
+      res.status(HTTP_STATUS.OK).json({
         success: true,
+        message: 'Subscription retrieved successfully',
         data: { subscription }
       });
     } catch (error) {
-      res.status(500).json({
+      console.error('Get subscription by name error:', error);
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Failed to fetch subscription'
+        message: error instanceof Error ? `Failed to fetch subscription: ${error.message}` : 'Failed to fetch subscription',
+        data: null,
       });
     }
-  };
-
+  }
 }

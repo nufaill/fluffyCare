@@ -1,4 +1,4 @@
-import { Model, Types } from "mongoose";
+import { Model, Types, FilterQuery } from "mongoose";
 import { ISubscription } from "../../types/subscription.type";
 import { SubscriptionModel } from "../../models/subscription.model";
 import { ISubscriptionRepository } from './../../interfaces/repositoryInterfaces/ISubscriptionRepository';
@@ -17,9 +17,11 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     this.subscriptionModel = SubscriptionModel;
   }
 
-  async createSubscription(subscriptionData: Partial<ISubscription>): Promise<ISubscription> {
+  async findByPlanName(plan: string): Promise<ISubscription | null> {
+    return await this.subscriptionModel.findOne({ plan }).exec();
+  }
 
-    // Set default values
+  async createSubscription(subscriptionData: Partial<ISubscription>): Promise<ISubscription> {
     const subscriptionToCreate = {
       ...subscriptionData,
       isActive: subscriptionData.isActive !== undefined ? subscriptionData.isActive : true,
@@ -30,7 +32,6 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   }
 
   async updateSubscription(subscriptionId: Types.ObjectId, updateData: Partial<ISubscription>): Promise<ISubscription | null> {
-
     const updatedSubscription = await this.subscriptionModel
       .findByIdAndUpdate(subscriptionId, { $set: updateData }, { new: true, runValidators: true })
       .exec();
@@ -39,12 +40,11 @@ export class SubscriptionRepository implements ISubscriptionRepository {
       throw new Error("Subscription not found");
     }
 
-    // Check and update status if endDate has passed
-    return await (updatedSubscription);
+    return updatedSubscription;
   }
 
-async getAllSubscriptions(filter: any, page: number, limit: number): Promise<SubscriptionPaginatedResult> {
-  const query = filter || {};
+  async getAllSubscriptions(filter: FilterQuery<ISubscription>, page: number, limit: number): Promise<SubscriptionPaginatedResult> {
+    const query = filter || {};
 
     const [subscriptions, total] = await Promise.all([
       this.subscriptionModel
@@ -57,7 +57,7 @@ async getAllSubscriptions(filter: any, page: number, limit: number): Promise<Sub
     ]);
 
     return {
-     subscriptions,
+      subscriptions,
       total,
       page,
       limit,
