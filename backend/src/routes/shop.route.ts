@@ -5,6 +5,7 @@ import { validateCreateService } from '../validations/service.validator';
 import { validateCreateStaff } from '../validations/staff.validator';
 import { ValidationChain } from 'express-validator';
 import { appointmentDependencies } from '../di/appointmentInjection';
+import { checkVerifiedShop } from '../middlewares/checkisVerifiedShop.middleware';
 const router = Router();
 
 /**
@@ -367,6 +368,7 @@ router.get('/pet-types', shopDependencies.serviceController.getPetTypes as Reque
 // Protected routes
 router.use(shopDependencies.authMiddleware.authenticate as RequestHandler);
 
+
 /**
  * @swagger
  * /shop/profile/{shopId}:
@@ -439,6 +441,8 @@ router.get('/profile/:shopId', shopDependencies.shopController.getShopProfile as
  *               $ref: '#/components/schemas/Error'
  */
 router.patch('/profile/update/:shopId', shopDependencies.shopController.updateShopProfile as RequestHandler);
+
+router.use(checkVerifiedShop as RequestHandler);
 
 /**
  * @swagger

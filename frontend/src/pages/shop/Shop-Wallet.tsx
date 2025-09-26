@@ -115,19 +115,12 @@ export default function ShopWalletPage() {
     }
   }, [shopId]);
 
-  // Enhanced debugging display
   if (!shopId) {
     return (
       <div className="min-h-screen bg-gray-100 p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow p-6">
             <h1 className="text-2xl font-bold text-red-600 mb-4">Shop ID Missing</h1>
-            <p className="text-red-600 mb-4">Please log in to view your wallet.</p>
-
-            <div className="bg-gray-50 p-4 rounded text-sm">
-              <h3 className="font-semibold mb-2">Debug Info:</h3>
-              <pre className="whitespace-pre-wrap">{JSON.stringify(shop, null, 2)}</pre>
-            </div>
           </div>
         </div>
       </div>
