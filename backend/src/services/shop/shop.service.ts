@@ -48,6 +48,11 @@ export class ShopService implements IShopService {
     if (updateData.description && updateData.description.length > 1000) {
       throw new CustomError('Description must be less than 1000 characters', HTTP_STATUS.BAD_REQUEST);
     }
+    if (updateData.certificateUrl) {
+      if (typeof updateData.certificateUrl !== 'string' || updateData.certificateUrl.trim().length === 0) {
+        throw new CustomError('Certificate URL must be a non-empty string', HTTP_STATUS.BAD_REQUEST);
+      }
+    }
   }
 
   async getShopById(shopId: string): Promise<ShopResponseDTO> {

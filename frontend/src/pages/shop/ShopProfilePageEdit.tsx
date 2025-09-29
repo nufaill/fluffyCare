@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar';
-import { Camera } from 'lucide-react';
+import { Camera, FileText } from 'lucide-react';
 import { Navbar } from '@/components/shop/Navbar';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -26,6 +26,7 @@ const shopSchema = z.object({
   streetAddress: z.string().min(5, 'Street address must be at least 5 characters').max(200, 'Street address must be less than 200 characters'),
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional(),
   logo: z.string().optional(),
+  certificateUrl: z.string().optional(),
   location: z.object({
     type: z.literal('Point'),
     coordinates: z.tuple([z.number(), z.number()])
@@ -39,12 +40,14 @@ export default function ShopEditPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
+  const [previewCertificate, setPreviewCertificate] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [certificateError, setCertificateError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [locationAddress, setLocationAddress] = useState<string>('');
   const [loadingLocation, setLoadingLocation] = useState(false);
-  
+
   const shopId = shop?.id;
 
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<ShopFormData>({
@@ -56,7 +59,8 @@ export default function ShopEditPage() {
       streetAddress: '',
       description: '',
       logo: '',
-      location: undefined 
+      certificateUrl: '',
+      location: undefined
     },
   });
 
@@ -69,9 +73,11 @@ export default function ShopEditPage() {
         streetAddress: shop.streetAddress || '',
         description: shop.description || '',
         logo: shop.logo || '',
+        certificateUrl: shop.certificateUrl || '',
         location: shop.location || undefined
       });
       setPreviewLogo(shop.logo ? cloudinaryUtils.getFullUrl(shop.logo) : null);
+      setPreviewCertificate(shop.certificateUrl ? cloudinaryUtils.getFullUrl(shop.certificateUrl) : null);
 
       if (shop.location?.coordinates) {
         setCurrentLocation({
@@ -113,6 +119,39 @@ export default function ShopEditPage() {
       setFileError('Failed to upload image');
       console.error('Image upload error:', error);
       toast.error('Failed to upload logo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCertificateChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      setCertificateError('Please upload a valid file (PNG, JPG, JPEG, or PDF)');
+      return;
+    }
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setCertificateError('File size must be less than 10MB');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const relativePath = await cloudinaryUtils.uploadImage(file);
+      const fullUrl = cloudinaryUtils.getFullUrl(relativePath);
+      setValue('certificateUrl', fullUrl);
+      setPreviewCertificate(fullUrl);
+      setCertificateError(null);
+      toast.success('Certificate uploaded successfully');
+    } catch (error) {
+      setCertificateError('Failed to upload certificate');
+      console.error('Certificate upload error:', error);
+      toast.error('Failed to upload certificate');
     } finally {
       setLoading(false);
     }
@@ -177,7 +216,8 @@ export default function ShopEditPage() {
       const payload = {
         ...data,
         logo: data.logo || undefined,
-        location: data.location || undefined 
+        certificateUrl: data.certificateUrl || undefined,
+        location: data.location || undefined
       };
       const shopData = await shopService.editShop(shopId, payload);
       if (!shopData) {
@@ -252,6 +292,38 @@ export default function ShopEditPage() {
                 </div>
                 {fileError && <p className="text-red-500 text-sm">{fileError}</p>}
                 {errors.logo && <p className="text-red-500 text-sm">{errors.logo.message}</p>}
+              </div>
+
+              {/* Certificate Section */}
+              <div className="space-y-2">
+                <Label>Shop Certificate</Label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <Avatar className="h-24 w-24 border-4 border-gray-100 shadow-lg">
+                      <AvatarImage src={previewCertificate || cloudinaryUtils.getFullUrl(shop.certificateUrl ?? "")} alt="Certificate" />
+                      <AvatarFallback className="bg-black text-white text-2xl font-bold">
+                        <FileText className="h-12 w-12" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="absolute -bottom-2 -right-2 bg-black text-white hover:bg-gray-800 rounded-full h-8 w-8 p-0"
+                      onClick={() => document.getElementById('certificate-upload')?.click()}
+                    >
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                    <Input
+                      id="certificate-upload"
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,application/pdf"
+                      className="hidden"
+                      onChange={handleCertificateChange}
+                    />
+                  </div>
+                </div>
+                {certificateError && <p className="text-red-500 text-sm">{certificateError}</p>}
+                {errors.certificateUrl && <p className="text-red-500 text-sm">{errors.certificateUrl.message}</p>}
               </div>
 
               {/* Shop Name */}

@@ -18,6 +18,7 @@ export interface IShopSubscription {
 }
 
 export interface UpdateShopDTO {
+  certificateUrl?: string;
   name?: string;
   phone?: string;
   logo?: string;

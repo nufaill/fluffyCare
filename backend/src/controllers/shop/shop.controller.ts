@@ -526,7 +526,7 @@ export class ShopController implements IShopController {
     }
   };
 
-  updateShopProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+ updateShopProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { shopId } = req.params;
       if (!shopId) {
@@ -539,7 +539,7 @@ export class ShopController implements IShopController {
 
       const body: UpdateShopDTO = req.body;
 
-      const validFields = ['name', 'phone', 'logo', 'city', 'streetAddress', 'description', 'location'];
+      const validFields = ['name', 'phone', 'logo', 'city', 'streetAddress', 'description', 'location', 'certificateUrl'];
       const invalidFields = Object.keys(body).filter(key => !validFields.includes(key));
       if (invalidFields.length > 0) {
         res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -591,6 +591,13 @@ export class ShopController implements IShopController {
         });
         return;
       }
+      if (body.certificateUrl && typeof body.certificateUrl !== 'string') {
+        res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
+          success: false,
+          message: 'certificateUrl must be a string'
+        });
+        return;
+      }
       if (body.location) {
         if (body.location.type !== 'Point' || !Array.isArray(body.location.coordinates) || body.location.coordinates.length !== 2 || !body.location.coordinates.every((coord: any) => typeof coord === 'number')) {
           res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
@@ -609,6 +616,7 @@ export class ShopController implements IShopController {
       if (body.city) updateData.city = body.city;
       if (body.streetAddress) updateData.streetAddress = body.streetAddress;
       if (body.description) updateData.description = body.description;
+      if (body.certificateUrl) updateData.certificateUrl = body.certificateUrl;
 
       const updatedShop = await this._shopService.updateShopProfile(shopId, updateData);
 

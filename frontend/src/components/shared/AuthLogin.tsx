@@ -93,31 +93,8 @@ const AuthLogin: React.FC<AuthLoginProps> = ({
     try {
       if (onSubmit) {
         await onSubmit(formData);
-        // Success toast
-        toast.success('Login successful! Welcome back!', {
-          position: 'top-right',
-          duration: 4000,
-          style: {
-            background: '#DCFCE7',
-            color: '#16A34A',
-            border: '1px solid #BBF7D0',
-          },
-          icon: '🎉',
-        });
       } else {
         await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Success toast
-        toast.success('Login successful! Welcome back!', {
-          position: 'top-right',
-          duration: 4000,
-          style: {
-            background: '#DCFCE7',
-            color: '#16A34A',
-            border: '1px solid #BBF7D0',
-          },
-          icon: '🎉',
-        });
       }
     } catch (error: any) {
       console.error('Login error:', error);
