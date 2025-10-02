@@ -210,7 +210,7 @@ export default function StaffManagement() {
                 phone: formData.phone,
                 shopId,
             };
-            const response = await StaffService.createStaff(shopId,staffPayload);
+            const response = await StaffService.createStaff(shopId, staffPayload);
             setStaff((prev) => [...prev, response.data]);
             setIsAddDialogOpen(false);
             resetForm();
@@ -343,10 +343,10 @@ export default function StaffManagement() {
     if (initialLoading) {
         return (
             <PetCareLayout>
-                <div className="flex items-center justify-center min-h-[400px]">
+                <div className="flex items-center justify-center min-h-[400px] px-4">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-                        <p className="text-gray-600">Loading staff data...</p>
+                        <p className="text-gray-600 text-sm sm:text-base">Loading staff data...</p>
                     </div>
                 </div>
             </PetCareLayout>
@@ -356,40 +356,40 @@ export default function StaffManagement() {
     return (
         <PetCareLayout>
             <Navbar />
-            <div className="space-y-6">
+            <div className="space-y-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="mb-8">
+                <div className="mb-6">
                     <div className="flex items-center gap-3 mb-2">
-                        <Users className="h-8 w-8" />
-                        <h1 className="text-3xl font-bold">Staff Management</h1>
+                        <Users className="h-6 w-6 sm:h-8 sm:w-8" />
+                        <h1 className="text-2xl sm:text-3xl font-bold">Staff Management</h1>
                     </div>
-                    <p className="text-gray-600">Manage your shop staff members</p>
+                    <p className="text-gray-600 text-sm sm:text-base">Manage your shop staff members</p>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
                     <Card className="border-2 border-black">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-600">Total Staff</CardTitle>
+                            <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Total Staff</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{total}</div>
+                            <div className="text-xl sm:text-2xl font-bold">{total}</div>
                         </CardContent>
                     </Card>
                     <Card className="border-2 border-black">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-600">Active Staff</CardTitle>
+                            <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Active Staff</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-green-600">{staff.filter((s) => s.isActive).length}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-green-600">{staff.filter((s) => s.isActive).length}</div>
                         </CardContent>
                     </Card>
                     <Card className="border-2 border-black">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-600">Inactive Staff</CardTitle>
+                            <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Inactive Staff</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-red-600">{staff.filter((s) => !s.isActive).length}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-red-600">{staff.filter((s) => !s.isActive).length}</div>
                         </CardContent>
                     </Card>
                 </div>
@@ -402,71 +402,74 @@ export default function StaffManagement() {
                             placeholder="Search staff by name, email, or phone..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 border-2 border-black focus:border-gray-400"
+                            className="pl-10 border-2 border-black focus:border-gray-400 text-sm sm:text-base"
                         />
                     </div>
-
                     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                         <DialogTrigger asChild>
-                            <Button className="bg-black text-white hover:bg-gray-800 border-2 border-black">
+                            <Button className="bg-black text-white hover:bg-gray-800 border-2 border-black flex items-center text-sm sm:text-base">
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add Staff
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="border-2 border-black">
+                        <DialogContent className="border-2 border-black max-w-[95vw] sm:max-w-md">
                             <DialogHeader>
-                                <DialogTitle>Add New Staff Member</DialogTitle>
-                                <DialogDescription>Enter the details for the new staff member.</DialogDescription>
+                                <DialogTitle className="text-lg sm:text-xl">Add New Staff Member</DialogTitle>
+                                <DialogDescription className="text-sm sm:text-base">Enter the details for the new staff member.</DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
                                 <div className="grid gap-2">
-                                    <Label htmlFor="name">Name</Label>
+                                    <Label htmlFor="name" className="text-sm sm:text-base">Name</Label>
                                     <Input
                                         id="name"
                                         value={formData.name}
                                         onChange={(e) => handleInputChange("name", e.target.value)}
-                                        className={`border-2 border-black focus:border-gray-400 ${formErrors.name ? 'border-red-600' : ''}`}
+                                        className={`border-2 border-black focus:border-gray-400 ${formErrors.name ? 'border-red-600' : ''} text-sm sm:text-base`}
                                         placeholder="Enter full name (3-100 characters)"
                                     />
-                                    {formErrors.name && <p className="text-red-600 text-sm">{formErrors.name}</p>}
+                                    {formErrors.name && <p className="text-red-600 text-xs sm:text-sm">{formErrors.name}</p>}
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email" className="text-sm sm:text-base">Email</Label>
                                     <Input
                                         id="email"
                                         type="email"
                                         value={formData.email}
                                         onChange={(e) => handleInputChange("email", e.target.value)}
-                                        className={`border-2 border-black focus:border-gray-400 ${formErrors.email ? 'border-red-600' : ''}`}
+                                        className={`border-2 border-black focus:border-gray-400 ${formErrors.email ? 'border-red-600' : ''} text-sm sm:text-base`}
                                         placeholder="Enter valid email address"
                                     />
-                                    {formErrors.email && <p className="text-red-600 text-sm">{formErrors.email}</p>}
+                                    {formErrors.email && <p className="text-red-600 text-xs sm:text-sm">{formErrors.email}</p>}
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="phone">Phone</Label>
+                                    <Label htmlFor="phone" className="text-sm sm:text-base">Phone</Label>
                                     <Input
                                         id="phone"
                                         value={formData.phone}
                                         onChange={(e) => handleInputChange("phone", e.target.value)}
-                                        className={`border-2 border-black focus:border-gray-400 ${formErrors.phone ? 'border-red-600' : ''}`}
+                                        className={`border-2 border-black focus:border-gray-400 ${formErrors.phone ? 'border-red-600' : ''} text-sm sm:text-base`}
                                         placeholder="Enter 10-digit phone number"
                                         maxLength={10}
                                     />
-                                    {formErrors.phone && <p className="text-red-600 text-sm">{formErrors.phone}</p>}
+                                    {formErrors.phone && <p className="text-red-600 text-xs sm:text-sm">{formErrors.phone}</p>}
                                 </div>
                             </div>
-                            <DialogFooter>
+                            <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                                 <Button
                                     variant="outline"
                                     onClick={() => {
                                         setIsAddDialogOpen(false);
                                         resetForm();
                                     }}
-                                    className="border-2 border-black hover:bg-gray-100"
+                                    className="border-2 border-black hover:bg-gray-100 w-full sm:w-auto text-sm sm:text-base"
                                 >
                                     Cancel
                                 </Button>
-                                <Button onClick={handleAddStaff} disabled={loading || Object.values(formErrors).some(err => err)} className="bg-black text-white hover:bg-gray-800">
+                                <Button
+                                    onClick={handleAddStaff}
+                                    disabled={loading || Object.values(formErrors).some(err => err)}
+                                    className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto text-sm sm:text-base"
+                                >
                                     {loading ? "Adding..." : "Add Staff"}
                                 </Button>
                             </DialogFooter>
@@ -477,8 +480,8 @@ export default function StaffManagement() {
                 {/* Staff Table */}
                 <Card className="border-2 border-black">
                     <CardHeader>
-                        <CardTitle>Staff Members</CardTitle>
-                        <CardDescription>
+                        <CardTitle className="text-lg sm:text-xl">Staff Members</CardTitle>
+                        <CardDescription className="text-sm sm:text-base">
                             {filteredStaff.length} staff member{filteredStaff.length !== 1 ? "s" : ""} found
                         </CardDescription>
                     </CardHeader>
@@ -487,27 +490,26 @@ export default function StaffManagement() {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="border-black">
-                                        <TableHead className="font-bold text-black">Name</TableHead>
-                                        <TableHead className="font-bold text-black">Email</TableHead>
-                                        <TableHead className="font-bold text-black">Phone</TableHead>
-                                        <TableHead className="font-bold text-black">Status</TableHead>
-                                        <TableHead className="font-bold text-black">Actions</TableHead>
+                                        <TableHead className="font-bold text-black text-xs sm:text-sm">Name</TableHead>
+                                        <TableHead className="font-bold text-black text-xs sm:text-sm hidden sm:table-cell">Email</TableHead>
+                                        <TableHead className="font-bold text-black text-xs sm:text-sm hidden md:table-cell">Phone</TableHead>
+                                        <TableHead className="font-bold text-black text-xs sm:text-sm">Status</TableHead>
+                                        <TableHead className="font-bold text-black text-xs sm:text-sm">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {filteredStaff.map((staffMember) => (
                                         <TableRow key={staffMember._id} className="border-black">
-                                            <TableCell className="font-medium">{staffMember.name}</TableCell>
-                                            <TableCell>{staffMember.email}</TableCell>
-                                            <TableCell>{staffMember.phone}</TableCell>
+                                            <TableCell className="font-medium text-xs sm:text-sm">{staffMember.name}</TableCell>
+                                            <TableCell className="text-xs sm:text-sm hidden sm:table-cell">{staffMember.email}</TableCell>
+                                            <TableCell className="text-xs sm:text-sm hidden md:table-cell">{staffMember.phone}</TableCell>
                                             <TableCell>
                                                 <Badge
                                                     variant={staffMember.isActive ? "default" : "secondary"}
-                                                    className={
-                                                        staffMember.isActive
-                                                            ? "bg-black text-white"
-                                                            : "bg-gray-200 text-black border border-black"
-                                                    }
+                                                    className={`
+                                                        ${staffMember.isActive ? "bg-black text-white" : "bg-gray-200 text-black border border-black"}
+                                                        text-xs sm:text-sm
+                                                    `}
                                                 >
                                                     {staffMember.isActive ? "Active" : "Inactive"}
                                                 </Badge>
@@ -542,7 +544,7 @@ export default function StaffManagement() {
                             </Table>
 
                             {filteredStaff.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-8 text-gray-500 text-sm sm:text-base">
                                     No staff members found matching your search.
                                 </div>
                             )}
@@ -564,49 +566,49 @@ export default function StaffManagement() {
 
                 {/* Edit Dialog */}
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                    <DialogContent className="border-2 border-black">
+                    <DialogContent className="border-2 border-black max-w-[95vw] sm:max-w-md">
                         <DialogHeader>
-                            <DialogTitle>Edit Staff Member</DialogTitle>
-                            <DialogDescription>Update the details for {editingStaff?.name}.</DialogDescription>
+                            <DialogTitle className="text-lg sm:text-xl">Edit Staff Member</DialogTitle>
+                            <DialogDescription className="text-sm sm:text-base">Update the details for {editingStaff?.name}.</DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="edit-name">Name</Label>
+                                <Label htmlFor="edit-name" className="text-sm sm:text-base">Name</Label>
                                 <Input
                                     id="edit-name"
                                     value={formData.name}
                                     onChange={(e) => handleInputChange("name", e.target.value)}
-                                    className={`border-2 border-black focus:border-gray-400 ${formErrors.name ? 'border-red-600' : ''}`}
+                                    className={`border-2 border-black focus:border-gray-400 ${formErrors.name ? 'border-red-600' : ''} text-sm sm:text-base`}
                                     placeholder="Enter full name (3-100 characters)"
                                 />
-                                {formErrors.name && <p className="text-red-600 text-sm">{formErrors.name}</p>}
+                                {formErrors.name && <p className="text-red-600 text-xs sm:text-sm">{formErrors.name}</p>}
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="edit-email">Email</Label>
+                                <Label htmlFor="edit-email" className="text-sm sm:text-base">Email</Label>
                                 <Input
                                     id="edit-email"
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => handleInputChange("email", e.target.value)}
-                                    className={`border-2 border-black focus:border-gray-400 ${formErrors.email ? 'border-red-600' : ''}`}
+                                    className={`border-2 border-black focus:border-gray-400 ${formErrors.email ? 'border-red-600' : ''} text-sm sm:text-base`}
                                     placeholder="Enter valid email address"
                                 />
-                                {formErrors.email && <p className="text-red-600 text-sm">{formErrors.email}</p>}
+                                {formErrors.email && <p className="text-red-600 text-xs sm:text-sm">{formErrors.email}</p>}
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="edit-phone">Phone</Label>
+                                <Label htmlFor="edit-phone" className="text-sm sm:text-base">Phone</Label>
                                 <Input
                                     id="edit-phone"
                                     value={formData.phone}
                                     onChange={(e) => handleInputChange("phone", e.target.value)}
-                                    className={`border-2 border-black focus:border-gray-400 ${formErrors.phone ? 'border-red-600' : ''}`}
+                                    className={`border-2 border-black focus:border-gray-400 ${formErrors.phone ? 'border-red-600' : ''} text-sm sm:text-base`}
                                     placeholder="Enter 10-digit phone number"
                                     maxLength={10}
                                 />
-                                {formErrors.phone && <p className="text-red-600 text-sm">{formErrors.phone}</p>}
+                                {formErrors.phone && <p className="text-red-600 text-xs sm:text-sm">{formErrors.phone}</p>}
                             </div>
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                             <Button
                                 variant="outline"
                                 onClick={() => {
@@ -614,14 +616,14 @@ export default function StaffManagement() {
                                     setEditingStaff(null);
                                     resetForm();
                                 }}
-                                className="border-2 border-black hover:bg-gray-100"
+                                className="border-2 border-black hover:bg-gray-100 w-full sm:w-auto text-sm sm:text-base"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 onClick={handleEditStaff}
                                 disabled={loading || Object.values(formErrors).some(err => err)}
-                                className="bg-black text-white hover:bg-gray-800"
+                                className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto text-sm sm:text-base"
                             >
                                 {loading ? "Updating..." : "Update Staff"}
                             </Button>
@@ -631,28 +633,28 @@ export default function StaffManagement() {
 
                 {/* Toggle Status Confirmation Dialog */}
                 <Dialog open={isToggleDialogOpen} onOpenChange={setIsToggleDialogOpen}>
-                    <DialogContent className="border-2 border-black">
+                    <DialogContent className="border-2 border-black max-w-[95vw] sm:max-w-md">
                         <DialogHeader>
-                            <DialogTitle>Confirm Status Change</DialogTitle>
-                            <DialogDescription>
+                            <DialogTitle className="text-lg sm:text-xl">Confirm Status Change</DialogTitle>
+                            <DialogDescription className="text-sm sm:text-base">
                                 Are you sure you want to {staffToToggle?.isActive ? "deactivate" : "activate"} this staff member?
                             </DialogDescription>
                         </DialogHeader>
-                        <DialogFooter>
+                        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                             <Button
                                 variant="outline"
                                 onClick={() => {
                                     setIsToggleDialogOpen(false);
                                     setStaffToToggle(null);
                                 }}
-                                className="border-2 border-black hover:bg-gray-100"
+                                className="border-2 border-black hover:bg-gray-100 w-full sm:w-auto text-sm sm:text-base"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 onClick={handleToggleStatus}
                                 disabled={loading}
-                                className="bg-black text-white hover:bg-gray-800"
+                                className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto text-sm sm:text-base"
                             >
                                 {loading ? "Updating..." : "Confirm"}
                             </Button>

@@ -94,7 +94,7 @@ export function Pagination({
     }
 
     return (
-      <span className="text-sm text-gray-700 dark:text-gray-300">
+      <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
         Showing {startIndex} to {endIndex} of {total} entries
       </span>
     )
@@ -104,19 +104,19 @@ export function Pagination({
 
   return (
     <div
-      className={`flex items-center justify-between bg-white dark:bg-gray-800 px-6 py-4 border-t border-gray-200 dark:border-gray-600 ${className}`}
+      className={`flex flex-col sm:flex-row items-center justify-between bg-white dark:bg-gray-800 px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-600 space-y-4 sm:space-y-0 ${className}`}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
         {renderTotal()}
 
         {showSizeChanger && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-700 dark:text-gray-300">Show</span>
+            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Show</span>
             <select
               value={pageSize}
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
               disabled={disabled}
-              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -124,20 +124,20 @@ export function Pagination({
                 </option>
               ))}
             </select>
-            <span className="text-sm text-gray-700 dark:text-gray-300">entries</span>
+            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">entries</span>
           </div>
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
         {showQuickJumper && (
-          <div className="flex items-center gap-2 mr-4">
-            <span className="text-sm text-gray-700 dark:text-gray-300">Go to</span>
+          <div className="flex items-center gap-2 mr-0 sm:mr-4">
+            <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Go to</span>
             <input
               type="number"
               min={1}
               max={totalPages}
-              className="w-16 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-16 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
                   const page = Number.parseInt((e.target as HTMLInputElement).value)
@@ -156,17 +156,17 @@ export function Pagination({
           size="sm"
           onClick={() => handlePageChange(current - 1)}
           disabled={current <= 1 || disabled}
-          className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+          className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs sm:text-sm"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4 mr-1" />
           Previous
         </Button>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
           {renderPageNumbers().map((page, index) => (
             <div key={index}>
               {page === "..." ? (
-                <span className="px-3 py-2 text-gray-500 dark:text-gray-400">
+                <span className="px-2 sm:px-3 py-2 text-gray-500 dark:text-gray-400">
                   <MoreHorizontal className="h-4 w-4" />
                 </span>
               ) : (
@@ -175,11 +175,12 @@ export function Pagination({
                   size="sm"
                   onClick={() => handlePageChange(page as number)}
                   disabled={disabled}
-                  className={
-                    current === page
+                  className={`
+                    ${current === page
                       ? "bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200"
-                      : "text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  }
+                      : "text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"}
+                    text-xs sm:text-sm
+                  `}
                 >
                   {page}
                 </Button>
@@ -193,10 +194,10 @@ export function Pagination({
           size="sm"
           onClick={() => handlePageChange(current + 1)}
           disabled={current >= totalPages || disabled}
-          className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+          className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs sm:text-sm"
         >
           Next
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
     </div>

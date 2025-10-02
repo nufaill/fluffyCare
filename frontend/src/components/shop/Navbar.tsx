@@ -78,21 +78,17 @@ export function Navbar({
 
   return (
     <header
-      className={`w-full h-16 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm ${className}`}
+      className={`w-full h-16 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm flex items-center ${className}`}
     >
-      <div className="flex items-center justify-between h-full px-6">
+      <div className="w-full max-w-7xl mx-auto flex items-center justify-between h-full px-4 sm:px-6 lg:px-8">
         {/* Search Bar */}
-        <div className={`relative flex-1 max-w-md transition-all duration-300 ${searchFocused ? "scale-105" : ""}`}>
+        <div className={`relative flex-1 max-w-full sm:max-w-md transition-all duration-300 ${searchFocused ? "scale-100 sm:scale-105" : ""}`}>
           <Search
-            className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors ${
-              searchFocused ? "text-blue-500" : "text-gray-400 dark:text-gray-500"
-            }`}
+            className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors ${searchFocused ? "text-blue-500" : "text-gray-400 dark:text-gray-500"}`}
           />
           <Input
             placeholder={searchPlaceholder}
-            className={`pl-10 pr-4 bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600 focus:bg-white dark:focus:bg-gray-800 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 transition-all duration-200 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
-              searchFocused ? "shadow-md" : ""
-            }`}
+            className={`w-full pl-10 pr-4 py-2 text-sm bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-600 focus:bg-white dark:focus:bg-gray-800 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 transition-all duration-200 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 ${searchFocused ? "shadow-md" : ""}`}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
             onChange={(e) => onSearch?.(e.target.value)}
@@ -100,17 +96,17 @@ export function Navbar({
         </div>
 
         {/* Right Section */}
-        <div className="flex items-center gap-3 ml-6">
+        <div className="flex items-center gap-2 sm:gap-3 ml-2 sm:ml-4 lg:ml-6 flex-shrink-0">
           {/* Notifications */}
           <Button
             variant="ghost"
             size="icon"
-            className="relative hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group text-gray-600 dark:text-gray-300"
+            className="relative h-10 w-10 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group text-gray-600 dark:text-gray-300"
             onClick={onNotificationClick}
           >
             <Bell className="h-5 w-5 group-hover:animate-pulse" />
             {notificationCount > 0 && (
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-r from-red-500 to-pink-500 p-0 text-xs animate-pulse border-0">
+              <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-gradient-to-r from-red-500 to-pink-500 p-0 text-[10px] sm:text-xs animate-pulse border-0">
                 {notificationCount > 9 ? "9+" : notificationCount}
               </Badge>
             )}
@@ -121,61 +117,61 @@ export function Navbar({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all duration-200 hover:shadow-md text-gray-900 dark:text-gray-100"
+                className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all duration-200 hover:shadow-md text-gray-900 dark:text-gray-100 max-w-[200px] sm:max-w-none"
               >
-                <div className="relative">
-                  <Avatar className="h-9 w-9 ring-2 ring-blue-100 dark:ring-blue-900">
+                <div className="relative flex-shrink-0">
+                  <Avatar className="h-8 w-8 sm:h-9 sm:w-9 ring-2 ring-blue-100 dark:ring-blue-900">
                     <AvatarImage src={cloudinaryUtils.getFullUrl(shop?.logo || userAvatar || "/placeholder.svg?height=40&width=40")} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold text-xs sm:text-sm">
                       {displayName.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="absolute -bottom-1 -right-1 h-3 w-3 bg-green-400 rounded-full border-2 border-white dark:border-gray-900"></div>
+                  <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 sm:h-3 sm:w-3 bg-green-400 rounded-full border-1.5 border-white dark:border-gray-900"></div>
                 </div>
-                <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{displayName}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{displayRole}</p>
+                <div className="hidden sm:block text-left min-w-0">
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{displayName}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">{displayRole}</p>
                 </div>
-                <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-56 p-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-lg z-50 mt-2"
+              className="w-52 sm:w-56 p-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-lg z-50 mt-2"
             >
-              <div className="flex items-center gap-3 p-2 mb-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <Avatar className="h-10 w-10">
+              <div className="flex items-center gap-2 sm:gap-3 p-2 mb-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                   <AvatarImage src={cloudinaryUtils.getFullUrl(shop?.logo || userAvatar || "/placeholder.svg?height=40&width=40")} />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs sm:text-sm">
                     {displayName.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{displayName}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{displayRole}</p>
-                  {shop?.email && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{shop.email}</p>}
+                  <p className="font-medium text-xs sm:text-sm text-gray-900 dark:text-gray-100 truncate">{displayName}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">{displayRole}</p>
+                  {shop?.email && <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 truncate">{shop.email}</p>}
                 </div>
               </div>
               <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
               <DropdownMenuItem
                 onClick={onProfileClick}
-                className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs sm:text-sm py-1.5"
               >
                 👤 View Profile
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+              <DropdownMenuItem className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs sm:text-sm py-1.5">
                 ⚙️ Account Settings
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setIsBillingOpen(true)}
-                className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs sm:text-sm py-1.5"
               >
                 💳 Billing & Plans
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-600" />
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="cursor-pointer text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="cursor-pointer text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm py-1.5"
               >
                 {isLoggingOut ? "🔄 Signing Out..." : "🚪 Sign Out"}
               </DropdownMenuItem>

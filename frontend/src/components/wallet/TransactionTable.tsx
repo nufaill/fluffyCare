@@ -21,9 +21,8 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'credit' | 'debit'>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // Temporarily reduced for testing
+  const itemsPerPage = 5;
 
-  // Memoize filtered and sorted transactions
   const filteredTransactions = useMemo(() => {
     return transactions
       .filter(transaction => {
@@ -35,7 +34,6 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [transactions, searchTerm, filterType]);
 
-  // Reset currentPage when totalPages changes
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -45,7 +43,6 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
     }
   }, [totalPages, currentPage]);
 
-  // Pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
 
@@ -69,52 +66,49 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
 
   const getTransactionIcon = (type: 'credit' | 'debit') => {
     return type === 'credit' ? 
-      <ArrowUpCircle className="h-5 w-5 text-green-500" /> : 
-      <ArrowDownCircle className="h-5 w-5 text-red-500" />;
+      <ArrowUpCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-green-500" /> : 
+      <ArrowDownCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-red-500" />;
   };
 
   const getTransactionColor = (type: 'credit' | 'debit') => {
     return type === 'credit' ? 'text-green-600' : 'text-red-600';
   };
 
-  // Generate page numbers for pagination
   const pageNumbers = [];
-  for (let i = 1; i <= totalPages; i++) {
+  for (let i = 1; i <= Math.ceil(filteredTransactions.length / itemsPerPage); i++) {
     pageNumbers.push(i);
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 w-full max-w-full mx-auto">
+      <div className="p-4 sm:p-6 lg:p-8 border-b border-gray-200">
+        <div className="flex flex-col gap-4">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">Transaction History</h3>
-            <p className="text-gray-600 text-sm mt-1">
+            <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Transaction History</h3>
+            <p className="text-gray-600 text-xs sm:text-sm lg:text-base mt-1">
               {role === 'admin' ? 'All platform transactions' : 'Your recent transactions'}
             </p>
           </div>
           
-          {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search transactions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                className="w-full pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm lg:text-base"
                 aria-label="Search transactions"
               />
             </div>
             
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as 'all' | 'credit' | 'debit')}
-                className="pl-10 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                className="pl-10 pr-8 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-xs sm:text-sm lg:text-base"
                 aria-label="Filter transactions by type"
               >
                 <option value="all">All Types</option>
@@ -126,13 +120,12 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
         </div>
       </div>
 
-      {/* Transaction List */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6 lg:p-8">
         {paginatedTransactions.length === 0 ? (
-          <div className="text-center py-12">
-            <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 mb-2">No transactions found</h4>
-            <p className="text-gray-600">
+          <div className="text-center py-8 sm:py-12">
+            <Calendar className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16 text-gray-300 mx-auto mb-4" />
+            <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-2">No transactions found</h4>
+            <p className="text-gray-600 text-xs sm:text-sm lg:text-base">
               {searchTerm || filterType !== 'all' 
                 ? 'Try adjusting your search or filter criteria' 
                 : 'Your transactions will appear here once you start using your wallet'}
@@ -143,35 +136,27 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
             {paginatedTransactions.map((transaction, index) => (
               <div
                 key={transaction._id || index}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 lg:p-5 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors gap-3 sm:gap-4"
               >
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-10 h-10 bg-white rounded-full shadow-sm">
+                <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                  <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-sm">
                     {getTransactionIcon(transaction.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-gray-900 truncate">
-                      {transaction.description}
-                    </h4>
-                    <div className="flex items-center gap-3 mt-1">
-                      <p className="text-xs text-gray-500">
-                        {formatDate(transaction.createdAt)}
-                      </p>
+                    <h4 className="text-xs sm:text-sm lg:text-base font-medium text-gray-900 truncate">{transaction.description}</h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-1">
+                      <p className="text-xs sm:text-xs lg:text-sm text-gray-500">{formatDate(transaction.createdAt)}</p>
                       {transaction.referenceId && (
-                        <p className="text-xs text-gray-400">
-                          Ref: {transaction.referenceId.slice(-8)}
-                        </p>
+                        <p className="text-xs sm:text-xs lg:text-sm text-gray-400">Ref: {transaction.referenceId.slice(-8)}</p>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`text-lg font-semibold ${getTransactionColor(transaction.type)}`}>
+                <div className="text-left sm:text-right">
+                  <p className={`text-sm sm:text-base lg:text-lg font-semibold ${getTransactionColor(transaction.type)}`}>
                     {transaction.type === 'credit' ? '+' : '-'}{formatCurrency(transaction.amount)}
                   </p>
-                  <p className="text-xs text-gray-500 capitalize">
-                    {transaction.type}
-                  </p>
+                  <p className="text-xs sm:text-xs lg:text-sm text-gray-500 capitalize">{transaction.type}</p>
                 </div>
               </div>
             ))}
@@ -179,17 +164,16 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
         )}
       </div>
 
-      {/* Pagination */}
-      {filteredTransactions.length > 0 && totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-4 border-t border-gray-200 px-6">
-          <p className="text-sm text-gray-600 mb-4 sm:mb-0">
+      {filteredTransactions.length > 0 && pageNumbers.length > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between mt-4 sm:mt-6 pt-4 border-t border-gray-200 px-4 sm:px-6 lg:px-8 gap-4">
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600">
             Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
           </p>
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <button
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className={`px-3 py-1 text-sm border border-gray-300 rounded-md transition-colors ${
+              className={`px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded-md transition-colors ${
                 currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
               }`}
               aria-label="Previous page"
@@ -200,7 +184,7 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 text-sm border border-gray-300 rounded-md transition-colors ${
+                className={`px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded-md transition-colors ${
                   currentPage === page ? 'bg-blue-600 text-white' : 'hover:bg-gray-50'
                 }`}
                 aria-label={`Page ${page}`}
@@ -210,10 +194,10 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
               </button>
             ))}
             <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 text-sm border border-gray-300 rounded-md transition-colors ${
-                currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+              onClick={() => setCurrentPage(Math.min(pageNumbers.length, currentPage + 1))}
+              disabled={currentPage === pageNumbers.length}
+              className={`px-2 sm:px-3 py-1 text-xs sm:text-sm border border-gray-300 rounded-md transition-colors ${
+                currentPage === pageNumbers.length ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
               }`}
               aria-label="Next page"
             >

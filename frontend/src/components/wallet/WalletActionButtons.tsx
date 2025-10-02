@@ -77,30 +77,28 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
 
   return (
     <div className="space-y-4">
-      {/* Action Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {actions.map((action, index) => (
           <button
             key={index}
             onClick={action.onClick}
-            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-lg ${action.className}`}
+            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-lg ${action.className} text-sm sm:text-base`}
           >
-            <action.icon className="h-5 w-5" />
+            <action.icon className="h-4 sm:h-5 w-4 sm:w-5" />
             <span className="text-sm font-medium">{action.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Add Money Modal */}
       {isAddMoneyOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-xs sm:max-w-sm">
+            <h3 className="text-base sm:text-lg font-semibold mb-4">
               {role === 'admin' ? 'Manual Credit' : 'Add Money'}
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Amount
                 </label>
                 <input
@@ -108,7 +106,7 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Enter amount"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                   min="0"
                   step="0.01"
                 />
@@ -116,7 +114,7 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
               <div className="flex gap-3">
                 <button
                   onClick={handleAddMoney}
-                  className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
+                  className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors text-sm sm:text-base"
                 >
                   {role === 'admin' ? 'Credit' : 'Add Money'}
                 </button>
@@ -125,7 +123,7 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
                     setIsAddMoneyOpen(false);
                     setAmount('');
                   }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors text-sm sm:text-base"
                 >
                   Cancel
                 </button>
@@ -135,16 +133,15 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
         </div>
       )}
 
-      {/* Withdraw Modal */}
       {isWithdrawOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-xs sm:max-w-sm">
+            <h3 className="text-base sm:text-lg font-semibold mb-4">
               {role === 'admin' ? 'Manual Debit' : role === 'shop' ? 'Withdraw Earnings' : 'Withdraw Money'}
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                   Amount
                 </label>
                 <input
@@ -152,7 +149,7 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Enter amount"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                   min="0"
                   step="0.01"
                 />
@@ -160,7 +157,7 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
               <div className="flex gap-3">
                 <button
                   onClick={handleWithdraw}
-                  className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
+                  className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors text-sm sm:text-base"
                 >
                   {role === 'admin' ? 'Debit' : 'Withdraw'}
                 </button>
@@ -169,7 +166,7 @@ export function WalletActionButtons({ role, onAction }: WalletActionButtonsProps
                     setIsWithdrawOpen(false);
                     setAmount('');
                   }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors text-sm sm:text-base"
                 >
                   Cancel
                 </button>
