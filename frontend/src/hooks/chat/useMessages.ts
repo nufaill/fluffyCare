@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { messageService } from '@/services/chat/messageService';
-import { type Message } from '@/types/message.type';
+import { type Message, type MessageReaction } from '@/types/message.type';
 import { useToast } from '@/hooks/use-toast';
 import {
   joinChat,
@@ -100,6 +100,10 @@ export const useMessages = ({
         updatedAt: new Date(msg.updatedAt || Date.now()),
       }));
 
+      const unreadIds = mappedMessages
+        .filter(m => !m.isRead && m.senderRole !== currentRole && m._id)
+        .map(m => m._id!);
+
       setMessages(prev => {
         const existingIds = new Set(prev.map(m => m._id));
         const uniqueNew = append ? mappedMessages.filter(m => !existingIds.has(m._id)) : mappedMessages;
@@ -116,6 +120,10 @@ export const useMessages = ({
       if (mappedMessages.length > 0) {
         lastMessageTimestamp.current = mappedMessages[mappedMessages.length - 1].createdAt.toISOString();
       }
+
+      if (unreadIds.length > 0 && currentRole) {
+        await markMessagesAsRead(unreadIds, currentRole);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch messages');
       toast({
@@ -126,7 +134,7 @@ export const useMessages = ({
     } finally {
       setLoading(false);
     }
-  }, [chatId, toast]);
+  }, [chatId, currentRole, toast]);
 
   const sendMessage = useCallback(async (
     senderRole: 'User' | 'Shop',
@@ -162,9 +170,28 @@ export const useMessages = ({
     if (!userId) return;
 
     try {
-      const updatedMessage = await messageService.addReaction(messageId, userId, emoji);
+      const message = messages.find(msg => msg._id === messageId);
+      if (!message) {
+        throw new Error('Message not found');
+      }
+
+      const existingReaction = message.reactions.find(r => r.userId === userId);
+
+      let updatedMessage: Message;
+
+      if (existingReaction) {
+        if (existingReaction.emoji === emoji) {
+          updatedMessage = await messageService.removeReaction(messageId, userId, emoji);
+        } else {
+          await messageService.removeReaction(messageId, userId, existingReaction.emoji);
+          updatedMessage = await messageService.addReaction(messageId, userId, emoji);
+        }
+      } else {
+        updatedMessage = await messageService.addReaction(messageId, userId, emoji);
+      }
+
       setMessages(prev => sortMessages(prev.map(msg =>
-        msg._id === updatedMessage._id ? updatedMessage : msg
+        msg._id === messageId ? updatedMessage : msg
       )));
     } catch (err: any) {
       setError(err.message || 'Failed to add reaction');
@@ -174,7 +201,7 @@ export const useMessages = ({
         variant: 'destructive',
       });
     }
-  }, [userId, toast]);
+  }, [userId, messages, toast]);
 
   const removeReaction = useCallback(async (messageId: string, emoji: string) => {
     if (!userId) return;
@@ -260,6 +287,10 @@ export const useMessages = ({
         updatedAt: new Date(msg.updatedAt || Date.now()),
       }));
 
+      const unreadIds = mappedMessages
+        .filter(m => !m.isRead && m.senderRole !== currentRole && m._id)
+        .map(m => m._id!);
+
       setMessages(prev => {
         const existingIds = new Set(prev.map(m => m._id));
         const uniqueNew = mappedMessages.filter(m => !existingIds.has(m._id));
@@ -269,6 +300,10 @@ export const useMessages = ({
 
       if (mappedMessages.length > 0) {
         lastMessageTimestamp.current = mappedMessages[mappedMessages.length - 1].createdAt.toISOString();
+      }
+
+      if (unreadIds.length > 0 && currentRole) {
+        await markMessagesAsRead(unreadIds, currentRole);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch new messages');
@@ -280,7 +315,7 @@ export const useMessages = ({
     } finally {
       setLoading(false);
     }
-  }, [chatId, toast]);
+  }, [chatId, currentRole, toast]);
 
   const searchMessages = useCallback(async (
     query: string,
@@ -316,7 +351,7 @@ export const useMessages = ({
       setMessages(sortMessages(mappedMessages));
       setPagination({
         currentPage: response.page || response.currentPage || 1,
-        totalPages: Math.ceil((response.total || response.totalMessages || 0) / 20), // Use default limit 20
+        totalPages: Math.ceil((response.total || response.totalMessages || 0) / 20), 
         totalMessages: response.total || response.totalMessages || 0,
       });
     } catch (err: any) {
@@ -354,8 +389,6 @@ export const useMessages = ({
     switch (event) {
       case 'new-message':
       case 'message-updated':
-      case 'reaction-added':
-      case 'reaction-removed':
         const socketMsg = data.message || data;
         const updatedMessage = transformSocketMessage(socketMsg);
         if (!updatedMessage || !updatedMessage._id) {
@@ -382,6 +415,47 @@ export const useMessages = ({
             lastMessageTimestamp.current = updatedMessage.createdAt.toISOString();
           }
         }
+        if (event === 'new-message' && updatedMessage.senderRole !== currentRole && !updatedMessage.isRead && currentRole) {
+          markMessagesAsRead([updatedMessage._id], currentRole);
+        }
+        break;
+
+      case 'reaction-added':
+        setMessages(prev => {
+          const newList = prev.map(msg => {
+            if (msg._id === data.messageId) {
+              const existing = msg.reactions.find(r => r.userId === data.userId);
+              let newReactions = [...msg.reactions];
+              if (existing) {
+                if (existing.emoji === data.emoji) {
+                  return msg;
+                }
+                newReactions = newReactions.map(r =>
+                  (r.userId === data.userId) ? { userId: data.userId, emoji: data.emoji, reactedAt: new Date(data.timestamp || Date.now()) } : r
+                );
+              } else {
+                newReactions.push({ userId: data.userId, emoji: data.emoji, reactedAt: new Date(data.timestamp || Date.now()) });
+              }
+              return { ...msg, reactions: newReactions };
+            }
+            return msg;
+          });
+          return sortMessages(newList);
+        });
+        break;
+
+      case 'reaction-removed':
+        setMessages(prev => {
+          const newList = prev.map(msg => {
+            if (msg._id === data.messageId) {
+              const filterCondition = (r: MessageReaction) => r.userId === data.userId && (data.emoji ? r.emoji === data.emoji : true);
+              const newReactions = msg.reactions.filter(r => !filterCondition(r));
+              return { ...msg, reactions: newReactions };
+            }
+            return msg;
+          });
+          return sortMessages(newList);
+        });
         break;
 
       case 'message-deleted':
@@ -408,7 +482,7 @@ export const useMessages = ({
         )));
         break;
     }
-  }, [chatId, transformSocketMessage]);
+  }, [chatId, currentRole, transformSocketMessage]);
 
   useEffect(() => {
     if (!chatId || !userId || !currentRole) return;

@@ -188,6 +188,7 @@ export function MessageList({
           const showAvatar = shouldShowAvatar(message, index);
           const showDateSeparator = shouldShowDateSeparator(message, index);
           const messageKey = generateMessageKey(message, index);
+          const userReaction = message.reactions?.find((r: any) => r.userId === currentUserId)?.emoji;
 
           return (
             <div key={messageKey}>
@@ -204,6 +205,7 @@ export function MessageList({
                 message={message}
                 isOwn={isOwn}
                 showAvatar={showAvatar}
+                currentReaction={userReaction}
                 onReactionAdd={(messageId, emoji) => onReactionAdd(extractId(messageId), emoji)}
                 onReactionRemove={(messageId, emoji) => onReactionRemove(extractId(messageId), emoji)}
                 onReply={onReply ? () => onReply(message) : () => { }}

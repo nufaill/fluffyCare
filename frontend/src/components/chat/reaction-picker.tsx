@@ -1,3 +1,4 @@
+// reaction-picker.tsx
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/chat/ui/popover';
 import { Plus } from 'lucide-react';
@@ -5,6 +6,7 @@ import { motion } from 'framer-motion';
 
 interface ReactionPickerProps {
   onReactionSelect: (emoji: string) => void;
+  currentReaction?: string;
   trigger?: React.ReactNode;
 }
 
@@ -65,7 +67,9 @@ const allReactions = {
   Hearts: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝'],
 };
 
-export function ReactionPicker({ onReactionSelect, trigger }: ReactionPickerProps) {
+export function ReactionPicker({ onReactionSelect, currentReaction, trigger }: ReactionPickerProps) {
+  const isSelected = (emoji: string) => emoji === currentReaction;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -80,7 +84,12 @@ export function ReactionPicker({ onReactionSelect, trigger }: ReactionPickerProp
           <div className="flex gap-1 justify-center">
             {quickReactions.map((emoji) => (
               <motion.div key={emoji} whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-lg hover:bg-accent" onClick={() => onReactionSelect(emoji)}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`h-8 w-8 p-0 text-lg hover:bg-accent ${isSelected(emoji) ? 'bg-primary text-primary-foreground' : ''}`} 
+                  onClick={() => onReactionSelect(emoji)}
+                >
                   {emoji}
                 </Button>
               </motion.div>
@@ -94,7 +103,12 @@ export function ReactionPicker({ onReactionSelect, trigger }: ReactionPickerProp
               <div className="grid grid-cols-8 gap-1">
                 {emojis.map((emoji) => (
                   <motion.div key={emoji} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-sm hover:bg-accent" onClick={() => onReactionSelect(emoji)}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className={`h-6 w-6 p-0 text-sm hover:bg-accent ${isSelected(emoji) ? 'bg-primary text-primary-foreground' : ''}`} 
+                      onClick={() => onReactionSelect(emoji)}
+                    >
                       {emoji}
                     </Button>
                   </motion.div>

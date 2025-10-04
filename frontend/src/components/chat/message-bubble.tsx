@@ -1,3 +1,4 @@
+// message-bubble.tsx
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/chat/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ReactionPicker } from './reaction-picker';
@@ -15,6 +16,7 @@ interface MessageBubbleProps {
   message: Message;
   isOwn: boolean;
   showAvatar: boolean;
+  currentReaction?: string;
   replyToMessage?: Message | null;
   onReactionAdd: (messageId: string, emoji: string) => void;
   onReactionRemove: (messageId: string, emoji: string) => void;
@@ -30,6 +32,7 @@ export function MessageBubble({
   message,
   isOwn,
   showAvatar,
+  currentReaction,
   replyToMessage,
   onReactionAdd,
   onReactionRemove,
@@ -196,7 +199,16 @@ export function MessageBubble({
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.2 }}
               >
-                <ReactionPicker onReactionSelect={(emoji) => onReactionAdd(messageId, emoji)} />
+                <ReactionPicker 
+                  onReactionSelect={(emoji) => {
+                    if (emoji === currentReaction) {
+                      onReactionRemove(messageId, emoji);
+                    } else {
+                      onReactionAdd(messageId, emoji);
+                    }
+                  }}
+                  currentReaction={currentReaction}
+                />
                 <MessageOptions
                   message={message}
                   isOwn={isOwn}

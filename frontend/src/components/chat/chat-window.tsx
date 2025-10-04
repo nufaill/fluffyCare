@@ -1,3 +1,4 @@
+// chat-window.tsx
 import { useEffect, useCallback, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { ChatHeader } from "./chat-header";
@@ -7,7 +8,7 @@ import { useMessages } from "@/hooks/chat/useMessages";
 import { chatService } from "@/services/chat/chatService";
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
 import { useToast } from "@/hooks/use-toast";
-import { connectSocket, disconnectSocket, joinChat, leaveChat, sendTyping, stopTyping, isSocketConnected } from '@/components/shared/socket.io-client';
+import { connectSocket, disconnectSocket, joinChat, leaveChat, sendTyping, stopTyping, isSocketConnected, getSocket } from '@/components/shared/socket.io-client';
 import type { Chat } from "@/types/chat.type";
 
 interface FileAttachment {
@@ -145,19 +146,37 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
     if (!currentUserId) return;
     try {
       await addReaction(messageId, emoji);
+      if (socketConnected && isValidChat) {
+        getSocket().emit('reaction-added', {
+          chatId,
+          messageId,
+          userId: currentUserId,
+          emoji,
+          timestamp: new Date().toISOString()
+        });
+      }
     } catch {
       toast({ title: "Error", description: "Failed to add reaction", variant: "destructive" });
     }
-  }, [currentUserId, addReaction, toast]);
+  }, [currentUserId, addReaction, socketConnected, isValidChat, chatId, toast]);
 
   const handleReactionRemove = useCallback(async (messageId: string, emoji: string) => {
     if (!currentUserId) return;
     try {
       await removeReaction(messageId, emoji);
+      if (socketConnected && isValidChat) {
+        getSocket().emit('reaction-removed', {
+          chatId,
+          messageId,
+          userId: currentUserId,
+          emoji,
+          timestamp: new Date().toISOString()
+        });
+      }
     } catch {
       toast({ title: "Error", description: "Failed to remove reaction", variant: "destructive" });
     }
-  }, [currentUserId, removeReaction, toast]);
+  }, [currentUserId, removeReaction, socketConnected, isValidChat, chatId, toast]);
 
   // Delete message
   const handleDeleteMessage = useCallback(async (messageId: string) => {
@@ -199,8 +218,21 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
       const messageIds = unreadMessages.map(msg => msg._id || "").filter(Boolean);
       markMessagesAsRead(messageIds, receiverRole);
       chatService.resetUnreadCount(chatId).catch(() => { });
+
+      // Emit read events for real-time updates
+      if (socketConnected) {
+        const readAt = new Date().toISOString();
+        messageIds.forEach(id => {
+          getSocket().emit('message-read', {
+            chatId,
+            messageId: id,
+            readAt,
+            receiverRole
+          });
+        });
+      }
     }
-  }, [chat, currentUserId, messages, markMessagesAsRead, userType, chatId, isValidChat]);
+  }, [chat, currentUserId, messages, markMessagesAsRead, userType, chatId, isValidChat, socketConnected]);
 
   // Handle errors
   useEffect(() => {
