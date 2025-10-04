@@ -47,7 +47,7 @@ export function WalletBalanceCard({ role, balance, currency, isLoading }: Wallet
             {balance >= 0 ? (
               <TrendingUp className="h-4 sm:h-5 w-4 sm:w-5 text-green-400" />
             ) : (
-              <TrendingDown className="h-4 sm:h-5 w-4 sm:h-5 text-red-400" />
+              <TrendingDown className="h-4 w-4 sm:h-5 text-red-400" />
             )}
           </div>
         </div>
