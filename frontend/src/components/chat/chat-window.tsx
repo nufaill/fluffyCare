@@ -1,4 +1,3 @@
-// chat-window.tsx
 import { useEffect, useCallback, useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { ChatHeader } from "./chat-header";
@@ -35,7 +34,7 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
   const currentRole = userType === "user" ? "User" : "Shop";
   const isValidChat = !!chatId && typeof chatId === "string";
 
-  const { messages, sending, error, sendMessage, addReaction, removeReaction, markMessagesAsRead, deleteMessage, fetchNewMessages } = useMessages({
+  const { messages, sending, error, sendMessage, addReaction, removeReaction, markMessagesAsRead, deleteMessage } = useMessages({
     chatId,
     userId: currentUserId,
     currentRole,
@@ -43,7 +42,6 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
     refreshInterval: 15000,
   });
 
-  // chat-window.tsx
   useEffect(() => {
     let mounted = true;
 
@@ -80,12 +78,11 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
     };
   }, [socketConnected, chatId, currentUserId, currentRole, isValidChat]);
 
-  // File upload
   const uploadFile = async (file: File): Promise<string> => {
     setIsUploading(true);
     try {
-      if (typeof cloudinaryUtils?.uploadFile === "function") {
-        return await cloudinaryUtils.uploadFile(file);
+      if (typeof cloudinaryUtils?.uploadImage === "function") {
+        return await cloudinaryUtils.uploadImage(file);
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
       return `mock-url-${file.name}`;
@@ -96,7 +93,6 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
     }
   };
 
-  // Send message
   const handleSendMessage = useCallback(async (content: string, attachments: FileAttachment[]) => {
     if (!chat || !currentUserId || !isValidChat) {
       toast({ title: "Error", description: "Invalid chat configuration", variant: "destructive" });
@@ -107,7 +103,6 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
     let messagesSent = 0;
 
     try {
-      // Send text message
       if (content.trim()) {
         const textMessage = await sendMessage(senderRole, "Text", content.trim());
         if (textMessage) {
@@ -119,7 +114,6 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
         }
       }
 
-      // Send attachments
       for (const attachment of attachments) {
         const messageType = attachment.type === "document" ? "File" : attachment.type.charAt(0).toUpperCase() + attachment.type.slice(1) as "Image" | "Video" | "Audio" | "File";
         let mediaUrl = attachment.file.name;
@@ -150,7 +144,7 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
   const handleReactionAdd = useCallback(async (messageId: string, emoji: string) => {
     if (!currentUserId) return;
     try {
-      await addReaction(messageId, currentUserId, emoji);
+      await addReaction(messageId, emoji);
     } catch {
       toast({ title: "Error", description: "Failed to add reaction", variant: "destructive" });
     }
@@ -159,7 +153,7 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
   const handleReactionRemove = useCallback(async (messageId: string, emoji: string) => {
     if (!currentUserId) return;
     try {
-      await removeReaction(messageId, currentUserId, emoji);
+      await removeReaction(messageId, emoji);
     } catch {
       toast({ title: "Error", description: "Failed to remove reaction", variant: "destructive" });
     }
@@ -218,20 +212,20 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
   // Invalid/no chat handling
   if (!chat || !isValidChat) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-            <MessageCircle className="h-8 w-8 text-muted-foreground" />
+      <div className={`flex-1 flex items-center justify-center bg-background ${isMobile ? 'p-4' : ''}`}>
+        <div className="text-center max-w-md w-full">
+          <div className={`w-24 h-24 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center ${isMobile ? 'w-16 h-16' : ''}`}>
+            <MessageCircle className={`h-8 w-8 text-muted-foreground ${isMobile ? 'h-6 w-6' : ''}`} />
           </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">{chat ? "Invalid Chat" : "Select a conversation"}</h3>
-          <p className="text-muted-foreground">{chat ? "This chat has an invalid configuration." : "Choose a chat from the sidebar to start messaging"}</p>
+          <h3 className={`text-lg font-medium text-foreground mb-2 ${isMobile ? 'text-base' : ''}`}>{chat ? "Invalid Chat" : "Select a conversation"}</h3>
+          <p className={`text-muted-foreground ${isMobile ? 'text-sm' : ''}`}>{chat ? "This chat has an invalid configuration." : "Choose a chat from the sidebar to start messaging"}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-background relative">
+    <div className="flex flex-col bg-background h-full relative md:h-[calc(100vh-80px)]">
       <ChatHeader
         chat={chat}
         onOpenChatList={onOpenChatList}
@@ -253,16 +247,11 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
         onTypingStop={handleTypingStop}
         disabled={sending || isUploading || !chat || !isValidChat}
       />
-      <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-10">
+      <div className={`absolute bottom-4 right-4 flex flex-col gap-2 z-10 ${isMobile ? 'bottom-20 right-2' : ''}`}>
         {(sending || isUploading) && (
           <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm shadow-lg">
             {isUploading ? "Uploading..." : "Sending..."}
           </div>
-        )}
-        {socketConnected ? (
-          <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs shadow-lg">Online</div>
-        ) : (
-          <div className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm shadow-lg">Connecting...</div>
         )}
       </div>
     </div>

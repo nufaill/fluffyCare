@@ -1,3 +1,4 @@
+// message-list.tsx
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { MessageBubble } from './message-bubble';
 import type { Message } from '@/types/message.type';
@@ -150,8 +151,8 @@ export function MessageList({
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="text-center">
+      <div className="flex-1 flex items-center justify-center bg-background p-4">
+        <div className="text-center max-w-sm w-full">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             <MessageCircle className="h-6 w-6 text-muted-foreground" />
           </div>
@@ -176,11 +177,10 @@ export function MessageList({
 
 
   return (
-    <div className="flex-1 relative h-full">
+    <div className="flex-1 relative h-full md:h-[calc(100vh-200px)]">
       <div
         ref={messagesContainerRef}
-        className="h-full overflow-y-auto p-4 space-y-1 scroll-smooth"
-        style={{ maxHeight: 'calc(100vh - 200px)' }}
+        className="h-full overflow-y-auto p-2 md:p-4 space-y-1 scroll-smooth"
         onScroll={handleScroll}
       >
         {cleanedMessages.map((message, index) => {
@@ -222,10 +222,10 @@ export function MessageList({
       {showScrollButton && (
         <Button
           onClick={() => scrollToBottom()}
-          className="absolute bottom-4 right-4 rounded-full h-10 w-10 p-0 shadow-lg z-10"
+          className="absolute bottom-2 right-2 md:bottom-4 md:right-4 rounded-full h-8 w-8 md:h-10 md:w-10 p-0 shadow-lg z-10"
           variant="secondary"
         >
-          <ChevronDown className="h-4 w-4" />
+          <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
         </Button>
       )}
     </div>

@@ -55,9 +55,10 @@ export class MessageService {
     } catch (error: any) {
       const status = error.response?.status;
       const messages: { [key: number]: string } = {
+        400: 'Bad request. Please check your input.',
         401: 'Unauthorized access. Please login again.',
         403: 'You do not have permission to perform this action.',
-        404: 'Chat or message not found.',
+        404: 'Resource not found.',
         500: 'Server error. Please try again later.'
       };
       throw new Error(messages[status] || error.response?.data?.message || error.message || 'An unexpected error occurred');
@@ -80,7 +81,7 @@ export class MessageService {
     chatId: string,
     senderRole: 'User' | 'Shop',
     messageType: Message['messageType'] = 'Text',
-    content: string,
+    content: string = '',
     mediaUrl?: string
   ): Promise<Message> {
     this.validateId(chatId, 'chatId');
@@ -89,22 +90,21 @@ export class MessageService {
     }
     this.validateMessageType(messageType);
 
-    if (messageType === 'Text') {
-      if (!content?.trim()) {
-        throw new Error('Content is required for text messages');
-      }
-      if (content.trim().length > 10000) {
-        throw new Error('Message content cannot exceed 10000 characters');
-      }
-    } else if (!mediaUrl?.trim()) {
+    if (messageType === 'Text' && !content?.trim()) {
+      throw new Error('Content is required for text messages');
+    }
+    if (messageType !== 'Text' && !mediaUrl?.trim()) {
       throw new Error(`Media URL is required for ${messageType.toLowerCase()} messages`);
+    }
+    if (content?.trim().length > 10000) {
+      throw new Error('Message content cannot exceed 10000 characters');
     }
 
     const payload = {
       chatId,
       senderRole,
       messageType,
-      content: content?.trim() || '',
+      content: content.trim(),
       ...(mediaUrl && { mediaUrl: mediaUrl.trim() })
     };
 
@@ -130,24 +130,23 @@ export class MessageService {
     const mappedMessages = response.data.messages.map((msg: any) => ({
       ...msg,
       _id: msg.id || msg._id,
-      createdAt: new Date(msg.createdAt),
-      updatedAt: new Date(msg.updatedAt),
+      createdAt: new Date(msg.createdAt || Date.now()),
+      updatedAt: new Date(msg.updatedAt || Date.now()),
       deliveredAt: msg.deliveredAt ? new Date(msg.deliveredAt) : undefined,
       readAt: msg.readAt ? new Date(msg.readAt) : undefined,
     })) as Message[];
 
     return {
-      page: response.data.page || validPage,
-      total: response.data.total || 0,
+      page: response.data.currentPage || validPage,
+      total: response.data.totalMessages || 0,
       data: mappedMessages,
       messages: mappedMessages.filter((msg): msg is Message => !!msg && !!msg._id),
-      currentPage: response.data.page || validPage,
-      totalPages: Math.ceil((response.data.total || 0) / validLimit),
-      totalMessages: response.data.total || 0,
-      hasMore: response.data.hasMore,
+      currentPage: response.data.currentPage || validPage,
+      totalPages: Math.ceil((response.data.totalMessages || 0) / validLimit),
+      totalMessages: response.data.totalMessages || 0,
+      hasMore: response.data.hasMore ?? (validPage < Math.ceil((response.data.totalMessages || 0) / validLimit))
     };
   }
-
 
   async getLatestMessage(chatId: string): Promise<Message> {
     this.validateId(chatId, 'chatId');
@@ -155,6 +154,7 @@ export class MessageService {
 
     return {
       ...response.data,
+      _id: response.data.id || response.data._id,
       createdAt: new Date(response.data.createdAt || Date.now()),
       updatedAt: new Date(response.data.updatedAt || Date.now()),
       deliveredAt: response.data.deliveredAt ? new Date(response.data.deliveredAt) : undefined,
@@ -164,6 +164,9 @@ export class MessageService {
 
   async markAsDelivered(messageId: string, deliveredAt: Date = new Date()): Promise<Message> {
     this.validateId(messageId, 'messageId');
+    if (!(deliveredAt instanceof Date) || isNaN(deliveredAt.getTime())) {
+      throw new Error('Invalid deliveredAt date');
+    }
     return (await this.handleRequest<MessageResponse>(
       this.axios.put(`/${messageId}/delivered`, { deliveredAt: deliveredAt.toISOString() })
     )).data;
@@ -171,14 +174,20 @@ export class MessageService {
 
   async markAsRead(messageId: string, readAt: Date = new Date()): Promise<Message> {
     this.validateId(messageId, 'messageId');
+    if (!(readAt instanceof Date) || isNaN(readAt.getTime())) {
+      throw new Error('Invalid readAt date');
+    }
     return (await this.handleRequest<MessageResponse>(
       this.axios.put(`/${messageId}/read`, { readAt: readAt.toISOString() })
     )).data;
   }
 
-  async markMultipleAsRead(messageIds: string[], readAt: Date = new Date()): Promise<number> {
+  async markMultipleAsRead(messageIds: string[], receiverRole: string, readAt: Date = new Date()): Promise<number> {
     if (!Array.isArray(messageIds) || !messageIds.length) {
       throw new Error('messageIds must be a non-empty array');
+    }
+    if (!(readAt instanceof Date) || isNaN(readAt.getTime())) {
+      throw new Error('Invalid readAt date');
     }
     const validMessageIds = messageIds.filter(id => id?.trim()).map(id => id.trim());
     if (!validMessageIds.length) {
@@ -200,7 +209,9 @@ export class MessageService {
     if (!['User', 'Shop'].includes(receiverRole)) {
       throw new Error('receiverRole must be either "User" or "Shop"');
     }
-
+    if (!(readAt instanceof Date) || isNaN(readAt.getTime())) {
+      throw new Error('Invalid readAt date');
+    }
     const validMessageIds = messageIds?.filter(id => id?.trim()).map(id => id.trim());
     if (messageIds && !validMessageIds?.length) {
       throw new Error('No valid message IDs provided');
@@ -241,9 +252,12 @@ export class MessageService {
   async removeReaction(messageId: string, userId: string, emoji: string): Promise<Message> {
     this.validateId(messageId, 'messageId');
     this.validateId(userId, 'userId');
+    if (!emoji?.trim()) {
+      throw new Error('emoji is required');
+    }
 
     return (await this.handleRequest<MessageResponse>(
-      this.axios.delete(`/${messageId}/reactions`, { data: { userId } })
+      this.axios.delete(`/${messageId}/reactions`, { data: { userId, emoji: emoji.trim() } })
     )).data;
   }
 
@@ -259,13 +273,13 @@ export class MessageService {
       throw new Error('Search query cannot be empty');
     }
     if (messageType && !this.validMessageTypes.includes(messageType)) {
-      throw new Error('Invalid message type');
+      throw new Error(`Invalid message type: ${messageType}. Must be one of: ${this.validMessageTypes.join(', ')}`);
     }
 
     const validPage = Math.max(1, Math.floor(page));
     const validLimit = Math.min(100, Math.max(1, Math.floor(limit)));
 
-    return await (await this.handleRequest<MessageListResponse>(
+    return (await this.handleRequest<MessageListResponse>(
       this.axios.get(`/chats/${chatId}/messages/search`, {
         params: { query: query.trim(), messageType, page: validPage, limit: validLimit }
       })
@@ -279,13 +293,12 @@ export class MessageService {
     limit: number = 20
   ): Promise<MessageListResponse['data']> {
     this.validateId(chatId, 'chatId');
-    this.validateId(messageType, 'messageType');
     this.validateMessageType(messageType);
 
     const validPage = Math.max(1, Math.floor(page));
     const validLimit = Math.min(100, Math.max(1, Math.floor(limit)));
 
-    return await (await this.handleRequest<MessageListResponse>(
+    return (await this.handleRequest<MessageListResponse>(
       this.axios.get(`/chats/${chatId}/messages/by-type/${messageType}`, {
         params: { page: validPage, limit: validLimit }
       })
@@ -309,6 +322,11 @@ export class MessageService {
     return (await this.handleRequest<{ data: { deletedCount: number } }>(
       this.axios.delete(`/chats/${chatId}/messages`)
     )).data.deletedCount;
+  }
+
+  async findMessageById(messageId: string): Promise<Message> {
+    this.validateId(messageId, 'messageId');
+    return (await this.handleRequest<MessageResponse>(this.axios.get(`/${messageId}`))).data;
   }
 }
 

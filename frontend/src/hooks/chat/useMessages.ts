@@ -19,21 +19,6 @@ interface UseMessagesOptions {
   currentRole?: 'User' | 'Shop';
 }
 
-interface SocketMessage {
-  _id: string;
-  chatId: string;
-  senderRole: 'User' | 'Shop';
-  messageType: 'Text' | 'Image' | 'Video' | 'Audio' | 'File';
-  content: string;
-  mediaUrl?: string;
-  isRead: boolean;
-  deliveredAt?: string;
-  readAt?: string;
-  reactions: any[];
-  createdAt: string;
-  updatedAt: string;
-}
-
 export const useMessages = ({
   chatId,
   userId,
@@ -55,32 +40,31 @@ export const useMessages = ({
   const eventQueue = useRef<Map<string, Message>>(new Map());
 
   const transformSocketMessage = useCallback((socketMessage: any): Message | null => {
-  
-  const msg = socketMessage || {};
-  const rawId = msg._id || msg.messageId || msg.id;
+    const msg = socketMessage || {};
+    const rawId = msg._id || msg.messageId || msg.id;
 
-  if (!rawId || typeof rawId !== 'string' || rawId.includes('[object Object]')) {
-    console.error('Invalid or missing message ID:', { rawId });
-    return null; 
-  }
+    if (!rawId || typeof rawId !== 'string' || rawId.includes('[object Object]')) {
+      console.error('Invalid or missing message ID:', { rawId });
+      return null;
+    }
 
-  return {
-    _id: rawId,
-    chatId: typeof msg.chatId === 'object' 
-      ? (msg.chatId._id || msg.chatId.id || msg.chatId || '')
-      : (msg.chatId || ''),
-    senderRole: msg.senderRole || 'Unknown',
-    messageType: msg.messageType || 'Text',
-    content: msg.content || '',
-    mediaUrl: msg.mediaUrl,
-    isRead: msg.isRead ?? false,
-    deliveredAt: msg.deliveredAt ? new Date(msg.deliveredAt) : undefined,
-    readAt: msg.readAt ? new Date(msg.readAt) : undefined,
-    reactions: msg.reactions || [],
-    createdAt: new Date(msg.createdAt || msg.timestamp || Date.now()),
-    updatedAt: new Date(msg.updatedAt || msg.timestamp || Date.now()),
-  };
-}, []);
+    return {
+      _id: rawId,
+      chatId: typeof msg.chatId === 'object'
+        ? (msg.chatId._id || msg.chatId.id || msg.chatId || '')
+        : (msg.chatId || ''),
+      senderRole: msg.senderRole || 'Unknown',
+      messageType: msg.messageType || 'Text',
+      content: msg.content || '',
+      mediaUrl: msg.mediaUrl,
+      isRead: msg.isRead ?? false,
+      deliveredAt: msg.deliveredAt ? new Date(msg.deliveredAt) : undefined,
+      readAt: msg.readAt ? new Date(msg.readAt) : undefined,
+      reactions: msg.reactions || [],
+      createdAt: new Date(msg.createdAt || msg.timestamp || Date.now()),
+      updatedAt: new Date(msg.updatedAt || msg.timestamp || Date.now()),
+    };
+  }, []);
 
   const sortMessages = (msgs: Message[]) => {
     return [...msgs].sort(
@@ -215,7 +199,7 @@ export const useMessages = ({
 
     try {
       const uniqueMessageIds = [...new Set(messageIds)];
-      await messageService.markMultipleAsRead(chatId, uniqueMessageIds, receiverRole, new Date());
+      await messageService.markMultipleAsRead(uniqueMessageIds, receiverRole, new Date());
       setMessages(prev => sortMessages(prev.map(msg =>
         messageIds.includes(msg._id || '') ? { ...msg, isRead: true, readAt: new Date() } : msg
       )));
@@ -332,7 +316,7 @@ export const useMessages = ({
       setMessages(sortMessages(mappedMessages));
       setPagination({
         currentPage: response.page || response.currentPage || 1,
-        totalPages: Math.ceil((response.total || response.totalMessages || 0) / (response.limit || 20)),
+        totalPages: Math.ceil((response.total || response.totalMessages || 0) / 20), // Use default limit 20
         totalMessages: response.total || response.totalMessages || 0,
       });
     } catch (err: any) {
@@ -347,88 +331,84 @@ export const useMessages = ({
     }
   }, [chatId, toast]);
 
-  const handleSocketEvent = useCallback((event: string, data: any) => {  
-  let receivedChatId: string | undefined;
-  if (data.chatId) {
-    receivedChatId = typeof data.chatId === 'object' 
-      ? (data.chatId._id?.toString() || data.chatId.id?.toString())
-      : data.chatId.toString();
-  } else if (data.message?.chatId) {
-    receivedChatId = typeof data.message.chatId === 'object' 
-      ? (data.message.chatId._id?.toString() || data.message.chatId.id?.toString())
-      : data.message.chatId.toString();
-  } else {
-    console.warn(`[Socket Event] No chatId found in data for ${event}. Assuming current chat.`);
-    receivedChatId = chatId;
-  }
-  
-  const normalizedCurrentChatId = typeof chatId === 'object' 
-    ? (chatId._id?.toString() || chatId.id?.toString()) 
-    : chatId.toString();
-  
-  if (receivedChatId !== normalizedCurrentChatId) {
-    console.warn(`[Socket Event] Ignored ${event} for chatId ${receivedChatId}, expected ${normalizedCurrentChatId}`);
-    return;
-  }
+  const handleSocketEvent = useCallback((event: string, data: any) => {
+    let receivedChatId: string | undefined;
+    if (data.chatId) {
+      receivedChatId = typeof data.chatId === 'string'
+        ? data.chatId
+        : (data.chatId._id?.toString() || data.chatId.id?.toString());
+    } else if (data.message?.chatId) {
+      receivedChatId = typeof data.message.chatId === 'string'
+        ? data.message.chatId
+        : (data.message.chatId._id?.toString() || data.message.chatId.id?.toString());
+    } else {
+      console.warn(`[Socket Event] No chatId found in data for ${event}. Assuming current chat.`);
+      receivedChatId = chatId;
+    }
 
-  switch (event) {
-    case 'new-message':
-    case 'message-updated':
-    case 'reaction-added':
-    case 'reaction-removed':
-      const socketMsg = data.message || data;
-      const updatedMessage = transformSocketMessage(socketMsg);
-      if (!updatedMessage || !updatedMessage._id) {
-        console.warn('Invalid message received, skipping:', socketMsg);
-        return;
-      }
-      if (!processedMessageIds.current.has(updatedMessage._id)) {
-        eventQueue.current.set(updatedMessage._id, updatedMessage);
-        setMessages(prev => {
-          const newList = [...prev];
-          eventQueue.current.forEach((msg, id) => {
-            const existingIndex = newList.findIndex(m => m._id === id);
-            if (existingIndex >= 0) {
-              newList[existingIndex] = msg;
-            } else {
-              newList.push(msg); 
-              processedMessageIds.current.add(id);
-            }
-          });
-          eventQueue.current.clear();
-          return sortMessages(newList);
-        });
-        if (event === 'new-message') {
-          lastMessageTimestamp.current = updatedMessage.createdAt.toISOString();
+    if (receivedChatId !== chatId) {
+      console.warn(`[Socket Event] Ignored ${event} for chatId ${receivedChatId}, expected ${chatId}`);
+      return;
+    }
+
+    switch (event) {
+      case 'new-message':
+      case 'message-updated':
+      case 'reaction-added':
+      case 'reaction-removed':
+        const socketMsg = data.message || data;
+        const updatedMessage = transformSocketMessage(socketMsg);
+        if (!updatedMessage || !updatedMessage._id) {
+          console.warn('Invalid message received, skipping:', socketMsg);
+          return;
         }
-      } 
-      break;
+        if (!processedMessageIds.current.has(updatedMessage._id)) {
+          eventQueue.current.set(updatedMessage._id, updatedMessage);
+          setMessages(prev => {
+            const newList = [...prev];
+            eventQueue.current.forEach((msg, id) => {
+              const existingIndex = newList.findIndex(m => m._id === id);
+              if (existingIndex >= 0) {
+                newList[existingIndex] = msg;
+              } else {
+                newList.push(msg);
+                processedMessageIds.current.add(id);
+              }
+            });
+            eventQueue.current.clear();
+            return sortMessages(newList);
+          });
+          if (event === 'new-message') {
+            lastMessageTimestamp.current = updatedMessage.createdAt.toISOString();
+          }
+        }
+        break;
 
-    case 'message-deleted':
-      setMessages(prev => prev.filter(msg => msg._id !== data.messageId));
-      processedMessageIds.current.delete(data.messageId);
-      break;
+      case 'message-deleted':
+        setMessages(prev => prev.filter(msg => msg._id !== data.messageId));
+        processedMessageIds.current.delete(data.messageId);
+        break;
 
-    case 'message-delivered':
-      setMessages(prev => sortMessages(prev.map(msg =>
-        msg._id === data.messageId ? {
-          ...msg,
-          deliveredAt: data.deliveredAt ? new Date(data.deliveredAt) : new Date()
-        } : msg
-      )));
-      break;
+      case 'message-delivered':
+        setMessages(prev => sortMessages(prev.map(msg =>
+          msg._id === data.messageId ? {
+            ...msg,
+            deliveredAt: data.deliveredAt ? new Date(data.deliveredAt) : new Date()
+          } : msg
+        )));
+        break;
 
-    case 'message-read':
-      setMessages(prev => sortMessages(prev.map(msg =>
-        msg._id === data.messageId ? {
-          ...msg,
-          isRead: true,
-          readAt: data.readAt ? new Date(data.readAt) : new Date()
-        } : msg
-      )));
-      break;
-  }
-}, [chatId, transformSocketMessage]);
+      case 'message-read':
+        setMessages(prev => sortMessages(prev.map(msg =>
+          msg._id === data.messageId ? {
+            ...msg,
+            isRead: true,
+            readAt: data.readAt ? new Date(data.readAt) : new Date()
+          } : msg
+        )));
+        break;
+    }
+  }, [chatId, transformSocketMessage]);
 
   useEffect(() => {
     if (!chatId || !userId || !currentRole) return;

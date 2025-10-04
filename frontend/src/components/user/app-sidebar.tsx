@@ -1,3 +1,4 @@
+// App-sidebar.tsx (no changes needed; already supports responsiveness via isCollapsed prop)
 import {
   Calendar,
   Heart,

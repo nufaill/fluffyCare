@@ -1,4 +1,4 @@
-// src/components/user/user-chat.tsx
+// user-chat.tsx
 import { useState, useEffect } from 'react';
 import { ChatList } from '@/components/chat/chat-list';
 import { ChatWindow } from '@/components/chat/chat-window';
@@ -8,12 +8,13 @@ import type { Chat } from '@/types/chat.type';
 import Header from '@/components/user/Header';
 import { ModernSidebar } from '@/components/user/App-sidebar';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MessageCircle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { RootState } from '@/redux/store';
 import { useSelector } from 'react-redux';
 import { getChatId, isValidChatId, extractId } from '@/utils/helpers/chatHelpers';
 import { connectSocket, disconnectSocket } from '@/components/shared/socket.io-client';
+import { Button } from '@/components/chat/ui/button';
 
 export function UserChat() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -104,10 +105,10 @@ export function UserChat() {
 
   if (!userId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col">
         <Header />
-        <div className="flex items-center justify-center h-96">
-          <p className="text-lg text-gray-600">Please log in to access chat</p>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <p className="text-lg text-gray-600 text-center">Please log in to access chat</p>
         </div>
       </div>
     );
@@ -115,11 +116,13 @@ export function UserChat() {
 
   if (loading && chats.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col">
         <Header />
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading conversations...</span>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="text-lg">Loading conversations...</span>
+          </div>
         </div>
       </div>
     );
@@ -128,20 +131,20 @@ export function UserChat() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col">
       <Header />
-      <div className="flex flex-1 overflow-hidden pt-16">
-        <ModernSidebar />
-        <div className="flex flex-1 h-[calc(100vh-80px)]">
+      <div className="flex flex-1 overflow-hidden pt-16 relative">
+        <ModernSidebar isCollapsed={isMobile} />
+        <div className={`flex flex-1 h-[calc(100vh-80px)] ${isMobile ? 'ml-16' : ''}`}>
           <div
             className={`
               ${isMobile
-                ? `fixed inset-y-0 left-0 z-50 w-80 transform transition-transform duration-300 ease-in-out ${isChatListOpen ? 'translate-x-0' : '-translate-x-full'}`
+                ? `fixed inset-y-0 left-0 z-50 w-full md:w-80 transform transition-transform duration-300 ease-in-out ${isChatListOpen ? 'translate-x-0' : '-translate-x-full'}`
                 : 'w-80 border-r border-border'}
               bg-card h-full
             `}
           >
-            <div className="p-4 border-b border-border">
-              <h1 className="text-xl font-semibold text-foreground">My Conversations</h1>
-              <p className="text-sm text-muted-foreground">
+            <div className="p-2 md:p-4 border-b border-border">
+              <h1 className={`text-lg md:text-xl font-semibold text-foreground ${isMobile ? 'text-base mb-1' : ''}`}>My Conversations</h1>
+              <p className={`text-xs md:text-sm text-muted-foreground ${isMobile ? 'mb-1' : ''}`}>
                 Chat with pet care providers
                 {totalUnreadCount > 0 && (
                   <span className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded-full">
@@ -150,7 +153,7 @@ export function UserChat() {
                 )}
               </p>
             </div>
-            <div className="h-[calc(100%-80px)]">
+            <div className={`h-[calc(100%-60px)] md:h-[calc(100%-80px)]`}>
               <ChatList
                 selectedChat={selectedChat}
                 onSelectChat={handleSelectChat}
@@ -165,7 +168,7 @@ export function UserChat() {
               />
             </div>
           </div>
-          <div className="flex-1 flex flex-col h-full">
+          <div className={`flex-1 flex flex-col h-full ${isMobile ? 'w-full ml-4' : ''}`}>
             <ChatWindow
               chat={selectedChat}
               onOpenChatList={() => setIsChatListOpen(true)}
@@ -178,6 +181,15 @@ export function UserChat() {
             <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsChatListOpen(false)} />
           )}
         </div>
+        {isMobile && (
+          <Button
+            onClick={() => setIsChatListOpen(true)}
+            className="fixed bottom-4 left-20 z-50 md:hidden rounded-full h-12 w-12 shadow-lg"
+            variant="secondary"
+          >
+            <MessageCircle className="h-6 w-6" />
+          </Button>
+        )}
       </div>
     </div>
   );
