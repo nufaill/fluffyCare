@@ -77,24 +77,19 @@ export class SocketHandler {
     });
 
     this.setupEventHandlers();
-    console.log('✅ Socket.IO server initialized');
   }
 
   private setupEventHandlers(): void {
     this.io.on('connection', (socket: Socket) => {
-      console.log(`🔌 Client connected: ${socket.id}`);
 
-      // User authentication for chat
       socket.on('authenticate-user', (data: { userId: string; userRole: 'User' | 'Shop' }) => {
         if (data.userId && data.userRole) {
           this.addUserConnection(data.userId, data.userRole, socket.id);
           socket.userId = data.userId;
           socket.userRole = data.userRole;
-          console.log(`👤 User authenticated: ${data.userId} as ${data.userRole}`);
         }
       });
 
-      // Join chat room
       socket.on('join-chat', (chatId: string | { chatId: string }) => {
         let roomId: string;
         if (typeof chatId === 'string') {
@@ -107,32 +102,26 @@ export class SocketHandler {
           return;
         }
         socket.join(`chat-${roomId}`);
-        console.log(`💬 Client ${socket.id} joined chat room: ${roomId}`);
       });
 
-      // Leave chat room
       socket.on('leave-chat', (chatId: string) => {
         if (chatId) {
           socket.leave(`chat-${chatId}`);
-          console.log(`👋 Client ${socket.id} left chat room: ${chatId}`);
         }
       });
 
       socket.on('join-shop', (shopId: string) => {
         if (shopId) {
           socket.join(`shop-${shopId}`);
-          console.log(`🏪 Client ${socket.id} joined shop room: ${shopId}`);
         }
       });
 
       socket.on('leave-shop', (shopId: string) => {
         if (shopId) {
           socket.leave(`shop-${shopId}`);
-          console.log(`👋 Client ${socket.id} left shop room: ${shopId}`);
         }
       });
 
-      // Typing indicators
       socket.on('typing-start', (data: { chatId: string }) => {
         if (socket.userId && socket.userRole && data.chatId) {
           socket.to(`chat-${data.chatId}`).emit('user-typing', {
@@ -159,7 +148,6 @@ export class SocketHandler {
         if (socket.userId) {
           this.removeUserConnection(socket.userId, socket.id);
         }
-        console.log(`❌ Client disconnected: ${socket.id}`);
       });
     });
   }
@@ -187,10 +175,7 @@ export class SocketHandler {
     return connections.map(conn => conn.socketId);
   }
 
-  // Existing appointment slot methods
   public emitSlotBooked(data: SlotBookedData): void {
-    console.log('📅 Emitting slot booked event:', data);
-
     this.io.to(`shop-${data.shopId}`).emit('slot-booked', {
       shopId: data.shopId,
       staffId: data.staffId,
@@ -214,16 +199,10 @@ export class SocketHandler {
     });
   }
 
-  // New chat-related methods
   public emitNewMessage(data: NewMessageData): void {
-    console.log('💬 Emitting new message:', data.messageId);
-
-    // Emit to chat room
     this.io.to(`chat-${data.chatId}`).emit('new-message', data);
 
-    // Also emit to specific user sockets for notification
     const receiverSockets = this.getUserSockets(data.receiverId);
-    console.log(`🔔 Notifying receiver ${data.receiverId} on sockets:`, receiverSockets);
     receiverSockets.forEach(socketId => {
       this.io.to(socketId).emit('message-notification', {
         chatId: data.chatId,
@@ -238,20 +217,14 @@ export class SocketHandler {
   }
 
   public emitMessageStatus(data: MessageStatusData): void {
-    console.log(`📍 Emitting message ${data.status}:`, data.messageId);
-
     this.io.to(`chat-${data.chatId}`).emit('message-status-update', data);
   }
 
   public emitMessageReaction(data: ReactionData): void {
-    console.log('👍 Emitting message reaction:', data);
-
     this.io.to(`chat-${data.chatId}`).emit('message-reaction', data);
   }
 
   public emitChatUpdate(chatId: string, updateData: any): void {
-    console.log('🔄 Emitting chat update:', chatId);
-
     this.io.to(`chat-${chatId}`).emit('chat-updated', {
       chatId,
       ...updateData,

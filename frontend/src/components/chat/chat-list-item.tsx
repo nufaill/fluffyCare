@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/chat/ui/avatar';
 import { Badge } from '@/components/chat/ui/badge';
 import type { Chat } from '@/types/chat.type';
+import { cloudinaryUtils } from '@/utils/cloudinary/cloudinary';
 import { format, isToday, isYesterday } from 'date-fns';
 import { ImageIcon, Video, Mic, Paperclip } from 'lucide-react';
 
@@ -45,13 +46,27 @@ export function ChatListItem({ chat, isSelected, onClick, userType }: ChatListIt
     return chat.lastMessage;
   };
 
-  const otherParty = userType === 'user' ? chat.shop : chat.user;
-
   const getFallbackInitials = (name: string) => {
     if (!name) return 'NA';
     const words = name.trim().split(' ');
     return words.length > 1 ? `${words[0][0]}${words[1][0]}`.toUpperCase() : name.slice(0, 2).toUpperCase();
   };
+
+  let displayName: string;
+  let imageSrc: string;
+  let partyId: string | undefined;
+
+  if (userType === 'user') {
+    const party = chat.shop;
+    displayName = party?.name || 'Unknown';
+    imageSrc = party?.logo ? cloudinaryUtils.getFullUrl(party.logo) : '/placeholder.svg';
+    partyId = party?.id;
+  } else {
+    const party = chat.user;
+    displayName = party?.fullName || 'Unknown';
+    imageSrc = party?.profileImage ? cloudinaryUtils.getFullUrl(party.profileImage) : '/placeholder.svg';
+    partyId = party?.id;
+  }
 
   return (
     <div
@@ -65,12 +80,15 @@ export function ChatListItem({ chat, isSelected, onClick, userType }: ChatListIt
       <div className="flex items-start gap-3">
         <div className="relative">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={otherParty.logo || otherParty.profileImage || '/placeholder.svg'} alt={otherParty.name || otherParty.fullName} />
+            <AvatarImage 
+              src={imageSrc} 
+              alt={displayName} 
+            />
             <AvatarFallback className="bg-primary/10 text-primary font-medium">
-              {getFallbackInitials(otherParty.name || otherParty.fullName || '')}
+              {getFallbackInitials(displayName)}
             </AvatarFallback>
           </Avatar>
-          {parseInt(userType === 'user' ? chat.shopId.id : chat.userId.id) % 3 === 0 && (
+          {partyId && parseInt(partyId) % 3 === 0 && (
             <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
           )}
         </div>
@@ -78,11 +96,8 @@ export function ChatListItem({ chat, isSelected, onClick, userType }: ChatListIt
           <div className="flex items-center justify-between mb-1">
             <div className="flex flex-col">
               <h3 className={`font-medium truncate ${chat.unreadCount > 0 ? 'text-foreground' : 'text-foreground'}`}>
-                {otherParty.name || otherParty.fullName || 'Unknown'}
+                {displayName}
               </h3>
-              {userType === 'user' && chat.shopId.city && (
-                <span className="text-xs text-muted-foreground">{chat.shopId.city}</span>
-              )}
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="text-xs text-muted-foreground">{formatTime(chat.lastMessageAt)}</span>

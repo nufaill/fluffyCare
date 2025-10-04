@@ -242,10 +242,7 @@ export const useChats = (options: UseChatOptions) => {
     fetchUnreadCount();
   }, [fetchChats, fetchUnreadCount]);
 
-  // Socket event handlers for real-time updates
   const handleMessageNotification = useCallback((data: any) => {
-    console.log('Handling message notification:', data);
-    // If the chat exists, update lastMessage and increment unread
     setChats(prev => prev.map(chat => {
       const currentChatId = chat._id || chat.id || `${chat.userId}-${chat.shopId}`;
       if (currentChatId === data.chatId) {
@@ -263,7 +260,6 @@ export const useChats = (options: UseChatOptions) => {
   }, [refreshChats]);
 
   const handleChatUpdated = useCallback((data: any) => {
-    console.log('Handling chat updated:', data);
     setChats(prev => prev.map(chat => {
       const currentChatId = chat._id || chat.id || `${chat.userId}-${chat.shopId}`;
       if (currentChatId === data.chatId) {
@@ -274,7 +270,6 @@ export const useChats = (options: UseChatOptions) => {
   }, []);
 
   const handleUnreadCountUpdate = useCallback((data: any) => {
-    console.log('Handling unread count update:', data);
     if (data.userId === (userId || shopId)) {
       setTotalUnreadCount(data.unreadCount);
     }
@@ -284,7 +279,6 @@ export const useChats = (options: UseChatOptions) => {
     if (userId || shopId) {
       connectSocket(userId || shopId, userType === 'user' ? 'User' : 'Shop')
         .then(() => {
-          console.log('Socket connected for chats');
         })
         .catch(err => {
           console.error('Failed to connect socket for chats:', err);
@@ -293,7 +287,6 @@ export const useChats = (options: UseChatOptions) => {
       fetchChats();
       fetchUnreadCount();
 
-      // Add real-time listeners
       addEventListener('message-notification', handleMessageNotification);
       addEventListener('chat-updated', handleChatUpdated);
       addEventListener('unread-count-update', handleUnreadCountUpdate);

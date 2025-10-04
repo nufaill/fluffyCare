@@ -1,4 +1,3 @@
-// useMessages.ts
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { messageService } from '@/services/chat/messageService';
 import { type Message } from '@/types/message.type';
@@ -52,24 +51,36 @@ export const useMessages = ({
 
   const { toast } = useToast();
   const lastMessageTimestamp = useRef<string | null>(null);
+  const processedMessageIds = useRef<Set<string>>(new Set());
+  const eventQueue = useRef<Map<string, Message>>(new Map());
 
-  const transformSocketMessage = useCallback((socketMessage: SocketMessage): Message => {
-    console.log('Transforming socket message:', socketMessage);
-    return {
-      _id: socketMessage._id,
-      chatId: socketMessage.chatId,
-      senderRole: socketMessage.senderRole,
-      messageType: socketMessage.messageType,
-      content: socketMessage.content || '',
-      mediaUrl: socketMessage.mediaUrl,
-      isRead: socketMessage.isRead,
-      deliveredAt: socketMessage.deliveredAt ? new Date(socketMessage.deliveredAt) : undefined,
-      readAt: socketMessage.readAt ? new Date(socketMessage.readAt) : undefined,
-      reactions: socketMessage.reactions || [],
-      createdAt: new Date(socketMessage.createdAt || Date.now()),
-      updatedAt: new Date(socketMessage.updatedAt || Date.now()),
-    };
-  }, []);
+  const transformSocketMessage = useCallback((socketMessage: any): Message | null => {
+  
+  const msg = socketMessage || {};
+  const rawId = msg._id || msg.messageId || msg.id;
+
+  if (!rawId || typeof rawId !== 'string' || rawId.includes('[object Object]')) {
+    console.error('Invalid or missing message ID:', { rawId });
+    return null; 
+  }
+
+  return {
+    _id: rawId,
+    chatId: typeof msg.chatId === 'object' 
+      ? (msg.chatId._id || msg.chatId.id || msg.chatId || '')
+      : (msg.chatId || ''),
+    senderRole: msg.senderRole || 'Unknown',
+    messageType: msg.messageType || 'Text',
+    content: msg.content || '',
+    mediaUrl: msg.mediaUrl,
+    isRead: msg.isRead ?? false,
+    deliveredAt: msg.deliveredAt ? new Date(msg.deliveredAt) : undefined,
+    readAt: msg.readAt ? new Date(msg.readAt) : undefined,
+    reactions: msg.reactions || [],
+    createdAt: new Date(msg.createdAt || msg.timestamp || Date.now()),
+    updatedAt: new Date(msg.updatedAt || msg.timestamp || Date.now()),
+  };
+}, []);
 
   const sortMessages = (msgs: Message[]) => {
     return [...msgs].sort(
@@ -125,7 +136,7 @@ export const useMessages = ({
       setError(err.message || 'Failed to fetch messages');
       toast({
         title: 'Error',
-        description: err.message || 'Failed to load messages',
+        description: err.message || 'Failed to fetch messages',
         variant: 'destructive',
       });
     } finally {
@@ -133,128 +144,124 @@ export const useMessages = ({
     }
   }, [chatId, toast]);
 
-  const fetchNewMessages = useCallback(async () => {
-    if (!chatId || loading || sending || !lastMessageTimestamp.current) {
-      return fetchMessages();
-    }
-
-    setLoading(true);
-    try {
-      const sinceDate = new Date(lastMessageTimestamp.current);
-      sinceDate.setMilliseconds(sinceDate.getMilliseconds() + 1);
-
-      const response = await messageService.getChatMessages(chatId, 1, 50, sinceDate);
-      const newMessages = response.messages || [];
-
-      const mappedMessages: Message[] = newMessages.map((msg: any) => ({
-        _id: msg.id || msg._id,
-        chatId: msg.chatId,
-        senderRole: msg.senderRole,
-        messageType: msg.messageType,
-        content: msg.content || '',
-        mediaUrl: msg.mediaUrl,
-        isRead: msg.isRead,
-        deliveredAt: msg.deliveredAt ? new Date(msg.deliveredAt) : undefined,
-        readAt: msg.readAt ? new Date(msg.readAt) : undefined,
-        reactions: msg.reactions || [],
-        createdAt: new Date(msg.createdAt || Date.now()),
-        updatedAt: new Date(msg.updatedAt || Date.now()),
-      }));
-
-      if (mappedMessages.length > 0) {
-        setMessages(prev => {
-          const existingIds = new Set(prev.map(m => m._id));
-          const uniqueNew = mappedMessages.filter(m => !existingIds.has(m._id));
-          const newList = [...prev, ...uniqueNew];
-          return sortMessages(newList);
-        });
-        lastMessageTimestamp.current = mappedMessages[mappedMessages.length - 1].createdAt.toISOString();
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch new messages');
-    } finally {
-      setLoading(false);
-    }
-  }, [chatId, fetchMessages, loading, sending]);
-
   const sendMessage = useCallback(async (
     senderRole: 'User' | 'Shop',
-    messageType: 'Text' | 'Image' | 'Video' | 'Audio' | 'File',
+    messageType: Message['messageType'] = 'Text',
     content: string,
     mediaUrl?: string
   ) => {
-    if (!chatId) return null;
+    if (!chatId || !userId || !currentRole) return null;
 
     setSending(true);
+    setError(null);
+
     try {
-      const newMessage = await messageService.createMessage(chatId, senderRole, messageType, content, mediaUrl);
-      setMessages(prev => sortMessages([...prev, newMessage]));
-      if (newMessage.createdAt) {
-        lastMessageTimestamp.current = newMessage.createdAt.toISOString();
-      }
-      return newMessage;
+      const message = await messageService.createMessage(chatId, senderRole, messageType, content, mediaUrl);
+      
+      setMessages(prev => sortMessages([...prev, message]));
+      lastMessageTimestamp.current = message.createdAt.toISOString();
+      return message;
     } catch (err: any) {
       setError(err.message || 'Failed to send message');
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to send message',
+        variant: 'destructive',
+      });
       return null;
     } finally {
       setSending(false);
     }
-  }, [chatId]);
+  }, [chatId, userId, currentRole, toast]);
 
-  const addReaction = useCallback(async (messageId: string, userId: string, emoji: string) => {
-    if (!chatId) return;
+  const addReaction = useCallback(async (messageId: string, emoji: string) => {
+    if (!userId) return;
 
     try {
       const updatedMessage = await messageService.addReaction(messageId, userId, emoji);
-      setMessages(prev => sortMessages(prev.map(m => m._id === updatedMessage._id ? updatedMessage : m)));
+      setMessages(prev => sortMessages(prev.map(msg =>
+        msg._id === updatedMessage._id ? updatedMessage : msg
+      )));
     } catch (err: any) {
       setError(err.message || 'Failed to add reaction');
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to add reaction',
+        variant: 'destructive',
+      });
     }
-  }, [chatId]);
+  }, [userId, toast]);
 
-  const removeReaction = useCallback(async (messageId: string, userId: string, emoji: string) => {
-    if (!chatId) return;
+  const removeReaction = useCallback(async (messageId: string, emoji: string) => {
+    if (!userId) return;
 
     try {
       const updatedMessage = await messageService.removeReaction(messageId, userId, emoji);
-      setMessages(prev => sortMessages(prev.map(m => m._id === updatedMessage._id ? updatedMessage : m)));
+      setMessages(prev => sortMessages(prev.map(msg =>
+        msg._id === updatedMessage._id ? updatedMessage : msg
+      )));
     } catch (err: any) {
       setError(err.message || 'Failed to remove reaction');
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to remove reaction',
+        variant: 'destructive',
+      });
     }
-  }, [chatId]);
+  }, [userId, toast]);
 
   const markMessagesAsRead = useCallback(async (messageIds: string[], receiverRole: 'User' | 'Shop') => {
+    if (!chatId || !messageIds.length) return;
+
     try {
-      await messageService.markMultipleAsRead(messageIds, new Date());
+      const uniqueMessageIds = [...new Set(messageIds)];
+      await messageService.markMultipleAsRead(chatId, uniqueMessageIds, receiverRole, new Date());
+      setMessages(prev => sortMessages(prev.map(msg =>
+        messageIds.includes(msg._id || '') ? { ...msg, isRead: true, readAt: new Date() } : msg
+      )));
     } catch (err: any) {
       setError(err.message || 'Failed to mark messages as read');
-      throw err;
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to mark messages as read',
+        variant: 'destructive',
+      });
     }
-  }, []);
+  }, [chatId, toast]);
 
   const deleteMessage = useCallback(async (messageId: string) => {
     try {
       await messageService.deleteMessage(messageId);
+      setMessages(prev => prev.filter(msg => msg._id !== messageId));
     } catch (err: any) {
       setError(err.message || 'Failed to delete message');
-      throw err;
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to delete message',
+        variant: 'destructive',
+      });
     }
-  }, []);
+  }, [toast]);
 
-  const searchMessages = useCallback(async (
-    query: string,
-    messageType?: Message['messageType'],
-    page: number = 1,
-    limit: number = 20
-  ) => {
-    if (!chatId || !query) return;
+  const fetchNewMessages = useCallback(async () => {
+    if (!chatId || !lastMessageTimestamp.current) return;
 
     setLoading(true);
-    try {
-      const response = await messageService.searchMessages(chatId, query, messageType, page, limit);
-      const messages = response.messages || [];
+    setError(null);
 
-      const mappedMessages: Message[] = messages.map((msg: any) => ({
+    try {
+      const response = await messageService.getChatMessages(
+        chatId,
+        1,
+        50,
+        new Date(lastMessageTimestamp.current)
+      );
+
+      if (!response?.messages) {
+        throw new Error('Invalid message data received');
+      }
+
+      const mappedMessages: Message[] = response.messages.map((msg: any) => ({
         _id: msg.id || msg._id,
         chatId: msg.chatId,
         senderRole: msg.senderRole,
@@ -269,74 +276,159 @@ export const useMessages = ({
         updatedAt: new Date(msg.updatedAt || Date.now()),
       }));
 
-      setMessages(mappedMessages);
+      setMessages(prev => {
+        const existingIds = new Set(prev.map(m => m._id));
+        const uniqueNew = mappedMessages.filter(m => !existingIds.has(m._id));
+        const newList = [...prev, ...uniqueNew];
+        return sortMessages(newList);
+      });
+
+      if (mappedMessages.length > 0) {
+        lastMessageTimestamp.current = mappedMessages[mappedMessages.length - 1].createdAt.toISOString();
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch new messages');
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to fetch new messages',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [chatId, toast]);
+
+  const searchMessages = useCallback(async (
+    query: string,
+    messageType?: Message['messageType']
+  ) => {
+    if (!chatId || !query.trim()) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await messageService.searchMessages(chatId, query, messageType);
+      
+      if (!response?.messages) {
+        throw new Error('Invalid message data received');
+      }
+
+      const mappedMessages: Message[] = response.messages.map((msg: any) => ({
+        _id: msg.id || msg._id,
+        chatId: msg.chatId,
+        senderRole: msg.senderRole,
+        messageType: msg.messageType,
+        content: msg.content || '',
+        mediaUrl: msg.mediaUrl,
+        isRead: msg.isRead,
+        deliveredAt: msg.deliveredAt ? new Date(msg.deliveredAt) : undefined,
+        readAt: msg.readAt ? new Date(msg.readAt) : undefined,
+        reactions: msg.reactions || [],
+        createdAt: new Date(msg.createdAt || Date.now()),
+        updatedAt: new Date(msg.updatedAt || Date.now()),
+      }));
+
+      setMessages(sortMessages(mappedMessages));
       setPagination({
-        currentPage: response.page || response.currentPage || page,
-        totalPages: Math.ceil((response.total || response.totalMessages || 0) / limit),
+        currentPage: response.page || response.currentPage || 1,
+        totalPages: Math.ceil((response.total || response.totalMessages || 0) / (response.limit || 20)),
         totalMessages: response.total || response.totalMessages || 0,
       });
     } catch (err: any) {
       setError(err.message || 'Failed to search messages');
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to search messages',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
-  }, [chatId]);
+  }, [chatId, toast]);
 
-  // useMessages.ts
-  const handleSocketEvent = useCallback((event: string, data: any) => {
-    console.log(`[Socket Event] ${event} received:`, JSON.stringify(data, null, 2));
-    // Normalize chatId to handle string or object
-    const receivedChatId = typeof data.chatId === 'object' ? data.chatId._id || data.chatId.id : data.chatId;
-    if (receivedChatId !== chatId && receivedChatId !== (typeof chatId === 'object' ? chatId._id || chatId.id : chatId)) {
-      console.warn(`[Socket Event] Ignored ${event} for chatId ${receivedChatId}, expected ${chatId}`);
-      return;
-    }
+  const handleSocketEvent = useCallback((event: string, data: any) => {  
+  let receivedChatId: string | undefined;
+  if (data.chatId) {
+    receivedChatId = typeof data.chatId === 'object' 
+      ? (data.chatId._id?.toString() || data.chatId.id?.toString())
+      : data.chatId.toString();
+  } else if (data.message?.chatId) {
+    receivedChatId = typeof data.message.chatId === 'object' 
+      ? (data.message.chatId._id?.toString() || data.message.chatId.id?.toString())
+      : data.message.chatId.toString();
+  } else {
+    console.warn(`[Socket Event] No chatId found in data for ${event}. Assuming current chat.`);
+    receivedChatId = chatId;
+  }
+  
+  const normalizedCurrentChatId = typeof chatId === 'object' 
+    ? (chatId._id?.toString() || chatId.id?.toString()) 
+    : chatId.toString();
+  
+  if (receivedChatId !== normalizedCurrentChatId) {
+    console.warn(`[Socket Event] Ignored ${event} for chatId ${receivedChatId}, expected ${normalizedCurrentChatId}`);
+    return;
+  }
 
-    switch (event) {
-      case 'new-message':
-      case 'message-updated':
-      case 'reaction-added':
-      case 'reaction-removed':
-        const updatedMessage = transformSocketMessage(data.message);
+  switch (event) {
+    case 'new-message':
+    case 'message-updated':
+    case 'reaction-added':
+    case 'reaction-removed':
+      const socketMsg = data.message || data;
+      const updatedMessage = transformSocketMessage(socketMsg);
+      if (!updatedMessage || !updatedMessage._id) {
+        console.warn('Invalid message received, skipping:', socketMsg);
+        return;
+      }
+      if (!processedMessageIds.current.has(updatedMessage._id)) {
+        eventQueue.current.set(updatedMessage._id, updatedMessage);
         setMessages(prev => {
-          const existingIds = new Set(prev.map(m => m._id));
-          let newList = prev.map(msg =>
-            msg._id === updatedMessage._id ? updatedMessage : msg
-          );
-          if (event === 'new-message' && !existingIds.has(updatedMessage._id)) {
-            newList = [...newList, updatedMessage];
-          }
+          const newList = [...prev];
+          eventQueue.current.forEach((msg, id) => {
+            const existingIndex = newList.findIndex(m => m._id === id);
+            if (existingIndex >= 0) {
+              newList[existingIndex] = msg;
+            } else {
+              newList.push(msg); 
+              processedMessageIds.current.add(id);
+            }
+          });
+          eventQueue.current.clear();
           return sortMessages(newList);
         });
         if (event === 'new-message') {
           lastMessageTimestamp.current = updatedMessage.createdAt.toISOString();
         }
-        break;
+      } 
+      break;
 
-      case 'message-deleted':
-        setMessages(prev => prev.filter(msg => msg._id !== data.messageId));
-        break;
+    case 'message-deleted':
+      setMessages(prev => prev.filter(msg => msg._id !== data.messageId));
+      processedMessageIds.current.delete(data.messageId);
+      break;
 
-      case 'message-delivered':
-        setMessages(prev => sortMessages(prev.map(msg =>
-          msg._id === data.messageId ? {
-            ...msg,
-            deliveredAt: data.deliveredAt ? new Date(data.deliveredAt) : new Date()
-          } : msg
-        )));
-        break;
+    case 'message-delivered':
+      setMessages(prev => sortMessages(prev.map(msg =>
+        msg._id === data.messageId ? {
+          ...msg,
+          deliveredAt: data.deliveredAt ? new Date(data.deliveredAt) : new Date()
+        } : msg
+      )));
+      break;
 
-      case 'message-read':
-        setMessages(prev => sortMessages(prev.map(msg =>
-          msg._id === data.messageId ? {
-            ...msg,
-            isRead: true,
-            readAt: data.readAt ? new Date(data.readAt) : new Date()
-          } : msg
-        )));
-        break;
-    }
-  }, [chatId, transformSocketMessage]);
+    case 'message-read':
+      setMessages(prev => sortMessages(prev.map(msg =>
+        msg._id === data.messageId ? {
+          ...msg,
+          isRead: true,
+          readAt: data.readAt ? new Date(data.readAt) : new Date()
+        } : msg
+      )));
+      break;
+  }
+}, [chatId, transformSocketMessage]);
 
   useEffect(() => {
     if (!chatId || !userId || !currentRole) return;
@@ -351,19 +443,30 @@ export const useMessages = ({
       'reaction-removed'
     ];
 
-    events.forEach(event => addEventListener(event, (data: any) => handleSocketEvent(event, data)));
+    const listeners = new Map<string, (data: any) => void>();
+
+    events.forEach(event => {
+      const listener = (data: any) => handleSocketEvent(event, data);
+      listeners.set(event, listener);
+      addEventListener(event, listener);
+    });
 
     if (isSocketConnected()) {
-      console.log(`Joining chat ${chatId} on mount`);
       joinChat(chatId, userId, currentRole);
     }
 
     return () => {
-      console.log(`Cleaning up listeners for chat ${chatId}`);
-      events.forEach(event => removeEventListener(event, (data: any) => handleSocketEvent(event, data)));
+      events.forEach(event => {
+        const listener = listeners.get(event);
+        if (listener) {
+          removeEventListener(event, listener);
+        }
+      });
       if (isSocketConnected()) {
         leaveChat(chatId, userId);
       }
+      processedMessageIds.current.clear();
+      eventQueue.current.clear();
     };
   }, [chatId, userId, currentRole, handleSocketEvent]);
 
@@ -381,12 +484,10 @@ export const useMessages = ({
     const socket = getSocket();
 
     const handleConnect = () => {
-      console.log('Socket (re)connected - fetching any missed messages');
       if (chatId && lastMessageTimestamp.current) {
         fetchNewMessages();
       }
       if (chatId && userId && currentRole) {
-        console.log(`Rejoining chat ${chatId} after reconnect`);
         joinChat(chatId, userId, currentRole);
       }
     };

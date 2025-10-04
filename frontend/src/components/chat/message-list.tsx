@@ -97,56 +97,50 @@ export function MessageList({
     if (onCopy) {
       onCopy(content);
     } else {
-      // Fallback copy functionality
       navigator.clipboard.writeText(content).catch(console.error);
     }
   }, [onCopy]);
 
-  // Generate a stable key for each message
   const generateMessageKey = useCallback((message: Message, index: number): string => {
     try {
       const messageId = extractId(message._id || message.id);
-
-      if (messageId && messageId !== '[object Object]') {
-        return messageId;
-      }
-
-      // Fallback to chatId if available
-      const chatId = extractId(message.chatId);
-      if (chatId && chatId !== '[object Object]') {
-        // Use chatId + timestamp + index as fallback
+      if (messageId && messageId !== '[object Object]' && messageId !== '') {
         const timestamp = message.createdAt ? new Date(message.createdAt).getTime() : Date.now();
-        return `${chatId}-${timestamp}-${index}`;
+        return `${messageId}-${timestamp}-${index}`;
       }
 
-      // Final fallback: use content hash + index
-      const contentHash = message.content ?
-        message.content.slice(0, 10).replace(/[^a-zA-Z0-9]/g, '') :
-        'empty';
+      const chatId = extractId(message.chatId);
+      const content = message.content || '';
       const timestamp = message.createdAt ? new Date(message.createdAt).getTime() : Date.now();
-      return `msg-${contentHash}-${timestamp}-${index}`;
 
+      let contentHash = 0;
+      for (let i = 0; i < content.length; i++) {
+        contentHash = ((contentHash << 5) - contentHash) + content.charCodeAt(i);
+        contentHash = contentHash & contentHash;
+      }
+
+      return `msg-${chatId || 'no-chat'}-${contentHash}-${timestamp}-${index}`;
     } catch (error) {
       console.warn('Error generating message key:', error);
       return `fallback-${index}-${Date.now()}`;
     }
   }, []);
 
-  // Debug logging
   useEffect(() => {
-    console.log('MessageList: messages updated', {
-      count: messages.length,
-      messages: messages.slice(0, 3).map(m => ({
-        id: m._id,
-        content: m.content?.slice(0, 20) + '...',
-        sender: m.senderRole
-      }))
+    const messageIdCount = new Map<string, number>();
+    messages.forEach(m => {
+      const id = extractId(m._id);
+      messageIdCount.set(id, (messageIdCount.get(id) || 0) + 1);
     });
 
-    // Check for corrupted message IDs
+    const duplicates = Array.from(messageIdCount.entries()).filter(([_, count]) => count > 1);
+    if (duplicates.length > 0) {
+      console.error('Found duplicate message IDs:', duplicates);
+    }
+
     const corruptedMessages = messages.filter(m => {
       const id = extractId(m._id);
-      return id === '[object Object]' || id.includes('[object Object]');
+      return id === '[object Object]' || id.includes('[object Object]') || !id;
     });
 
     if (corruptedMessages.length > 0) {
@@ -167,6 +161,19 @@ export function MessageList({
       </div>
     );
   }
+  // remove duplicates + corrupted before render
+  const cleanedMessages = messages.filter((m, index, self) => {
+    const id = extractId(m._id || m.id);
+
+    // reject invalid or corrupted IDs
+    if (!id || id === '[object Object]' || id.includes('[object Object]')) {
+      return false;
+    }
+
+    // reject duplicates (keep first occurrence)
+    return index === self.findIndex(msg => extractId(msg._id || msg.id) === id);
+  });
+
 
   return (
     <div className="flex-1 relative h-full">
@@ -176,12 +183,11 @@ export function MessageList({
         style={{ maxHeight: 'calc(100vh - 200px)' }}
         onScroll={handleScroll}
       >
-        {messages.map((message, index) => {
+        {cleanedMessages.map((message, index) => {
           const isOwn = userType === 'user' ? message.senderRole === 'User' : message.senderRole === 'Shop';
           const showAvatar = shouldShowAvatar(message, index);
           const showDateSeparator = shouldShowDateSeparator(message, index);
           const messageKey = generateMessageKey(message, index);
-
 
           return (
             <div key={messageKey}>
@@ -198,21 +204,14 @@ export function MessageList({
                 message={message}
                 isOwn={isOwn}
                 showAvatar={showAvatar}
-                onReactionAdd={(messageId, emoji) => {
-                  const cleanId = extractId(messageId);
-                  if (cleanId && cleanId !== '[object Object]') {
-                    onReactionAdd(cleanId, emoji);
-                  } else {
-                    console.error('Cannot add reaction - invalid message ID:', messageId);
-                  }
-                }}
+                onReactionAdd={(messageId, emoji) => onReactionAdd(extractId(messageId), emoji)}
                 onReactionRemove={(messageId, emoji) => onReactionRemove(extractId(messageId), emoji)}
-                onReply={() => { }}
-                onEdit={() => { }}
-                onDelete={handleDelete}
-                onForward={() => { }}
-                onCopy={handleCopy}
-                onReport={() => { }}
+                onReply={onReply ? () => onReply(message) : () => { }}
+                onEdit={onEdit ? () => onEdit(message) : () => { }}
+                onDelete={() => handleDelete(message)}
+                onForward={onForward ? () => onForward(message) : () => { }}
+                onCopy={() => handleCopy(message.content || '')}
+                onReport={onReport ? () => onReport(message) : () => { }}
               />
             </div>
           );

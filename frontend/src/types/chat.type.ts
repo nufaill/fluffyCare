@@ -10,8 +10,8 @@ export interface Chat {
   unreadCount: number;
   createdAt?: Date;
   updatedAt?: Date;
-  shop: { id: string; name: string; avatar?: string; } | null;
-  user: { id: string; name: string; avatar?: string; } | null;
+  shop: { id: string; name: string; logo?: string; phone?:Number } | null;
+  user: { id: string; fullName: string; profileImage?: string; phone?:Number} | null;
 }
 
 export interface ChatDocument extends Chat, Document {}

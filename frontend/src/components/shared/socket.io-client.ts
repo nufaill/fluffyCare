@@ -33,19 +33,18 @@ interface SocketEventData {
 class SocketManager {
   private socket: Socket | null = null;
   private connectionAttempts = 0;
-  private maxRetries = 10; // Increased from 5
-  private retryDelay = 2000; // Increased from 1000
+  private maxRetries = 10; 
+  private retryDelay = 2000;
   private isConnecting = false;
   private eventListeners: Map<string, Function[]> = new Map();
 
   getSocket(): Socket {
     if (!this.socket) {
-      console.log('🔌 Creating new socket instance with URL:', SOCKET_URL);
       this.socket = io(SOCKET_URL, {
         withCredentials: true,
         autoConnect: false,
-        transports: ['websocket'], // Changed to websocket for real-time; fallback to polling if needed
-        timeout: 30000, // Increased from 20000
+        transports: ['websocket'], 
+        timeout: 30000, 
         reconnection: true,
         reconnectionAttempts: this.maxRetries,
         reconnectionDelay: this.retryDelay,
@@ -62,13 +61,11 @@ class SocketManager {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('✅ Socket connected:', this.socket?.id);
       this.connectionAttempts = 0;
       this.isConnecting = false;
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('❌ Socket disconnected:', reason);
       this.isConnecting = false;
       if (reason === 'io server disconnect') {
         setTimeout(() => this.connectSocket(), this.retryDelay);
@@ -85,7 +82,6 @@ class SocketManager {
     });
 
     this.socket.on('reconnect', (attempt) => {
-      console.log(`🔄 Socket reconnected after ${attempt} attempts`);
       this.connectionAttempts = 0;
     });
 
@@ -99,7 +95,6 @@ class SocketManager {
 
     this.socket.on('new-message', (data: SocketEventData) => {
       try {
-        console.log('📩 New message received:', data);
         this.notifyListeners('new-message', data);
       } catch (error) {
         console.error('Error handling new message:', error);
@@ -108,7 +103,6 @@ class SocketManager {
 
     this.socket.on('message-notification', (data: SocketEventData) => {
       try {
-        console.log('🔔 Message notification received:', data);
         this.notifyListeners('message-notification', data);
       } catch (error) {
         console.error('Error handling message notification:', error);
@@ -117,7 +111,6 @@ class SocketManager {
 
     this.socket.on('unread-count-update', (data: any) => {
       try {
-        console.log('📊 Unread count update:', data);
         this.notifyListeners('unread-count-update', data);
       } catch (error) {
         console.error('Error handling unread count update:', error);
@@ -126,7 +119,6 @@ class SocketManager {
 
     this.socket.on('chat-updated', (data: SocketEventData) => {
       try {
-        console.log('💬 Chat updated:', data);
         this.notifyListeners('chat-updated', data);
       } catch (error) {
         console.error('Error handling chat updated:', error);
@@ -135,7 +127,6 @@ class SocketManager {
 
     this.socket.on('message-delivered', (data: SocketEventData) => {
       try {
-        console.log('📨 Message delivered:', data);
         this.notifyListeners('message-delivered', data);
       } catch (error) {
         console.error('Error handling message delivered:', error);
@@ -144,7 +135,6 @@ class SocketManager {
 
     this.socket.on('message-read', (data: SocketEventData) => {
       try {
-        console.log('👁️ Message marked as read:', data);
         this.notifyListeners('message-read', data);
       } catch (error) {
         console.error('Error handling message read:', error);
@@ -153,7 +143,6 @@ class SocketManager {
 
     this.socket.on('user-typing', (data: SocketEventData) => {
       try {
-        console.log('⌨️ User typing:', data);
         this.notifyListeners('user-typing', data);
       } catch (error) {
         console.error('Error handling user typing:', error);
@@ -162,7 +151,6 @@ class SocketManager {
 
     this.socket.on('user-stopped-typing', (data: SocketEventData) => {
       try {
-        console.log('⌨️ User stopped typing:', data);
         this.notifyListeners('user-stopped-typing', data);
       } catch (error) {
         console.error('Error handling user stopped typing:', error);
@@ -171,7 +159,6 @@ class SocketManager {
 
     this.socket.on('reaction-added', (data: SocketEventData) => {
       try {
-        console.log('😊 Reaction added:', data);
         this.notifyListeners('reaction-added', data);
       } catch (error) {
         console.error('Error handling reaction added:', error);
@@ -180,7 +167,6 @@ class SocketManager {
 
     this.socket.on('reaction-removed', (data: SocketEventData) => {
       try {
-        console.log('😐 Reaction removed:', data);
         this.notifyListeners('reaction-removed', data);
       } catch (error) {
         console.error('Error handling reaction removed:', error);
@@ -189,7 +175,6 @@ class SocketManager {
 
     this.socket.on('message-deleted', (data: SocketEventData) => {
       try {
-        console.log('🗑️ Message deleted:', data);
         this.notifyListeners('message-deleted', data);
       } catch (error) {
         console.error('Error handling message deleted:', error);
@@ -202,12 +187,10 @@ class SocketManager {
     });
 
     this.socket.on('joined-chat', (data: SocketEventData) => {
-      console.log('🏠 Joined chat room:', data);
       this.notifyListeners('joined-chat', data);
     });
 
     this.socket.on('left-chat', (data: SocketEventData) => {
-      console.log('🚪 Left chat room:', data);
       this.notifyListeners('left-chat', data);
     });
   }
@@ -226,14 +209,12 @@ class SocketManager {
   connectSocket(userId?: string, userRole?: 'User' | 'Shop'): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.isConnecting) {
-        console.log('🔌 Connection already in progress...');
         return resolve();
       }
 
       const socket = this.getSocket();
       
       if (socket.connected) {
-        console.log('✅ Socket already connected');
         if (userId && userRole) {
           socket.emit('authenticate-user', { userId, userRole });
         }
@@ -243,7 +224,6 @@ class SocketManager {
       this.isConnecting = true;
 
       const onConnect = () => {
-        console.log('✅ Socket connection established');
         socket.off('connect', onConnect);
         socket.off('connect_error', onError);
         this.isConnecting = false;
@@ -264,7 +244,6 @@ class SocketManager {
       socket.on('connect', onConnect);
       socket.on('connect_error', onError);
 
-      console.log('🔌 Attempting to connect to:', SOCKET_URL);
       socket.connect();
 
       setTimeout(() => {
@@ -280,7 +259,6 @@ class SocketManager {
 
   disconnectSocket(): void {
     if (this.socket) {
-      console.log('🔌❌ Disconnecting socket...');
       this.socket.disconnect();
       this.isConnecting = false;
     }
@@ -301,7 +279,6 @@ class SocketManager {
       return;
     }
 
-    console.log(`🏠 Joining chat: ${chatId} as ${userRole} (${userId})`);
     this.socket.emit('join-chat', { chatId, userId, userRole });
   }
 
@@ -316,7 +293,6 @@ class SocketManager {
       return;
     }
 
-    console.log(`🚪 Leaving chat: ${chatId}`);
     this.socket.emit('leave-chat', { chatId, userId });
   }
 
