@@ -7,14 +7,15 @@ import { Badge } from "@/components/ui/Badge"
 import { ModernSidebar } from "@/components/user/App-sidebar"
 import { PetCard } from "@/components/user/Pet-card"
 import type { Pet } from "@/types/pet.type"
-import { Plus, Search, Filter, Heart, Users, Loader2 } from "lucide-react"
+import { Plus, Search, Filter, Heart, Users, Loader2, Menu, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { useNavigate } from "react-router-dom"
-import { userService,  } from "@/services/user/user.service"
+import { userService } from "@/services/user/user.service"
 import type { PetType } from "@/types/pet.type"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
+import { useMobile } from "@/hooks/chat/use-mobile"
 
 export default function PetsPage() {
   const [searchTerm, setSearchTerm] = React.useState("")
@@ -23,9 +24,11 @@ export default function PetsPage() {
   const [petTypes, setPetTypes] = React.useState<PetType[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = React.useState(false)
   const navigate = useNavigate()
+  const isMobile = useMobile()
 
-  const userId = localStorage.getItem('userId') || '1' 
+  const userId = localStorage.getItem('userId') || '1'
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -57,23 +60,30 @@ export default function PetsPage() {
     fetchData()
   }, [userId])
 
+  // Close sidebar when screen size changes to desktop
+  React.useEffect(() => {
+    if (!isMobile) {
+      setSidebarOpen(false)
+    }
+  }, [isMobile])
+
   const filteredPets = React.useMemo(() => {
     return pets.filter((pet) => {
       const matchesSearch =
         pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         pet.breed.toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       const matchesFilter = (() => {
         if (selectedFilter === "all") return true
         const petType = petTypes.find(type => type._id === pet.petTypeId)
         const petTypeName = petType?.name.toLowerCase() || ''
-        
+
         return (
           (selectedFilter === "dogs" && petTypeName.includes("dog")) ||
           (selectedFilter === "cats" && petTypeName.includes("cat"))
         )
       })()
-      
+
       return matchesSearch && matchesFilter
     })
   }, [searchTerm, selectedFilter, pets, petTypes])
@@ -84,12 +94,12 @@ export default function PetsPage() {
       const petType = petTypes.find(type => type._id === pet.petTypeId)
       return petType?.name.toLowerCase().includes("dog")
     }).length
-    
+
     const cats = pets.filter(pet => {
       const petType = petTypes.find(type => type._id === pet.petTypeId)
       return petType?.name.toLowerCase().includes("cat")
     }).length
-    
+
     const vaccinated = pets.filter((pet) => pet.vaccinationStatus).length
     const trained = pets.filter((pet) => pet.trainedBefore).length
     const friendly = pets.filter((pet) => pet.friendlyWithOthers).length
@@ -99,6 +109,7 @@ export default function PetsPage() {
 
   const handleAddPet = () => {
     navigate("/add-pets")
+    setSidebarOpen(false)
   }
 
   const handleQuickAction = (action: string) => {
@@ -119,186 +130,178 @@ export default function PetsPage() {
     }
   }
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen)
+  }
+
   if (loading) {
     return (
-      <>
-        <div className="flex flex-col h-screen bg-white dark:bg-black">
-          <Header />
-          <div className="flex flex-1 overflow-hidden">
-            <ModernSidebar />
-            <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
-              <div className="flex items-center justify-center h-full">
-                <div className="flex flex-col items-center gap-4">
-                  <Loader2 className="h-8 w-8 animate-spin text-gray-900 dark:text-white" />
-                  <p className="text-gray-600 dark:text-gray-400">Loading your pets...</p>
-                </div>
-              </div>
-            </main>
+      <div className="flex flex-col min-h-screen bg-white dark:bg-black">
+        <Header />
+        <div className="flex flex-1 overflow-hidden">
+          {!isMobile && <ModernSidebar />}
+          <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-900 dark:text-white" />
+              <p className="text-gray-600 dark:text-gray-400">Loading your pets...</p>
+            </div>
           </div>
         </div>
         <Footer />
-      </>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <>
-        <div className="flex flex-col h-screen bg-white dark:bg-black">
-          <Header />
-          <div className="flex flex-1 overflow-hidden">
-            <ModernSidebar />
-            <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
-              <div className="flex items-center justify-center h-full">
-                <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm max-w-md">
-                  <CardContent className="p-6 text-center">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="p-4 bg-red-100 dark:bg-red-900 rounded-full">
-                        <Heart className="h-8 w-8 text-red-500" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                          Error Loading Pets
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-4">
-                          {error}
-                        </p>
-                        <Button 
-                          onClick={() => window.location.reload()}
-                          className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold"
-                        >
-                          Try Again
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </main>
+      <div className="flex flex-col min-h-screen bg-white dark:bg-black">
+        <Header />
+        <div className="flex flex-1 overflow-hidden">
+          {!isMobile && <ModernSidebar />}
+          <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
+            <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm max-w-md w-full">
+              <CardContent className="p-6 text-center">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="p-4 bg-red-100 dark:bg-red-900 rounded-full">
+                    <Heart className="h-8 w-8 text-red-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      Error Loading Pets
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      {error}
+                    </p>
+                    <Button
+                      onClick={() => window.location.reload()}
+                      className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold"
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
         <Footer />
-      </>
+      </div>
     )
   }
 
   return (
-    <>
-      <div className="flex flex-col h-screen bg-white dark:bg-black">
-        {/* Header spans full width at top */}
-        <Header />
+    <div className="flex flex-col min-h-screen bg-white dark:bg-black">
+      <Header />
+      
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Desktop Sidebar */}
+        {!isMobile && <ModernSidebar />}
+        
+        {/* Mobile Sidebar Overlay */}
+        {isMobile && sidebarOpen && (
+          <>
+            <div 
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="fixed inset-y-0 left-0 z-50 md:hidden">
+              <ModernSidebar />
+            </div>
+          </>
+        )}
 
-        {/* Sidebar and main content below header */}
-        <div className="flex flex-1 overflow-hidden">
-          <ModernSidebar />
-
-          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
-            <header className="flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 dark:border-gray-800 px-4 lg:px-6 bg-white dark:bg-black">
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">My Pets</h1>
-                  <Badge className="bg-gray-900 text-white dark:bg-white dark:text-black font-medium">
-                    {pets.length} {pets.length === 1 ? "Pet" : "Pets"}
-                  </Badge>
-                </div>
-                <Button 
-                  onClick={handleAddPet}
-                  className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Pet
-                </Button>
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden w-full">
+          {/* Page Header */}
+          <header className="flex h-14 sm:h-16 shrink-0 items-center gap-2 sm:gap-4 border-b border-gray-200 dark:border-gray-800 px-3 sm:px-4 lg:px-6 bg-white dark:bg-black w-full">
+            <div className="flex items-center justify-between w-full gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                {isMobile && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSidebar}
+                    className="shrink-0"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                )}
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+                  My Pets
+                </h1>
+                <Badge className="bg-gray-900 text-white dark:bg-white dark:text-black font-medium shrink-0">
+                  {pets.length}
+                </Badge>
               </div>
-            </header>
+              <Button
+                onClick={handleAddPet}
+                size={isMobile ? "sm" : "default"}
+                className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold shrink-0"
+              >
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Pet</span>
+              </Button>
+            </div>
+          </header>
 
-            <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+          {/* Scrollable Content */}
+          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
+            <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-4 lg:p-6">
               {/* Stats Overview */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{petStats.total}</div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Pets</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{petStats.dogs}</div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Dogs</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{petStats.cats}</div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Cats</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{petStats.vaccinated}</div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Vaccinated</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{petStats.trained}</div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Trained</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">{petStats.friendly}</div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">People Friendly</p>
-                  </CardContent>
-                </Card>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
+                {[
+                  { label: "Total Pets", value: petStats.total },
+                  { label: "Dogs", value: petStats.dogs },
+                  { label: "Cats", value: petStats.cats },
+                  { label: "Vaccinated", value: petStats.vaccinated },
+                  { label: "Trained", value: petStats.trained },
+                  { label: "Friendly", value: petStats.friendly }
+                ].map((stat, index) => (
+                  <Card 
+                    key={index}
+                    className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm"
+                  >
+                    <CardContent className="p-3 sm:p-4 text-center">
+                      <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                        {stat.value}
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium mt-1">
+                        {stat.label}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
 
               {/* Search and Filter */}
               <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="flex flex-col sm:flex-row gap-4">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col gap-3 sm:gap-4">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
-                        placeholder="Search pets by name or breed..."
+                        placeholder="Search by name or breed..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 border-gray-300 dark:border-gray-700 focus:border-gray-900 dark:focus:border-white"
+                        className="pl-10 border-gray-300 dark:border-gray-700 focus:border-gray-900 dark:focus:border-white text-sm sm:text-base"
                       />
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={selectedFilter === "all" ? "default" : "outline"}
-                        onClick={() => setSelectedFilter("all")}
-                        className={
-                          selectedFilter === "all"
-                            ? "bg-gray-900 text-white dark:bg-white dark:text-black"
-                            : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900"
-                        }
-                      >
-                        All
-                      </Button>
-                      <Button
-                        variant={selectedFilter === "dogs" ? "default" : "outline"}
-                        onClick={() => setSelectedFilter("dogs")}
-                        className={
-                          selectedFilter === "dogs"
-                            ? "bg-gray-900 text-white dark:bg-white dark:text-black"
-                            : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900"
-                        }
-                      >
-                        Dogs
-                      </Button>
-                      <Button
-                        variant={selectedFilter === "cats" ? "default" : "outline"}
-                        onClick={() => setSelectedFilter("cats")}
-                        className={
-                          selectedFilter === "cats"
-                            ? "bg-gray-900 text-white dark:bg-white dark:text-black"
-                            : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900"
-                        }
-                      >
-                        Cats
-                      </Button>
+                    <div className="flex gap-2 flex-wrap">
+                      {["all", "dogs", "cats"].map((filter) => (
+                        <Button
+                          key={filter}
+                          variant={selectedFilter === filter ? "default" : "outline"}
+                          onClick={() => setSelectedFilter(filter as typeof selectedFilter)}
+                          size={isMobile ? "sm" : "default"}
+                          className={
+                            selectedFilter === filter
+                              ? "bg-gray-900 text-white dark:bg-white dark:text-black"
+                              : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900"
+                          }
+                        >
+                          {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                        </Button>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
@@ -306,30 +309,37 @@ export default function PetsPage() {
 
               {/* Pets Grid */}
               {filteredPets.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                   {filteredPets.map((pet) => (
-                    <PetCard key={pet._id} pet={{ ...pet, profileImage: cloudinaryUtils.getFullUrl(pet.profileImage) }} />
+                    <PetCard 
+                      key={pet._id} 
+                      pet={{ 
+                        ...pet, 
+                        profileImage: cloudinaryUtils.getFullUrl(pet.profileImage) 
+                      }} 
+                    />
                   ))}
                 </div>
               ) : (
                 <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                  <CardContent className="p-12 text-center">
+                  <CardContent className="p-6 sm:p-12 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="p-4 bg-gray-100 dark:bg-gray-900 rounded-full">
-                        <Heart className="h-8 w-8 text-gray-400" />
+                        <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-2">
                           {searchTerm || selectedFilter !== "all" ? "No pets found" : "No pets yet"}
                         </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">
                           {searchTerm || selectedFilter !== "all"
                             ? "Try adjusting your search or filter criteria."
                             : "Add your first pet to get started!"}
                         </p>
                         {!searchTerm && selectedFilter === "all" && (
-                          <Button 
+                          <Button
                             onClick={handleAddPet}
+                            size={isMobile ? "sm" : "default"}
                             className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold"
                           >
                             <Plus className="h-4 w-4 mr-2" />
@@ -345,43 +355,30 @@ export default function PetsPage() {
               {/* Quick Actions */}
               {filteredPets.length > 0 && (
                 <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-gray-900 dark:text-white font-bold">Quick Actions</CardTitle>
+                  <CardHeader className="p-3 sm:p-6">
+                    <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-white font-bold">
+                      Quick Actions
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleQuickAction('add')}
-                        className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add New Pet
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleQuickAction('health')}
-                        className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
-                      >
-                        <Heart className="h-4 w-4 mr-2" />
-                        Health Records
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleQuickAction('training')}
-                        className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
-                      >
-                        <Users className="h-4 w-4 mr-2" />
-                        Training Sessions
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleQuickAction('export')}
-                        className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
-                      >
-                        <Filter className="h-4 w-4 mr-2" />
-                        Export Data
-                      </Button>
+                  <CardContent className="p-3 sm:p-6 pt-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+                      {[
+                        { icon: Plus, label: "Add New Pet", action: "add" },
+                        { icon: Heart, label: "Health Records", action: "health" },
+                        { icon: Users, label: "Training Sessions", action: "training" },
+                        { icon: Filter, label: "Export Data", action: "export" }
+                      ].map((item) => (
+                        <Button
+                          key={item.action}
+                          variant="outline"
+                          onClick={() => handleQuickAction(item.action)}
+                          size={isMobile ? "sm" : "default"}
+                          className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
+                        >
+                          <item.icon className="h-4 w-4 mr-2" />
+                          {item.label}
+                        </Button>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -390,7 +387,8 @@ export default function PetsPage() {
           </main>
         </div>
       </div>
+      
       <Footer />
-    </>
+    </div>
   )
 }

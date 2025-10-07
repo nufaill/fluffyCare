@@ -11,11 +11,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ModernSidebar } from "@/components/user/App-sidebar"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
-import { Upload, Save, X, Heart, Camera, Loader2, AlertCircle } from "lucide-react"
+import { Upload, Save, X, Heart, Camera, Loader2, AlertCircle, Menu } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 import { userService } from "@/services/user/user.service"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
-import type { CreatePetData, FormErrors, Pet, PetType } from "@/types/pet.type";
+import type { CreatePetData, FormErrors, Pet, PetType } from "@/types/pet.type"
+import { useMobile } from "@/hooks/chat/use-mobile"
 
 export default function EditPetPage() {
     const { petId } = useParams<{ petId: string }>()
@@ -41,25 +42,27 @@ export default function EditPetPage() {
     const [isLoading, setIsLoading] = React.useState(true)
     const [loadingError, setLoadingError] = React.useState<string | null>(null)
     const [petTypes, setPetTypes] = React.useState<PetType[]>([])
+    const [sidebarOpen, setSidebarOpen] = React.useState(false)
     const navigate = useNavigate()
+    const isMobile = useMobile()
 
     React.useEffect(() => {
         const fetchData = async () => {
             if (!petId) {
-                console.error('No petId provided in URL params');
-                setLoadingError('Invalid pet ID');
-                navigate("/pets");
-                return;
+                console.error('No petId provided in URL params')
+                setLoadingError('Invalid pet ID')
+                navigate("/pets")
+                return
             }
 
             try {
-                setIsLoading(true);
-                setLoadingError(null);
-                const petTypesData = await userService.getAllPetTypes();
-                setPetTypes(petTypesData);
-                const petData: Pet = await userService.getPetById(petId);
+                setIsLoading(true)
+                setLoadingError(null)
+                const petTypesData = await userService.getAllPetTypes()
+                setPetTypes(petTypesData)
+                const petData: Pet = await userService.getPetById(petId)
                 if (!petData || !petData._id) {
-                    throw new Error('Invalid pet data received from server');
+                    throw new Error('Invalid pet data received from server')
                 }
 
                 setFormData({
@@ -77,33 +80,38 @@ export default function EditPetPage() {
                     vaccinationStatus: Boolean(petData.vaccinationStatus),
                     medication: petData.medication || "",
                     userId: typeof petData.userId === 'object' ? petData.userId._id : petData.userId || ""
-                });
-
+                })
             } catch (error: any) {
-                console.error('Error fetching pet data:', error);
-                let errorMessage = 'Failed to load pet data. Please try again.';
+                console.error('Error fetching pet data:', error)
+                let errorMessage = 'Failed to load pet data. Please try again.'
                 if (error.response?.status === 404) {
-                    errorMessage = 'Pet not found. It may have been deleted or you may not have permission to view it.';
+                    errorMessage = 'Pet not found. It may have been deleted or you may not have permission to view it.'
                 } else if (error.response?.status === 401) {
-                    errorMessage = 'Unauthorized. Please log in again.';
+                    errorMessage = 'Unauthorized. Please log in again.'
                 } else if (error.response?.status === 403) {
-                    errorMessage = 'You do not have permission to edit this pet.';
+                    errorMessage = 'You do not have permission to edit this pet.'
                 } else if (error.response?.data?.message) {
-                    errorMessage = error.response.data.message;
+                    errorMessage = error.response.data.message
                 } else if (error.message) {
-                    errorMessage = error.message;
+                    errorMessage = error.message
                 }
-                setLoadingError(errorMessage);
+                setLoadingError(errorMessage)
                 setTimeout(() => {
-                    navigate("/pets");
-                }, 100);
+                    navigate("/pets")
+                }, 100)
             } finally {
-                setIsLoading(false);
+                setIsLoading(false)
             }
-        };
+        }
 
-        fetchData();
-    }, [petId, navigate]);
+        fetchData()
+    }, [petId, navigate])
+
+    React.useEffect(() => {
+        if (!isMobile) {
+            setSidebarOpen(false)
+        }
+    }, [isMobile])
 
     const handleInputChange = <K extends keyof CreatePetData>(field: K, value: CreatePetData[K]) => {
         setFormData((prev) => ({ ...prev, [field]: value }))
@@ -152,39 +160,51 @@ export default function EditPetPage() {
     }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+        e.preventDefault()
 
-        if (!validateForm()) return;
+        if (!validateForm()) return
 
         if (!petId || typeof petId !== 'string' || !/^[0-9a-fA-F]{24}$/.test(petId)) {
-            console.error('Invalid petId:', petId);
-            return;
+            console.error('Invalid petId:', petId)
+            return
         }
 
-        setIsSubmitting(true);
+        setIsSubmitting(true)
 
         try {
-            const { userId, ...updateData } = formData;
-            await userService.updatePet(petId, updateData);
-            navigate("/pets");
+            const { userId, ...updateData } = formData
+            await userService.updatePet(petId, updateData)
+            navigate("/pets")
+            setSidebarOpen(false)
         } catch (error: any) {
-            console.error("Error updating pet:", error);
-
-            if (error.response?.data?.message) {
-            } else if (error.message) {
-            }
+            console.error("Error updating pet:", error)
         } finally {
-            setIsSubmitting(false);
+            setIsSubmitting(false)
         }
-    };
+    }
+
+    const toggleSidebar = () => {
+        setSidebarOpen(!sidebarOpen)
+    }
 
     if (isLoading) {
         return (
-            <>
-                <div className="flex flex-col h-screen bg-white dark:bg-black">
-                    <Header />
-                    <div className="flex flex-1 overflow-hidden">
-                        <ModernSidebar />
+            <div className="flex flex-col min-h-screen bg-white dark:bg-black">
+                <Header />
+                <div className="flex flex-1 overflow-hidden relative">
+                    {!isMobile && <ModernSidebar />}
+                    {isMobile && sidebarOpen && (
+                        <>
+                            <div 
+                                className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                                onClick={() => setSidebarOpen(false)}
+                            />
+                            <div className="fixed inset-y-0 left-0 z-50 md:hidden">
+                                <ModernSidebar />
+                            </div>
+                        </>
+                    )}
+                    <div className="flex-1 flex flex-col overflow-hidden w-full">
                         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
                             <div className="flex items-center justify-center h-full">
                                 <div className="flex flex-col items-center gap-4">
@@ -196,17 +216,28 @@ export default function EditPetPage() {
                     </div>
                 </div>
                 <Footer />
-            </>
+            </div>
         )
     }
 
     if (loadingError) {
         return (
-            <>
-                <div className="flex flex-col h-screen bg-white dark:bg-black">
-                    <Header />
-                    <div className="flex flex-1 overflow-hidden">
-                        <ModernSidebar />
+            <div className="flex flex-col min-h-screen bg-white dark:bg-black">
+                <Header />
+                <div className="flex flex-1 overflow-hidden relative">
+                    {!isMobile && <ModernSidebar />}
+                    {isMobile && sidebarOpen && (
+                        <>
+                            <div 
+                                className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                                onClick={() => setSidebarOpen(false)}
+                            />
+                            <div className="fixed inset-y-0 left-0 z-50 md:hidden">
+                                <ModernSidebar />
+                            </div>
+                        </>
+                    )}
+                    <div className="flex-1 flex flex-col overflow-hidden w-full">
                         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
                             <div className="flex items-center justify-center h-full">
                                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
@@ -217,6 +248,7 @@ export default function EditPetPage() {
                                     <p className="text-gray-600 dark:text-gray-400">{loadingError}</p>
                                     <Button
                                         onClick={() => navigate("/pets")}
+                                        size={isMobile ? "sm" : "default"}
                                         className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black"
                                     >
                                         Back to Pets
@@ -227,37 +259,66 @@ export default function EditPetPage() {
                     </div>
                 </div>
                 <Footer />
-            </>
+            </div>
         )
     }
 
     return (
-        <>
-            <div className="flex flex-col h-screen bg-white dark:bg-black">
-                <Header />
-                <div className="flex flex-1 overflow-hidden">
-                    <ModernSidebar />
-                    <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
-                        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 dark:border-gray-800 px-4 lg:px-6 bg-white dark:bg-black">
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-3">
-                                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">Edit Pet</h1>
-                                    <Badge className="bg-gray-900 text-white dark:bg-white dark:text-black font-medium">
-                                        Update Pet Information
-                                    </Badge>
-                                </div>
-                                <Button
-                                    onClick={() => navigate("/pets")}
-                                    variant="outline"
-                                    className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
-                                >
-                                    <X className="h-4 w-4 mr-2" />
-                                    Cancel
-                                </Button>
-                            </div>
-                        </header>
+        <div className="flex flex-col min-h-screen bg-white dark:bg-black">
+            <Header />
+            <div className="flex flex-1 overflow-hidden relative">
+                {/* Desktop Sidebar */}
+                {!isMobile && <ModernSidebar />}
+                
+                {/* Mobile Sidebar Overlay */}
+                {isMobile && sidebarOpen && (
+                    <>
+                        <div 
+                            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                            onClick={() => setSidebarOpen(false)}
+                        />
+                        <div className="fixed inset-y-0 left-0 z-50 md:hidden">
+                            <ModernSidebar />
+                        </div>
+                    </>
+                )}
 
-                        <div className="p-4 lg:p-6">
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col overflow-hidden w-full">
+                    <header className="flex h-14 sm:h-16 shrink-0 items-center gap-2 sm:gap-4 border-b border-gray-200 dark:border-gray-800 px-3 sm:px-4 lg:px-6 bg-white dark:bg-black w-full">
+                        <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                {isMobile && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={toggleSidebar}
+                                        className="shrink-0"
+                                    >
+                                        <Menu className="h-5 w-5" />
+                                    </Button>
+                                )}
+                                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+                                    Edit Pet
+                                </h1>
+                                <Badge className="bg-gray-900 text-white dark:bg-white dark:text-black font-medium shrink-0">
+                                    Update Pet Information
+                                </Badge>
+                            </div>
+                            <Button
+                                onClick={() => navigate("/pets")}
+                                size={isMobile ? "sm" : "default"}
+                                variant="outline"
+                                className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent shrink-0"
+                            >
+                                <X className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Cancel</span>
+                            </Button>
+                        </div>
+                    </header>
+
+                    <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
+                        <div className="p-3 sm:p-4 lg:p-6">
                             <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
                                 <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
                                     <CardHeader>
@@ -487,13 +548,16 @@ export default function EditPetPage() {
                                         type="button"
                                         variant="outline"
                                         onClick={() => navigate("/pets")}
+                                        size={isMobile ? "sm" : "default"}
                                         className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
                                     >
-                                        Cancel
+                                        <X className="h-4 w-4 sm:mr-2" />
+                                        <span className="hidden sm:inline">Cancel</span>
                                     </Button>
                                     <Button
                                         type="submit"
                                         disabled={isSubmitting}
+                                        size={isMobile ? "sm" : "default"}
                                         className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold"
                                     >
                                         {isSubmitting ? (
@@ -503,8 +567,9 @@ export default function EditPetPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <Save className="h-4 w-4 mr-2" />
-                                                Update Pet
+                                                <Save className="h-4 w-4 sm:mr-2" />
+                                                <span className="hidden sm:inline">Update Pet</span>
+                                                <span className="sm:hidden">Save</span>
                                             </>
                                         )}
                                     </Button>
@@ -515,6 +580,6 @@ export default function EditPetPage() {
                 </div>
             </div>
             <Footer />
-        </>
+        </div>
     )
 }

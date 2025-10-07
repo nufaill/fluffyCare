@@ -11,11 +11,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ModernSidebar } from "@/components/user/App-sidebar"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
-import { Upload, Save, X, Heart, Camera } from "lucide-react"
+import { Upload, Save, X, Heart, Camera, Menu } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { userService } from "@/services/user/user.service"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import type { CreatePetData, PetType } from "@/types/pet.type"
+import { useMobile } from "@/hooks/chat/use-mobile"
 
 interface FormErrors {
     petTypeId?: string
@@ -48,13 +49,15 @@ export default function AddPetPage() {
         trainedBefore: false,
         vaccinationStatus: false,
         medication: "",
-        userId: "" 
+        userId: ""
     })
 
     const [errors, setErrors] = React.useState<FormErrors>({})
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [petTypes, setPetTypes] = React.useState<PetType[]>([])
+    const [sidebarOpen, setSidebarOpen] = React.useState(false)
     const navigate = useNavigate()
+    const isMobile = useMobile()
 
     React.useEffect(() => {
         const fetchPetTypes = async () => {
@@ -67,6 +70,12 @@ export default function AddPetPage() {
         }
         fetchPetTypes()
     }, [])
+
+    React.useEffect(() => {
+        if (!isMobile) {
+            setSidebarOpen(false)
+        }
+    }, [isMobile])
 
     const handleInputChange = <K extends keyof CreatePetData>(field: K, value: CreatePetData[K]) => {
         setFormData((prev) => ({ ...prev, [field]: value }))
@@ -94,13 +103,12 @@ export default function AddPetPage() {
         const file = e.target.files?.[0]
         if (!file) return
 
-        // Validate file type and size
         const validImageTypes = ['image/jpeg', 'image/png', 'image/gif']
         if (!validImageTypes.includes(file.type)) {
             setErrors((prev) => ({ ...prev, profileImage: "Only JPG, PNG, or GIF files are allowed" }))
             return
         }
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        if (file.size > 5 * 1024 * 1024) {
             setErrors((prev) => ({ ...prev, profileImage: "Image size must not exceed 5MB" }))
             return
         }
@@ -125,6 +133,7 @@ export default function AddPetPage() {
         try {
             await userService.createPet(formData)
             navigate("/pets")
+            setSidebarOpen(false)
         } catch (error: any) {
             console.error("Error adding pet:", error)
         } finally {
@@ -132,33 +141,66 @@ export default function AddPetPage() {
         }
     }
 
-    return (
-        <>
-            <div className="flex flex-col h-screen bg-white dark:bg-black">
-                <Header />
-                <div className="flex flex-1 overflow-hidden">
-                    <ModernSidebar />
-                    <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
-                        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 dark:border-gray-800 px-4 lg:px-6 bg-white dark:bg-black">
-                            <div className="flex items-center justify-between w-full">
-                                <div className="flex items-center gap-3">
-                                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">Add New Pet</h1>
-                                    <Badge className="bg-gray-900 text-white dark:bg-white dark:text-black font-medium">
-                                        New Pet Registration
-                                    </Badge>
-                                </div>
-                                <Button
-                                    onClick={() => navigate("/pets")}
-                                    variant="outline"
-                                    className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
-                                >
-                                    <X className="h-4 w-4 mr-2" />
-                                    Cancel
-                                </Button>
-                            </div>
-                        </header>
+    const toggleSidebar = () => {
+        setSidebarOpen(!sidebarOpen)
+    }
 
-                        <div className="p-4 lg:p-6">
+    return (
+        <div className="flex flex-col min-h-screen bg-white dark:bg-black">
+            <Header />
+            <div className="flex flex-1 overflow-hidden relative">
+                {/* Desktop Sidebar */}
+                {!isMobile && <ModernSidebar />}
+                
+                {/* Mobile Sidebar Overlay */}
+                {isMobile && sidebarOpen && (
+                    <>
+                        <div 
+                            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                            onClick={() => setSidebarOpen(false)}
+                        />
+                        <div className="fixed inset-y-0 left-0 z-50 md:hidden">
+                            <ModernSidebar />
+                        </div>
+                    </>
+                )}
+
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col overflow-hidden w-full">
+                    <header className="flex h-14 sm:h-16 shrink-0 items-center gap-2 sm:gap-4 border-b border-gray-200 dark:border-gray-800 px-3 sm:px-4 lg:px-6 bg-white dark:bg-black w-full">
+                        <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                {isMobile && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={toggleSidebar}
+                                        className="shrink-0"
+                                    >
+                                        <Menu className="h-5 w-5" />
+                                    </Button>
+                                )}
+                                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
+                                    Add New Pet
+                                </h1>
+                                <Badge className="bg-gray-900 text-white dark:bg-white dark:text-black font-medium shrink-0">
+                                    New Pet Registration
+                                </Badge>
+                            </div>
+                            <Button
+                                onClick={() => navigate("/pets")}
+                                size={isMobile ? "sm" : "default"}
+                                variant="outline"
+                                className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent shrink-0"
+                            >
+                                <X className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Cancel</span>
+                            </Button>
+                        </div>
+                    </header>
+
+                    <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
+                        <div className="p-3 sm:p-4 lg:p-6">
                             <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
                                 <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
                                     <CardHeader>
@@ -395,13 +437,16 @@ export default function AddPetPage() {
                                         type="button"
                                         variant="outline"
                                         onClick={() => navigate("/pets")}
+                                        size={isMobile ? "sm" : "default"}
                                         className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
                                     >
-                                        Cancel
+                                        <X className="h-4 w-4 sm:mr-2" />
+                                        <span className="hidden sm:inline">Cancel</span>
                                     </Button>
                                     <Button
                                         type="submit"
                                         disabled={isSubmitting}
+                                        size={isMobile ? "sm" : "default"}
                                         className="bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black font-semibold"
                                     >
                                         {isSubmitting ? (
@@ -411,8 +456,9 @@ export default function AddPetPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <Save className="h-4 w-4 mr-2" />
-                                                Add Pet
+                                                <Save className="h-4 w-4 sm:mr-2" />
+                                                <span className="hidden sm:inline">Add Pet</span>
+                                                <span className="sm:hidden">Save</span>
                                             </>
                                         )}
                                     </Button>
@@ -423,6 +469,6 @@ export default function AddPetPage() {
                 </div>
             </div>
             <Footer />
-        </>
+        </div>
     )
 }
