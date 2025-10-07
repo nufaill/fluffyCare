@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 
 interface FilterBarProps {
   filters: FilterOptions;
-  onFiltersChange: (filters: FilterOptions) => void;
+  onFiltersChange: (filters: Partial<FilterOptions>) => void;
   onToggleMap?: () => void;
   showMap?: boolean;
 }
@@ -20,8 +20,6 @@ const petTypeOptions = [
   { value: 'dog', label: 'Dogs' },
   { value: 'cat', label: 'Cats' },
   { value: 'rat', label: 'Rat' },
-  // { value: 'rabbit', label: 'Rabbits' },
-  // { value: 'other', label: 'Other' },
 ];
 
 const serviceTypeOptions = [
@@ -78,6 +76,10 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
       rating: 0,
       nearMe: false,
       search: '',
+      radius: 5000,
+      currentAvailability: false,
+      selectedDay: '',
+      selectedTime: '',
     });
   };
 
@@ -86,17 +88,20 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
     filters.serviceType.length + 
     (filters.rating > 0 ? 1 : 0) + 
     (filters.nearMe ? 1 : 0) +
-    (filters.search ? 1 : 0);
+    (filters.search ? 1 : 0) +
+    (filters.currentAvailability ? 1 : 0) +
+    (filters.selectedDay ? 1 : 0) +
+    (filters.selectedTime ? 1 : 0);
 
   return (
     <Card className="p-4 mb-6 bg-card border-border">
-      <div className="flex flex-wrap items-center gap-4 justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 sm:justify-between">
+        <div className="flex flex-col sm:flex-row items-center gap-4">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <SlidersHorizontal className="w-4 h-4" />
             Filters
@@ -112,33 +117,33 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
               variant={showMap ? "default" : "outline"}
               size="sm"
               onClick={onToggleMap}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <MapPin className="w-4 h-4" />
               {showMap ? 'Hide Map' : 'Show Map'}
             </Button>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Input
               placeholder="Search services..."
               value={filters.search || ''}
               onChange={handleSearchChange}
-              className="w-64"
+              className="w-full sm:w-64"
             />
             <Search className="w-4 h-4 text-muted-foreground" />
           </div>
         </div>
 
         {activeFiltersCount > 0 && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="mt-2 sm:mt-0">
             Clear All
           </Button>
         )}
       </div>
 
       {isExpanded && (
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
             <h3 className="font-medium mb-3 text-card-foreground">Pet Types</h3>
             <div className="space-y-2">

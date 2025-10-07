@@ -973,4 +973,6 @@ router.post("/reviews", userDependencies.reviewController.createReview as Reques
 router.put("/reviews/:reviewId", userDependencies.reviewController.updateReview as RequestHandler);
 router.delete("/reviews/:reviewId", userDependencies.reviewController.deleteReview as RequestHandler);
 
+router.get('/nearby-shops', userDependencies.userController.getNearbyShops as RequestHandler);
+
 export default router;

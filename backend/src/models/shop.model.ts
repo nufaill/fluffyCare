@@ -99,3 +99,5 @@ const shopSchema = new Schema<ShopDocument>(
 shopSchema.index({ location: '2dsphere' });
 
 export const Shop = model<ShopDocument>('Shop', shopSchema);
+
+export { ShopDocument };

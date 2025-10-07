@@ -75,6 +75,9 @@ export interface ServiceLocation {
 
 
 export interface FilterOptions {
+  selectedDay: any;
+  selectedTime: any;
+  currentAvailability: any;
   petType: string[];
   serviceType: string[];
   priceRange: [number, number];
@@ -84,6 +87,7 @@ export interface FilterOptions {
   search: string;
   page?: number;
   pageSize?: number;
+  radius?: number;
 }
 
 export interface ServiceType {

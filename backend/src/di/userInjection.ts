@@ -1,7 +1,7 @@
 import { UserController } from "../controllers/user/user.controller";
 import { UserService } from "../services/user/user.service";
 import { AuthService } from "../services/user/auth.service";
-import { NearbyService } from "../services/user/nearby.service";
+import { NearbyShopsService } from "../services/user/nearby.service";
 import { UserRepository } from "../repositories/user/user.repository";
 import { ShopRepository } from "../repositories/shop/shop.repository";
 import { AuthMiddleware } from "../middlewares/auth.middleware";
@@ -20,6 +20,7 @@ import { ShopService } from "../services/shop/shop.service";
 import { ReviewController } from '../controllers/review/review.controller';
 import { ReviewService } from "../services/review/review.service";
 import { ReviewRepository } from "../repositories/review/review.repository";
+import { NearbyRepository } from "repositories/user/nearby.repository";
 
 // Initialize repositories
 const userRepository = new UserRepository();
@@ -28,6 +29,7 @@ const staffRepository = new StaffRepository();
 const shopRepository = new ShopRepository();
 const walletRepository = new WalletRepository();
 const reviewRepository = new ReviewRepository();
+const nearbyRepository = new NearbyRepository();
 
 // Initialize services
 const authService = new AuthService(
@@ -40,7 +42,7 @@ const authService = new AuthService(
 const userService = new UserService(userRepository);
 const authMiddleware = new AuthMiddleware(jwtService);
 const petService = new PetService(petRepository);
-const nearbyService = new NearbyService(shopRepository);
+const nearbyService = new NearbyShopsService(nearbyRepository);
 const staffService = new StaffService(staffRepository);
 const shopAvailabilityService = new ShopAvailabilityService(shopRepository);
 const shopService = new ShopService(shopRepository);

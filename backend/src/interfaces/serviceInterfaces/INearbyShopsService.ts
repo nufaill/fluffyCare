@@ -1,24 +1,20 @@
-export interface NearbyShopsQuery {
-  latitude: number;
-  longitude: number;
-  maxDistance?: number;
-  serviceType?: string;
-  petType?: string;
+import { ShopDocument, ShopAvailability, Verification, GeoLocation } from '../../types/Shop.types';
+
+export interface ShopDTO {
+  id: string;
+  name: string;
+  location: GeoLocation;
+  shopAvailability?: ShopAvailability;
+  isVerified: Verification;
+  isActive: boolean;
 }
 
-export interface NearbyShop {
-  _id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  address: string; // This will map to streetAddress
-  location: {
-    type: 'Point';
-    coordinates: [number, number]; // [longitude, latitude]
-  };
-  isActive: boolean;
-  isVerified: boolean;
-  distance: number;
-  profileImage?: string; // This will map to logo
-  description?: string;
+export interface NearbyShopsQuery {
+  limit?: number;
+  sortOrder?: 'asc' | 'desc';
+  openNow?: boolean;
+}
+
+export interface INearbyShopsService {
+  getNearbyShops(query: NearbyShopsQuery): Promise<ShopDTO[]>;
 }

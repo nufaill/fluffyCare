@@ -38,9 +38,8 @@ export interface ServiceLocation {
   rating: number;
   price: number;
   description?: string;
-  distance?: number; 
+  distance?: number;
 }
-let currentUserLocation: UserLocation | null = null;
 
 export const userService = {
   async getUser(userId: string): Promise<UserDocument> {
@@ -123,141 +122,26 @@ export const userService = {
       id: type._id.toString(),
     }));
   },
-   setUserLocation(location: UserLocation, syncWithBackend: boolean = false): void {
-    currentUserLocation = location;
-    
-    // Store in localStorage for persistence
-    try {
-      localStorage.setItem('userLocation', JSON.stringify(location));
-    } catch (error) {
-      console.warn('Failed to store location in localStorage:', error);
-    }
-    
-    // Optionally sync with backend
-    if (syncWithBackend) {
-      this.syncLocationWithBackend(location).catch(error => {
-        console.error('Failed to sync location with backend:', error);
-      });
-    }
-  },
 
-  /**
-   * Get stored user location
-   */
-  getUserLocation(): UserLocation | null {
-    if (currentUserLocation) {
-      return currentUserLocation;
-    }
-    
-    // Try to get from localStorage
+  async getNearbyServices(request: NearbyServicesRequest): Promise<ServiceLocation[]> {
     try {
-      const stored = localStorage.getItem('userLocation');
-      if (stored) {
-        currentUserLocation = JSON.parse(stored);
-        return currentUserLocation;
-      }
-    } catch (error) {
-      console.warn('Failed to retrieve location from localStorage:', error);
-    }
-    
-    return null;
-  },
-
-  /**
-   * Clear stored user location
-   */
-  clearUserLocation(): void {
-    currentUserLocation = null;
-    try {
-      localStorage.removeItem('userLocation');
-    } catch (error) {
-      console.warn('Failed to clear location from localStorage:', error);
-    }
-  },
-
-  /**
-   * Sync location with backend (if your backend supports it)
-   */
-  async syncLocationWithBackend(location: UserLocation): Promise<void> {
-    try {
-      const payload: LocationUpdatePayload = {
-        location: {
-          lat: location.lat,
-          lng: location.lng,
-          accuracy: location.accuracy,
+      const res = await Useraxios.get('/nearby-shops', {
+        params: {
+          lat: request.lat,
+          lng: request.lng,
+          radius: request.radius,
+          category: request.serviceType, 
         },
-        timestamp: location.timestamp,
-      };
-      
-      await Useraxios.post('/location', payload);
-    } catch (error) {
-      console.error('Error syncing location with backend:', error);
-      throw error;
-    }
-  },
-
-  async getNearbyServices(params: NearbyServicesRequest): Promise<ServiceLocation[]> {
-    try {
-      const res = await Useraxios.get('/services/nearby', { params });
+      });
+      console.log('Nearby shops response:', res.data.data);
       return res.data.data.map((service: any) => ({
         ...service,
-        id: service._id.toString(),
+        _id: service.id.toString(),
+        distance: service.distance, 
       }));
-    } catch (error) {
-      console.error('Error fetching nearby services:', error);
+    } catch (error: any) {
+      console.error('Get nearby services error:', error.response?.data || error.message);
       throw error;
     }
-  },
-
-  async getServicesWithLocation(): Promise<ServiceLocation[]> {
-    try {
-      const res = await Useraxios.get('/services/with-location');
-      return res.data.data.map((service: any) => ({
-        ...service,
-        id: service._id.toString(),
-      }));
-    } catch (error) {
-      console.error('Error fetching services with location:', error);
-      throw error;
-    }
-  },
-
-  calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371; 
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  },
-
-  getDistanceFromUser(targetLat: number, targetLng: number): number | null {
-    const userLocation = this.getUserLocation();
-    if (!userLocation) return null;
-    
-    return this.calculateDistance(
-      userLocation.lat,
-      userLocation.lng,
-      targetLat,
-      targetLng
-    );
-  },
-
-  isUserWithinRadius(targetLat: number, targetLng: number, radiusKm: number): boolean {
-    const distance = this.getDistanceFromUser(targetLat, targetLng);
-    return distance !== null && distance <= radiusKm;
-  },
-
-  getUserLocationAge(): number | null {
-    const location = this.getUserLocation();
-    return location ? Date.now() - location.timestamp : null;
-  },
-
-  isUserLocationFresh(): boolean {
-    const age = this.getUserLocationAge();
-    return age !== null && age < 300000; 
   },
 };

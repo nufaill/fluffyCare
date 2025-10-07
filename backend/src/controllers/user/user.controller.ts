@@ -4,12 +4,12 @@ import { IUserService } from '../../interfaces/serviceInterfaces/IUserService';
 import { HTTP_STATUS, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../shared/constant';
 import { CustomError } from '../../util/CustomerError';
 import { UpdateUserStatusDTO, UpdateUserDTO, CustomerAnalytics } from '../../dto/user.dto';
-import { NearbyService } from '../../services/user/nearby.service';
+import { INearbyShopsService, NearbyShopsQuery } from '../../interfaces/serviceInterfaces/INearbyShopsService';
 
 export class UserController implements IUserController {
   constructor(
     private _userService: IUserService,
-    private _nearbyService: NearbyService
+    private _nearbyService: INearbyShopsService
   ) { }
 
   getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -115,66 +115,45 @@ export class UserController implements IUserController {
         success: false,
         message,
       });
-      next(error);
+      next(error); 
     }
   };
 
-  getNearbyShops = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    // try {
-    //   const { lat, lng, radius } = req.query;
+ getNearbyShops = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { limit, sortOrder, openNow } = req.query;
 
-    //   // Validate required parameters
-    //   if (!lat || !lng) {
-    //     return res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-    //       success: false,
-    //       message: 'Latitude and longitude are required',
-    //     });
-    //   }
+      const query: NearbyShopsQuery = {
+        limit: parseInt(limit as string) || 50,
+        sortOrder: sortOrder ? (sortOrder as 'asc' | 'desc') : 'asc',
+        openNow: openNow === 'true',
+      };
 
-    //   const nearbyShopsQuery = {
-    //     latitude: parseFloat(lat as string),
-    //     longitude: parseFloat(lng as string),
-    //     maxDistance: radius ? parseInt(radius as string) : 5000,
-    //   };
+      // Validate optional parameters
+      if (query.limit && query.limit < 1) {
+        throw new CustomError('Limit must be a positive integer', HTTP_STATUS.BAD_REQUEST);
+      }
 
-    //   // Validate coordinates
-    //   if (
-    //     isNaN(nearbyShopsQuery.latitude) ||
-    //     isNaN(nearbyShopsQuery.longitude) ||
-    //     nearbyShopsQuery.latitude < -90 || nearbyShopsQuery.latitude > 90 ||
-    //     nearbyShopsQuery.longitude < -180 || nearbyShopsQuery.longitude > 180
-    //   ) {
-    //     return res.status(HTTP_STATUS.BAD_REQUEST || 400).json({
-    //       success: false,
-    //       message: 'Invalid latitude or longitude values',
-    //     });
-    //   }
+      const shops = await this._nearbyService.getNearbyShops(query);
 
-    //   const nearbyShops = await this.nearbyService.findNearbyShops(nearbyShopsQuery);
-
-    //   res.status(HTTP_STATUS.OK || 200).json({
-    //     success: true,
-    //     data: nearbyShops,
-    //     message: `Found ${nearbyShops.length} nearby shops`,
-    //     meta: {
-    //       count: nearbyShops.length,
-    //       searchRadius: nearbyShopsQuery.maxDistance,
-    //       userLocation: {
-    //         latitude: nearbyShopsQuery.latitude,
-    //         longitude: nearbyShopsQuery.longitude,
-    //       },
-    //     },
-    //   });
-    // } catch (error) {
-    //   console.error(`❌ [UserController] Error fetching nearby shops:`, error);
-    //   const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
-    //   const message = error instanceof Error ? error.message : 'Failed to fetch nearby shops';
-    //   res.status(statusCode).json({
-    //     success: false,
-    //     message,
-    //   });
-    //   next(error);
-    // }
+      res.status(HTTP_STATUS.OK || 200).json({
+        success: true,
+        data: shops,
+        message: `Found ${shops.length} shops`,
+        meta: {
+          count: shops.length,
+        },
+      });
+    } catch (error) {
+      console.error(`❌ [UserController] Error fetching shops:`, error);
+      const statusCode = error instanceof CustomError ? error.statusCode : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+      const message = error instanceof Error ? error.message : 'Failed to fetch shops';
+      res.status(statusCode).json({
+        success: false,
+        message,
+      });
+      next(error);
+    }
   };
 
   getCustomerAnalytics = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
