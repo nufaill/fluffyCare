@@ -35,7 +35,9 @@ export default function AdminWalletPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const admin = useSelector((state: RootState) => state.admin.adminDatas);
+  const [activeMenuItem, setActiveMenuItem] = useState("Wallet");
 
   const adminId = admin?._id;
 
@@ -120,7 +122,6 @@ export default function AdminWalletPage() {
   }, [adminId]);
 
   const handleAction = (actionType: string, data?: any) => {
-    
     switch (actionType) {
       case 'adjust_balance':
         break;
@@ -162,24 +163,40 @@ export default function AdminWalletPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleMenuItemClick = (item: string) => {
+    setActiveMenuItem(item);
+    setIsSidebarOpen(false);
+  };
+
+  const handleSidebarClose = () => {
+    setIsSidebarOpen(false);
+  };
+
   if (!adminId) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="fixed top-0 left-0 right-0 z-50">
-          <Navbar userName="NUFAIL" />
+        <div className="fixed top-0 left-0 right-0 md:left-64 z-50">
+          <Navbar
+            userName="NUFAIL"
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
         </div>
         <div className="flex flex-1 pt-16">
-          <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] z-40">
-            <Sidebar />
-          </div>
-          <div className="flex-1 ml-64 min-h-[calc(100vh-4rem)] pb-16 flex items-center justify-center">
+          <Sidebar
+            activeItem={activeMenuItem}
+            onItemClick={handleMenuItemClick}
+            isOpen={isSidebarOpen}
+            onClose={handleSidebarClose}
+          />
+          <div className="flex-1 md:ml-64 min-h-[calc(100vh-4rem)] pb-16 flex items-center justify-center p-4 md:p-6">
             <div className="text-center bg-white p-8 rounded-lg shadow-md">
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h1>
               <p className="text-gray-600 mb-4">You need to be logged in as admin to view the wallet.</p>
             </div>
           </div>
         </div>
-        <div className="ml-64">
+        <div className="md:ml-64">
           <Footer />
         </div>
       </div>
@@ -189,14 +206,21 @@ export default function AdminWalletPage() {
   if (isCreating) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="fixed top-0 left-0 right-0 z-50">
-          <Navbar userName="Admin" />
+        <div className="fixed top-0 left-0 right-0 md:left-64 z-50">
+          <Navbar
+            userName="Admin"
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
         </div>
         <div className="flex flex-1 pt-16">
-          <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] z-40">
-            <Sidebar />
-          </div>
-          <div className="flex-1 ml-64 min-h-[calc(100vh-4rem)] pb-16 flex items-center justify-center">
+          <Sidebar
+            activeItem={activeMenuItem}
+            onItemClick={handleMenuItemClick}
+            isOpen={isSidebarOpen}
+            onClose={handleSidebarClose}
+          />
+          <div className="flex-1 md:ml-64 min-h-[calc(100vh-4rem)] pb-16 flex items-center justify-center p-4 md:p-6">
             <div className="text-center bg-white p-8 rounded-lg shadow-md">
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <h1 className="text-2xl font-bold text-blue-600 mb-4">Creating Admin Wallet</h1>
@@ -204,7 +228,7 @@ export default function AdminWalletPage() {
             </div>
           </div>
         </div>
-        <div className="ml-64">
+        <div className="md:ml-64">
           <Footer />
         </div>
       </div>
@@ -214,14 +238,21 @@ export default function AdminWalletPage() {
   if (error && !wallet) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="fixed top-0 left-0 right-0 z-50">
-          <Navbar userName="Admin" />
+        <div className="fixed top-0 left-0 right-0 md:left-64 z-50">
+          <Navbar
+            userName="Admin"
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
         </div>
         <div className="flex flex-1 pt-16">
-          <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] z-40">
-            <Sidebar />
-          </div>
-          <div className="flex-1 ml-64 min-h-[calc(100vh-4rem)] pb-16 flex items-center justify-center">
+          <Sidebar
+            activeItem={activeMenuItem}
+            onItemClick={handleMenuItemClick}
+            isOpen={isSidebarOpen}
+            onClose={handleSidebarClose}
+          />
+          <div className="flex-1 md:ml-64 min-h-[calc(100vh-4rem)] pb-16 flex items-center justify-center p-4 md:p-6">
             <div className="text-center bg-white p-8 rounded-lg shadow-md max-w-md mx-4">
               <Wallet className="h-16 w-16 text-blue-600 mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Set Up Admin Wallet</h1>
@@ -235,7 +266,7 @@ export default function AdminWalletPage() {
             </div>
           </div>
         </div>
-        <div className="ml-64">
+        <div className="md:ml-64">
           <Footer />
         </div>
       </div>
@@ -245,14 +276,21 @@ export default function AdminWalletPage() {
   if (error && wallet) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="fixed top-0 left-0 right-0 z-50">
-          <Navbar userName="Admin" />
+        <div className="fixed top-0 left-0 right-0 md:left-64 z-50">
+          <Navbar
+            userName="Admin"
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
         </div>
         <div className="flex flex-1 pt-16">
-          <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] z-40">
-            <Sidebar />
-          </div>
-          <div className="flex-1 ml-64 min-h-[calc(100vh-4rem)] pb-16 p-4 md:p-6">
+          <Sidebar
+            activeItem={activeMenuItem}
+            onItemClick={handleMenuItemClick}
+            isOpen={isSidebarOpen}
+            onClose={handleSidebarClose}
+          />
+          <div className="flex-1 md:ml-64 min-h-[calc(100vh-4rem)] pb-16 p-4 md:p-6">
             <div className="max-w-4xl mx-auto">
               <div className="bg-white rounded-lg shadow p-6">
                 <h1 className="text-2xl font-bold text-red-600 mb-4">Wallet Error</h1>
@@ -267,7 +305,7 @@ export default function AdminWalletPage() {
             </div>
           </div>
         </div>
-        <div className="ml-64">
+        <div className="md:ml-64">
           <Footer />
         </div>
       </div>
@@ -276,14 +314,21 @@ export default function AdminWalletPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="fixed top-0 left-0 right-0 z-50">
-        <Navbar userName="Admin" />
+      <div className="fixed top-0 left-0 right-0 md:left-64 z-50">
+        <Navbar
+          userName="Admin"
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
       </div>
       <div className="flex flex-1 pt-16">
-        <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] z-40">
-          <Sidebar />
-        </div>
-        <div className="flex-1 ml-64 min-h-[calc(100vh-4rem)] pb-16">
+        <Sidebar
+          activeItem={activeMenuItem}
+          onItemClick={handleMenuItemClick}
+          isOpen={isSidebarOpen}
+          onClose={handleSidebarClose}
+        />
+        <div className="flex-1 md:ml-64 min-h-[calc(100vh-4rem)] pb-16 p-4 md:p-6 overflow-y-auto">
           <WalletComponent
             role="admin"
             balance={wallet?.balance ?? 0}
@@ -294,7 +339,7 @@ export default function AdminWalletPage() {
           />
         </div>
       </div>
-      <div className="ml-64">
+      <div className="md:ml-64">
         <Footer />
       </div>
     </div>

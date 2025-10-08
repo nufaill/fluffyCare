@@ -49,6 +49,7 @@ const CustomerDetails: React.FC = () => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [updateLoading, setUpdateLoading] = useState<string | null>(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
     fetchUsers()
@@ -187,6 +188,7 @@ const CustomerDetails: React.FC = () => {
 
   const handleMenuItemClick = (item: string): void => {
     setActiveMenuItem(item)
+    setIsSidebarOpen(false)
   }
 
   const handleLogout = async (): Promise<void> => {
@@ -226,9 +228,9 @@ const CustomerDetails: React.FC = () => {
       sortable: true,
       render: (_value: unknown, record: User) => (
         <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 ring-2 ring-gray-200 dark:ring-gray-600">
+          <Avatar className="h-8 sm:h-10 w-8 sm:w-10 ring-2 ring-gray-200 dark:ring-gray-600">
             <AvatarImage src={record.profileImage ? cloudinaryUtils.getFullUrl(record.profileImage) : "/placeholder.svg?height=40&width=40"} />
-            <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300">
+            <AvatarFallback className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 text-gray-700 dark:text-gray-300 text-xs sm:text-sm">
               {record.fullName
                 .split(" ")
                 .map((n) => n[0])
@@ -237,8 +239,8 @@ const CustomerDetails: React.FC = () => {
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium text-gray-900 dark:text-gray-100">{record.fullName}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm sm:text-base">{record.fullName}</p>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               {record.isGoogleUser ? 'Google User' : 'Regular User'}
             </p>
           </div>
@@ -249,16 +251,17 @@ const CustomerDetails: React.FC = () => {
       key: "contact",
       title: "Contact Info",
       dataIndex: "email",
+      sortable: true,
       render: (_value: unknown, record: User) => (
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm">
-            <Mail className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-900 dark:text-gray-100">{record.email}</span>
+          <div className="flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
+            <Mail className="h-3 sm:h-4 w-3 sm:w-4 text-gray-400" />
+            <span className="truncate">{record.email}</span>
           </div>
           {record.phone && (
-            <div className="flex items-center gap-2 text-sm">
-              <Phone className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-900 dark:text-gray-100">{record.phone}</span>
+            <div className="flex items-center gap-2 text-sm text-gray-900 dark:text-gray-100">
+              <Phone className="h-3 sm:h-4 w-3 sm:w-4 text-gray-400" />
+              <span>{record.phone}</span>
             </div>
           )}
         </div>
@@ -268,13 +271,14 @@ const CustomerDetails: React.FC = () => {
       key: "status",
       title: "Status",
       dataIndex: "isActive",
+      align: "center",
       sortable: true,
-      render: (_value: unknown, record: User) => (
+      render: (value: unknown, record: User) => (
         <Badge
           className={
             record.isActive
-              ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800"
-              : "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800"
+              ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-800 text-xs sm:text-sm"
+              : "bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800 text-xs sm:text-sm"
           }
         >
           {record.isActive ? 'Active' : 'Blocked'}
@@ -301,7 +305,7 @@ const CustomerDetails: React.FC = () => {
       dataIndex: "createdAt",
       sortable: true,
       render: (value: unknown) => (
-        <span className="text-gray-900 dark:text-gray-100">
+        <span className="text-gray-900 dark:text-gray-100 text-sm">
           {typeof value === 'string' ? new Date(value).toLocaleDateString() : 'N/A'}
         </span>
       ),
@@ -319,27 +323,38 @@ const CustomerDetails: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <Sidebar activeItem={activeMenuItem} onItemClick={handleMenuItemClick} onLogout={handleLogout} />
+      <Sidebar 
+        activeItem={activeMenuItem} 
+        onItemClick={handleMenuItemClick} 
+        onLogout={handleLogout} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* Navbar */}
-      <Navbar userName="NUFAIL" onSearch={handleSearch} />
+      <Navbar 
+        userName="NUFAIL" 
+        onSearch={handleSearch} 
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        isSidebarOpen={isSidebarOpen}
+      />
 
       {/* Main Content */}
-      <main className="ml-64 pt-16 p-6">
+      <main className="pt-16 md:ml-64 p-4 md:p-6">
         <div className="space-y-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 min-h-screen">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                 Customer Details
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">Manage customer information and user accounts</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage customer information and user accounts</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <Button
                 variant="outline"
                 onClick={()=>({})}
-                className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
+                className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent text-sm w-full sm:w-auto"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export
@@ -348,58 +363,58 @@ const CustomerDetails: React.FC = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalUsers}</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalUsers}</p>
                   </div>
-                  <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                    <User className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                  <div className="p-2 md:p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <User className="h-5 md:h-6 w-5 md:w-6 text-gray-600 dark:text-gray-300" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Users</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.activeUsers}</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.activeUsers}</p>
                   </div>
-                  <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <User className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  <div className="p-2 md:p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                    <User className="h-5 md:h-6 w-5 md:w-6 text-green-600 dark:text-green-400" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Blocked Users</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.blockedUsers}</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.blockedUsers}</p>
                   </div>
-                  <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                    <User className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  <div className="p-2 md:p-3 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                    <User className="h-5 md:h-6 w-5 md:w-6 text-red-600 dark:text-red-400" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Google Users</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.googleUsers}</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.googleUsers}</p>
                   </div>
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                    <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <div className="p-2 md:p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                    <User className="h-5 md:h-6 w-5 md:w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
               </CardContent>
@@ -408,22 +423,22 @@ const CustomerDetails: React.FC = () => {
 
           {/* Filters and Search */}
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex-1 relative">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex-1 relative w-full">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search customers by name, email, or phone..."
                     value={searchTerm}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:border-transparent text-sm"
                   />
                 </div>
                 <Button
                   variant="outline"
                   onClick={()=>({})}
-                  className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
+                  className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent w-full sm:w-auto text-sm"
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filters
@@ -440,7 +455,7 @@ const CustomerDetails: React.FC = () => {
             sortBy={sortBy}
             sortOrder={sortOrder}
             onSort={handleSort}
-            className="shadow-sm"
+            className="shadow-sm overflow-x-auto"
           />
 
           {/* Pagination */}
@@ -462,7 +477,7 @@ const CustomerDetails: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <div className="ml-64">
+      <div className="md:ml-64">
         <Footer />
       </div>
     </div>

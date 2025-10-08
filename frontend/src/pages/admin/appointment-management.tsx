@@ -59,6 +59,7 @@ export default function AppointmentManagement() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // ✅ Added state for sidebar
   const itemsPerPage = 6
 
   useEffect(() => {
@@ -188,10 +189,20 @@ export default function AppointmentManagement() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
+    setIsSidebarOpen(false) // ✅ Close sidebar on page change
   }
 
   const handleViewDetails = (appointment: Appointment) => {
     setSelectedAppointment(appointment)
+    setIsSidebarOpen(false) // ✅ Close sidebar when viewing details
+  }
+
+  const handleMenuItemClick = (itemId: string) => {
+    setIsSidebarOpen(false) // ✅ Close sidebar on menu item click
+  }
+
+  const handleLogout = () => {
+    setIsSidebarOpen(false) // ✅ Close sidebar on logout
   }
 
   const columns: TableColumn<Appointment>[] = [
@@ -312,11 +323,23 @@ export default function AppointmentManagement() {
   ]
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar userName="NUFAIL" />
-      <Sidebar />
-      <main className="transition-all duration-300 pt-16 pb-6 lg:ml-64">
-        <div className="px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
+        <Navbar
+          userName="NUFAIL"
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
+      </div>
+      <div className="flex flex-1 pt-16">
+        <Sidebar
+          activeItem="BookingList"
+          onItemClick={handleMenuItemClick}
+          onLogout={handleLogout}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+        <main className="w-full lg:ml-64 pt-4 px-4 sm:px-6 lg:px-8 pb-6">
           <div className="max-w-7xl mx-auto space-y-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <div>
@@ -408,7 +431,6 @@ export default function AppointmentManagement() {
               showQuickJumper={true}
             />
 
-
             <Dialog open={!!selectedAppointment} onOpenChange={() => setSelectedAppointment(null)}>
               <DialogContent className="sm:max-w-[500px] rounded-2xl shadow-lg bg-gradient-to-br from-white to-gray-50">
                 <DialogHeader className="border-b pb-3">
@@ -476,9 +498,9 @@ export default function AppointmentManagement() {
               </DialogContent>
             </Dialog>
           </div>
-        </div>
-        <Footer />
-      </main>
+          <Footer />
+        </main>
+      </div>
     </div>
   )
 }

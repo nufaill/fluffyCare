@@ -13,6 +13,7 @@ import { AddItemForm } from "@/components/admin/add-item-form";
 import { StatsCards } from "@/components/admin/stats-cards";
 import { createPetType, getAllPetTypes, updatePetType, updatePetTypeStatus } from "@/services/admin/admin.service";
 import toast from 'react-hot-toast';
+import Footer from "@/components/user/Footer";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -49,6 +50,7 @@ export default function PetCategoryPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [nameError, setNameError] = useState<string>("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -209,18 +211,27 @@ export default function PetCategoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AdminSidebar activeItem="PetCategory" />
-      <AdminNavbar userName="NUFAIL" onSearch={setSearchTerm} />
+      <AdminSidebar 
+        activeItem="PetCategory" 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+      <AdminNavbar 
+        userName="NUFAIL" 
+        onSearch={setSearchTerm} 
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        isSidebarOpen={isSidebarOpen}
+      />
 
-      <main className="ml-64 pt-16 p-6 space-y-6">
+      <main className="pt-16 md:ml-64 p-4 md:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-black dark:bg-white rounded-lg">
-              <PawPrint className="h-6 w-6 text-white dark:text-black" />
+            <div className="p-2 sm:p-3 bg-black dark:bg-white rounded-lg">
+              <PawPrint className="h-5 sm:h-6 w-5 sm:w-6 text-white dark:text-black" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Pet Categories</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage pet categories for your services</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Pet Categories</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Manage pet categories for your services</p>
             </div>
           </div>
         </div>
@@ -232,7 +243,7 @@ export default function PetCategoryPage() {
           icon={<PawPrint className="h-4 w-4 text-white dark:text-black" />}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-4">
               <div className="relative">
@@ -242,7 +253,7 @@ export default function PetCategoryPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm"
                 />
               </div>
             </CardContent>
@@ -254,8 +265,8 @@ export default function PetCategoryPage() {
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
-              <span>Categories List</span>
-              <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+              <span className="text-base sm:text-lg">Categories List</span>
+              <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs sm:text-sm">
                 {petTypes.length} categories
               </Badge>
             </CardTitle>
@@ -283,14 +294,14 @@ export default function PetCategoryPage() {
                             if (e.key === 'Enter') handleSaveEdit();
                             if (e.key === 'Escape') handleCancelEdit();
                           }}
-                          className="w-full"
+                          className="w-full text-sm"
                         />
                         {nameError && (
                           <p className="text-red-500 text-xs mt-1">{nameError}</p>
                         )}
                       </>
                     ) : (
-                      <span>{value}</span>
+                      <span className="text-sm sm:text-base">{value}</span>
                     )
                   ),
                 },
@@ -304,8 +315,8 @@ export default function PetCategoryPage() {
                     <Badge
                       className={
                         value
-                          ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30"
-                          : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+                          ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 text-xs sm:text-sm"
+                          : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 text-xs sm:text-sm"
                       }
                     >
                       {value ? (
@@ -328,7 +339,7 @@ export default function PetCategoryPage() {
                   dataIndex: "createdAt",
                   sortable: true,
                   align: "left",
-                  render: (value: string) => new Date(value).toLocaleDateString(),
+                  render: (value: string) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
                 },
                 {
                   key: "actions",
@@ -336,14 +347,14 @@ export default function PetCategoryPage() {
                   dataIndex: "actions",
                   align: "center",
                   render: (_, record: PetType) => (
-                    <div className="flex items-center justify-center space-x-3">
+                    <div className="flex items-center justify-center space-x-2 sm:space-x-3">
                       {editingId === record._id ? (
                         <>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleSaveEdit}
-                            className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                            className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs sm:text-sm"
                           >
                             Save
                           </Button>
@@ -351,7 +362,7 @@ export default function PetCategoryPage() {
                             variant="ghost"
                             size="sm"
                             onClick={handleCancelEdit}
-                            className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                            className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs sm:text-sm"
                           >
                             Cancel
                           </Button>
@@ -363,10 +374,10 @@ export default function PetCategoryPage() {
                           onClick={() => handleStartEdit(record)}
                           className="hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                         >
-                          <Edit2 className="h-4 w-4" />
+                          <Edit2 className="h-3 sm:h-4 w-3 sm:w-4" />
                         </Button>
                       )}
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1 sm:space-x-2">
                         <Switch
                           checked={record.isActive}
                           onCheckedChange={() => handleToggleStatus(record._id, record.isActive)}
@@ -403,6 +414,9 @@ export default function PetCategoryPage() {
           pageSizeOptions={[10, 20, 50, 100]}
         />
       </main>
+       <div className="md:ml-64 p-4 md:p-6">
+        <Footer />
+      </div>
     </div>
   );
 }

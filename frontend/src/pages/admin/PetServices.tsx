@@ -14,6 +14,7 @@ import { StatsCards } from "@/components/admin/stats-cards"
 import { createServiceType, getAllServiceTypes, updateServiceType, updateServiceTypeStatus } from "@/services/admin/admin.service"
 import toast from 'react-hot-toast'
 import { debounce } from 'lodash'
+import Footer from "@/components/user/Footer"
 
 interface ServiceType {
   _id: string
@@ -34,6 +35,7 @@ export default function ServiceCategoryPage() {
   const [editingName, setEditingName] = useState<string>("")
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const debouncedFetchServiceTypes = useCallback(
     debounce(async (search: string, isActive: boolean | undefined, sortBy: string, sortOrder: 'asc' | 'desc') => {
@@ -210,19 +212,28 @@ export default function ServiceCategoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AdminSidebar activeItem="ServiceCategory" />
-      <AdminNavbar userName="NUFAIL" onSearch={setSearchTerm} />
+      <AdminSidebar 
+        activeItem="ServiceCategory" 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+      <AdminNavbar 
+        userName="NUFAIL" 
+        onSearch={setSearchTerm} 
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        isSidebarOpen={isSidebarOpen}
+      />
 
-      <main className="ml-64 pt-16 p-6 space-y-6">
+      <main className="pt-16 md:ml-64 p-4 md:p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg shadow-md">
-              <PawPrint className="h-6 w-6 text-white" />
+            <div className="p-2 sm:p-3 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg shadow-md">
+              <PawPrint className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Service Types</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage and organize your service categories easily</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Service Types</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Manage and organize your service categories easily</p>
             </div>
           </div>
         </div>
@@ -259,8 +270,8 @@ export default function ServiceCategoryPage() {
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-md rounded-xl">
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-gray-900 dark:text-gray-100">
-              <span className="font-semibold">Service Types List</span>
-              <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+              <span className="font-semibold text-base sm:text-lg">Service Types List</span>
+              <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs sm:text-sm">
                 {serviceTypes.length} service types
               </Badge>
             </CardTitle>
@@ -284,10 +295,10 @@ export default function ServiceCategoryPage() {
                           if (e.key === 'Enter') handleSaveEdit()
                           if (e.key === 'Escape') handleCancelEdit()
                         }}
-                        className="w-full"
+                        className="w-full text-sm"
                       />
                     ) : (
-                      <span className="font-medium text-gray-800 dark:text-gray-200">{value}</span>
+                      <span className="font-medium text-gray-800 dark:text-gray-200 text-sm sm:text-base">{value}</span>
                     )
                   ),
                 },
@@ -301,8 +312,8 @@ export default function ServiceCategoryPage() {
                     <Badge
                       className={
                         value
-                          ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400"
-                          : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400"
+                          ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-xs sm:text-sm"
+                          : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 text-xs sm:text-sm"
                       }
                     >
                       {value ? (
@@ -324,7 +335,7 @@ export default function ServiceCategoryPage() {
                   sortable: true,
                   align: "left",
                   render: (value: string) => (
-                    <span className="text-gray-600 dark:text-gray-400">{new Date(value).toLocaleDateString()}</span>
+                    <span className="text-gray-600 dark:text-gray-400 text-sm">{new Date(value).toLocaleDateString()}</span>
                   ),
                 },
                 {
@@ -333,14 +344,14 @@ export default function ServiceCategoryPage() {
                   dataIndex: "actions",
                   align: "center",
                   render: (_, record: ServiceType) => (
-                    <div className="flex items-center justify-center space-x-3">
+                    <div className="flex items-center justify-center space-x-2 sm:space-x-3">
                       {editingId === record._id ? (
                         <>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleSaveEdit}
-                            className="text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400"
+                            className="text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 text-xs sm:text-sm"
                           >
                             Save
                           </Button>
@@ -348,7 +359,7 @@ export default function ServiceCategoryPage() {
                             variant="ghost"
                             size="sm"
                             onClick={handleCancelEdit}
-                            className="text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                            className="text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 text-xs sm:text-sm"
                           >
                             Cancel
                           </Button>
@@ -360,10 +371,10 @@ export default function ServiceCategoryPage() {
                           onClick={() => handleStartEdit(record)}
                           className="text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                         >
-                          <Edit2 className="h-4 w-4" />
+                          <Edit2 className="h-3 sm:h-4 w-3 sm:w-4" />
                         </Button>
                       )}
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1 sm:space-x-2">
                         <Switch
                           checked={record.isActive}
                           onCheckedChange={() => handleToggleStatus(record._id, record.isActive)}
@@ -402,6 +413,9 @@ export default function ServiceCategoryPage() {
           pageSizeOptions={[10, 20, 50, 100]}
         />
       </main>
+     <div className="md:ml-64 p-4 md:p-6">
+        <Footer />
+      </div>
     </div>
   )
 }

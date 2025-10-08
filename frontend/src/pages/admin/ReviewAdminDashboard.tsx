@@ -15,6 +15,7 @@ import AdminAxios from "@/api/admin.axios"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import { Pagination } from "@/components/ui/Pagination"
 import debounce from "lodash.debounce"
+import Footer from "@/components/user/Footer"
 
 interface Review {
     _id: string;
@@ -48,6 +49,7 @@ export default function ReviewAdminDashboard() {
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [totalReviews, setTotalReviews] = useState(0)
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false) // ✅ Added state for sidebar
 
     // Debounce search term updates
     const debouncedSetSearchTerm = useCallback(
@@ -135,6 +137,7 @@ export default function ReviewAdminDashboard() {
 
     const handleEditReview = (review: Review) => {
         setEditingReview({ ...review })
+        setIsSidebarOpen(false) // ✅ Close sidebar when editing review
     }
 
     const handleSaveReview = async () => {
@@ -195,6 +198,15 @@ export default function ReviewAdminDashboard() {
         if (newPageSize) {
             setPageSize(newPageSize)
         }
+        setIsSidebarOpen(false) // ✅ Close sidebar on page change
+    }
+
+    const handleMenuItemClick = (item: string) => {
+        setIsSidebarOpen(false) // ✅ Close sidebar on menu item click
+    }
+
+    const handleLogout = () => {
+        setIsSidebarOpen(false) // ✅ Close sidebar on logout
     }
 
     const renderStars = (rating: number) => {
@@ -291,71 +303,18 @@ export default function ReviewAdminDashboard() {
             key: "actions",
             title: "Actions",
             dataIndex: "actions",
-            render: (_: any, review: Review) => (
-                <div className="flex items-center justify-end gap-2">
-                    <Dialog onOpenChange={(open) => !open && setEditingReview(null)}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => handleEditReview(review)}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                        </DialogTrigger>
-                        <Dialog open={!!editingReview} onOpenChange={(open) => !open && setEditingReview(null)}>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Edit Review</DialogTitle>
-                                </DialogHeader>
-                                {editingReview && (
-                                    <div className="space-y-4">
-                                        <div>
-                                            <Label htmlFor="rating">Rating</Label>
-                                            <Select
-                                                value={editingReview.rating.toString()}
-                                                onValueChange={(value) =>
-                                                    setEditingReview({
-                                                        ...editingReview,
-                                                        rating: parseInt(value),
-                                                    })
-                                                }
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="1">1 Star</SelectItem>
-                                                    <SelectItem value="2">2 Stars</SelectItem>
-                                                    <SelectItem value="3">3 Stars</SelectItem>
-                                                    <SelectItem value="4">4 Stars</SelectItem>
-                                                    <SelectItem value="5">5 Stars</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="comment">Comment</Label>
-                                            <Textarea
-                                                id="comment"
-                                                value={editingReview.comment || ""}
-                                                onChange={(e) =>
-                                                    setEditingReview({
-                                                        ...editingReview,
-                                                        comment: e.target.value,
-                                                    })
-                                                }
-                                                rows={4}
-                                            />
-                                        </div>
-                                        <div className="flex justify-end gap-2">
-                                            <Button variant="outline" onClick={() => setEditingReview(null)}>
-                                                Cancel
-                                            </Button>
-                                            <Button onClick={handleSaveReview}>Save Changes</Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </DialogContent>
-                        </Dialog>
-                    </Dialog>
+            render: (_value: string, review: Review) => (
+                <div className="flex gap-2 justify-end">
                     <Button
-                        variant="outline"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditReview(review)}
+                        className="text-primary hover:text-primary"
+                    >
+                        <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteReview(review._id)}
                         className="text-destructive hover:text-destructive"
@@ -368,15 +327,23 @@ export default function ReviewAdminDashboard() {
     ]
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background flex flex-col">
             <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
-                <Navbar userName="NUFAIL" />
+                <Navbar
+                    userName="NUFAIL"
+                    isSidebarOpen={isSidebarOpen}
+                    onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                />
             </div>
             <div className="flex flex-1 pt-16">
-                <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] z-40 bg-white shadow-md w-64 hidden lg:block">
-                    <Sidebar />
-                </div>
-                <div className="flex-1 lg:ml-64">
+                <Sidebar
+                    activeItem="Reviews"
+                    onItemClick={handleMenuItemClick}
+                    onLogout={handleLogout}
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                />
+                <main className="w-full lg:ml-64">
                     <header className="border-b bg-card">
                         <div className="container mx-auto px-6 py-4">
                             <div className="flex items-center justify-between">
@@ -553,7 +520,10 @@ export default function ReviewAdminDashboard() {
                             pageSizeOptions={[10, 20, 50, 100]}
                         />
                     </div>
-                </div>
+                </main>
+            </div>
+            <div className="ml-64 p-6">
+                <Footer />
             </div>
         </div>
     )

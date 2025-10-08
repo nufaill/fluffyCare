@@ -76,6 +76,7 @@ const ShopVerification: React.FC = () => {
   const [verificationNotes, setVerificationNotes] = useState("");
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [activeMenuItem, setActiveMenuItem] = useState("Verification");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const fetchUnverifiedShops = async () => {
@@ -171,6 +172,7 @@ const ShopVerification: React.FC = () => {
 
   const handleMenuItemClick = (item: string) => {
     setActiveMenuItem(item);
+    setIsSidebarOpen(false);
   };
 
   const handleLogout = async () => {
@@ -264,11 +266,11 @@ const ShopVerification: React.FC = () => {
             <p className="font-medium text-gray-900 dark:text-gray-100">{record.name}</p>
             <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
               <MapPin className="h-3 w-3" />
-              <span>{record.address}</span>
+              <span className="truncate">{record.address}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <Mail className="h-3 w-3" />
-              <span>{record.email}</span>
+              <span className="truncate">{record.email}</span>
             </div>
           </div>
         </div>
@@ -291,10 +293,6 @@ const ShopVerification: React.FC = () => {
             <FileText className="h-4 w-4 text-gray-400" />
             <span className="text-gray-900 dark:text-gray-100">{record.documents.length} documents</span>
           </div>
-          {/* <div className="flex items-center gap-2 text-sm">
-            <Users className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-900 dark:text-gray-100">{record.totalServices} services</span>
-          </div> */}
         </div>
       ),
     },
@@ -339,12 +337,12 @@ const ShopVerification: React.FC = () => {
       dataIndex: "actions",
       align: "center",
       render: (_value: undefined, record: Shop) => (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-center gap-2">
           <Button
             size="sm"
             variant="outline"
             onClick={() => handleViewDetails(record)}
-            className="text-xs border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="text-xs border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 w-full sm:w-auto"
           >
             <Eye className="h-3 w-3 mr-1" />
             Review
@@ -355,7 +353,7 @@ const ShopVerification: React.FC = () => {
                 <Button
                   size="sm"
                   onClick={() => setSelectedShop(record)}
-                  className="text-xs bg-green-600 hover:bg-green-700 text-white"
+                  className="text-xs bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
                 >
                   <CheckCircle className="h-3 w-3 mr-1" />
                   Approve
@@ -412,7 +410,7 @@ const ShopVerification: React.FC = () => {
                   size="sm"
                   variant="outline"
                   onClick={() => setSelectedShop(record)}
-                  className="text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20"
+                  className="text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/20 w-full sm:w-auto"
                 >
                   <XCircle className="h-3 w-3 mr-1" />
                   Reject
@@ -466,30 +464,41 @@ const ShopVerification: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Sidebar */}
-      <Sidebar activeItem={activeMenuItem} onItemClick={handleMenuItemClick} onLogout={handleLogout} />
+      <Sidebar 
+        activeItem={activeMenuItem} 
+        onItemClick={handleMenuItemClick} 
+        onLogout={handleLogout} 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* Navbar */}
-      <Navbar userName="NUFAIL" onSearch={handleSearch} />
+      <Navbar 
+        userName="NUFAIL" 
+        onSearch={handleSearch} 
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        isSidebarOpen={isSidebarOpen}
+      />
 
       {/* Main Content */}
-      <main className="ml-64 pt-16 p-6">
-        <div className="space-y-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 min-h-screen">
+      <main className="flex-1 pt-16 md:ml-64 p-4 sm:p-6">
+        <div className="space-y-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 min-h-[calc(100vh-4rem)]">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-black to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                   Shop Verification
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-1">Review and approve pending shop applications</p>
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">Review and approve pending shop applications</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
-                className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
+                className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent text-sm"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export
@@ -498,50 +507,50 @@ const ShopVerification: React.FC = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Reviews</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {shops.filter((shop) => shop.isVerified === "pending").length}
                     </p>
                   </div>
                   <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                    <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                    <Clock className="h-5 sm:h-6 w-5 sm:w-6 text-yellow-600 dark:text-yellow-400" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Rejected Shops</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {shops.filter((shop) => shop.isVerified === "rejected").length}
                     </p>
                   </div>
                   <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                    <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                    <XCircle className="h-5 sm:h-6 w-5 sm:w-6 text-red-600 dark:text-red-400" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Documents Submitted</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {shops.reduce((sum, shop) => sum + shop.documents.length, 0)}
                     </p>
                   </div>
                   <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <FileText className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <FileText className="h-5 sm:h-6 w-5 sm:w-6 text-green-600 dark:text-green-400" />
                   </div>
                 </div>
               </CardContent>
@@ -550,21 +559,21 @@ const ShopVerification: React.FC = () => {
 
           {/* Filters and Search */}
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex-1 relative">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex-1 relative w-full">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search shops by name, email, or address..."
                     value={searchTerm}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:border-transparent text-sm"
                   />
                 </div>
                 <Button
                   variant="outline"
-                  className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent"
+                  className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 bg-transparent w-full sm:w-auto text-sm"
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filters
@@ -581,7 +590,7 @@ const ShopVerification: React.FC = () => {
             sortBy={sortBy}
             sortOrder={sortOrder}
             onSort={handleSort}
-            className="shadow-sm"
+            className="shadow-sm overflow-x-auto"
           />
 
           {/* Pagination */}
@@ -602,44 +611,44 @@ const ShopVerification: React.FC = () => {
 
           {/* Shop Details Modal */}
           <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-            <DialogContent className="max-w-4xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <DialogContent className="max-w-full sm:max-w-4xl bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  <Store className="h-6 w-6 text-black-500 dark:text-black-400" aria-hidden="true" />
+                <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <Store className="h-5 sm:h-6 w-5 sm:w-6 text-black-500 dark:text-black-400" aria-hidden="true" />
                   Shop Review Details
                 </DialogTitle>
-                <DialogDescription className="text-gray-600 dark:text-gray-400 mt-2">
+                <DialogDescription className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-2">
                   Review all shop information and documents before making a decision.
                 </DialogDescription>
               </DialogHeader>
               {selectedShop && (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                     <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
                       <CardHeader className="flex items-center gap-2">
-                        <Info className="h-5 w-5 text-black-500 dark:text-black-400" aria-hidden="true" />
-                        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <Info className="h-4 sm:h-5 w-4 sm:w-5 text-black-500 dark:text-black-400" aria-hidden="true" />
+                        <CardTitle className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
                           Basic Information
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                           <div>
-                            <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{selectedShop.name}</h3>
+                            <h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100">{selectedShop.name}</h3>
                             <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                               <Mail className="h-4 w-4" aria-hidden="true" />
-                              {selectedShop.email}
+                              <span className="truncate">{selectedShop.email}</span>
                             </p>
                             <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                               <Phone className="h-4 w-4" aria-hidden="true" />
-                              {selectedShop.phone}
+                              <span className="truncate">{selectedShop.phone}</span>
                             </p>
                           </div>
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-900 dark:text-gray-100">{selectedShop.address}</span>
+                            <span className="text-sm text-gray-900 dark:text-gray-100 truncate">{selectedShop.address}</span>
                           </div>
                         </div>
                       </CardContent>
@@ -647,7 +656,7 @@ const ShopVerification: React.FC = () => {
 
                     <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
                       <CardHeader>
-                        <CardTitle className="text-lg text-gray-900 dark:text-gray-100">Submitted Documents</CardTitle>
+                        <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-gray-100">Submitted Documents</CardTitle>
                       </CardHeader>
                       <CardContent>
                         {selectedShop.documents && selectedShop.documents.length > 0 ? (
@@ -661,7 +670,7 @@ const ShopVerification: React.FC = () => {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => window.open(cloudinaryUtils.getFullUrl(doc), "_blank")}
-                                  className="text-xs bg-transparent"
+                                  className="text-xs bg-transparent w-full sm:w-auto"
                                 >
                                   View
                                 </Button>
@@ -679,13 +688,13 @@ const ShopVerification: React.FC = () => {
 
                   <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                     <CardHeader className="flex items-center gap-2">
-                      <Info className="h-5 w-5 text-black-500 dark:text-black-400" aria-hidden="true" />
-                      <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      <Info className="h-4 sm:h-5 w-4 sm:w-5 text-black-500 dark:text-black-400" aria-hidden="true" />
+                      <CardTitle className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Shop Description
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-900 dark:text-gray-100">
+                      <p className="text-sm sm:text-base text-gray-900 dark:text-gray-100">
                         {selectedShop.description || "No description provided."}
                       </p>
                       {selectedShop.isVerified === "rejected" && selectedShop.verificationNotes && (
@@ -707,7 +716,7 @@ const ShopVerification: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => setShowDetailsModal(false)}
-                  className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
+                  className="border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 w-full sm:w-auto"
                 >
                   Close
                 </Button>
@@ -718,7 +727,7 @@ const ShopVerification: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <div className="ml-64">
+      <div className="md:ml-64">
         <Footer />
       </div>
     </div>

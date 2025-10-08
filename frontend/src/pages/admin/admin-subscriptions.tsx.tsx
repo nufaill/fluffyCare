@@ -5,6 +5,7 @@ import AdminAxios from "@/api/admin.axios";
 import { Pagination as TablePagination } from "@/components/ui/Pagination";
 import { Pencil, Search } from "lucide-react";
 import debounce from "lodash/debounce";
+import Footer from "@/components/user/Footer";
 
 interface ISubscription {
     _id: string;
@@ -42,6 +43,7 @@ export default function AdminSubscription() {
     const [totalItems, setTotalItems] = useState(0);
     const [search, setSearch] = useState("");
     const [formErrors, setFormErrors] = useState<Partial<Record<keyof ISubscription, string>>>({});
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // ✅ Added state for sidebar
 
     // Debounced fetchSubscriptions to prevent excessive API calls
     const debouncedFetchSubscriptions = useCallback(
@@ -122,10 +124,10 @@ export default function AdminSubscription() {
         profitPercentage: number;
     }, currentId?: string): Promise<Partial<Record<keyof ISubscription, string>>> => {
         const errors: Partial<Record<keyof ISubscription, string>> = {};
-        
+
         // Plan validation
         const planValue = payload.plan.trim();
-        
+
         // Check if plan is empty
         if (!planValue) {
             errors.plan = "Plan name is required";
@@ -149,10 +151,10 @@ export default function AdminSubscription() {
             // Check for duplicate plan names
             else {
                 try {
-                    const existingPlan = subscriptions.find(sub => 
+                    const existingPlan = subscriptions.find(sub =>
                         sub.plan.toLowerCase() === planValue.toLowerCase() && sub._id !== currentId
                     );
-                    
+
                     if (existingPlan) {
                         errors.plan = `Plan name '${planValue}' already exists. Please choose a different name.`;
                     }
@@ -161,7 +163,7 @@ export default function AdminSubscription() {
                 }
             }
         }
-        
+
         // Description validation
         const descriptionValue = payload.description.trim();
         if (!descriptionValue) {
@@ -171,7 +173,7 @@ export default function AdminSubscription() {
         } else if (descriptionValue.length > 500) {
             errors.description = "Description cannot exceed 500 characters.";
         }
-        
+
         // Duration validation
         if (isNaN(payload.durationInDays)) {
             errors.durationInDays = "Duration must be a valid number";
@@ -182,7 +184,7 @@ export default function AdminSubscription() {
         } else if (!Number.isInteger(payload.durationInDays)) {
             errors.durationInDays = "Duration must be a whole number (no decimal places)";
         }
-        
+
         // Price validation
         if (isNaN(payload.price)) {
             errors.price = "Price must be a valid number";
@@ -193,7 +195,7 @@ export default function AdminSubscription() {
         } else if (payload.price > 0 && payload.price < 0.01) {
             errors.price = "Price must be at least ₹0.01 if not free";
         }
-        
+
         // Profit percentage validation
         if (isNaN(payload.profitPercentage)) {
             errors.profitPercentage = "Profit percentage must be a valid number";
@@ -204,7 +206,7 @@ export default function AdminSubscription() {
         } else if (!Number.isInteger(payload.profitPercentage)) {
             errors.profitPercentage = "Profit percentage must be a whole number (e.g., 50, not 50.5)";
         }
-        
+
         return errors;
     };
 
@@ -256,6 +258,7 @@ export default function AdminSubscription() {
 
             setEditing(null);
             setView("table");
+            setIsSidebarOpen(false); // ✅ Close sidebar after form submission
         } catch (err) {
             if (err instanceof Error && err.message.includes('Plan name already exists')) {
                 setFormErrors({ plan: "Plan name already exists. Please choose a different name." });
@@ -287,6 +290,7 @@ export default function AdminSubscription() {
         setEditing(null);
         setView("table");
         setFormErrors({});
+        setIsSidebarOpen(false); // ✅ Close sidebar when canceling form
     }
 
     const handlePageChange = (page: number, newPageSize?: number) => {
@@ -296,15 +300,31 @@ export default function AdminSubscription() {
         }
     };
 
+    const handleMenuItemClick = (itemId: string) => {
+        setIsSidebarOpen(false); // ✅ Close sidebar on menu item click
+    };
+
+    const handleLogout = () => {
+        setIsSidebarOpen(false); // ✅ Close sidebar on logout
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
-                <Navbar userName="Admin" />
+                <Navbar
+                    userName="NUFAIL"
+                    isSidebarOpen={isSidebarOpen}
+                    onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                />
             </div>
             <div className="flex flex-1 pt-16">
-                <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] z-40 bg-white shadow-md w-64 hidden lg:block">
-                    <Sidebar />
-                </div>
+                <Sidebar
+                    activeItem={subscriptions.length > 0 ? "subscription" : undefined}
+                    onItemClick={handleMenuItemClick}
+                    onLogout={handleLogout}
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                />
                 <div className="w-full lg:ml-64 pt-4 px-4 sm:px-6 lg:px-8">
                     <main className="p-4 sm:p-6 lg:p-8">
                         <div className="mx-auto max-w-7xl">
@@ -494,12 +514,13 @@ export default function AdminSubscription() {
                                     />
                                 </div>
                             )}
-
-                            
                         </div>
                     </main>
                 </div>
             </div>
+                    <div className="ml-64 p-6">
+                        <Footer />
+                    </div>
         </div>
     );
 }
@@ -740,7 +761,7 @@ function SubscriptionForm({
                         isEdit ? "Save Changes" : "Create Plan"
                     )}
                 </button>
-                
+
                 {!isSubmitting && (
                     <p className="text-xs text-gray-500">
                         Press Escape to cancel or click Cancel button above
