@@ -252,7 +252,7 @@ export class ShopController implements IShopController {
           type: 'credit',
           amount: amount / 100,
           currency,
-          description: `Subscription payment received from shop ${shopId} for plan ${planName} (Stripe ID: ${paymentIntentId})`,
+          description: `Subscription payment received from shop ${shopId} for plan ${planName}`,
           referenceId: undefined,
         };
 

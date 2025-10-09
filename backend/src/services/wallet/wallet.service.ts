@@ -13,7 +13,7 @@ import { IWallet, IWalletTransaction } from '../../types/Wallet.types';
 import { Shop } from '../../models/shop.model';
 import { SubscriptionModel } from '../../models/subscription.model';
 
-const DEFAULT_COMMISSION_RATE = Number(process.env.DEFAULT_COMMISSION_RATE||'0.5')
+const DEFAULT_COMMISSION_RATE = Number(process.env.DEFAULT_COMMISSION_RATE || '0.5')
 
 export class WalletService implements IWalletService {
   public walletRepository: IWalletRepository; 
@@ -239,6 +239,12 @@ export class WalletService implements IWalletService {
           throw new Error(`Insufficient balance in user wallet. Required: ${dto.amount}, Available: ${userWallet.balance}`);
         }
 
+        const appointment = await this._appointmentService?.getAppointmentById(dto.appointmentId.toString());
+        if (!appointment?.success || !appointment.data) {
+          throw new Error('Appointment not found for payment');
+        }
+        const bookingNumber = appointment.data.bookingNumber;
+
         const commissionRate = await this.getCommissionRate(dto.shopId);
 
         const commission = Math.round(dto.amount * commissionRate * 100) / 100;
@@ -248,7 +254,7 @@ export class WalletService implements IWalletService {
           'debit',
           dto.amount,
           dto.currency,
-          `Payment for appointment ${dto.appointmentId}`,
+          `Payment for appointment ${bookingNumber}`,
           dto.appointmentId
         );
 
@@ -256,7 +262,7 @@ export class WalletService implements IWalletService {
           'credit',
           shopAmount,
           dto.currency,
-          `Payment received for appointment ${dto.appointmentId} (after ${(commissionRate * 100).toFixed(1)}% commission)`,
+          `Payment received for appointment ${bookingNumber} (after ${(commissionRate * 100).toFixed(1)}% commission)`,
           dto.appointmentId
         );
 
@@ -264,7 +270,7 @@ export class WalletService implements IWalletService {
           'credit',
           commission,
           dto.currency,
-          `Commission (${(commissionRate * 100).toFixed(1)}%) for appointment ${dto.appointmentId}`,
+          `Commission (${(commissionRate * 100).toFixed(1)}%) for appointment ${bookingNumber}`,
           dto.appointmentId
         );
 
@@ -301,6 +307,7 @@ export class WalletService implements IWalletService {
         throw new Error('Appointment not found for refund');
       }
       const appointment = appointmentResult.data;
+      const bookingNumber = appointment.bookingNumber;
 
       await session.withTransaction(async () => {
         const userWallet = await this.walletRepository.findWalletByOwner(appointment.userId, 'user');
@@ -332,7 +339,7 @@ export class WalletService implements IWalletService {
           'credit',
           dto.amount,
           dto.currency,
-          `Refund for appointment ${dto.appointmentId}`,
+          `Refund for appointment ${bookingNumber}`,
           dto.appointmentId
         );
 
@@ -340,7 +347,7 @@ export class WalletService implements IWalletService {
           'debit',
           shopAmount,
           dto.currency,
-          `Refund debited for appointment ${dto.appointmentId} (${(commissionRate * 100).toFixed(1)}% commission reversed)`,
+          `Refund debited for appointment ${bookingNumber} (${(commissionRate * 100).toFixed(1)}% commission reversed)`,
           dto.appointmentId
         );
 
@@ -348,7 +355,7 @@ export class WalletService implements IWalletService {
           'debit',
           commission,
           dto.currency,
-          `Commission refund (${(commissionRate * 100).toFixed(1)}%) for appointment ${dto.appointmentId}`,
+          `Commission refund (${(commissionRate * 100).toFixed(1)}%) for appointment ${bookingNumber}`,
           dto.appointmentId
         );
 
