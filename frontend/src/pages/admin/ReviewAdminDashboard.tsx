@@ -11,11 +11,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Star, Edit, Trash2, Filter, Search, Users, MessageSquare, TrendingUp } from "lucide-react"
 import Navbar from "@/components/admin/Navbar"
 import Sidebar from "@/components/admin/sidebar"
-import AdminAxios from "@/api/admin.axios"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import { Pagination } from "@/components/ui/Pagination"
 import debounce from "lodash.debounce"
 import Footer from "@/components/user/Footer"
+import { createBaseAxios } from '@/api/base.axios';
+
+let  AdminAxios = createBaseAxios('/admin');
 
 interface Review {
     _id: string;
@@ -49,9 +51,8 @@ export default function ReviewAdminDashboard() {
     const [currentPage, setCurrentPage] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [totalReviews, setTotalReviews] = useState(0)
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false) // ✅ Added state for sidebar
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false) 
 
-    // Debounce search term updates
     const debouncedSetSearchTerm = useCallback(
         debounce((value: string) => {
             setDebouncedSearchTerm(value)

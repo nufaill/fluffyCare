@@ -1,7 +1,9 @@
-// src/services/admin/adminService.ts
-import AdminAxios from "@/api/admin.axios";
+
+import { createBaseAxios } from '@/api/base.axios';
 import axios from "axios";
 import toast from 'react-hot-toast';
+
+let  AdminAxios = createBaseAxios('/admin');
 
 export const loginAdmin = async (data: { email: string; password: string }) => {
   try {

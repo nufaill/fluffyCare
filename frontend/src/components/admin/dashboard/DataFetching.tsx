@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import AdminAxios from "@/api/admin.axios";
 import type { PaginatedShopRatings, CustomerAnalytics } from "./StatComponents";
+import { createBaseAxios } from '@/api/base.axios';
+
+let  AdminAxios = createBaseAxios('/admin');
 
 export const useDataFetching = () => {
   const [shops, setShops] = useState<{ shopId: string; shopName: string }[]>([]);

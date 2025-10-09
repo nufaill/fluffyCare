@@ -10,11 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@
 import Navbar from "@/components/admin/Navbar"
 import Sidebar from "@/components/admin/sidebar"
 import Footer from "@/components/user/Footer"
-import AdminAxios from "@/api/admin.axios"
 import { Pagination } from "@/components/ui/Pagination"
 import type { Appointment } from "@/types/appointment.types"
 
-// Define status colors for badges
+
+import { createBaseAxios } from '@/api/base.axios';
+
+let  AdminAxios = createBaseAxios('/admin');
+
 const statusColors = {
   pending: "bg-yellow-100 text-yellow-800",
   confirmed: "bg-blue-100 text-blue-800",
@@ -23,7 +26,6 @@ const statusColors = {
   cancelled: "bg-red-100 text-red-800",
 } as const
 
-// Define payment status colors for badges
 const paymentStatusColors = {
   pending: "bg-yellow-100 text-yellow-800",
   completed: "bg-green-100 text-green-800",
@@ -31,7 +33,6 @@ const paymentStatusColors = {
   refunded: "bg-gray-100 text-gray-800",
 } as const
 
-// Define the expected backend response structure
 interface AppointmentApiResponse {
   success: boolean
   message: string

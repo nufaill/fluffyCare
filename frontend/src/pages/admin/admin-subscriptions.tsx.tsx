@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Navbar from "@/components/admin/Navbar";
 import Sidebar from "@/components/admin/sidebar";
-import AdminAxios from "@/api/admin.axios";
 import { Pagination as TablePagination } from "@/components/ui/Pagination";
 import { Pencil, Search } from "lucide-react";
 import debounce from "lodash/debounce";
 import Footer from "@/components/user/Footer";
+
+import { createBaseAxios } from '@/api/base.axios';
+
+let  AdminAxios = createBaseAxios('/admin');
 
 interface ISubscription {
     _id: string;
