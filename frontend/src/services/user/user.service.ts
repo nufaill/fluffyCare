@@ -123,6 +123,14 @@ export const userService = {
     }));
   },
 
+  async getAllServiceTypes(): Promise<PetType[]> {
+    const res = await Useraxios.get('/service-types');
+    return res.data.data.map((type: any) => ({
+      ...type,
+      id: type._id.toString(),
+    }));
+  },
+
   async getNearbyServices(request: NearbyServicesRequest): Promise<ServiceLocation[]> {
     try {
       const res = await Useraxios.get('/nearby-shops', {
