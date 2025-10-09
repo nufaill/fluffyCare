@@ -85,6 +85,7 @@ interface Appointment {
     email: string
     phone: string
   }
+  bookingNumber?: string
 }
 
 interface Stats {
@@ -374,7 +375,8 @@ export default function ShopAppointmentsPage() {
           appointment.staffId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           appointment.userId?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           appointment.userId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          appointment.userId?.phone?.includes(searchTerm)
+          appointment.userId?.phone?.includes(searchTerm) ||
+          appointment.bookingNumber?.toLowerCase().includes(searchTerm.toLowerCase())
         )
       })
     }
@@ -478,7 +480,7 @@ export default function ShopAppointmentsPage() {
   }
 
   const AppointmentCard = ({ appointment }: { appointment: Appointment }) => {
-    const { petId, staffId, serviceId, slotDetails, appointmentStatus, _id, createdAt, userId } = appointment
+    const { petId, staffId, serviceId, slotDetails, appointmentStatus, _id, createdAt, userId, bookingNumber } = appointment
     const isStatusLocked = ["completed", "cancelled"].includes(appointmentStatus.toLowerCase())
 
     return (
@@ -496,7 +498,7 @@ export default function ShopAppointmentsPage() {
               <h3 className="text-lg font-bold text-gray-900 group-hover:text-emerald-600 transition-colors duration-300 truncate">
                 {serviceId?.name || "Unknown service"}
               </h3>
-              <p className="text-sm text-gray-500 mt-1">ID: {_id.slice(-6)}</p>
+              <p className="text-sm text-gray-500 mt-1">Appointment ID: {bookingNumber || 'N/A'}</p>
             </div>
             <Badge
               className={`${getStatusColor(appointmentStatus)} px-3 py-1.5 text-xs flex items-center gap-2 font-semibold rounded-full shadow-lg animate-pulse`}
@@ -642,7 +644,7 @@ export default function ShopAppointmentsPage() {
                 <div className="relative group">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors duration-300" />
                   <Input
-                    placeholder="Search by pet, service, staff, or client..."
+                    placeholder="Search by pet, service, staff, client or booking number..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-12 h-12 border-2 border-gray-200 bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 rounded-xl text-gray-900 placeholder-gray-500 transition-all duration-300"

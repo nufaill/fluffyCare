@@ -80,6 +80,7 @@ interface Appointment {
     email: string
     phone: string
   }
+  bookingNumber?: string
 }
 
 interface Stats {
@@ -241,7 +242,8 @@ export default function AppointmentsPage() {
         appointment.petId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         appointment.serviceId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         appointment.shopId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        appointment.staffId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        appointment.staffId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        appointment.bookingNumber?.toLowerCase().includes(searchTerm.toLowerCase())
 
       return matchesSearch
     })
@@ -447,7 +449,7 @@ export default function AppointmentsPage() {
   }
 
   const AppointmentCard = ({ appointment }: { appointment: Appointment }) => {
-    const { petId, staffId, serviceId, shopId, slotDetails, appointmentStatus, paymentDetails, _id, notes, createdAt } =
+    const { petId, staffId, serviceId, shopId, slotDetails, appointmentStatus, paymentDetails, _id, notes, createdAt, bookingNumber } =
       appointment
 
     return (
@@ -486,6 +488,11 @@ export default function AppointmentsPage() {
                   <p className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide">
                     {petId?.breed || "Unknown Breed"}
                   </p>
+                  {bookingNumber && (
+                    <p className="text-xs sm:text-sm font-semibold text-gray-600 truncate">
+                      Appointment ID: {bookingNumber}
+                    </p>
+                  )}
                 </div>
                 <Badge
                   className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 rounded-full font-bold text-xs sm:text-sm ${getStatusColor(appointmentStatus)} transition-all duration-300 hover:scale-105 min-w-fit`}
@@ -754,7 +761,7 @@ export default function AppointmentsPage() {
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
-                        placeholder="Search by pet, service, shop, or staff..."
+                        placeholder="Search by pet, service, shop, staff or booking number..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 border-gray-300 dark:border-gray-700 focus:border-gray-900 dark:focus:border-white text-sm sm:text-base"
