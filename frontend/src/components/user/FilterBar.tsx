@@ -338,7 +338,7 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
             </div>
           </div>
 
-          <div>
+          {/* <div>
             <h3 className="font-medium mb-3 text-card-foreground">Minimum Rating</h3>
             <Select 
               value={filters.rating.toString()} 
@@ -360,7 +360,7 @@ export const FilterBar = ({ filters, onFiltersChange, onToggleMap, showMap }: Fi
                 Showing services with {filters.rating}+ star rating
               </div>
             )}
-          </div>
+          </div> */}
         </div>
       )}
     </Card>
