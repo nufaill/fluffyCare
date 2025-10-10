@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ArrowUpCircle, ArrowDownCircle, Calendar, Search, Filter } from 'lucide-react';
+import { Pagination } from '../ui/Pagination'; // Import the Pagination component
 
 interface IWalletTransaction {
   _id?: string;
@@ -21,7 +22,7 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'credit' | 'debit'>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [itemsPerPage, setItemsPerPage] = useState(5); // Now a state variable
 
   const filteredTransactions = useMemo(() => {
     return transactions
@@ -35,6 +36,7 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
   }, [transactions, searchTerm, filterType]);
 
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages);
@@ -76,10 +78,14 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
     return type === 'credit' ? 'text-green-600' : 'text-red-600';
   };
 
-  const pageNumbers = [];
-  for (let i = 1; i <= Math.ceil(filteredTransactions.length / itemsPerPage); i++) {
-    pageNumbers.push(i);
-  }
+  const handlePaginationChange = (page: number, pageSize?: number) => {
+    setCurrentPage(page);
+    if (pageSize && pageSize !== itemsPerPage) {
+      setItemsPerPage(pageSize);
+      // Reset to first page when page size changes to avoid invalid page numbers
+      setCurrentPage(1);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 w-full mx-auto">
@@ -164,47 +170,22 @@ export function TransactionTable({ transactions, currency, role }: TransactionTa
         )}
       </div>
 
-      {filteredTransactions.length > 0 && pageNumbers.length > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between mt-3 pt-3 border-t border-gray-200 px-3 sm:px-4 gap-2">
-          <p className="text-xs sm:text-sm text-gray-600">
-            Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredTransactions.length)} of {filteredTransactions.length} transactions
-          </p>
-          <div className="flex items-center gap-1 flex-wrap justify-center">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className={`px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded-md transition-colors ${
-                currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
-              }`}
-              aria-label="Previous page"
-            >
-              Previous
-            </button>
-            {pageNumbers.map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded-md transition-colors ${
-                  currentPage === page ? 'bg-blue-600 text-white' : 'hover:bg-gray-50'
-                }`}
-                aria-label={`Page ${page}`}
-                aria-current={currentPage === page ? 'page' : undefined}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(Math.min(pageNumbers.length, currentPage + 1))}
-              disabled={currentPage === pageNumbers.length}
-              className={`px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded-md transition-colors ${
-                currentPage === pageNumbers.length ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
-              }`}
-              aria-label="Next page"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {filteredTransactions.length > 0 && (
+        <Pagination
+          current={currentPage}
+          total={filteredTransactions.length}
+          pageSize={itemsPerPage}
+          onChange={handlePaginationChange}
+          showSizeChanger={true}
+          showQuickJumper={true}
+          showTotal={(total, range) => (
+            <span className="text-xs sm:text-sm text-gray-600">
+              Showing {range[0]} to {range[1]} of {total} transactions
+            </span>
+          )}
+          pageSizeOptions={[5, 10, 20, 50]}
+          className="mt-3 pt-3 border-t border-gray-200 px-3 sm:px-4"
+        />
       )}
     </div>
   );

@@ -41,6 +41,7 @@ import type { RootState } from "@/redux/store"
 import { useSelector } from "react-redux"
 import { chatService } from "@/services/chat/chatService"
 import { toast } from "@/hooks/use-toast"
+import { AxiosError } from "axios"
 
 // Define the Review interface based on IReview
 interface Review {
@@ -55,6 +56,11 @@ interface Review {
   comment?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// Define the error response data type
+interface ErrorResponse {
+  message?: string;
 }
 
 const getPetIcon = (petType: string) => {
@@ -124,9 +130,9 @@ export const ServiceDetails = () => {
   const [reviews, setReviews] = useState<Review[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(true)
   const [reviewsError, setReviewsError] = useState<string | null>(null)
-  const [ratingSummary, setRatingSummary] = useState<{ averageRating: number; reviewCount: number } | null>(null);
-  const [summaryLoading, setSummaryLoading] = useState(true);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [ratingSummary, setRatingSummary] = useState<{ averageRating: number; reviewCount: number } | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(true)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
   const [showEditReviewDialog, setShowEditReviewDialog] = useState<string | null>(null)
   const [editReviewRating, setEditReviewRating] = useState<number>(0)
   const [editReviewComment, setEditReviewComment] = useState<string>("")
@@ -134,97 +140,93 @@ export const ServiceDetails = () => {
   const userId = user?._id || user?.id || ""
 
   useEffect(() => {
-    const fetchServiceDetails = async () => {
+    const fetchData = async () => {
       if (!id) {
         setError("No service ID provided")
         setLoading(false)
+        setReviewsLoading(false)
+        setSummaryLoading(false)
         return
       }
+
       try {
         setLoading(true)
+        setReviewsLoading(true)
+        setSummaryLoading(true)
         setError(null)
-        const response = await Useraxios.get(`/services/${id}`)
-        if (response.status !== 200) {
-          throw new Error(`Failed to fetch service details: ${response.statusText}`)
+        setReviewsError(null)
+        setSummaryError(null)
+
+        const serviceResponse = await Useraxios.get(`/services/${id}`)
+        const serviceData = serviceResponse.data.data || serviceResponse.data
+        setService(serviceData)
+
+        if (!serviceData?.shopId?._id) {
+          throw new Error("Shop ID not found in service data")
         }
-        setService(response.data.data || response.data)
+
+        const [reviewsResponse, summaryResponse] = await Promise.all([
+          Useraxios.get(`/shops/${serviceData.shopId._id}/reviews?page=1&limit=10`).catch((err: AxiosError<ErrorResponse>) => ({
+            error: err,
+          })),
+          Useraxios.get(`/shops/${serviceData.shopId._id}/reviews/summary`).catch((err: AxiosError<ErrorResponse>) => ({
+            error: err,
+          })),
+        ])
+
+        // Handle service details
+        if (serviceResponse.status !== 200) {
+          throw new Error(`Failed to fetch service details: ${serviceResponse.statusText}`)
+        }
+        setService(serviceData)
+
+        // Handle reviews
+        if ('error' in reviewsResponse) {
+          setReviewsError(reviewsResponse.error.response?.data?.message || reviewsResponse.error.message || "Failed to load reviews")
+        } else {
+          if (reviewsResponse.status !== 200) {
+            throw new Error(`Failed to fetch reviews: ${reviewsResponse.statusText}`)
+          }
+          const reviewsData = reviewsResponse.data.data?.reviews || reviewsResponse.data.data || []
+          if (!Array.isArray(reviewsData)) {
+            throw new Error("Invalid reviews data format")
+          }
+          const reviewsWithUserDetails = reviewsData.map((review: any) => ({
+            ...review,
+            _id: review._id || review.id,
+            userId: typeof review.userId === 'object' && review.userId !== null
+              ? {
+                  _id: review.userId.id || review.userId._id,
+                  fullName: review.userId.fullName || 'Anonymous User',
+                  profileImage: review.userId.profileImage || null,
+                }
+              : { _id: '', fullName: 'Anonymous User', profileImage: null },
+          }))
+          setReviews(reviewsWithUserDetails)
+        }
+
+        // Handle rating summary
+        if ('error' in summaryResponse) {
+          setSummaryError(summaryResponse.error.response?.data?.message || summaryResponse.error.message || "Failed to load rating summary")
+        } else {
+          if (summaryResponse.status !== 200) {
+            throw new Error(`Failed to fetch rating summary: ${summaryResponse.statusText}`)
+          }
+          setRatingSummary(summaryResponse.data.data)
+        }
+
       } catch (err: any) {
-        console.error("Service Fetch Error:", err)
-        setError(err.response?.data?.message || err.message || "An error occurred")
+        console.error("Data Fetch Error:", err)
+        setError(err.message || "An error occurred")
       } finally {
         setLoading(false)
+        setReviewsLoading(false)
+        setSummaryLoading(false)
       }
     }
 
-    fetchServiceDetails()
+    fetchData()
   }, [id])
-
-  useEffect(() => {
-    const fetchRatingSummary = async () => {
-      if (!service?.shopId?._id) return;
-      try {
-        setSummaryLoading(true);
-        setSummaryError(null);
-        const response = await Useraxios.get(`/shops/${service.shopId._id}/reviews/summary`);
-        if (response.status !== 200) {
-          throw new Error(`Failed to fetch rating summary: ${response.statusText}`);
-        }
-        setRatingSummary(response.data.data);
-      } catch (err: any) {
-        console.error("Rating Summary Fetch Error:", err);
-        setSummaryError(err.response?.data?.message || err.message || "Failed to load rating summary");
-      } finally {
-        setSummaryLoading(false);
-      }
-    };
-
-    if (service?.shopId?._id) {
-      fetchRatingSummary();
-    }
-  }, [service?.shopId?._id]);
-
-
-  useEffect(() => {
-    const fetchReviews = async () => {
-      if (!id || !service?.shopId?._id) return;
-      try {
-        setReviewsLoading(true);
-        setReviewsError(null);
-        const response = await Useraxios.get(`/shops/${service.shopId._id}/reviews?page=1&limit=10`);
-        if (response.status !== 200) {
-          throw new Error(`Failed to fetch reviews: ${response.statusText}`);
-        }
-
-        const reviewsData = response.data.data?.reviews || response.data.data || [];
-        if (!Array.isArray(reviewsData)) {
-          console.error("Reviews data is not an array:", reviewsData);
-          throw new Error("Invalid reviews data format");
-        }
-
-        const reviewsWithUserDetails = reviewsData.map((review: any) => ({
-          ...review,
-          _id: review._id || review.id,
-          userId: typeof review.userId === 'object' && review.userId !== null
-            ? {
-              _id: review.userId.id || review.userId._id,
-              fullName: review.userId.fullName || 'Anonymous User',
-              profileImage: review.userId.profileImage || null,
-            }
-            : { _id: '', fullName: 'Anonymous User', profileImage: null },
-        }));
-        setReviews(reviewsWithUserDetails);
-      } catch (err: any) {
-        console.error("Reviews Fetch Error:", err);
-        setReviewsError(err.response?.data?.message || err.message || "Failed to load reviews");
-      } finally {
-        setReviewsLoading(false);
-      }
-    };
-
-    if (service?.shopId?._id) {
-      fetchReviews();
-    }
-  }, [id, service?.shopId?._id]);
 
   const handleChatWithShop = async () => {
     if (!userId) {
@@ -262,47 +264,47 @@ export const ServiceDetails = () => {
 
   const handleSubmitEditReview = async (reviewId: string) => {
     try {
-      const response = await Useraxios.put(`/reviews/${reviewId}`, {
+      await Useraxios.put(`/reviews/${reviewId}`, {
         rating: editReviewRating,
         comment: editReviewComment,
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      })
       setReviews((prevReviews) =>
         prevReviews.map((r) =>
           r._id === reviewId
             ? { ...r, rating: editReviewRating, comment: editReviewComment }
             : r
         )
-      );
-      setShowEditReviewDialog(null);
-      setEditReviewRating(0);
-      setEditReviewComment("");
-      toast({ title: "Success", description: "Review updated successfully" });
+      )
+      setShowEditReviewDialog(null)
+      setEditReviewRating(0)
+      setEditReviewComment("")
+      toast({ title: "Success", description: "Review updated successfully" })
     } catch (err: any) {
-      console.error("Failed to update review:", err.response?.data?.message || err.message);
-      setReviewsError(err.response?.data?.message || "Failed to update review");
+      console.error("Failed to update review:", err.response?.data?.message || err.message)
+      setReviewsError(err.response?.data?.message || "Failed to update review")
       toast({
         title: "Error",
         description: err.response?.data?.message || "Failed to update review",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
   const renderReview = (review: Review) => {
     const userFullName =
       typeof review.userId === "object" && review.userId !== null
         ? review.userId.fullName || "Anonymous User"
-        : "Anonymous User";
+        : "Anonymous User"
     const userProfileImage =
       typeof review.userId === "object" && review.userId !== null
         ? review.userId.profileImage
-        : null;
+        : null
     const isOwnReview =
       typeof review.userId === "object" &&
       review.userId !== null &&
-      review.userId._id === userId;
+      review.userId._id === userId
 
     return (
       <div
@@ -321,8 +323,8 @@ export const ServiceDetails = () => {
               alt={`${userFullName}'s profile`}
               className="w-12 h-12 rounded-full object-cover border-2 border-black dark:border-white"
               onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "/api/placeholder/48/48";
+                const target = e.target as HTMLImageElement
+                target.src = "/api/placeholder/48/48"
               }}
             />
             <div>
@@ -348,9 +350,9 @@ export const ServiceDetails = () => {
             <div className="flex gap-2">
               <Button
                 onClick={() => {
-                  setShowEditReviewDialog(review._id);
-                  setEditReviewRating(review.rating);
-                  setEditReviewComment(review.comment || "");
+                  setShowEditReviewDialog(review._id)
+                  setEditReviewRating(review.rating)
+                  setEditReviewComment(review.comment || "")
                 }}
                 className="bg-white text-black border border-black hover:bg-gray-100 p-2"
               >
@@ -360,8 +362,8 @@ export const ServiceDetails = () => {
           )}
         </div>
       </div>
-    );
-  };
+    )
+  }
 
   const petTypes = formatPetTypes(service?.petTypeIds || [])
 
@@ -720,7 +722,7 @@ export const ServiceDetails = () => {
             </Card>
 
             {/* Location Map Placeholder */}
-            <Card className="border-2 border-black dark:border-white bg-white dark:bg-black shadow-xl">
+            {/* <Card className="border-2 border-black dark:border-white bg-white dark:bg-black shadow-xl">
               <CardContent className="p-6">
                 <h3 className="font-bold text-xl text-black dark:text-white font-mono mb-4">Location</h3>
                 <div className="bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl h-48 flex items-center justify-center">
@@ -735,7 +737,7 @@ export const ServiceDetails = () => {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
       </main>
@@ -765,8 +767,7 @@ export const ServiceDetails = () => {
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`w-8 h-8 cursor-pointer ${star <= editReviewRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-gray-600"
-                    }`}
+                  className={`w-8 h-8 cursor-pointer ${star <= editReviewRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
                   onClick={() => setEditReviewRating(star)}
                 />
               ))}

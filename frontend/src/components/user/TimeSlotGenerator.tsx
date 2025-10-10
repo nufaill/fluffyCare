@@ -253,7 +253,6 @@ export function EnhancedTimeSlotGenerator({
 
       const toastInfo = (msg: string) => toast(msg, { style: { background: '#2196f3', color: '#fff' } });
 
-      // Show toast notification
       if (data.shopId === shopId) {
         toastInfo('A slot became available!');
       }
@@ -261,7 +260,6 @@ export function EnhancedTimeSlotGenerator({
     enabled: true
   });
 
-  // Expose the markSlotAsBooked function so parent can call it
   useEffect(() => {
     // Store the function reference so parent component can access it
     (window as any).markSlotAsBooked = markSlotAsBooked;

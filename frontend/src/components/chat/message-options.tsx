@@ -23,7 +23,7 @@ export function MessageOptions({ message, isOwn, onReply, onEdit, onDelete, onFo
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={isOwn ? 'end' : 'start'}>
-        <DropdownMenuItem onClick={() => onReply(message)}>
+        {/* <DropdownMenuItem onClick={() => onReply(message)}>
           <Reply className="h-4 w-4 mr-2" />
           Reply
         </DropdownMenuItem>
@@ -32,12 +32,12 @@ export function MessageOptions({ message, isOwn, onReply, onEdit, onDelete, onFo
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </DropdownMenuItem>
-        )}
+        )} */}
         <DropdownMenuItem onClick={() => onCopy(message.content)}>
           <Copy className="h-4 w-4 mr-2" />
           Copy
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onForward(message)}>
+        {/* <DropdownMenuItem onClick={() => onForward(message)}>
           <Forward className="h-4 w-4 mr-2" />
           Forward
         </DropdownMenuItem>
@@ -52,7 +52,7 @@ export function MessageOptions({ message, isOwn, onReply, onEdit, onDelete, onFo
             <Flag className="h-4 w-4 mr-2" />
             Report
           </DropdownMenuItem>
-        )}
+        )} */}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -67,29 +67,6 @@ export function ChatHeader({ chat, onOpenChatList, isMobile, userType }: ChatHea
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm">
-            <Phone className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm">
-            <Video className="h-4 w-4" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Info className="h-4 w-4 mr-2" />
-                View Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem>Clear Chat</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">Block User</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
     </div>
   );

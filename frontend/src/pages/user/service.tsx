@@ -135,7 +135,6 @@ export const Services = () => {
     });
   };
 
-  // Log current filters for debugging
   useEffect(() => {
     console.log('Current active filters:', {
       search: filters.search,

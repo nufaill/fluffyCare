@@ -18,6 +18,7 @@ import {
   UserX,
   ArrowDownCircle,
   IndianRupee,
+  LineChart,
 } from "lucide-react"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
@@ -30,6 +31,7 @@ import {
   CustomersChart,
   CustomerDemographicsChart,
   BookingsChart,
+  ServiceTypePieChart,
 } from "../../components/admin/dashboard/AnalyticsCharts"
 import { StatCard, type Stat } from "../../components/admin/dashboard/StatComponents"
 import { useDataFetching } from "../../components/admin/dashboard/DataFetching"
@@ -41,6 +43,13 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart as RechartsLineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  BarChart,
+  Bar,
 } from "recharts"
 import type { RootState } from "@/redux/store"
 
@@ -95,38 +104,31 @@ const AdminDashboard: React.FC = () => {
     fetchWalletData()
   }, [admin])
 
-  const customerChartData = customerAnalytics?.chartData || [
-    { month: "Jan", total: 8200, new: 180, active: 1200 },
-    { month: "Feb", total: 8350, new: 150, active: 1280 },
-    { month: "Mar", total: 8520, new: 170, active: 1350 },
-    { month: "Apr", total: 8720, new: 200, active: 1420 },
-    { month: "May", total: 8942, new: 222, active: 1456 },
-  ]
-
-  const revenueChartData = [
-    { month: "Jan", revenue: 35000, commission: 4375, target: 40000 },
-    { month: "Feb", revenue: 38000, commission: 4750, target: 40000 },
-    { month: "Mar", revenue: 42000, commission: 5250, target: 40000 },
-    { month: "Apr", revenue: 45280, commission: 5660, target: 40000 },
-    { month: "May", revenue: 48000, commission: 6000, target: 40000 },
-    { month: "Jun", revenue: 52000, commission: 6500, target: 40000 },
-  ]
-
-  const shopsChartData = [
-    { month: "Jan", total: 1180, active: 1089, pending: 15, suspended: 76 },
-    { month: "Feb", total: 1195, active: 1105, pending: 12, suspended: 78 },
-    { month: "Mar", total: 1210, active: 1125, pending: 18, suspended: 67 },
-    { month: "Apr", total: 1230, active: 1145, pending: 16, suspended: 69 },
-    { month: "May", total: 1247, active: 1156, pending: 18, suspended: 73 },
-  ]
-
+  // Dynamic data for charts
+  const customerChartData = customerAnalytics?.chartData || []
   const bookingsChartData = analytics?.dailyBookings || []
-
   const serviceTypePieData = (analytics?.serviceTypeBreakdown || []).map((item, index) => ({
     name: item.name,
     value: item.value,
     color: ["#3B82F6", "#10B981", "#8B5CF6", "#EF4444"][index % 4],
   }))
+
+  // Dynamic revenue chart data - properly formatted from wallet data
+  const revenueChartData = walletData?.monthlyRevenue?.map((item: any) => ({
+    month: item.month,
+    revenue: item.totalRevenue || 0,
+    commission: item.commission || 0,
+    target: item.target || 40000,
+  })) || []
+
+  // Dynamic shops chart data - properly formatted from shopsOverview
+  const shopsChartData = shopsOverview?.monthlyData?.map((item: any) => ({
+    month: item.month,
+    total: item.totalShops || 0,
+    active: item.activeShops || 0,
+    pending: item.pendingShops || 0,
+    suspended: item.suspendedShops || 0,
+  })) || []
 
   const handleMenuItemClick = (item: string) => {
     setActiveMenuItem(item)
@@ -248,6 +250,114 @@ const AdminDashboard: React.FC = () => {
     },
   ]
 
+  const renderRevenueSection = () => {
+    if (isLoadingWallet) {
+      return (
+        <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-emerald-50 rounded-lg animate-pulse">
+                <IndianRupee className="h-6 w-6 text-emerald-600" />
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900">Revenue Overview</h2>
+            </div>
+            <button
+              className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors"
+            >
+              <LineChart className="h-4 w-4" />
+              <span>Show Graph</span>
+            </button>
+          </div>
+          <div className="h-32 bg-gray-100 rounded-lg animate-pulse" />
+        </div>
+      )
+    }
+
+    if (walletError) {
+      return (
+        <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-900">Revenue Overview</h2>
+          <div className="text-red-600 text-sm">{walletError}</div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-emerald-50 rounded-lg">
+              <IndianRupee className="h-6 w-6 text-emerald-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900">Revenue Overview</h2>
+          </div>
+          <button
+            onClick={() => setShowRevenueGraph(!showRevenueGraph)}
+            className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors"
+          >
+            <LineChart className="h-4 w-4" />
+            <span>{showRevenueGraph ? "Hide" : "Show"} Graph</span>
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {revenueStats.map((stat, index) => (
+            <StatCard key={index} stat={stat} index={index} />
+          ))}
+        </div>
+        {showRevenueGraph && (
+          revenueChartData.length > 0 ? (
+            <div className="mt-6">
+              <ResponsiveContainer width="100%" height={300}>
+                <RechartsLineChart data={revenueChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    }}
+                  />
+                  <Legend />
+                  <Line type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={3} name="Revenue" />
+                  <Line type="monotone" dataKey="commission" stroke="#10B981" strokeWidth={2} name="Commission" />
+                </RechartsLineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fadeIn">
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-gray-900">Revenue Breakdown</h3>
+                <p className="text-sm text-gray-600">Comparison of total revenue and debited amounts</p>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={[{ name: "Overview", revenue: walletData?.balance || 0, debited: totalDebited || 0 }]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
+                  <Tooltip
+                    formatter={(value: number) => `₹ ${value.toLocaleString()}`}
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#10B981" name="Total Revenue" />
+                  <Bar dataKey="debited" fill="#EF4444" name="Total Debited" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )
+        )}
+      </div>
+    )
+  }
+
   const renderShopAnalyticsSection = () => {
     if (loading) {
       return (
@@ -281,6 +391,12 @@ const AdminDashboard: React.FC = () => {
       )
     }
 
+    const shopStatusData = [
+      { name: "Active Shops", value: shopsOverview?.activeShops || 0, color: "#10B981" },
+      { name: "Pending Shops", value: shopsOverview?.pendingShops || 0, color: "#F59E0B" },
+      { name: "Inactive Shops", value: shopsOverview?.inactiveShops || 0, color: "#EF4444" },
+    ].filter((item) => item.value > 0)
+
     return (
       <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
         <div className="flex items-center justify-between">
@@ -310,24 +426,52 @@ const AdminDashboard: React.FC = () => {
           ))}
         </div>
         {showShopsGraph && (
-          <ShopsChart
-            revenueChartData={revenueChartData}
-            shopsChartData={shopsChartData}
-            customerChartData={customerChartData}
-            bookingsChartData={bookingsChartData}
-            serviceTypePieData={serviceTypePieData}
-            customerAnalytics={customerAnalytics}
-            showCustomersGraph={showCustomersGraph}
-            setShowCustomersGraph={setShowCustomersGraph}
-            showRevenueGraph={showRevenueGraph}
-            setShowRevenueGraph={setShowRevenueGraph}
-            showShopsGraph={showShopsGraph}
-            setShowShopsGraph={setShowShopsGraph}
-            showBookingsGraph={showBookingsGraph}
-            setShowBookingsGraph={setShowBookingsGraph}
-            showServiceTypeGraph={showServiceTypeGraph}
-            setShowServiceTypeGraph={setShowServiceTypeGraph}
-          />
+          shopsChartData.length > 0 ? (
+            <ShopsChart
+              shopsChartData={shopsChartData}
+              showShopsGraph={showShopsGraph}
+              setShowShopsGraph={setShowShopsGraph}
+              revenueChartData={revenueChartData}
+              customerChartData={customerChartData}
+              bookingsChartData={bookingsChartData}
+              serviceTypePieData={serviceTypePieData}
+              customerAnalytics={customerAnalytics}
+              showCustomersGraph={showCustomersGraph}
+              setShowCustomersGraph={setShowCustomersGraph}
+              showRevenueGraph={showRevenueGraph}
+              setShowRevenueGraph={setShowRevenueGraph}
+              showBookingsGraph={showBookingsGraph}
+              setShowBookingsGraph={setShowBookingsGraph}
+              showServiceTypeGraph={showServiceTypeGraph}
+              setShowServiceTypeGraph={setShowServiceTypeGraph}
+            />
+          ) : (
+            <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fadeIn">
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-gray-900">Shop Status Distribution</h3>
+                <p className="text-sm text-gray-600">Distribution of shops by status</p>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={shopStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {shopStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )
         )}
       </div>
     )
@@ -345,11 +489,10 @@ const AdminDashboard: React.FC = () => {
               <h2 className="text-xl font-semibold text-gray-900">Customer Analytics</h2>
             </div>
             <button
-              onClick={() => setShowCustomersGraph(!showCustomersGraph)}
               className="flex items-center space-x-2 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg text-sm font-medium hover:bg-cyan-100 transition-colors"
             >
-              <Users className="h-4 w-4" />
-              <span>{showCustomersGraph ? "Hide" : "Show"} Graph</span>
+              <LineChart className="h-4 w-4" />
+              <span>Show Graph</span>
             </button>
           </div>
           <div className="h-32 bg-gray-100 rounded-lg animate-pulse" />
@@ -379,7 +522,7 @@ const AdminDashboard: React.FC = () => {
             onClick={() => setShowCustomersGraph(!showCustomersGraph)}
             className="flex items-center space-x-2 px-4 py-2 bg-cyan-50 text-cyan-600 rounded-lg text-sm font-medium hover:bg-cyan-100 transition-colors"
           >
-            <Users className="h-4 w-4" />
+            <UsersIcon className="h-4 w-4" />
             <span>{showCustomersGraph ? "Hide" : "Show"} Graph</span>
           </button>
         </div>
@@ -395,16 +538,16 @@ const AdminDashboard: React.FC = () => {
           ))}
         </div>
         {showCustomersGraph && (
-          <div>
+          customerChartData.length > 0 ? (
             <CustomersChart
+              customerChartData={customerChartData}
+              showCustomersGraph={showCustomersGraph}
+              setShowCustomersGraph={setShowCustomersGraph}
               revenueChartData={revenueChartData}
               shopsChartData={shopsChartData}
-              customerChartData={customerChartData}
               bookingsChartData={bookingsChartData}
               serviceTypePieData={serviceTypePieData}
               customerAnalytics={customerAnalytics}
-              showCustomersGraph={showCustomersGraph}
-              setShowCustomersGraph={setShowCustomersGraph}
               showRevenueGraph={showRevenueGraph}
               setShowRevenueGraph={setShowRevenueGraph}
               showShopsGraph={showShopsGraph}
@@ -414,67 +557,180 @@ const AdminDashboard: React.FC = () => {
               showServiceTypeGraph={showServiceTypeGraph}
               setShowServiceTypeGraph={setShowServiceTypeGraph}
             />
-            <CustomerDemographicsChart
-              revenueChartData={revenueChartData}
-              shopsChartData={shopsChartData}
-              customerChartData={customerChartData}
-              bookingsChartData={bookingsChartData}
-              serviceTypePieData={serviceTypePieData}
-              customerAnalytics={customerAnalytics}
-              showCustomersGraph={showCustomersGraph}
-              setShowCustomersGraph={setShowCustomersGraph}
-              showRevenueGraph={showRevenueGraph}
-              setShowRevenueGraph={setShowRevenueGraph}
-              showShopsGraph={showShopsGraph}
-              setShowShopsGraph={setShowShopsGraph}
-              showBookingsGraph={showBookingsGraph}
-              setShowBookingsGraph={setShowBookingsGraph}
-              showServiceTypeGraph={showServiceTypeGraph}
-              setShowServiceTypeGraph={setShowServiceTypeGraph}
-            />
-          </div>
+          ) : (
+            <CustomerDemographicsChart customerAnalytics={customerAnalytics} revenueChartData={[]} shopsChartData={[]} customerChartData={[]} bookingsChartData={[]} serviceTypePieData={[]} showCustomersGraph={false} setShowCustomersGraph={function (value: boolean): void {
+                throw new Error("Function not implemented.")
+              } } showRevenueGraph={false} setShowRevenueGraph={function (value: boolean): void {
+                throw new Error("Function not implemented.")
+              } } showShopsGraph={false} setShowShopsGraph={function (value: boolean): void {
+                throw new Error("Function not implemented.")
+              } } showBookingsGraph={false} setShowBookingsGraph={function (value: boolean): void {
+                throw new Error("Function not implemented.")
+              } } showServiceTypeGraph={false} setShowServiceTypeGraph={function (value: boolean): void {
+                throw new Error("Function not implemented.")
+              } } />
+          )
         )}
-        {customerAnalytics?.engagement && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
-                </div>
-                <h4 className="text-lg font-semibold text-gray-900">Engagement Rate</h4>
+      </div>
+    )
+  }
+
+  const renderBookingsOverviewSection = () => {
+    if (isLoadingAnalytics) {
+      return (
+        <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-50 rounded-lg animate-pulse">
+                <Calendar className="h-6 w-6 text-purple-600" />
               </div>
-              <p className="text-2xl font-bold text-blue-600 mb-1">
-                {((customerAnalytics.active / customerAnalytics.total) * 100).toFixed(1)}%
-              </p>
-              <p className="text-sm text-gray-600">
-                {customerAnalytics.active} active out of {customerAnalytics.total} total customers
-              </p>
+              <h2 className="text-xl font-semibold text-gray-900">Bookings Overview</h2>
             </div>
-            <div className="bg-white rounded-lg p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <UsersIcon className="h-5 w-5 text-green-600" />
-                </div>
-                <h4 className="text-lg font-semibold text-gray-900">Repeat Rate</h4>
-              </div>
-              <p className="text-2xl font-bold text-green-600 mb-1">
-                {customerAnalytics.engagement.repeatCustomers}
-              </p>
-              <p className="text-sm text-gray-600">Customers with multiple bookings</p>
-            </div>
-            <div className="bg-white rounded-lg p-5 border border-gray-100 shadow-sm">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="p-2 bg-red-50 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                </div>
-                <h4 className="text-lg font-semibold text-gray-900">Churn Rate</h4>
-              </div>
-              <p className="text-2xl font-bold text-red-600 mb-1">
-                {customerAnalytics.engagement.churnRate}%
-              </p>
-              <p className="text-sm text-gray-600">Lost customers this month</p>
-            </div>
+            <button
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-100 transition-colors"
+            >
+              <LineChart className="h-4 w-4" />
+              <span>Show Graph</span>
+            </button>
           </div>
+          <div className="h-32 bg-gray-100 rounded-lg animate-pulse" />
+        </div>
+      )
+    }
+
+    if (analyticsError) {
+      return (
+        <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-900">Bookings Overview</h2>
+          <div className="text-red-600 text-sm">{analyticsError}</div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-purple-50 rounded-lg">
+              <Calendar className="h-6 w-6 text-purple-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900">Bookings Overview</h2>
+          </div>
+          <button
+            onClick={() => setShowBookingsGraph(!showBookingsGraph)}
+            className="flex items-center space-x-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-100 transition-colors"
+          >
+            <Calendar className="h-4 w-4" />
+            <span>{showBookingsGraph ? "Hide" : "Show"} Graph</span>
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {bookingStats.map((stat, index) => (
+            <StatCard
+              key={index}
+              stat={stat}
+              index={index}
+              onToggleGraph={() => setShowBookingsGraph(!showBookingsGraph)}
+              showGraph={showBookingsGraph}
+            />
+          ))}
+        </div>
+        {showBookingsGraph && (
+          bookingsChartData.length > 0 ? (
+            <BookingsChart
+              bookingsChartData={bookingsChartData}
+              showBookingsGraph={showBookingsGraph}
+              setShowBookingsGraph={setShowBookingsGraph}
+              revenueChartData={revenueChartData}
+              shopsChartData={shopsChartData}
+              customerChartData={customerChartData}
+              serviceTypePieData={serviceTypePieData}
+              customerAnalytics={customerAnalytics}
+              showRevenueGraph={showRevenueGraph}
+              setShowRevenueGraph={setShowRevenueGraph}
+              showShopsGraph={showShopsGraph}
+              setShowShopsGraph={setShowShopsGraph}
+              showCustomersGraph={showCustomersGraph}
+              setShowCustomersGraph={setShowCustomersGraph}
+              showServiceTypeGraph={showServiceTypeGraph}
+              setShowServiceTypeGraph={setShowServiceTypeGraph}
+            />
+          ) : (
+            <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-fadeIn">
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-gray-900">Booking Status Breakdown</h3>
+                <p className="text-sm text-gray-600">Distribution of bookings by status</p>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Completed", value: analytics?.overall.completed || 0, color: "#10B981" },
+                      { name: "Pending", value: analytics?.overall.pending || 0, color: "#F59E0B" },
+                      { name: "Cancelled", value: analytics?.overall.cancelled || 0, color: "#EF4444" },
+                    ].filter(item => item.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {[{ name: "Completed", value: analytics?.overall.completed || 0, color: "#10B981" },
+                      { name: "Pending", value: analytics?.overall.pending || 0, color: "#F59E0B" },
+                      { name: "Cancelled", value: analytics?.overall.cancelled || 0, color: "#EF4444" },
+                    ].filter(item => item.value > 0).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )
+        )}
+      </div>
+    )
+  }
+
+  const renderServiceTypeBreakdownSection = () => {
+    return (
+      <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <TrendingUp className="h-6 w-6 text-blue-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900">Service Type Breakdown</h2>
+          </div>
+          <button
+            onClick={() => setShowServiceTypeGraph(!showServiceTypeGraph)}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+          >
+            <TrendingUp className="h-4 w-4" />
+            <span>{showServiceTypeGraph ? "Hide" : "Show"} Graph</span>
+          </button>
+        </div>
+        {showServiceTypeGraph && (
+          <ServiceTypePieChart
+            serviceTypePieData={serviceTypePieData}
+            showServiceTypeGraph={showServiceTypeGraph}
+            setShowServiceTypeGraph={setShowServiceTypeGraph}
+            revenueChartData={revenueChartData}
+            shopsChartData={shopsChartData}
+            customerChartData={customerChartData}
+            bookingsChartData={bookingsChartData}
+            customerAnalytics={customerAnalytics}
+            showRevenueGraph={showRevenueGraph}
+            setShowRevenueGraph={setShowRevenueGraph}
+            showShopsGraph={showShopsGraph}
+            setShowShopsGraph={setShowShopsGraph}
+            showCustomersGraph={showCustomersGraph}
+            setShowCustomersGraph={setShowCustomersGraph}
+            showBookingsGraph={showBookingsGraph}
+            setShowBookingsGraph={setShowBookingsGraph}
+          />
         )}
       </div>
     )
@@ -482,142 +738,60 @@ const AdminDashboard: React.FC = () => {
 
   const renderDashboardContent = () => {
     return (
-      <div>
-        <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-emerald-50 rounded-lg">
-                <DollarSign className="h-6 w-6 text-emerald-600" />
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">Revenue Overview</h2>
-            </div>
-            <button
-              onClick={() => setShowRevenueGraph(!showRevenueGraph)}
-              className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors"
-            >
-              <DollarSign className="h-4 w-4" />
-              <span>{showRevenueGraph ? "Hide" : "Show"} Graph</span>
-            </button>
-          </div>
-          {isLoadingWallet ? (
-            <div className="h-32 bg-gray-100 rounded-lg animate-pulse" />
-          ) : walletError ? (
-            <div className="text-red-600 text-sm">{walletError}</div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {revenueStats.map((stat, index) => (
-                <StatCard key={index} stat={stat} index={index} />
-              ))}
-            </div>
-          )}
-        </div>
-
+      <>
+        {renderRevenueSection()}
         {renderShopAnalyticsSection()}
-
         {renderCustomerAnalyticsSection()}
-
-        <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <Calendar className="h-6 w-6 text-purple-600" />
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">Bookings Overview</h2>
-            </div>
-            <button
-              onClick={() => setShowBookingsGraph(!showBookingsGraph)}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-100 transition-colors"
-            >
-              <Calendar className="h-4 w-4" />
-              <span>{showBookingsGraph ? "Hide" : "Show"} Graph</span>
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {bookingStats.map((stat, index) => (
-              <StatCard key={index} stat={stat} index={index} />
-            ))}
-          </div>
-          {showBookingsGraph && (
-            <BookingsChart
-              revenueChartData={revenueChartData}
-              shopsChartData={shopsChartData}
-              customerChartData={customerChartData}
-              bookingsChartData={bookingsChartData}
-              serviceTypePieData={serviceTypePieData}
-              customerAnalytics={customerAnalytics}
-              showCustomersGraph={showCustomersGraph}
-              setShowCustomersGraph={setShowCustomersGraph}
-              showRevenueGraph={showRevenueGraph}
-              setShowRevenueGraph={setShowRevenueGraph}
-              showShopsGraph={showShopsGraph}
-              setShowShopsGraph={setShowShopsGraph}
-              showBookingsGraph={showBookingsGraph}
-              setShowBookingsGraph={setShowBookingsGraph}
-              showServiceTypeGraph={showServiceTypeGraph}
-              setShowServiceTypeGraph={setShowServiceTypeGraph}
-            />
-          )}
-        </div>
-
-        {isLoadingAnalytics ? (
-          <div className="text-center py-8 text-gray-600">Loading shop-wise data...</div>
-        ) : analyticsError ? (
-          <div className="text-center py-8 text-red-600">{analyticsError}</div>
-        ) : (
-          <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100 mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Shop-wise Bookings</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-100 rounded-lg">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      <Store className="h-4 w-4 inline mr-2 text-indigo-600" /> Shop Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      <Calendar className="h-4 w-4 inline mr-2 text-purple-600" /> Total
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      <Clock className="h-4 w-4 inline mr-2 text-amber-600" /> Pending
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      <CheckCircle className="h-4 w-4 inline mr-2 text-blue-600" /> Confirmed
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      <TrendingUp className="h-4 w-4 inline mr-2 text-purple-600" /> Ongoing
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      <CheckCircle className="h-4 w-4 inline mr-2 text-green-600" /> Completed
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                      <XCircle className="h-4 w-4 inline mr-2 text-red-600" /> Cancelled
-                    </th>
+        {renderBookingsOverviewSection()}
+        {renderServiceTypeBreakdownSection()}
+        <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Shop Name</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  <TrendingUp className="h-4 w-4 inline mr-2 text-indigo-600" /> Total
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  <Clock className="h-4 w-4 inline mr-2 text-amber-600" /> Pending
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  <CheckCircle className="h-4 w-4 inline mr-2 text-blue-600" /> Confirmed
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  <TrendingUp className="h-4 w-4 inline mr-2 text-purple-600" /> Ongoing
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  <CheckCircle className="h-4 w-4 inline mr-2 text-green-600" /> Completed
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                  <XCircle className="h-4 w-4 inline mr-2 text-red-600" /> Cancelled
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {analytics?.shopWise.length ? (
+                analytics.shopWise.map((shop) => (
+                  <tr key={shop.shopId} className="border-t hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-900">{shop.shopName}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{shop.total}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{shop.pending}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{shop.confirmed}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{shop.ongoing}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{shop.completed}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{shop.cancelled}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {analytics?.shopWise.length ? (
-                    analytics.shopWise.map((shop) => (
-                      <tr key={shop.shopId} className="border-t hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm text-gray-900">{shop.shopName}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{shop.total}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{shop.pending}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{shop.confirmed}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{shop.ongoing}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{shop.completed}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{shop.cancelled}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-600">
-                        No shop-wise data available
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-600">
+                    No shop-wise data available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
         <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
@@ -720,7 +894,7 @@ const AdminDashboard: React.FC = () => {
             })}
           </div>
         </div>
-      </div>
+      </>
     )
   }
 

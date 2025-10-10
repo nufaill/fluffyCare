@@ -80,19 +80,26 @@ const handleImageUpload = async (file: File): Promise<string | undefined> => {
   }
 };
 
-const validateForm = (data: ServiceFormData): ValidationErrors => {
+const validateForm = (data: ServiceFormData, isCreating: boolean = false, services?: Service[]): ValidationErrors => {
   const errors: ValidationErrors = {};
 
-  if (!data.name.trim()) {
+  const trimmedName = data.name.trim();
+  if (!trimmedName) {
     errors.name = "Service name is required";
-  } else if (data.name.length < 2 || data.name.length > 100) {
-    errors.name = "Service name must be between 2 and 100 characters";
+  } else if (trimmedName.length < 2) {
+    errors.name = "Service name must be at least 2 characters";
+  } else if (trimmedName.length > 100) {
+    errors.name = "Service name must not exceed 100 characters";
+  } else if (isCreating && services && services.some(s => s.name.trim().toLowerCase() === trimmedName.toLowerCase())) {
+    errors.name = "A service with this name already exists";
   }
 
   if (!data.description.trim()) {
     errors.description = "Description is required";
-  } else if (data.description.length < 10 || data.description.length > 500) {
-    errors.description = "Description must be between 10 and 500 characters";
+  } else if (data.description.length < 10) {
+    errors.description = "Description must be at least 10 characters";
+  } else if (data.description.length > 500) {
+    errors.description = "Description must not exceed 500 characters";
   }
 
   if (!data.serviceTypeId) {
@@ -113,14 +120,26 @@ const validateForm = (data: ServiceFormData): ValidationErrors => {
   const price = parseFloat(data.price);
   if (isNaN(price)) {
     errors.price = "Price must be a number";
-  } else if (price < 0) {
-    errors.price = "Price must be greater than or equal to 0";
+  } else if (price < 50) {
+    errors.price = "Price must be at least ₹50";
+  } else if (price > 5000) {
+    errors.price = "Price must not exceed ₹5000";
   }
 
   if (!data.durationHour) {
     errors.durationHour = "Duration is required";
   } else if (!durationOptions.some(opt => opt.value === data.durationHour)) {
     errors.durationHour = "Please select a valid duration (30 minutes, 1 hour, or 2 hours)";
+  }
+
+  if (isCreating) {
+    if (!data.image) {
+      errors.image = "Service image is required";
+    }
+  } else {
+    if (data.image && !data.image.startsWith('http')) {
+      errors.image = "Invalid image URL";
+    }
   }
 
   return errors;
@@ -280,11 +299,13 @@ function ServiceForm({
   onCancel,
   initialData,
   isEditing = false,
+  services,
 }: {
   onSubmit: (data: ServiceFormData) => Promise<void>;
   onCancel: () => void;
   initialData?: Partial<ServiceFormData>;
   isEditing?: boolean;
+  services?: Service[];
 }) {
   const [formData, setFormData] = useState<ServiceFormData>({
     name: initialData?.name || "",
@@ -303,30 +324,25 @@ function ServiceForm({
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
 
   useEffect(() => {
-    const fetchPetTypes = async () => {
+    const fetchData = async () => {
       try {
-        const types = await serviceService.getAllPetTypes();
-        setPetTypes(types);
+        const [petTypesData, serviceTypesData] = await Promise.all([
+          serviceService.getAllPetTypes(),
+          serviceService.getAllServiceTypes(),
+        ]);
+        setPetTypes(petTypesData);
+        setServiceTypes(serviceTypesData);
       } catch (error) {
-        console.error("Error fetching pet types:", error);
+        console.error("Error fetching data:", error);
       }
     };
-    fetchPetTypes();
-  }, []);
-
-  useEffect(() => {
-    const fetchServiceTypes = async () => {
-      try {
-        const types = await serviceService.getAllServiceTypes();
-        setServiceTypes(types);
-      } catch (error) {
-        console.error("Error fetching service types:", error);
-      }
-    };
-    fetchServiceTypes();
+    fetchData();
   }, []);
 
   const handleInputChange = (field: keyof ServiceFormData, value: any) => {
+    if (field === "name") {
+      value = value.trim();
+    }
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -358,12 +374,15 @@ function ServiceForm({
       setImagePreview(null);
       setSelectedFile(null);
       setFormData((prev) => ({ ...prev, image: undefined }));
+      if (!isEditing) {
+        setErrors((prev) => ({ ...prev, image: "Service image is required" }));
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validationErrors = validateForm(formData);
+    const validationErrors = validateForm(formData, !isEditing, services);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -476,7 +495,8 @@ function ServiceForm({
                 value={formData.price}
                 onChange={(e) => handleInputChange("price", e.target.value)}
                 placeholder="0.00"
-                min="0"
+                min="50"
+                max="5000"
                 step="0.01"
                 className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.price ? "border-destructive" : ""}`}
               />
@@ -515,7 +535,9 @@ function ServiceForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="image" className="text-gray-700 dark:text-gray-300">Service Image</Label>
+            <Label htmlFor="image" className="text-gray-700 dark:text-gray-300">
+              Service Image {!isEditing && "*"}
+            </Label>
             <Input
               id="image"
               type="file"
@@ -538,6 +560,9 @@ function ServiceForm({
                     setImagePreview(null);
                     setSelectedFile(null);
                     setFormData((prev) => ({ ...prev, image: undefined }));
+                    if (!isEditing) {
+                      setErrors((prev) => ({ ...prev, image: "Service image is required" }));
+                    }
                   }}
                   className="text-destructive hover:text-destructive"
                 >
@@ -667,7 +692,7 @@ export default function Services() {
       }
 
       const serviceData: CreateServiceData = {
-        name: data.name,
+        name: data.name.trim(),
         description: data.description,
         serviceTypeId: data.serviceTypeId,
         petTypeIds: data.petTypeIds,
@@ -707,7 +732,7 @@ export default function Services() {
       }
 
       const updateData: UpdateServiceData = {
-        name: data.name,
+        name: data.name.trim(),
         description: data.description,
         serviceTypeId: data.serviceTypeId,
         petTypeIds: data.petTypeIds,
@@ -853,6 +878,7 @@ export default function Services() {
                 : undefined
             }
             isEditing={!!editingService}
+            services={showAddForm ? services : undefined}
           />
         )}
 
@@ -865,7 +891,7 @@ export default function Services() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     placeholder="Search by name or description..."
-                    value={searchTerm}
+                    value={ searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />

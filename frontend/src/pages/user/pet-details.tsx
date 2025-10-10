@@ -1,13 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/Badge"
 import { ModernSidebar } from "@/components/user/App-sidebar"
 import { PetCard } from "@/components/user/Pet-card"
 import type { Pet } from "@/types/pet.type"
-import { Plus, Search, Filter, Heart, Users, Loader2, Menu, X } from "lucide-react"
+import { Plus, Search, Heart, Loader2, Menu,  } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
@@ -16,6 +16,7 @@ import { userService } from "@/services/user/user.service"
 import type { PetType } from "@/types/pet.type"
 import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import { useMobile } from "@/hooks/chat/use-mobile"
+import { Pagination } from "@/components/ui/Pagination"
 
 export default function PetsPage() {
   const [searchTerm, setSearchTerm] = React.useState("")
@@ -25,6 +26,8 @@ export default function PetsPage() {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [pageSize, setPageSize] = React.useState(6)
   const navigate = useNavigate()
   const isMobile = useMobile()
 
@@ -60,7 +63,6 @@ export default function PetsPage() {
     fetchData()
   }, [userId])
 
-  // Close sidebar when screen size changes to desktop
   React.useEffect(() => {
     if (!isMobile) {
       setSidebarOpen(false)
@@ -88,6 +90,12 @@ export default function PetsPage() {
     })
   }, [searchTerm, selectedFilter, pets, petTypes])
 
+  const paginatedPets = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    const end = start + pageSize
+    return filteredPets.slice(start, end)
+  }, [filteredPets, currentPage, pageSize])
+
   const petStats = React.useMemo(() => {
     const total = pets.length
     const dogs = pets.filter(pet => {
@@ -112,26 +120,18 @@ export default function PetsPage() {
     setSidebarOpen(false)
   }
 
-  const handleQuickAction = (action: string) => {
-    switch (action) {
-      case 'add':
-        navigate("/add-pets")
-        break
-      case 'health':
-        navigate("/health-records")
-        break
-      case 'training':
-        navigate("/training-sessions")
-        break
-      case 'export':
-        break
-      default:
-        break
-    }
-  }
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size)
+    setCurrentPage(1)
   }
 
   if (loading) {
@@ -194,10 +194,8 @@ export default function PetsPage() {
       <Header />
       
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Desktop Sidebar */}
         {!isMobile && <ModernSidebar />}
         
-        {/* Mobile Sidebar Overlay */}
         {isMobile && sidebarOpen && (
           <>
             <div 
@@ -210,9 +208,7 @@ export default function PetsPage() {
           </>
         )}
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden w-full">
-          {/* Page Header */}
           <header className="flex h-14 sm:h-16 shrink-0 items-center gap-2 sm:gap-4 border-b border-gray-200 dark:border-gray-800 px-3 sm:px-4 lg:px-6 bg-white dark:bg-black w-full">
             <div className="flex items-center justify-between w-full gap-2">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -244,10 +240,8 @@ export default function PetsPage() {
             </div>
           </header>
 
-          {/* Scrollable Content */}
           <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
             <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-4 lg:p-6">
-              {/* Stats Overview */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
                 {[
                   { label: "Total Pets", value: petStats.total },
@@ -273,7 +267,6 @@ export default function PetsPage() {
                 ))}
               </div>
 
-              {/* Search and Filter */}
               <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
                 <CardContent className="p-3 sm:p-6">
                   <div className="flex flex-col gap-3 sm:gap-4">
@@ -307,10 +300,9 @@ export default function PetsPage() {
                 </CardContent>
               </Card>
 
-              {/* Pets Grid */}
-              {filteredPets.length > 0 ? (
+              {paginatedPets.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-                  {filteredPets.map((pet) => (
+                  {paginatedPets.map((pet) => (
                     <PetCard 
                       key={pet._id} 
                       pet={{ 
@@ -352,37 +344,16 @@ export default function PetsPage() {
                 </Card>
               )}
 
-              {/* Quick Actions */}
-              {filteredPets.length > 0 && (
-                <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800 shadow-sm">
-                  <CardHeader className="p-3 sm:p-6">
-                    <CardTitle className="text-base sm:text-lg text-gray-900 dark:text-white font-bold">
-                      Quick Actions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-6 pt-0">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-                      {[
-                        { icon: Plus, label: "Add New Pet", action: "add" },
-                        { icon: Heart, label: "Health Records", action: "health" },
-                        { icon: Users, label: "Training Sessions", action: "training" },
-                        { icon: Filter, label: "Export Data", action: "export" }
-                      ].map((item) => (
-                        <Button
-                          key={item.action}
-                          variant="outline"
-                          onClick={() => handleQuickAction(item.action)}
-                          size={isMobile ? "sm" : "default"}
-                          className="justify-start border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 bg-transparent"
-                        >
-                          <item.icon className="h-4 w-4 mr-2" />
-                          {item.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                <Pagination
+                  current={currentPage}
+                  total={filteredPets.length}
+                  pageSize={pageSize}
+                  onChange={handlePageChange}
+                  showSizeChanger
+                  pageSizeOptions={[6, 12, 18, 24]}
+                  onPageSizeChange={handlePageSizeChange}></Pagination>
+
+              
             </div>
           </main>
         </div>
