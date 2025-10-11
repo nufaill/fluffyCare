@@ -972,31 +972,45 @@ export default function AppointmentsPage() {
             setReviewComment("")
           }}
         >
-          <DialogContent className="sm:max-w-[500px] max-w-full h-[90vh] sm:h-auto border-0 bg-white shadow-2xl rounded-2xl sm:rounded-2xl mx-2">
-            <DialogHeader className="pb-4 sm:pb-6">
-              <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900 text-center">Add Review</DialogTitle>
+          <DialogContent className="w-[95vw] sm:w-[500px] max-w-full h-auto max-h-[90vh] overflow-y-auto border-0 bg-white shadow-2xl rounded-2xl p-4 sm:p-6">
+            <DialogHeader className="pb-4">
+              <DialogTitle className="text-lg sm:text-2xl font-bold text-gray-900 text-center">
+                Add Review
+              </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
-              <div className="p-3 sm:p-4 bg-blue-50 rounded-xl border border-blue-200">
-                <p className="text-blue-800 font-medium text-sm sm:text-base">Rate your experience for this appointment:</p>
+
+            <div className="space-y-4">
+              <div className="p-3 sm:p-4 bg-blue-50 rounded-xl border border-blue-200 text-center">
+                <p className="text-blue-800 font-medium text-sm sm:text-base">
+                  Rate your experience for this appointment:
+                </p>
               </div>
-              <div className="flex justify-center gap-1 sm:gap-2">
+
+              {/* Rating stars */}
+              <div className="flex justify-center gap-2 sm:gap-3">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
-                    className={`w-6 h-6 sm:w-8 sm:h-8 cursor-pointer ${star <= reviewRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+                    className={`w-6 h-6 sm:w-8 sm:h-8 cursor-pointer ${star <= reviewRating
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-300"
+                      }`}
                     onClick={() => setReviewRating(star)}
                   />
                 ))}
               </div>
+
+              {/* Suggested comments */}
               <div className="space-y-2">
-                <p className="text-xs sm:text-sm font-medium text-gray-900">Suggested Comments:</p>
-                <div className="flex flex-wrap gap-2 justify-center">
+                <p className="text-xs sm:text-sm font-medium text-gray-900">
+                  Suggested Comments:
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
                   {suggestedMessages.map((message, index) => (
                     <Button
                       key={index}
                       variant="outline"
-                      className="text-xs sm:text-sm border-gray-200 hover:bg-gray-50 px-3 py-1.5 flex-1 min-w-[140px] max-w-xs"
+                      className="text-xs sm:text-sm border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg w-auto min-w-[130px] sm:min-w-[150px] text-center"
                       onClick={() => setReviewComment(message)}
                     >
                       {message}
@@ -1004,30 +1018,37 @@ export default function AppointmentsPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Textarea */}
               <Textarea
                 placeholder="Enter your review comment here..."
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                className="border-2 border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white transition-all duration-300 rounded-xl min-h-[80px] sm:min-h-[100px] text-sm"
+                className="border-2 border-gray-200 bg-gray-50 text-gray-900 focus:border-blue-500 focus:bg-white transition-all duration-300 rounded-xl min-h-[100px] text-sm w-full"
               />
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+
+              {/* Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-2.5 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-0 text-sm"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-2.5 sm:py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-0 text-sm"
                   onClick={() => {
-                    const appointment = appointments.find(apt => apt._id === showReviewDialog)
+                    const appointment = appointments.find(
+                      (apt) => apt._id === showReviewDialog
+                    );
                     if (appointment) {
-                      handleSubmitReview(showReviewDialog, appointment.shopId._id)
+                      handleSubmitReview(showReviewDialog, appointment.shopId._id);
                     }
                   }}
                   disabled={reviewRating === 0}
                 >
-                  <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                  <Star className="w-4 h-4 mr-2 flex-shrink-0" />
                   Submit Review
                 </Button>
+
                 <DialogClose asChild>
                   <Button
                     variant="outline"
-                    className="flex-1 border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-bold py-2.5 sm:py-3 rounded-xl transition-all duration-300 text-sm"
+                    className="flex-1 border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-semibold py-2.5 sm:py-3 rounded-xl transition-all duration-300 text-sm"
                   >
                     Cancel
                   </Button>
