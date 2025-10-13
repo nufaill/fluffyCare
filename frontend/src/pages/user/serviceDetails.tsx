@@ -1,6 +1,6 @@
 import Useraxios from "@/api/user.axios"
 import { useParams, useNavigate } from "react-router-dom"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
 import { Button } from "@/components/ui/button"
@@ -42,6 +42,8 @@ import { useSelector } from "react-redux"
 import { chatService } from "@/services/chat/chatService"
 import { toast } from "@/hooks/use-toast"
 import { AxiosError } from "axios"
+import L from "leaflet"
+import "leaflet/dist/leaflet.css"
 
 // Define the Review interface based on IReview
 interface Review {
@@ -138,6 +140,8 @@ export const ServiceDetails = () => {
   const [editReviewComment, setEditReviewComment] = useState<string>("")
   const user = useSelector((state: RootState) => state.user.userDatas)
   const userId = user?._id || user?.id || ""
+  const mapRef = useRef<L.Map | null>(null)
+  const mapContainerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -227,6 +231,40 @@ export const ServiceDetails = () => {
 
     fetchData()
   }, [id])
+
+  // Initialize Leaflet map
+  useEffect(() => {
+    if (!service?.shopId?.location?.coordinates || !mapContainerRef.current || loading) {
+      return
+    }
+
+    // Prevent reinitializing the map if it already exists
+    if (mapRef.current) {
+      mapRef.current.remove()
+    }
+
+    const [lng, lat] = service.shopId.location.coordinates
+    mapRef.current = L.map(mapContainerRef.current).setView([lat, lng], 15)
+
+    // Add OpenStreetMap tiles
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(mapRef.current)
+
+    // Add marker
+    L.marker([lat, lng])
+      .addTo(mapRef.current)
+      .bindPopup(`<b>${service.shopId.name}</b><br>${service.shopId.streetAddress}, ${service.shopId.city}`)
+      .openPopup()
+
+    // Cleanup on component unmount or when coordinates change
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+    }
+  }, [service, loading])
 
   const handleChatWithShop = async () => {
     if (!userId) {
@@ -721,23 +759,33 @@ export const ServiceDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Location Map Placeholder */}
-            {/* <Card className="border-2 border-black dark:border-white bg-white dark:bg-black shadow-xl">
+            {/* Location Map */}
+            <Card className="border-2 border-black dark:border-white bg-white dark:bg-black shadow-xl">
               <CardContent className="p-6">
                 <h3 className="font-bold text-xl text-black dark:text-white font-mono mb-4">Location</h3>
-                <div className="bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl h-48 flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-400 font-mono font-semibold">
-                      Interactive map would show here
-                    </p>
-                    {service.shopId?.city && (
-                      <p className="text-gray-500 dark:text-gray-500 font-mono mt-2">{service.shopId.city}</p>
-                    )}
+                {service.shopId?.location?.coordinates ? (
+                  <div
+                    ref={mapContainerRef}
+                    id="shop-location-map"
+                    className="w-full h-48 rounded-xl border-2 border-gray-300 dark:border-gray-600"
+                  ></div>
+                ) : (
+                  <div className="bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl h-48 flex items-center justify-center">
+                    <div className="text-center">
+                      <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600 dark:text-gray-400 font-mono font-semibold">
+                        No location data available
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
+                {service.shopId?.city && (
+                  <p className="text-gray-600 dark:text-gray-400 font-mono mt-3 text-center">
+                    {service.shopId.streetAddress}, {service.shopId.city}
+                  </p>
+                )}
               </CardContent>
-            </Card> */}
+            </Card>
           </div>
         </div>
       </main>
