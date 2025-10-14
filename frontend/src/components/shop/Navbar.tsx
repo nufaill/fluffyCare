@@ -159,9 +159,6 @@ export function Navbar({
               >
                 👤 View Profile
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs sm:text-sm py-1.5">
-                ⚙️ Account Settings
-              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setIsBillingOpen(true)}
                 className="cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs sm:text-sm py-1.5"

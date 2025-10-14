@@ -80,12 +80,6 @@ const Navbar: React.FC<NavbarProps> = ({
           {/* Icons */}
           <div className="hidden sm:flex items-center space-x-2">
             <button className="p-2 text-gray-400 hover:text-gray-600">
-              <MessageSquare className="h-5 w-5" />
-            </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600">
-              <ShoppingCart className="h-5 w-5" />
-            </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600">
               <Bell className="h-5 w-5" />
             </button>
           </div>
@@ -97,7 +91,7 @@ const Navbar: React.FC<NavbarProps> = ({
               className="flex items-center space-x-2 p-1 md:p-2 rounded-lg hover:bg-gray-50"
             >
               <div className="hidden md:block text-sm font-medium text-gray-900">
-                Hello, {userName}
+               {userName}
               </div>
               <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
                 {userAvatar ? (
@@ -113,12 +107,6 @@ const Navbar: React.FC<NavbarProps> = ({
 
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
-                <button
-                  onClick={() => navigate("/admin/profile")}
-                  className="block w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
-                >
-                  Profile
-                </button>
                 <button
                   onClick={handleLogout}
                   className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"

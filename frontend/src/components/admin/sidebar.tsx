@@ -1,6 +1,8 @@
 import type React from "react"
 import { LayoutDashboard, Calendar, Repeat, Store, Star, Shield, Users, LogOut, PawPrint, Scissors, Wallet } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
+import logo from "@/assets/user/logo.png"
+
 
 interface SidebarProps {
   activeItem?: string
@@ -46,23 +48,25 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick, onLogout, is
     <>
       {/* Backdrop for mobile */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
           onClick={onClose}
         />
       )}
-      <div 
-        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:fixed md:translate-x-0 md:w-64`}
+      <div
+        className={`fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          } md:fixed md:translate-x-0 md:w-64`}
       >
         {/* Logo Section */}
         <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-black to-gray-800 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">🐾</span>
+          <div className="flex-shrink-0 p-4 sm:p-6 border-b border-sidebar-border">
+            <div className="flex justify-end items-center w-full">
+              <img
+                src={logo || "/placeholder.svg?height=44&width=57"}
+                alt="logo"
+                className="max-w-57 max-h-44 object-contain"
+              />
             </div>
-            <span className="text-xl font-semibold text-gray-900 tracking-tight">FluffyCare</span>
           </div>
         </div>
 
@@ -77,9 +81,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick, onLogout, is
                 <li key={item.id}>
                   <button
                     onClick={() => handleItemClick(item.id, item.path)}
-                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
-                      isActive ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-500' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
+                    className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${isActive ? 'bg-indigo-50 text-indigo-700 border-l-4 border-indigo-500' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      }`}
                   >
                     <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-indigo-500' : 'text-gray-500'}`} />
                     <span>{item.label}</span>

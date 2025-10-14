@@ -2,7 +2,6 @@ import {
   Calendar,
   Heart,
   WalletIcon,
-  Settings,
   User,
   MessageCircle,
 } from "lucide-react"
@@ -18,11 +17,10 @@ interface SidebarProps {
 
 const menuItems = [
   { title: "Profile", icon: User, href: "/profile", badge: null },
-  { title: "My Pets", icon: Heart, href: "/pets", badge: "3" },
-  { title: "Bookings", icon: Calendar, href: "/appointments", badge: "2" },
-  { title: "Messages", icon: MessageCircle, href: "/messages", badge: "5" },
+  { title: "My Pets", icon: Heart, href: "/pets", badge: null },
+  { title: "Bookings", icon: Calendar, href: "/appointments", badge: null },
+  { title: "Messages", icon: MessageCircle, href: "/messages", badge: null },
   { title: "wallet", icon: WalletIcon, href: "/wallet/", badge: null },
-  { title: "Settings", icon: Settings, href: "/settings", badge: null },
 ]
 
 export function ModernSidebar({ className, isCollapsed = false }: SidebarProps) {
@@ -84,29 +82,6 @@ export function ModernSidebar({ className, isCollapsed = false }: SidebarProps) 
           })}
         </div>
       </nav>
-
-      {/* Bottom Section */}
-      {!isCollapsed && (
-        <div className="p-4 border-t border-gray-300 dark:border-gray-700">
-          <div className="rounded-lg bg-gray-100 dark:bg-gray-800 p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-gray-800 to-black dark:from-gray-200 dark:to-white flex items-center justify-center">
-                <Heart className="h-4 w-4 text-white dark:text-black" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Premium Plan</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Unlimited pets</p>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              className="w-full bg-gradient-to-r from-gray-800 to-black dark:from-gray-200 dark:to-white hover:from-gray-700 hover:to-gray-900 dark:hover:from-gray-300 dark:hover:to-gray-100 text-white dark:text-black"
-            >
-              Upgrade
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

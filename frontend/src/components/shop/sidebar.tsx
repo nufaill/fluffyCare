@@ -8,7 +8,6 @@ import {
   Calendar,
   MessageCircle,
   Clock,
-  Settings,
   LogOut,
   Dog,
   ChevronRight,
@@ -19,6 +18,8 @@ import { Badge } from "@/components/ui/Badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useNavigate, useLocation } from "react-router-dom"
+import logo from "@/assets/user/logo.png"
+
 
 export interface SidebarItem {
   title: string
@@ -48,14 +49,13 @@ const defaultMenuItems: SidebarItem[] = [
     title: "Appointments",
     icon: Calendar,
     url: "/shop/appointments",
-    badge: "12",
+    badge: "",
   },
   {
     title: "Messages",
     icon: MessageCircle,
     url: "/shop/messages",
-    badge: "5",
-    isNew: true,
+    badge: "",
   },
   {
     title: "Pet Services",
@@ -80,7 +80,6 @@ const defaultMenuItems: SidebarItem[] = [
 ]
 
 const defaultFooterItems: SidebarItem[] = [
-  { title: "Settings", icon: Settings, url: "/settings" },
   { title: "Logout", icon: LogOut, url: "/logout" },
 ]
 
@@ -125,16 +124,15 @@ export function PetCareSidebar({
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header - Fixed */}
         <div className="flex-shrink-0 p-4 sm:p-6 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <div className="h-8 sm:h-10 w-8 sm:w-10 bg-primary rounded-xl flex items-center justify-center">
-              <Dog className="h-5 sm:h-6 w-5 sm:w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-sidebar-foreground">PetCare Pro</h2>
-              <p className="text-xs sm:text-sm text-sidebar-foreground/60">Management Hub</p>
-            </div>
+          <div className="flex justify-end items-center w-full">
+            <img
+              src={logo || "/placeholder.svg?height=44&width=57"}
+              alt="logo"
+              className="max-w-57 max-h-44 object-contain"
+            />
           </div>
         </div>
+
 
         {/* Stats Card - Fixed */}
         <div className="flex-shrink-0 p-3 sm:p-4">
@@ -171,8 +169,8 @@ export function PetCareSidebar({
                 <Button
                   variant={isActiveRoute(item.url) ? "default" : "ghost"}
                   className={`w-full justify-between h-11 sm:h-12 px-3 sm:px-4 text-sm sm:text-base ${isActiveRoute(item.url)
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground"
                     }`}
                   onClick={(e) => handleItemClick(item, e)}
                 >
@@ -212,8 +210,8 @@ export function PetCareSidebar({
                         key={subItem.title}
                         variant="ghost"
                         className={`w-full justify-between h-9 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm ${isActiveRoute(subItem.url)
-                            ? "text-sidebar-foreground font-semibold bg-sidebar-accent"
-                            : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                          ? "text-sidebar-foreground font-semibold bg-sidebar-accent"
+                          : "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                           }`}
                         onClick={() => handleSubItemClick(subItem)}
                       >
@@ -239,8 +237,8 @@ export function PetCareSidebar({
                 key={item.title}
                 variant="ghost"
                 className={`w-full justify-start h-9 sm:h-10 px-3 sm:px-4 text-sm sm:text-base ${isActiveRoute(item.url)
-                    ? "bg-primary text-primary-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   }`}
                 onClick={() => handleItemClick(item)}
               >

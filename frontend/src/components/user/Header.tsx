@@ -239,9 +239,11 @@ const Header = () => {
                     <Bell className="w-6 h-6" />
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                   </button>
-                  <button className="p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300">
-                    <MessageSquare className="w-6 h-6" />
-                  </button>
+                  <Link to="/messages">
+                    <button className="p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300">
+                      <MessageSquare className="w-6 h-6" />
+                    </button>
+                  </Link>
                 </div>
 
                 <Link
