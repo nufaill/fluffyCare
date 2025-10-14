@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/redux/store';
 import { extractId } from '@/utils/helpers/chatHelpers';
+import { cloudinaryUtils } from '@/utils/cloudinary/cloudinary';
 
 interface MessageBubbleProps {
   message: Message;
@@ -45,6 +46,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [isImageFullScreen, setIsImageFullScreen] = useState(false);
   const user = useSelector((state: RootState) => state.user.userDatas);
   const userId = user?.id || '';
   const messageId = extractId(message.id || message._id) || '';
@@ -87,6 +89,15 @@ export function MessageBubble({
     }
   };
 
+  const handleDownload = (url: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = message.mediaUrl?.split('/').pop() || 'downloaded_file';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const renderMessageContent = () => {
     switch (message.messageType) {
       case 'Text':
@@ -96,25 +107,38 @@ export function MessageBubble({
           <div className="space-y-2">
             <div className="relative rounded-lg overflow-hidden bg-muted max-w-xs">
               <img
-                src={message.mediaUrl || '/placeholder.svg?height=200&width=300&query=pet photo'}
+                src={message.mediaUrl ? cloudinaryUtils.getFullUrl(message.mediaUrl) : '/placeholder.svg?height=200&width=300&query=pet photo'}
                 alt="Shared image"
-                className="w-full h-auto"
+                className="w-full h-auto cursor-pointer"
+                onClick={() => setIsImageFullScreen(true)}
               />
+              {isImageFullScreen && message.mediaUrl && (
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+                  onClick={() => setIsImageFullScreen(false)}
+                >
+                  <img
+                    src={cloudinaryUtils.getFullUrl(message.mediaUrl)}
+                    alt="Full screen image"
+                    className="max-h-[90vh] max-w-[90vw]"
+                  />
+                </div>
+              )}
             </div>
-            {message.content && <p className="text-sm leading-relaxed">{message.content}</p>}
           </div>
         );
       case 'Video':
         return (
           <div className="space-y-2">
             <div className="relative rounded-lg overflow-hidden bg-muted max-w-xs">
-              <div className="aspect-video bg-muted flex items-center justify-center">
-                <Button variant="ghost" size="sm" className="rounded-full">
-                  <Play className="h-6 w-6" />
-                </Button>
-              </div>
+              <video
+                controls
+                src={message.mediaUrl ? cloudinaryUtils.getFullUrl(message.mediaUrl) : '/placeholder.mp4'}
+                className="w-full h-auto"
+              >
+                Your browser does not support the video tag.
+              </video>
             </div>
-            {message.content && <p className="text-sm leading-relaxed">{message.content}</p>}
           </div>
         );
       case 'Audio':
@@ -139,17 +163,22 @@ export function MessageBubble({
       case 'File':
         return (
           <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3 max-w-xs">
-            <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full h-10 w-10 p-0"
+              onClick={() => message.mediaUrl && handleDownload(cloudinaryUtils.getFullUrl(message.mediaUrl))}
+            >
               <Download className="h-5 w-5 text-primary" />
-            </div>
+            </Button>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{message.content || 'Document.pdf'}</p>
+              <p className="text-sm font-medium truncate">{message.mediaUrl?.split('/').pop() || 'Document.pdf'}</p>
               <p className="text-xs text-muted-foreground">2.4 MB</p>
             </div>
           </div>
         );
       default:
-        return <p className="text-sm">{message.content}</p>;
+        return <p className="text-sm">{message.mediaUrl}</p>;
     }
   };
 
@@ -165,7 +194,7 @@ export function MessageBubble({
       {showAvatar && !isOwn && (
         <Avatar className="h-8 w-8 mt-1">
           <AvatarImage src="/placeholder.svg" />
-          <AvatarFallback className="bg-primary/10 text-primary text-xs">U</AvatarFallback>
+          {/* <AvatarFallback className="bg-primary/10 text-primary text-xs"></AvatarFallback> */}
         </Avatar>
       )}
       {showAvatar && isOwn && <div className="w-8" />}

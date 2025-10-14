@@ -79,16 +79,16 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
     };
   }, [socketConnected, chatId, currentUserId, currentRole, isValidChat]);
 
-  const uploadFile = async (file: File): Promise<string> => {
+  const uploadFile = async (file: File, type: 'image' | 'video' | 'audio' | 'document'): Promise<string> => {
     setIsUploading(true);
     try {
-      if (typeof cloudinaryUtils?.uploadImage === "function") {
-        return await cloudinaryUtils.uploadImage(file);
+      if (typeof cloudinaryUtils?.uploadFile === "function") {
+        return await cloudinaryUtils.uploadFile(file, type);
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
       return `mock-url-${file.name}`;
     } catch {
-      throw new Error("Failed to upload file.");
+      throw new Error(`Failed to upload ${type}.`);
     } finally {
       setIsUploading(false);
     }
@@ -120,8 +120,9 @@ export function ChatWindow({ chat, onOpenChatList, isMobile, userType, userId }:
         let mediaUrl = attachment.file.name;
 
         try {
-          if (["Image", "Video", "Audio"].includes(messageType)) {
-            mediaUrl = await uploadFile(attachment.file);
+          if (["Image", "Video", "Audio", "File"].includes(messageType)) {
+            const fileType: 'image' | 'video' | 'audio' | 'document' = messageType === "File" ? "document" : messageType.toLowerCase() as any;
+            mediaUrl = await uploadFile(attachment.file, fileType);
           }
           const attachmentMessage = await sendMessage(senderRole, messageType, "", mediaUrl);
           if (attachmentMessage) {
