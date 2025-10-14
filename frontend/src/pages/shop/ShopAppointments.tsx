@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useMemo } from "react"
 import {
   Calendar,
@@ -141,6 +139,7 @@ const getStatusIcon = (status: string) => {
 
 export default function ShopAppointmentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [searchInput, setSearchInput] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [sortBy, setSortBy] = useState("date-desc")
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -159,6 +158,15 @@ export default function ShopAppointmentsPage() {
   const { toast } = useToast()
   const shop = useSelector((state: RootState) => state.shop.shopData)
   const shopId = shop?._id || shop?.id || ""
+
+  // Debounce search input
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      setSearchTerm(searchInput)
+    }, 300)
+
+    return () => clearTimeout(debounceTimer)
+  }, [searchInput])
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -645,8 +653,8 @@ export default function ShopAppointmentsPage() {
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-emerald-500 transition-colors duration-300" />
                   <Input
                     placeholder="Search by pet, service, staff, client or booking number..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
                     className="pl-12 h-12 border-2 border-gray-200 bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 rounded-xl text-gray-900 placeholder-gray-500 transition-all duration-300"
                   />
                 </div>

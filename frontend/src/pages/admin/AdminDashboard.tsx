@@ -52,6 +52,7 @@ import {
   Bar,
 } from "recharts"
 import type { RootState } from "@/redux/store"
+import { Pagination } from "@/components/ui/Pagination"
 
 const AdminDashboard: React.FC = () => {
   const dispatch = useDispatch()
@@ -67,6 +68,10 @@ const AdminDashboard: React.FC = () => {
   const [isLoadingWallet, setIsLoadingWallet] = useState(true)
   const admin = useSelector((state: RootState) => state.admin.adminDatas)
   const [activeMenuItem, setActiveMenuItem] = useState("Dashboard")
+  const [ratingsPage, setRatingsPage] = useState(1)
+  const [shopWisePage, setShopWisePage] = useState(1)
+  const ratingsPageSize = 6
+  const shopWisePageSize = 10
 
   const {
     shopsOverview,
@@ -77,7 +82,7 @@ const AdminDashboard: React.FC = () => {
     isLoadingAnalytics,
     analyticsError,
     shopRatings,
-    setRatingsPage,
+    setRatingsPage: setDataFetchingRatingsPage,
     loading,
     error,
   } = useDataFetching()
@@ -558,17 +563,34 @@ const AdminDashboard: React.FC = () => {
               setShowServiceTypeGraph={setShowServiceTypeGraph}
             />
           ) : (
-            <CustomerDemographicsChart customerAnalytics={customerAnalytics} revenueChartData={[]} shopsChartData={[]} customerChartData={[]} bookingsChartData={[]} serviceTypePieData={[]} showCustomersGraph={false} setShowCustomersGraph={function (value: boolean): void {
+            <CustomerDemographicsChart
+              customerAnalytics={customerAnalytics}
+              revenueChartData={[]}
+              shopsChartData={[]}
+              customerChartData={[]}
+              bookingsChartData={[]}
+              serviceTypePieData={[]}
+              showCustomersGraph={false}
+              setShowCustomersGraph={function (value: boolean): void {
                 throw new Error("Function not implemented.")
-              } } showRevenueGraph={false} setShowRevenueGraph={function (value: boolean): void {
+              }}
+              showRevenueGraph={false}
+              setShowRevenueGraph={function (value: boolean): void {
                 throw new Error("Function not implemented.")
-              } } showShopsGraph={false} setShowShopsGraph={function (value: boolean): void {
+              }}
+              showShopsGraph={false}
+              setShowShopsGraph={function (value: boolean): void {
                 throw new Error("Function not implemented.")
-              } } showBookingsGraph={false} setShowBookingsGraph={function (value: boolean): void {
+              }}
+              showBookingsGraph={false}
+              setShowBookingsGraph={function (value: boolean): void {
                 throw new Error("Function not implemented.")
-              } } showServiceTypeGraph={false} setShowServiceTypeGraph={function (value: boolean): void {
+              }}
+              showServiceTypeGraph={false}
+              setShowServiceTypeGraph={function (value: boolean): void {
                 throw new Error("Function not implemented.")
-              } } />
+              }}
+            />
           )
         )}
       </div>
@@ -668,7 +690,7 @@ const AdminDashboard: React.FC = () => {
                       { name: "Completed", value: analytics?.overall.completed || 0, color: "#10B981" },
                       { name: "Pending", value: analytics?.overall.pending || 0, color: "#F59E0B" },
                       { name: "Cancelled", value: analytics?.overall.cancelled || 0, color: "#EF4444" },
-                    ].filter(item => item.value > 0)}
+                    ].filter((item) => item.value > 0)}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -676,12 +698,15 @@ const AdminDashboard: React.FC = () => {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {[{ name: "Completed", value: analytics?.overall.completed || 0, color: "#10B981" },
+                    {[
+                      { name: "Completed", value: analytics?.overall.completed || 0, color: "#10B981" },
                       { name: "Pending", value: analytics?.overall.pending || 0, color: "#F59E0B" },
                       { name: "Cancelled", value: analytics?.overall.cancelled || 0, color: "#EF4444" },
-                    ].filter(item => item.value > 0).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                    ]
+                      .filter((item) => item.value > 0)
+                      .map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
                   </Pie>
                   <Tooltip />
                   <Legend />
@@ -737,6 +762,18 @@ const AdminDashboard: React.FC = () => {
   }
 
   const renderDashboardContent = () => {
+    const paginatedShopRatings = shopRatings?.shopRatings.slice(
+      (ratingsPage - 1) * ratingsPageSize,
+      ratingsPage * ratingsPageSize
+    )
+    const totalRatings = shopRatings?.shopRatings.length || 0
+
+    const paginatedShopWise = analytics?.shopWise.slice(
+      (shopWisePage - 1) * shopWisePageSize,
+      shopWisePage * shopWisePageSize
+    )
+    const totalShopWise = analytics?.shopWise.length || 0
+
     return (
       <>
         {renderRevenueSection()}
@@ -770,8 +807,8 @@ const AdminDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {analytics?.shopWise.length ? (
-                analytics.shopWise.map((shop) => (
+              {paginatedShopWise?.length ? (
+                paginatedShopWise.map((shop) => (
                   <tr key={shop.shopId} className="border-t hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-900">{shop.shopName}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{shop.total}</td>
@@ -791,6 +828,15 @@ const AdminDashboard: React.FC = () => {
               )}
             </tbody>
           </table>
+          <Pagination
+            current={shopWisePage}
+            total={totalShopWise}
+            pageSize={shopWisePageSize}
+            onChange={(page) => setShopWisePage(page)}
+            showTotal={(total, range) => `Showing ${range[0]} to ${range[1]} of ${total} entries`}
+            showSizeChanger={false}
+            showQuickJumper={false}
+          />
         </div>
 
         <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
@@ -810,14 +856,20 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div className="flex space-x-2">
                 <button
-                  onClick={() => setRatingsPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() => {
+                    setRatingsPage((prev) => Math.max(prev - 1, 1))
+                    setDataFetchingRatingsPage((prev) => Math.max(prev - 1, 1))
+                  }}
                   disabled={!shopRatings.pagination.hasPrevious}
                   className="px-4 py-2 bg-gray-50 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                 >
                   Previous
                 </button>
                 <button
-                  onClick={() => setRatingsPage((prev) => prev + 1)}
+                  onClick={() => {
+                    setRatingsPage((prev) => prev + 1)
+                    setDataFetchingRatingsPage((prev) => prev + 1)
+                  }}
                   disabled={!shopRatings.pagination.hasNext}
                   className="px-4 py-2 bg-gray-50 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                 >
@@ -828,7 +880,7 @@ const AdminDashboard: React.FC = () => {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {shopRatings?.shopRatings.map((shop) => {
+            {paginatedShopRatings?.map((shop) => {
               const ratingBreakdownData = [
                 { name: "5 Stars", value: shop.ratingBreakdown[5], color: "#10B981" },
                 { name: "4 Stars", value: shop.ratingBreakdown[4], color: "#3B82F6" },
@@ -893,6 +945,20 @@ const AdminDashboard: React.FC = () => {
               )
             })}
           </div>
+          {totalRatings > 0 && (
+            <Pagination
+              current={ratingsPage}
+              total={totalRatings}
+              pageSize={ratingsPageSize}
+              onChange={(page) => {
+                setRatingsPage(page)
+                setDataFetchingRatingsPage(page)
+              }}
+              showTotal={(total, range) => `Showing ${range[0]} to ${range[1]} of ${total} shops`}
+              showSizeChanger={false}
+              showQuickJumper={false}
+            />
+          )}
         </div>
       </>
     )

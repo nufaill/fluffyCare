@@ -8,7 +8,6 @@ import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import { useState, useEffect } from "react"
 import Useraxios from "@/api/user.axios"
 
-// Define the Review interface (same as in serviceDetails.tsx)
 interface Review {
   _id: string;
   shopId: string;
@@ -24,10 +23,12 @@ interface Review {
 }
 
 interface ServiceCardProps {
-  service: PetService
+  service: PetService & {
+    averageRating?: number;
+    totalReviews?: number;
+  }
 }
 
-// Pet type icon mapping
 const getPetIcon = (petType: string) => {
   const type = petType.toLowerCase()
   switch (type) {
@@ -57,7 +58,6 @@ const getPetIcon = (petType: string) => {
   }
 }
 
-// Pet type color mapping
 const getPetColor = (petType: string) => {
   const type = petType.toLowerCase()
   switch (type) {
@@ -89,15 +89,19 @@ const getPetColor = (petType: string) => {
 
 export const ServiceCard = ({ service }: ServiceCardProps) => {
   const navigate = useNavigate()
-  const [ratingSummary, setRatingSummary] = useState<{ averageRating: number } | null>(null)
-  const [reviews, setReviews] = useState<Review[]>([])
-  const [summaryLoading, setSummaryLoading] = useState(true)
-  const [reviewsLoading, setReviewsLoading] = useState(true)
+  const [ratingSummary, setRatingSummary] = useState<{ averageRating: number; totalReviews: number } | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryError, setSummaryError] = useState<string | null>(null)
-  const [reviewsError, setReviewsError] = useState<string | null>(null)
 
-  // Fetch rating summary
   useEffect(() => {
+    if (service.averageRating !== undefined && service.totalReviews !== undefined) {
+      setRatingSummary({
+        averageRating: service.averageRating,
+        totalReviews: service.totalReviews,
+      });
+      return;
+    }
+
     const fetchRatingSummary = async () => {
       if (!service?.shopId?._id) return
       try {
@@ -107,7 +111,10 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
         if (response.status !== 200) {
           throw new Error(`Failed to fetch rating summary: ${response.statusText}`)
         }
-        setRatingSummary(response.data.data)
+        setRatingSummary({
+          averageRating: response.data.data.averageRating || 0,
+          totalReviews: response.data.data.totalReviews || 0,
+        })
       } catch (err: any) {
         console.error("Rating Summary Fetch Error:", err)
         setSummaryError(err.response?.data?.message || err.message || "Failed to load rating summary")
@@ -119,48 +126,7 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
     if (service?.shopId?._id) {
       fetchRatingSummary()
     }
-  }, [service?.shopId?._id])
-
-  // Fetch reviews
-  useEffect(() => {
-    const fetchReviews = async () => {
-      if (!service?.shopId?._id) return
-      try {
-        setReviewsLoading(true)
-        setReviewsError(null)
-        const response = await Useraxios.get(`/shops/${service.shopId._id}/reviews?page=1&limit=10`)
-        if (response.status !== 200) {
-          throw new Error(`Failed to fetch reviews: ${response.statusText}`)
-        }
-        const reviewsData = response.data.data?.reviews || response.data.data || []
-        if (!Array.isArray(reviewsData)) {
-          console.error("Reviews data is not an array:", reviewsData)
-          throw new Error("Invalid reviews data format")
-        }
-        const reviewsWithUserDetails = reviewsData.map((review: any) => ({
-          ...review,
-          _id: review._id || review.id,
-          userId: typeof review.userId === "object" && review.userId !== null
-            ? {
-                _id: review.userId.id || review.userId._id,
-                fullName: review.userId.fullName || "Anonymous User",
-                profileImage: review.userId.profileImage || null,
-              }
-            : { _id: "", fullName: "Anonymous User", profileImage: null },
-        }))
-        setReviews(reviewsWithUserDetails)
-      } catch (err: any) {
-        console.error("Reviews Fetch Error:", err)
-        setReviewsError(err.response?.data?.message || err.message || "Failed to load reviews")
-      } finally {
-        setReviewsLoading(false)
-      }
-    }
-
-    if (service?.shopId?._id) {
-      fetchReviews()
-    }
-  }, [service?.shopId?._id])
+  }, [service?.shopId?._id, service.averageRating, service.totalReviews])
 
   const handleViewDetails = () => {
     navigate(`/services/${service._id}`)
@@ -240,11 +206,10 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
 
   const petTypes = formatPetTypes(service.petTypeIds)
   const rating = ratingSummary?.averageRating || 0
-  const reviewCount = reviews.length
+  const reviewCount = ratingSummary?.totalReviews || 0
 
   return (
     <Card className="group overflow-hidden bg-white dark:bg-black border-2 border-black dark:border-white hover:shadow-2xl hover:shadow-gray-400/30 transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02]">
-      {/* Image Section with Overlay */}
       <div className="relative overflow-hidden">
         <img
           src={getServiceImage()}
@@ -254,25 +219,21 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
             (e.target as HTMLImageElement).src = "/placeholder-service.jpg"
           }}
         />
-        {/* Price Badge */}
         <div className="absolute top-4 right-4">
           <div className="bg-black text-white dark:bg-white dark:text-black border-2 border-black dark:border-white font-mono font-semibold text-base md:text-lg px-2 py-0.5 shadow-sm rounded-full">
             ₹{getPrice()}
           </div>
         </div>
-        {/* Service Type Badge */}
         <div className="absolute top-4 left-4">
           <Badge className="bg-white dark:bg-black text-black dark:text-white border-2 border-black dark:border-white font-mono font-semibold text-sm px-3 py-1 shadow-sm rounded-full flex items-center">
             <Award className="w-3 h-3 mr-1" />
             {formatServiceType(service.serviceTypeId)}
           </Badge>
         </div>
-        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
 
       <CardContent className="p-6 space-y-4">
-        {/* Shop Info Section */}
         <div className="flex items-center gap-4">
           <div className="relative">
             <img
@@ -290,25 +251,23 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
             <h3 className="font-bold text-black dark:text-white font-mono text-lg">{getShopName()}</h3>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                {summaryLoading || reviewsLoading ? (
+                {summaryLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin text-black dark:text-white" />
-                ) : summaryError || reviewsError ? (
+                ) : summaryError ? (
                   <AlertCircle className="h-4 w-4 text-red-600" />
                 ) : (
                   renderStars(rating)
                 )}
               </div>
               <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
-                {summaryLoading || reviewsLoading ? "..." : summaryError || reviewsError ? "N/A" : rating.toFixed(1)} ({reviewCount})
+                {summaryLoading ? "..." : summaryError ? "N/A" : `${rating.toFixed(1)} (${reviewCount})`}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Service Name */}
         <h4 className="font-bold text-2xl text-black dark:text-white font-mono leading-tight">{getServiceName()}</h4>
 
-        {/* Location and Duration */}
         <div className="space-y-3">
           <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
             <div className="w-8 h-8 bg-black dark:bg-white rounded-full flex items-center justify-center">
@@ -324,7 +283,6 @@ export const ServiceCard = ({ service }: ServiceCardProps) => {
           </div>
         </div>
 
-        {/* Pet Types with Icons */}
         {petTypes.length > 0 && (
           <div>
             <h5 className="text-sm font-semibold text-black dark:text-white font-mono mb-2 flex items-center gap-2">
