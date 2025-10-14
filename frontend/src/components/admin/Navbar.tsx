@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Search, Bell, MessageSquare, ShoppingCart, ChevronDown, Menu, X } from "lucide-react"
+import { Search, Bell, ChevronDown, Menu, X } from "lucide-react"
 import { useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { logoutAdmin as logoutAdminAction } from "@/redux/slices/admin.slice"
