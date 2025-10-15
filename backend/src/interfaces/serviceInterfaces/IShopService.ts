@@ -1,8 +1,9 @@
-import { ShopResponseDTO, UpdateShopDTO } from '../../dto/shop.dto';
+import { string, number, boolean } from 'zod';
+import { IShopSubscription, ShopResponseDTO, SubscriptionHistoryEntry, UpdateShopDTO } from '../../dto/shop.dto';
 
 export interface IShopService {
   getShopById(shopId: string): Promise<ShopResponseDTO>;
-  getShopSubscription(shopId: string): Promise<string>;
+  getShopSubscription(shopId: string): Promise<{plan: string, subscription: IShopSubscription, history: SubscriptionHistoryEntry[]}>;
   updateShop(shopId: string, updateData: UpdateShopDTO): Promise<ShopResponseDTO>;
   getAllShops(page: number, limit: number): Promise<{ shops: ShopResponseDTO[], total: number, page: number, limit: number }>;
   updateShopStatus(shopId: string, isActive: boolean): Promise<ShopResponseDTO>;

@@ -11,14 +11,14 @@ interface SubscriptionPaginatedResult {
 }
 
 export class SubscriptionRepository implements ISubscriptionRepository {
-  private readonly subscriptionModel: Model<ISubscription>;
+  private readonly _subscriptionModel: Model<ISubscription>;
 
   constructor() {
-    this.subscriptionModel = SubscriptionModel;
+    this._subscriptionModel = SubscriptionModel;
   }
 
   async findByPlanName(plan: string): Promise<ISubscription | null> {
-    return await this.subscriptionModel.findOne({ plan }).exec();
+    return await this._subscriptionModel.findOne({ plan }).exec();
   }
 
   async createSubscription(subscriptionData: Partial<ISubscription>): Promise<ISubscription> {
@@ -27,12 +27,12 @@ export class SubscriptionRepository implements ISubscriptionRepository {
       isActive: subscriptionData.isActive !== undefined ? subscriptionData.isActive : true,
     };
 
-    const subscription = await this.subscriptionModel.create(subscriptionToCreate);
+    const subscription = await this._subscriptionModel.create(subscriptionToCreate);
     return subscription;
   }
 
   async updateSubscription(subscriptionId: Types.ObjectId, updateData: Partial<ISubscription>): Promise<ISubscription | null> {
-    const updatedSubscription = await this.subscriptionModel
+    const updatedSubscription = await this._subscriptionModel
       .findByIdAndUpdate(subscriptionId, { $set: updateData }, { new: true, runValidators: true })
       .exec();
 
@@ -47,13 +47,13 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     const query = filter || {};
 
     const [subscriptions, total] = await Promise.all([
-      this.subscriptionModel
+      this._subscriptionModel
         .find(query)
         .skip((page - 1) * limit)
         .limit(limit)
         .lean()
         .exec(),
-      this.subscriptionModel.countDocuments(query).exec(),
+      this._subscriptionModel.countDocuments(query).exec(),
     ]);
 
     return {

@@ -131,11 +131,11 @@ export class ShopController implements IShopController {
         return;
       }
 
-      const planName = await this._shopService.getShopSubscription(shopId);
+      const subscriptionInfo = await this._shopService.getShopSubscription(shopId);
 
       res.status(HTTP_STATUS.OK || 200).json({
         success: true,
-        data: { plan: planName },
+        data: subscriptionInfo,
         message: 'Shop subscription fetched successfully'
       });
     } catch (error) {

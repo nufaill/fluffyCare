@@ -1,3 +1,4 @@
+// shop.model.ts
 import mongoose, { Schema, model } from 'mongoose';
 import { ShopDocument } from '../types/Shop.types';
 
@@ -87,6 +88,15 @@ const shopSchema = new Schema<ShopDocument>(
       isActive: { type: Boolean, default: true },
       plan: { type: String, default: 'free' },
     },
+
+    subscriptionHistory: [
+      {
+        subscriptionId: { type: Schema.Types.ObjectId, ref: 'Subscription' },
+        plan: { type: String },
+        start: { type: Date },
+        end: { type: Date },
+      }
+    ],
 
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },

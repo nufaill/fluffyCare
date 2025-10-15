@@ -1,3 +1,4 @@
+// shop.dto.ts
 import { GeoLocation, ShopAvailability } from "types/Shop.types";
 
 export interface UpdateShopStatusDTO {
@@ -15,6 +16,13 @@ export interface IShopSubscription {
   subscriptionEnd: Date | null;
   isActive: boolean;
   plan?: string;
+}
+
+export interface SubscriptionHistoryEntry {
+  subscriptionId: object | string | null;
+  plan: string;
+  start: Date | null;
+  end: Date | null;
 }
 
 export interface UpdateShopDTO {
@@ -53,6 +61,7 @@ export interface ShopResponseDTO {
   isVerified: Verification;
   shopAvailability?: ShopAvailability;
   subscription?: IShopSubscription;
+  subscriptionHistory?: SubscriptionHistoryEntry[];
 }
 
 export interface ShopAvailabilityDTO extends ShopAvailability {

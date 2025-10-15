@@ -1,5 +1,5 @@
 import IShopRepository from '../../interfaces/repositoryInterfaces/IShopRepository';
-import { UpdateShopDTO, ShopResponseDTO } from '../../dto/shop.dto';
+import { UpdateShopDTO, ShopResponseDTO, IShopSubscription, SubscriptionHistoryEntry } from '../../dto/shop.dto';
 import { CustomError } from '../../util/CustomerError';
 import { HTTP_STATUS } from '../../shared/constant';
 import { IShopService } from '../../interfaces/serviceInterfaces/IShopService';
@@ -99,13 +99,24 @@ export class ShopService implements IShopService {
     return updatedShop;
   }
 
-  async getShopSubscription(shopId: string): Promise<string> {
+  async getShopSubscription(shopId: string): Promise<{ plan: string, subscription: IShopSubscription, history: SubscriptionHistoryEntry[] }> {
     this.validateShopId(shopId);
     const shop = await this._shopRepository.findById(shopId);
     if (!shop) {
       throw new CustomError('Shop not found', HTTP_STATUS.NOT_FOUND);
     }
-    return shop.subscription?.plan || 'free';
+    const defaultFreeSubscription: IShopSubscription = {
+      subscriptionId: null,
+      subscriptionStart: null,
+      subscriptionEnd: null,
+      isActive: true,
+      plan: 'free'
+    };
+    return {
+      plan: shop.subscription?.plan || 'free',
+      subscription: shop.subscription || defaultFreeSubscription,
+      history: shop.subscriptionHistory || []
+    };
   }
 
   async updateShopSubscription(

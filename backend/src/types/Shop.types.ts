@@ -1,3 +1,4 @@
+// Shop.types.ts
 import { Document, Types } from 'mongoose';
 
 // GeoJSON location type
@@ -11,13 +12,19 @@ export type Verification = {
   reason: string | null;
 };
 
-
 export interface IShopSubscription {
   subscriptionId: Types.ObjectId | null;
   subscriptionStart: Date | null;
   subscriptionEnd: Date | null;
   isActive: boolean;
   plan: string;
+}
+
+export interface SubscriptionHistoryEntry {
+  subscriptionId: Types.ObjectId | null;
+  plan: string;
+  start: Date | null;
+  end: Date | null;
 }
 
 // Shop Availability
@@ -74,6 +81,7 @@ export interface ShopDocument extends Document {
   resetPasswordExpires?: Date;
   shopAvailability?: ShopAvailability;
   subscription: IShopSubscription;
+  subscriptionHistory: SubscriptionHistoryEntry[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -95,6 +103,7 @@ export interface ShopProfile {
   createdAt: Date;
   updatedAt: Date;
   shopAvailability?: ShopAvailability;
+  subscriptionHistory?: SubscriptionHistoryEntry[];
 }
 
 // Auth Types
@@ -165,6 +174,7 @@ export interface Shop {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   shopAvailability?: ShopAvailability;
+  subscriptionHistory?: SubscriptionHistoryEntry[];
 }
 
 export interface ShopDocument extends Shop, Document {

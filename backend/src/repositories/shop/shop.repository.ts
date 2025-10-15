@@ -46,7 +46,20 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
           customHolidays: shop.shopAvailability.customHolidays || [],
         }
         : undefined,
+      subscriptionHistory: shop.subscriptionHistory
+        ? shop.subscriptionHistory.map(h => ({
+          subscriptionId: h.subscriptionId ? h.subscriptionId.toString() : null,
+          plan: h.plan,
+          start: h.start,
+          end: h.end,
+        }))
+        : [],
     };
+  }
+
+  async findById(id: string): Promise<ShopResponseDTO | null> {
+    const shop = await this.checkAndExpireSubscription(id);
+    return shop ? this.mapToResponseDTO(shop) : null;
   }
 
   async findByEmail(email: string): Promise<ShopResponseDTO | null> {
@@ -58,10 +71,10 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
     return await this.findOne({ email }).exec();
   }
 
-  async findById(id: string): Promise<ShopResponseDTO | null> {
-    const shop = await super.findById(id);
-    return shop ? this.mapToResponseDTO(shop) : null;
-  }
+  // async findById(id: string): Promise<ShopResponseDTO | null> {
+  //   const shop = await super.findById(id);
+  //   return shop ? this.mapToResponseDTO(shop) : null;
+  // }
 
   async createShop(data: CreateShopData): Promise<ShopResponseDTO> {
     const shop = await this.create(data);
@@ -80,16 +93,27 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
     subscriptionEnd?: Date;
     isActive?: boolean;
   }): Promise<ShopResponseDTO | null> {
-    const updatedShop = await this.updateById(id, {
-      'subscription.subscriptionId': subscriptionData.subscriptionId,
-      'subscription.plan': subscriptionData.plan,
-      'subscription.subscriptionStart': subscriptionData.subscriptionStart,
-      'subscription.subscriptionEnd': subscriptionData.subscriptionEnd,
-      'subscription.isActive': subscriptionData.isActive ?? true
-    })
-      .select('-password -resetPasswordToken -resetPasswordExpires')
-      .exec();
-    return updatedShop ? this.mapToResponseDTO(updatedShop) : null;
+    await this.checkAndExpireSubscription(id);
+    const shop = await this.model.findById(id).select('-password -resetPasswordToken -resetPasswordExpires');
+    if (!shop) return null;
+
+    if (shop.subscription.plan !== 'free') {
+      shop.subscriptionHistory.push({
+        subscriptionId: shop.subscription.subscriptionId,
+        plan: shop.subscription.plan,
+        start: shop.subscription.subscriptionStart,
+        end: shop.subscription.subscriptionEnd,
+      });
+    }
+
+    shop.subscription.subscriptionId = subscriptionData.subscriptionId ? new Types.ObjectId(subscriptionData.subscriptionId) : null;
+    shop.subscription.plan = subscriptionData.plan;
+    shop.subscription.subscriptionStart = subscriptionData.subscriptionStart;
+    shop.subscription.subscriptionEnd = subscriptionData.subscriptionEnd;
+    shop.subscription.isActive = subscriptionData.isActive ?? true;
+
+    await shop.save();
+    return this.mapToResponseDTO(shop);
   }
 
   async existsByEmail(email: string): Promise<boolean> {
@@ -248,7 +272,7 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
     ]);
     return shops.map(shop => this.mapToResponseDTO(shop));
   }
-  
+
   async getShopsOverview(): Promise<{ totalShops: number; activeShops: number; inactiveShops: number; pendingShops: number }> {
     const [total, active, inactive, pending] = await Promise.all([
       this.countDocuments({}),
@@ -263,5 +287,58 @@ export class ShopRepository extends BaseRepository<any> implements IShopReposito
       inactiveShops: inactive,
       pendingShops: pending
     };
+  }
+  async checkAndExpireSubscription(id: string): Promise<ShopDocument | null> {
+    const shop = await this.model.findById(id);
+    if (!shop) return null;
+
+    const now = new Date();
+    if (shop.subscription.subscriptionEnd && now > shop.subscription.subscriptionEnd && shop.subscription.plan !== 'free') {
+      shop.subscriptionHistory.push({
+        subscriptionId: shop.subscription.subscriptionId,
+        plan: shop.subscription.plan,
+        start: shop.subscription.subscriptionStart,
+        end: shop.subscription.subscriptionEnd,
+      });
+
+      shop.subscription = {
+        subscriptionId: null,
+        subscriptionStart: null,
+        subscriptionEnd: null,
+        isActive: true,
+        plan: 'free'
+      };
+
+      await shop.save();
+    }
+
+    return shop;
+  }
+
+  async expireAllSubscriptions(): Promise<void> {
+    const now = new Date();
+    const shops = await this.model.find({
+      'subscription.subscriptionEnd': { $lt: now },
+      'subscription.plan': { $ne: 'free' }
+    });
+
+    for (const shop of shops) {
+      shop.subscriptionHistory.push({
+        subscriptionId: shop.subscription.subscriptionId,
+        plan: shop.subscription.plan,
+        start: shop.subscription.subscriptionStart,
+        end: shop.subscription.subscriptionEnd,
+      });
+
+      shop.subscription = {
+        subscriptionId: null,
+        subscriptionStart: null,
+        subscriptionEnd: null,
+        isActive: true,
+        plan: 'free'
+      };
+
+      await shop.save();
+    }
   }
 }

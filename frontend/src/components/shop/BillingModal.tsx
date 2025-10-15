@@ -38,16 +38,32 @@ interface Plan {
   popular?: boolean;
 }
 
+interface Subscription {
+  subscriptionId: string;
+  plan: string;
+  subscriptionStart: string;
+  subscriptionEnd: string;
+  isActive: boolean;
+}
+
+interface SubscriptionHistory {
+  subscriptionId: string;
+  plan: string;
+  start: string;
+  end: string;
+}
+
 const BillingModal = ({ onClose }: { onClose: () => void }) => {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [subscriptionHistory, setSubscriptionHistory] = useState<SubscriptionHistory[]>([]);
   const { shopData: shop } = useSelector((state: RootState) => state.shop);
 
   const shopId = shop?.id;
 
-  // Fetch subscription plans and current subscription on component mount
+  // Fetch subscription plans, current subscription, and history on component mount
   useEffect(() => {
     const fetchData = async () => {
       if (!shopId) return;
@@ -74,7 +90,7 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
         // Static Free plan
         const freePlan: Plan = {
           name: "Free",
-          price: "$0/month",
+          price: "₹0/month",
           amount: 0,
           description: "Free starter plan",
           profitPercentage: 50,
@@ -91,9 +107,11 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
         // Add Free plan always at top
         setPlans([freePlan, ...fetchedPlans]);
 
-        // Fetch current subscription plan
+        // Fetch current subscription and history
         const subscriptionResponse = await ShopAxios.get(`/shops/${shopId}/subscription`);
-        setCurrentPlan(subscriptionResponse.data.data.plan?.toLowerCase());
+        const subscriptionData = subscriptionResponse.data.data;
+        setCurrentPlan(subscriptionData.subscription?.plan?.toLowerCase() || null);
+        setSubscriptionHistory(subscriptionData.history || []);
       } catch (error) {
         toast.error("Failed to fetch subscription details or plans");
         console.error("Error fetching data:", error);
@@ -122,6 +140,15 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
   // Handle payment error
   const handlePaymentError = (error: string) => {
     toast.error(error, { style: { background: "#fef3c7", color: "#92400e" } });
+  };
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   return (
@@ -157,6 +184,7 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
                 const planLevel = plan.name.toLowerCase();
                 const currentLevel = currentPlan;
                 const isCurrentPlan = currentLevel === planLevel;
+                const isFreePlan = currentLevel === "free";
 
                 return (
                   <Card
@@ -199,7 +227,7 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
                         className="mt-2 sm:mt-4 w-full text-xs sm:text-sm"
                         variant={plan.popular ? "default" : "outline"}
                         onClick={() => handlePlanSelection(plan)}
-                        disabled={isCurrentPlan || isLoading || plan.amount === 0}
+                        disabled={isCurrentPlan || isLoading || plan.amount === 0 || isFreePlan}
                       >
                         {isCurrentPlan
                           ? "Current Plan"
@@ -211,6 +239,33 @@ const BillingModal = ({ onClose }: { onClose: () => void }) => {
                   </Card>
                 );
               })}
+            </div>
+          )}
+          {subscriptionHistory.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-2">Subscription History</h3>
+              <div className="space-y-2">
+                {subscriptionHistory.map((history, index) => (
+                  <div
+                    key={index}
+                    className="p-4 border rounded-md bg-gray-50 dark:bg-gray-800"
+                  >
+                    <p className="text-sm">
+                      <strong>Plan:</strong>{" "}
+                      {history.plan.charAt(0).toUpperCase() + history.plan.slice(1)}
+                    </p>
+                    <p className="text-sm">
+                      <strong>Subscription ID:</strong> {history.subscriptionId}
+                    </p>
+                    <p className="text-sm">
+                      <strong>Start Date:</strong> {formatDate(history.start)}
+                    </p>
+                    <p className="text-sm">
+                      <strong>End Date:</strong> {formatDate(history.end)}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {selectedPlan && shopId && selectedPlan.amount > 0 && (
