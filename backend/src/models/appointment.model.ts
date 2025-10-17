@@ -6,7 +6,6 @@ import {
   PaymentMethod,
 } from '../types/appointment.types';
 
-// Define AppointmentDocument interface
 export interface AppointmentDocument extends IAppointment, Document {
   _id: Types.ObjectId;
   bookingNumber: string;  
@@ -22,7 +21,7 @@ const AppointmentSchema = new Schema<AppointmentDocument>(
     slotDetails: {
       startTime: { type: String, required: true },
       endTime: { type: String, required: true },
-      date: { type: String, required: true }, // format: yyyy-MM-dd
+      date: { type: String, required: true },
     },
     paymentDetails: {
       paymentIntentId: { type: String },
@@ -46,8 +45,10 @@ const AppointmentSchema = new Schema<AppointmentDocument>(
   }
 );
 
+// Generate booking number
 AppointmentSchema.pre<AppointmentDocument>("save", async function (next) {
   if (this.bookingNumber) return next(); 
+  
   const today = new Date();
   const dd = String(today.getDate()).padStart(2, "0");
   const mm = String(today.getMonth() + 1).padStart(2, "0");
@@ -57,15 +58,67 @@ AppointmentSchema.pre<AppointmentDocument>("save", async function (next) {
   const startOfDay = new Date(today.setHours(0, 0, 0, 0));
   const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-  const countToday = await Appointment.countDocuments({
+  const countToday = await mongoose.model('Appointment').countDocuments({
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
 
   const seq = String(countToday + 1).padStart(2, "0");
-
   this.bookingNumber = `FC${formattedDate}-${seq}`;
 
   next();
+});
+
+AppointmentSchema.post<AppointmentDocument>("save", async function (doc) {
+  // Only trigger for new documents
+  // if (!this.isNew) return;
+  
+  try {
+    const { NotificationModel } = await import('../models/notifications.model');
+    
+    await NotificationModel.create({
+      userId: doc.userId,
+      shopId: doc.shopId,
+      receiverType: 'User',
+      type: 'Booking Update',
+      message: `New appointment created with booking number ${doc.bookingNumber}`,
+      isRead: false,
+    });
+
+    await NotificationModel.create({
+      userId: doc.userId,
+      shopId: doc.shopId,
+      receiverType: 'Shop',
+      type: 'Booking Update',
+      message: `New appointment received - ${doc.bookingNumber}`,
+      isRead: false,
+    });
+  } catch (error) {
+    console.error('Error creating appointment notification:', error);
+  }
+});
+
+AppointmentSchema.post("findOneAndUpdate", async function (doc) {
+  if (!doc) return;
+
+  try {
+    const update = this.getUpdate();
+    
+    if (update && '$set' in update && update.$set?.appointmentStatus) {
+      const { NotificationModel } = await import('../models/notifications.model');
+      const newStatus = update.$set.appointmentStatus;
+      
+      await NotificationModel.create({
+        userId: doc.userId,
+        shopId: doc.shopId,
+        receiverType: 'User',
+        type: 'Booking Update',
+        message: `Your appointment ${doc.bookingNumber} has been ${newStatus.toLowerCase()}`,
+        isRead: false,
+      });
+    }
+  } catch (error) {
+    console.error('Error creating status update notification:', error);
+  }
 });
 
 export const Appointment = model<AppointmentDocument>(

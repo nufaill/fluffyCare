@@ -11,4 +11,6 @@ export interface Chat {
   updatedAt?: Date;
 }
 
-export interface ChatDocument extends Chat, Document {}
+export interface ChatDocument extends Chat, Document {
+    modelName: string;
+}

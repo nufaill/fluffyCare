@@ -14,12 +14,13 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/Badge"
-import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/redux/store"
 import { removeShop } from "@/redux/slices/shop.slice"
 import { logoutShop } from "@/services/shop/auth.service"
 import BillingModal from "./BillingModal"
+import NotificationToast from "./NotificationModal"
 
 interface NavbarProps {
   className?: string
@@ -31,7 +32,6 @@ interface NavbarProps {
   notificationCount?: number
   onSearch?: (query: string) => void
   onProfileClick?: () => void
-  onNotificationClick?: () => void
   onMenuToggle?: () => void
 }
 
@@ -42,11 +42,11 @@ export function Navbar({
   userRole = "Pet Care Specialist",
   notificationCount = 3,
   onSearch,
-  onNotificationClick,
 }: NavbarProps) {
   const [searchFocused, setSearchFocused] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isBillingOpen, setIsBillingOpen] = useState(false)
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
 
   const { shopData: shop } = useSelector((state: RootState) => state.shop)
   const dispatch = useDispatch()
@@ -76,6 +76,10 @@ export function Navbar({
     }
   }
 
+  const handleNotificationClick = () => {
+    setIsNotificationOpen(true)
+  }
+
   return (
     <header
       className={`w-full h-16 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm flex items-center ${className}`}
@@ -102,7 +106,7 @@ export function Navbar({
             variant="ghost"
             size="icon"
             className="relative h-10 w-10 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group text-gray-600 dark:text-gray-300"
-            onClick={onNotificationClick}
+            onClick={handleNotificationClick}
           >
             <Bell className="h-5 w-5 group-hover:animate-pulse" />
             {notificationCount > 0 && (
@@ -177,6 +181,9 @@ export function Navbar({
         </div>
       </div>
       {isBillingOpen && <BillingModal onClose={() => setIsBillingOpen(false)} />}
+      {isNotificationOpen && shop?.id && (
+        <NotificationToast shopId={shop.id} onClose={() => setIsNotificationOpen(false)} />
+      )}
     </header>
   )
 }

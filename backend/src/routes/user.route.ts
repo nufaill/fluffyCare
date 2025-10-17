@@ -975,4 +975,9 @@ router.delete("/reviews/:reviewId", userDependencies.reviewController.deleteRevi
 
 router.get('/nearby-shops', userDependencies.userController.getNearbyShops as RequestHandler);
 
+
+router.put('/notifications/:notificationId', userDependencies.notificationController.updateNotification.bind(userDependencies.notificationController) as RequestHandler);
+router.delete('/notifications/:notificationId', userDependencies.notificationController.deleteNotification.bind(userDependencies.notificationController) as RequestHandler);
+router.get('/notifications/:userId', userDependencies.notificationController.getUserNotifications.bind(userDependencies.notificationController) as RequestHandler);
+
 export default router;

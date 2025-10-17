@@ -23,6 +23,9 @@ import { SubscriptionService } from "../services/subscription/subscription.servi
 import { ReviewController } from '../controllers/review/review.controller';
 import { ReviewService } from "../services/review/review.service";
 import { ReviewRepository } from "../repositories/review/review.repository";
+import { NotificationRepository } from "../repositories/notifications/notifications.repository";
+import { NotificationService } from "../services/notifications/notification.service";
+import { NotificationController } from "../controllers/notifications/notifications.controller";
 
 // Initialize repositories
 const shopRepository = new ShopRepository();
@@ -32,6 +35,7 @@ const staffRepository = new StaffRepository();
 const walletRepository = new WalletRepository();
 const subscriptionRepository = new SubscriptionRepository();
 const reviewRepository = new ReviewRepository();
+const notificationRepository = new NotificationRepository();
 
 // Initialize services
 const jwtService = new JwtService();
@@ -49,6 +53,7 @@ const serviceService = new ServiceService(serviceRepository);
 const staffService = new StaffService(staffRepository);
 const subscriptionService = new SubscriptionService(subscriptionRepository);
 const reviewService = new ReviewService(reviewRepository);
+const notificationService = new NotificationService(notificationRepository);
 
 // Initialize middleware
 const authMiddlewareInstance = new AuthMiddleware(jwtService);
@@ -61,6 +66,7 @@ const injectedServiceController = new ServiceController(serviceService);
 const injectedStaffController = new StaffController(staffService);
 const injectedSubscriptionController = new SubscriptionController(subscriptionService);
 const reviewController = new ReviewController(reviewService)
+const notificationController = new NotificationController(notificationService)
 
 const boundShopAuthController = {
   register: injectedShopAuthController.register.bind(injectedShopAuthController),
@@ -112,5 +118,6 @@ export const shopDependencies = {
   staffRepository,
   jwtService,
   authMiddleware,
-  reviewController
+  reviewController,
+  notificationController
 };

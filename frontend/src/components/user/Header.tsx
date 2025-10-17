@@ -1,4 +1,3 @@
-
 import { LogIn, UserPlus, Menu, X, LogOut, User, Bell, MessageSquare } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
@@ -8,15 +7,18 @@ import type { RootState } from "@/redux/store"
 import DefaultAvatar from "@/assets/user/default-avatar.jpeg"
 import { removeUser } from "@/redux/slices/user.slice"
 import { logoutUser } from "@/services/user/auth.service"
-import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary";
+import { cloudinaryUtils } from "@/utils/cloudinary/cloudinary"
+import NotificationToast from "./NotificationModal"
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const { userDatas: user } = useSelector((state: RootState) => state.user)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const notificationRef = useRef<HTMLDivElement>(null) // NEW: Add ref for notification modal
 
   const navItems = [
     { name: "Home", path: "/" },
@@ -30,8 +32,14 @@ const Header = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Check if click is outside profile dropdown
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false)
+      }
+      
+      // Check if click is outside notification modal (separate check)
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false)
       }
     }
 
@@ -50,7 +58,6 @@ const Header = () => {
       navigate('/login')
     } catch (error) {
       console.error('Logout failed:', error)
-      // Still clear local state even if API call fails
       dispatch(removeUser())
       navigate('/login')
     }
@@ -65,7 +72,6 @@ const Header = () => {
       md: "w-10 h-10",
       lg: "w-12 h-12",
     }
-
 
     if (user?.profileImage && !imageError) {
       return (
@@ -125,9 +131,11 @@ const Header = () => {
             {user ? (
               <div className="flex items-center space-x-3">
                 {/* Notification Icon */}
-                <button className="relative p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300 hover:scale-105">
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300 hover:scale-105"
+                >
                   <Bell className="w-5 h-5" />
-                  {/* Notification badge - can be conditionally shown */}
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                 </button>
 
@@ -200,10 +208,19 @@ const Header = () => {
         </div>
       </div>
 
+      {/* Notification Toasts - Wrapped with ref */}
+      {showNotifications && user && (
+        <div ref={notificationRef}>
+          <NotificationToast
+            userId={user.id}
+            onClose={() => setShowNotifications(false)}
+          />
+        </div>
+      )}
+
       {/* Mobile Slide Menu */}
       <div
-        className={`fixed top-0 right-0 h-full w-64 bg-white text-black shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${menuOpen ? "translate-x-0" : "translate-x-full"
-          } md:hidden`}
+        className={`fixed top-0 right-0 h-full w-64 bg-white text-black shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${menuOpen ? "translate-x-0" : "translate-x-full"} md:hidden`}
       >
         <div className="p-5 space-y-4">
           {/* Close Icon */}
@@ -235,12 +252,21 @@ const Header = () => {
               <div className="space-y-2">
                 {/* Mobile Notification and Chat Icons */}
                 <div className="flex justify-center space-x-4 py-3 border-b border-gray-200">
-                  <button className="relative p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false)
+                      setShowNotifications(true)
+                    }}
+                    className="relative p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300"
+                  >
                     <Bell className="w-6 h-6" />
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                   </button>
                   <Link to="/messages">
-                    <button className="p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300">
+                    <button
+                      className="p-2 rounded-lg text-black hover:bg-gray-100 transition-all duration-300"
+                      onClick={() => setMenuOpen(false)}
+                    >
                       <MessageSquare className="w-6 h-6" />
                     </button>
                   </Link>

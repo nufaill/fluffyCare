@@ -1371,4 +1371,8 @@ router.get('/subscriptions/by-name/:planName', shopDependencies.subscriptionCont
 router.get("/shops/:shopId/reviews", shopDependencies.reviewController.getReviewsByShop as RequestHandler);
 router.get("/shops/:shopId/reviews/summary", shopDependencies.reviewController.getShopRatingSummary as RequestHandler);
 
+router.put('/notifications/:notificationId', shopDependencies.notificationController.updateNotification.bind(shopDependencies.notificationController) as RequestHandler);
+router.delete('/notifications/:notificationId', shopDependencies.notificationController.deleteNotification.bind(shopDependencies.notificationController) as RequestHandler);
+router.get('/notifications/:shopId', shopDependencies.notificationController.getShopNotifications.bind(shopDependencies.notificationController) as RequestHandler);
+
 export default router;

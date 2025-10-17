@@ -20,4 +20,6 @@ export interface Message {
   updatedAt?: Date;
 }
 
-export interface MessageDocument extends Message, Document {}
+export interface MessageDocument extends Message, Document {
+    modelName: string;
+}

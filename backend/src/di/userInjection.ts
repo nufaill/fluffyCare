@@ -20,7 +20,10 @@ import { ShopService } from "../services/shop/shop.service";
 import { ReviewController } from '../controllers/review/review.controller';
 import { ReviewService } from "../services/review/review.service";
 import { ReviewRepository } from "../repositories/review/review.repository";
-import { NearbyRepository } from "repositories/user/nearby.repository";
+import { NearbyRepository } from "../repositories/user/nearby.repository";
+import { NotificationRepository } from "../repositories/notifications/notifications.repository";
+import { NotificationService } from "../services/notifications/notification.service";
+import { NotificationController } from "../controllers/notifications/notifications.controller";
 
 // Initialize repositories
 const userRepository = new UserRepository();
@@ -30,6 +33,7 @@ const shopRepository = new ShopRepository();
 const walletRepository = new WalletRepository();
 const reviewRepository = new ReviewRepository();
 const nearbyRepository = new NearbyRepository();
+const notificationRepository = new NotificationRepository();
 
 // Initialize services
 const authService = new AuthService(
@@ -48,6 +52,7 @@ const shopAvailabilityService = new ShopAvailabilityService(shopRepository);
 const shopService = new ShopService(shopRepository);
 const walletService = new WalletService(walletRepository);
 const reviewService = new ReviewService(reviewRepository);
+const notificationService = new NotificationService(notificationRepository);
 
 // Initialize controllers
 const injectedUserController = new UserController(userService, nearbyService);
@@ -55,6 +60,7 @@ const petController = new PetController(petService);
 const injectedStaffController = new StaffController(staffService);
 const shopController = new ShopController(shopService, shopAvailabilityService, walletService);
 const reviewController = new ReviewController(reviewService)
+const notificationController = new NotificationController(notificationService)
 
 const boundPetController = {
   createPet: petController.createPet.bind(petController),
@@ -87,5 +93,6 @@ export const userDependencies = {
   staffService,
   staffRepository,
   walletService,
-  reviewController
+  reviewController,
+  notificationController
 };
