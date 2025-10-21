@@ -2,7 +2,25 @@
 import mongoose, { Schema, model } from 'mongoose';
 import { ShopDocument } from '../types/Shop.types';
 
-// Subschema: Shop Availability
+
+const customHolidaySchema = new Schema(
+  {
+    date: {
+      type: String,
+      required: true, // e.g., '12-03-2025'
+    },
+    startTime: {
+      type: String, // optional, defaults to openingTime
+    },
+    endTime: {
+      type: String, // optional, defaults to closingTime
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 const shopAvailabilitySchema = new Schema(
   {
     workingDays: {
@@ -30,7 +48,7 @@ const shopAvailabilitySchema = new Schema(
       end: { type: String, default: '' },
     },
     customHolidays: {
-      type: [String],
+      type: [customHolidaySchema],
       default: [],
     },
   },

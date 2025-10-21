@@ -22,7 +22,11 @@ export interface ShopAvailability {
     start?: string;
     end?: string;
   };
-  customHolidays?: string[];
+  customHolidays?: Array<{
+    date: string;
+    startTime?: string;
+    endTime?: string;
+  }>;
 }
 
 export interface Shop {

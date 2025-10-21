@@ -32,8 +32,27 @@ export class ShopAvailabilityService implements IShopAvailabilityService {
         }
 
         if (data.customHolidays) {
-            if (!Array.isArray(data.customHolidays) || !data.customHolidays.every(date => /^\d{4}-\d{2}-\d{2}$/.test(date))) {
-                throw new CustomError('Invalid custom holidays format (YYYY-MM-DD required)', HTTP_STATUS.BAD_REQUEST);
+            if (!Array.isArray(data.customHolidays)) {
+                throw new CustomError('Custom holidays must be an array', HTTP_STATUS.BAD_REQUEST);
+            }
+            const timeFormat = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            for (const holiday of data.customHolidays) {
+                if (typeof holiday !== 'object' || holiday === null) {
+                    throw new CustomError('Each custom holiday must be an object', HTTP_STATUS.BAD_REQUEST);
+                }
+                if (typeof holiday.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(holiday.date)) {
+                    throw new CustomError('Invalid custom holiday date format (YYYY-MM-DD required)', HTTP_STATUS.BAD_REQUEST);
+                }
+                if (holiday.startTime !== undefined) {
+                    if (typeof holiday.startTime !== 'string' || !timeFormat.test(holiday.startTime)) {
+                        throw new CustomError('Invalid custom holiday start time format (HH:MM required)', HTTP_STATUS.BAD_REQUEST);
+                    }
+                }
+                if (holiday.endTime !== undefined) {
+                    if (typeof holiday.endTime !== 'string' || !timeFormat.test(holiday.endTime)) {
+                        throw new CustomError('Invalid custom holiday end time format (HH:MM required)', HTTP_STATUS.BAD_REQUEST);
+                    }
+                }
             }
         }
     }
@@ -58,7 +77,7 @@ export class ShopAvailabilityService implements IShopAvailabilityService {
             customHolidays: [],
         };
 
-        const availability = shop.shopAvailability || defaultAvailability ;
+        const availability = shop.shopAvailability || defaultAvailability;
 
         return {
             workingDays: availability.workingDays,
