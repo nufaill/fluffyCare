@@ -33,13 +33,19 @@ interface BookedSlot {
   status: "booked"
 }
 
+interface CustomHoliday {
+  date: string;
+  startTime: string;
+  endTime: string;
+}
+
 interface ShopAvailability {
   workingDays: string[]
   openingTime: string
   closingTime: string
   lunchBreak: { start: string; end: string }
   teaBreak: { start: string; end: string }
-  customHolidays: string[]
+  customHolidays: CustomHoliday[]
 }
 
 interface Staff {
@@ -206,7 +212,6 @@ export function EnhancedTimeSlotGenerator({
         return prev;
       });
 
-      // Update the timeSlots state to mark this slot as booked
       setTimeSlots(prev => 
         prev.map(slot => {
           if (slot.staffId === data.staffId && 
@@ -291,6 +296,7 @@ export function EnhancedTimeSlotGenerator({
   }, [shopId, selectedDate]);
 
   const timeToMinutes = (timeStr: string): number => {
+    if (!timeStr || timeStr.trim() === "") return -1; // Skip empty times
     const [h, m] = timeStr.split(":").map(Number)
     return h * 60 + m
   }
@@ -318,11 +324,31 @@ export function EnhancedTimeSlotGenerator({
     const teaStart = timeToMinutes(shopAvailability.teaBreak.start)
     const teaEnd = timeToMinutes(shopAvailability.teaBreak.end)
 
-    if (start < lunchEnd && end > lunchStart) {
+    if (lunchStart !== -1 && lunchEnd !== -1 && start < lunchEnd && end > lunchStart) {
       return { overlaps: true, breakType: "lunch" }
     }
-    if (start < teaEnd && end > teaStart) {
+    if (teaStart !== -1 && teaEnd !== -1 && start < teaEnd && end > teaStart) {
       return { overlaps: true, breakType: "break" }
+    }
+    return { overlaps: false }
+  }
+
+  // Check if a slot overlaps with custom holiday for the date
+  const overlapsWithHoliday = (dateStr: string, start: number, end: number) => {
+    const holidayForDate = shopAvailability.customHolidays.find(h => h.date === dateStr)
+    if (!holidayForDate || !holidayForDate.startTime || !holidayForDate.endTime) {
+      return { overlaps: false }
+    }
+
+    const holidayStart = timeToMinutes(holidayForDate.startTime)
+    const holidayEnd = timeToMinutes(holidayForDate.endTime)
+
+    if (holidayStart === -1 || holidayEnd === -1) {
+      return { overlaps: false }
+    }
+
+    if (start < holidayEnd && end > holidayStart) {
+      return { overlaps: true }
     }
     return { overlaps: false }
   }
@@ -341,7 +367,9 @@ export function EnhancedTimeSlotGenerator({
     const dayName = currentDate.toLocaleDateString("en-US", { weekday: "long" })
     const isWorkingDay = shopAvailability.workingDays.includes(dayName)
 
-    if (!isWorkingDay || shopAvailability.customHolidays.includes(dateStr) || !staffMember.isActive) {
+    // Skip entire day if not working day or staff inactive
+    // Custom holidays are now handled as time-specific overlaps, not full-day skips
+    if (!isWorkingDay || !staffMember.isActive) {
       return []
     }
 
@@ -366,14 +394,20 @@ export function EnhancedTimeSlotGenerator({
       if (isSlotBooked(staffMember.id, dateStr, minutesToTime(current))) {
         status = "booked";
       } else {
-        const breakCheck = overlapsWithBreak(current, end)
-        if (breakCheck.overlaps && !config.allowBookingDuringBreaks) {
-          status = breakCheck.breakType === "lunch" ? "lunch" : "break"
-        }
+        // Check for holiday overlap first (mark as unavailable)
+        const holidayCheck = overlapsWithHoliday(dateStr, current, end)
+        if (holidayCheck.overlaps) {
+          status = "unavailable"
+        } else {
+          const breakCheck = overlapsWithBreak(current, end)
+          if (breakCheck.overlaps && !config.allowBookingDuringBreaks) {
+            status = breakCheck.breakType === "lunch" ? "lunch" : "break"
+          }
 
-        if (currentDate.toDateString() === new Date().toDateString()) {
-          const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
-          if (current <= nowMin) status = "unavailable"
+          if (currentDate.toDateString() === new Date().toDateString()) {
+            const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
+            if (current <= nowMin) status = "unavailable"
+          }
         }
       }
 

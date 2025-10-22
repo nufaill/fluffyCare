@@ -25,15 +25,6 @@ interface TimeSlotCategory {
   startHour: number
   endHour: number
 }
-// interface BookingSuccessData {
-//   appointmentId: string;
-//   slotDetails: {
-//     date: string;
-//     startTime: string;
-//     endTime: string;
-//   };
-//   staffId: string;
-// }
 interface Staff {
   id: string
   name: string
@@ -44,13 +35,19 @@ interface Staff {
   avatar?: string
 }
 
+interface CustomHoliday {
+  date: string;
+  startTime: string;
+  endTime: string;
+}
+
 interface ShopAvailability {
   workingDays: string[]
   openingTime: string
   closingTime: string
   lunchBreak: { start: string; end: string }
   teaBreak: { start: string; end: string }
-  customHolidays: string[]
+ customHolidays: CustomHoliday[]
 }
 
 interface Service {
@@ -132,7 +129,7 @@ export default function UserSlot() {
 
       toast('A slot was just booked by another user', {
         duration: 3000,
-        style: { background: '#2196f3', color: '#fff' }, 
+        style: { background: '#2196f3', color: '#fff' },
       });
     },
     onSlotCanceled: (data) => {

@@ -1056,14 +1056,14 @@ export class AppointmentService implements IAppointmentService {
 
       const bookedSlotKeys = new Set(
         bookedSlots.map(slot =>
-          `${slot.staffId}-${slot.slotDetails.date}-${slot.slotDetails.startTime}`
+          `${slot.staffId}|${slot.slotDetails.date}|${slot.slotDetails.startTime}`
         )
       );
 
       return {
         success: true,
         data: Array.from(bookedSlotKeys).map(key => {
-          const [staffId, date, startTime] = key.split('-');
+          const [staffId, date, startTime] = key.split('|');
           const slot = bookedSlots.find(s =>
             s.staffId.toString() === staffId &&
             s.slotDetails.date === date &&
