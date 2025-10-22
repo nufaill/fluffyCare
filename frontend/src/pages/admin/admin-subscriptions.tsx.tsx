@@ -8,7 +8,7 @@ import Footer from "@/components/user/Footer";
 
 import { createBaseAxios } from '@/api/base.axios';
 
-let  AdminAxios = createBaseAxios('/admin');
+let AdminAxios = createBaseAxios('/admin');
 
 interface ISubscription {
     _id: string;
@@ -304,11 +304,11 @@ export default function AdminSubscription() {
     };
 
     const handleMenuItemClick = (itemId: string) => {
-        setIsSidebarOpen(false); // ✅ Close sidebar on menu item click
+        setIsSidebarOpen(false);
     };
 
     const handleLogout = () => {
-        setIsSidebarOpen(false); // ✅ Close sidebar on logout
+        setIsSidebarOpen(false);
     };
 
     return (
@@ -521,9 +521,7 @@ export default function AdminSubscription() {
                     </main>
                 </div>
             </div>
-                    <div className="ml-64 p-6">
-                        <Footer />
-                    </div>
+            <Footer />
         </div>
     );
 }

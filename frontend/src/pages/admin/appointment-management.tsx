@@ -447,7 +447,7 @@ export default function AppointmentManagement() {
                     <div className="grid grid-cols-4 items-center gap-4 bg-gray-50 rounded-lg p-3">
                       <Hash className="h-4 w-4 text-gray-600 col-span-1" />
                       <span className="col-span-3 font-medium">
-                        {selectedAppointment._id.slice(0, 6).toUpperCase()}
+                        {selectedAppointment.bookingNumber}
                       </span>
                     </div>
 

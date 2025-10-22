@@ -725,11 +725,7 @@ const ShopVerification: React.FC = () => {
           </Dialog>
         </div>
       </main>
-
-      {/* Footer */}
-      <div className="md:ml-64">
         <Footer />
-      </div>
     </div>
   );
 };

@@ -719,47 +719,47 @@ const AdminDashboard: React.FC = () => {
     )
   }
 
-  const renderServiceTypeBreakdownSection = () => {
-    return (
-      <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-blue-600" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900">Service Type Breakdown</h2>
-          </div>
-          <button
-            onClick={() => setShowServiceTypeGraph(!showServiceTypeGraph)}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
-          >
-            <TrendingUp className="h-4 w-4" />
-            <span>{showServiceTypeGraph ? "Hide" : "Show"} Graph</span>
-          </button>
-        </div>
-        {showServiceTypeGraph && (
-          <ServiceTypePieChart
-            serviceTypePieData={serviceTypePieData}
-            showServiceTypeGraph={showServiceTypeGraph}
-            setShowServiceTypeGraph={setShowServiceTypeGraph}
-            revenueChartData={revenueChartData}
-            shopsChartData={shopsChartData}
-            customerChartData={customerChartData}
-            bookingsChartData={bookingsChartData}
-            customerAnalytics={customerAnalytics}
-            showRevenueGraph={showRevenueGraph}
-            setShowRevenueGraph={setShowRevenueGraph}
-            showShopsGraph={showShopsGraph}
-            setShowShopsGraph={setShowShopsGraph}
-            showCustomersGraph={showCustomersGraph}
-            setShowCustomersGraph={setShowCustomersGraph}
-            showBookingsGraph={showBookingsGraph}
-            setShowBookingsGraph={setShowBookingsGraph}
-          />
-        )}
-      </div>
-    )
-  }
+  // const renderServiceTypeBreakdownSection = () => {
+  //   return (
+  //     <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+  //       <div className="flex items-center justify-between">
+  //         <div className="flex items-center space-x-3">
+  //           <div className="p-2 bg-blue-50 rounded-lg">
+  //             <TrendingUp className="h-6 w-6 text-blue-600" />
+  //           </div>
+  //           <h2 className="text-xl font-semibold text-gray-900">Service Type Breakdown</h2>
+  //         </div>
+  //         <button
+  //           onClick={() => setShowServiceTypeGraph(!showServiceTypeGraph)}
+  //           className="flex items-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+  //         >
+  //           <TrendingUp className="h-4 w-4" />
+  //           <span>{showServiceTypeGraph ? "Hide" : "Show"} Graph</span>
+  //         </button>
+  //       </div>
+  //       {showServiceTypeGraph && (
+  //         <ServiceTypePieChart
+  //           serviceTypePieData={serviceTypePieData}
+  //           showServiceTypeGraph={showServiceTypeGraph}
+  //           setShowServiceTypeGraph={setShowServiceTypeGraph}
+  //           revenueChartData={revenueChartData}
+  //           shopsChartData={shopsChartData}
+  //           customerChartData={customerChartData}
+  //           bookingsChartData={bookingsChartData}
+  //           customerAnalytics={customerAnalytics}
+  //           showRevenueGraph={showRevenueGraph}
+  //           setShowRevenueGraph={setShowRevenueGraph}
+  //           showShopsGraph={showShopsGraph}
+  //           setShowShopsGraph={setShowShopsGraph}
+  //           showCustomersGraph={showCustomersGraph}
+  //           setShowCustomersGraph={setShowCustomersGraph}
+  //           showBookingsGraph={showBookingsGraph}
+  //           setShowBookingsGraph={setShowBookingsGraph}
+  //         />
+  //       )}
+  //     </div>
+  //   )
+  // }
 
   const renderDashboardContent = () => {
     const paginatedShopRatings = shopRatings?.shopRatings.slice(
@@ -780,64 +780,80 @@ const AdminDashboard: React.FC = () => {
         {renderShopAnalyticsSection()}
         {renderCustomerAnalyticsSection()}
         {renderBookingsOverviewSection()}
-        {renderServiceTypeBreakdownSection()}
-        <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Shop Name</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                  <TrendingUp className="h-4 w-4 inline mr-2 text-indigo-600" /> Total
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                  <Clock className="h-4 w-4 inline mr-2 text-amber-600" /> Pending
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                  <CheckCircle className="h-4 w-4 inline mr-2 text-blue-600" /> Confirmed
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                  <TrendingUp className="h-4 w-4 inline mr-2 text-purple-600" /> Ongoing
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                  <CheckCircle className="h-4 w-4 inline mr-2 text-green-600" /> Completed
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
-                  <XCircle className="h-4 w-4 inline mr-2 text-red-600" /> Cancelled
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedShopWise?.length ? (
-                paginatedShopWise.map((shop) => (
-                  <tr key={shop.shopId} className="border-t hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-900">{shop.shopName}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{shop.total}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{shop.pending}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{shop.confirmed}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{shop.ongoing}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{shop.completed}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{shop.cancelled}</td>
-                  </tr>
-                ))
-              ) : (
+        {/* {renderServiceTypeBreakdownSection()} */}
+        <div className="p-4 sm:p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-600">
-                    No shop-wise data available
-                  </td>
+                  <th className="px-3 sm:px-6 py-3 text-left font-semibold text-gray-900">Shop Name</th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-semibold text-gray-900">
+                    <TrendingUp className="h-4 w-4 inline mr-2 text-indigo-600" /> Total
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-semibold text-gray-900">
+                    <Clock className="h-4 w-4 inline mr-2 text-amber-600" /> Pending
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-semibold text-gray-900">
+                    <CheckCircle className="h-4 w-4 inline mr-2 text-blue-600" /> Confirmed
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-semibold text-gray-900">
+                    <TrendingUp className="h-4 w-4 inline mr-2 text-purple-600" /> Ongoing
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-semibold text-gray-900">
+                    <CheckCircle className="h-4 w-4 inline mr-2 text-green-600" /> Completed
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-semibold text-gray-900">
+                    <XCircle className="h-4 w-4 inline mr-2 text-red-600" /> Cancelled
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-          <Pagination
-            current={shopWisePage}
-            total={totalShopWise}
-            pageSize={shopWisePageSize}
-            onChange={(page) => setShopWisePage(page)}
-            showTotal={(total, range) => `Showing ${range[0]} to ${range[1]} of ${total} entries`}
-            showSizeChanger={false}
-            showQuickJumper={false}
-          />
+              </thead>
+              <tbody>
+                {paginatedShopWise?.length ? (
+                  paginatedShopWise.map((shop) => (
+                    <tr
+                      key={shop.shopId}
+                      className="border-t hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-3 sm:px-6 py-3 text-gray-900">{shop.shopName}</td>
+                      <td className="px-3 sm:px-6 py-3 text-gray-900">{shop.total}</td>
+                      <td className="px-3 sm:px-6 py-3 text-gray-900">{shop.pending}</td>
+                      <td className="px-3 sm:px-6 py-3 text-gray-900">{shop.confirmed}</td>
+                      <td className="px-3 sm:px-6 py-3 text-gray-900">{shop.ongoing}</td>
+                      <td className="px-3 sm:px-6 py-3 text-gray-900">{shop.completed}</td>
+                      <td className="px-3 sm:px-6 py-3 text-gray-900">{shop.cancelled}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-3 sm:px-6 py-4 text-center text-gray-600"
+                    >
+                      No shop-wise data available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-sm text-gray-500 text-center sm:text-left">
+              Showing {Math.min((shopWisePage - 1) * shopWisePageSize + 1, totalShopWise)}–
+              {Math.min(shopWisePage * shopWisePageSize, totalShopWise)} of {totalShopWise} entries
+            </div>
+
+            <Pagination
+              current={shopWisePage}
+              total={totalShopWise}
+              pageSize={shopWisePageSize}
+              onChange={(page) => setShopWisePage(page)}
+              showSizeChanger={false}
+              showQuickJumper={false}
+            />
+          </div>
         </div>
+
 
         <div className="space-y-4 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">

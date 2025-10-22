@@ -576,9 +576,7 @@ const ShopDetails: React.FC = () => {
           </div>
         </main>
       </div>
-      <div className="ml-64 p-6">
         <Footer />
-      </div>
     </div>
   )
 }
