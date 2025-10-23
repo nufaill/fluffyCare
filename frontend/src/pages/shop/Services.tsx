@@ -17,6 +17,8 @@ import { serviceService } from "@/services/shop/service.service";
 import type { PetType, ServiceType, CreateServiceData, UpdateServiceData } from "@/types/service.type";
 import type { RootState } from "@/redux/store";
 import { useSelector } from "react-redux";
+import { Pagination } from "@/components/ui/Pagination";
+import Footer from "@/components/user/Footer";
 
 interface Service {
   _id: string;
@@ -51,7 +53,6 @@ interface ValidationErrors {
   image?: string;
 }
 
-// Updated duration options with numeric values
 const durationOptions = [
   { value: "0.5", label: "30 minutes" },
   { value: "1", label: "1 hour" },
@@ -153,12 +154,11 @@ const formatDuration = (hours: number): string => {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-// New function for user-friendly duration display
 const formatDurationDisplay = (hours: number): string => {
   if (hours === 0.5) return "30 minutes";
   if (hours === 1) return "1 hour";
   if (hours === 2) return "2 hours";
-  return formatDuration(hours); // Fallback to HH:MM:SS
+  return formatDuration(hours);
 };
 
 function PetTypeMultiSelect({
@@ -625,6 +625,8 @@ export default function Services() {
   const [petTypes, setPetTypes] = useState<PetType[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6); // Default to 6 services per page
   const { shopData: shop } = useSelector((state: RootState) => state.shop);
   const shopId = shop?.id;
 
@@ -701,10 +703,11 @@ export default function Services() {
         image: data.image,
       };
 
-      const newService = await serviceService.createService(shopId, serviceData); 
+      const newService = await serviceService.createService(shopId, serviceData);
       setServices((prev) => [...prev, newService]);
       setShowAddForm(false);
       showSuccess("Service added successfully!");
+      setCurrentPage(1); // Reset to first page after adding a service
     } catch (error) {
       console.error("Error adding service:", error);
     }
@@ -745,6 +748,7 @@ export default function Services() {
       setServices((prev) => prev.map((s) => (s._id === editingService._id ? updatedService : s)));
       setEditingService(null);
       showSuccess("Service updated successfully!");
+      setCurrentPage(1); // Reset to first page after updating a service
     } catch (error) {
       console.error("Error updating service:", error);
     }
@@ -764,8 +768,23 @@ export default function Services() {
     }
   };
 
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    setCurrentPage(page);
+    if (newPageSize && newPageSize !== pageSize) {
+      setPageSize(newPageSize);
+      setCurrentPage(1); // Reset to first page when page size changes
+    }
+  };
+
   const activeServices = services.filter((s) => s.isActive).length;
   const totalRevenue = services.reduce((sum, s) => sum + (s.isActive ? s.price : 0), 0);
+
+  // Calculate paginated services
+  const totalItems = filteredServices.length;
+  const paginatedServices = filteredServices.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   if (isLoading) {
     return (
@@ -891,8 +910,11 @@ export default function Services() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
                     placeholder="Search by name or description..."
-                    value={ searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1); // Reset to first page on search
+                    }}
                     className="pl-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                   />
                 </div>
@@ -900,7 +922,10 @@ export default function Services() {
 
               <div className="space-y-2">
                 <Label className="text-gray-700 dark:text-gray-300">Filter by Pet Type</Label>
-                <Select value={selectedPetTypeFilter} onValueChange={setSelectedPetTypeFilter}>
+                <Select value={selectedPetTypeFilter} onValueChange={(value) => {
+                  setSelectedPetTypeFilter(value);
+                  setCurrentPage(1); // Reset to first page on filter change
+                }}>
                   <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                     <SelectValue />
                   </SelectTrigger>
@@ -917,7 +942,10 @@ export default function Services() {
 
               <div className="space-y-2">
                 <Label className="text-gray-700 dark:text-gray-300">Filter by Service Type</Label>
-                <Select value={selectedServiceTypeFilter} onValueChange={setSelectedServiceTypeFilter}>
+                <Select value={selectedServiceTypeFilter} onValueChange={(value) => {
+                  setSelectedServiceTypeFilter(value);
+                  setCurrentPage(1); // Reset to first page on filter change
+                }}>
                   <SelectTrigger className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                     <SelectValue />
                   </SelectTrigger>
@@ -945,7 +973,7 @@ export default function Services() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {filteredServices.length === 0 ? (
+            {paginatedServices.length === 0 ? (
               <div className="text-center py-12">
                 <PawPrint className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">No services found</h3>
@@ -965,89 +993,106 @@ export default function Services() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 p-6">
-                {filteredServices.map((service) => (
-                  <Card key={service._id} className="hover:shadow-md transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                    <CardContent className="p-4">
-                      <div className="space-y-4">
-                        {service.image && (
-                          <img
-                            src={service.image || "/placeholder.svg?height=128&width=128"}
-                            alt={service.name}
-                            className="w-full h-32 object-cover rounded-lg"
-                          />
-                        )}
-                        <div className="space-y-2">
-                          <div className="flex items-start justify-between">
-                            <h3 className="font-semibold text-lg leading-tight text-gray-900 dark:text-gray-100">{service.name}</h3>
-                            <StatusToggle
-                              isActive={service.isActive}
-                              onToggle={() => shopId && handleToggleStatus(service._id)}
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 p-6">
+                  {paginatedServices.map((service) => (
+                    <Card key={service._id} className="hover:shadow-md transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                      <CardContent className="p-4">
+                        <div className="space-y-4">
+                          {service.image && (
+                            <img
+                              src={service.image || "/placeholder.svg?height=128&width=128"}
+                              alt={service.name}
+                              className="w-full h-32 object-cover rounded-lg"
                             />
-                          </div>
-                          <Badge className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                            {typeof service.serviceTypeId === 'object' && service.serviceTypeId?.name
-                              ? service.serviceTypeId.name
-                              : 'Unknown'}
-                          </Badge>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <p className="text-muted-foreground line-clamp-2">{service.description}</p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                              <DollarSign className="h-4 w-4" />
-                              <span className="font-semibold">₹{service.price.toFixed(2)}</span>
+                          )}
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between">
+                              <h3 className="font-semibold text-lg leading-tight text-gray-900 dark:text-gray-100">{service.name}</h3>
+                              <StatusToggle
+                                isActive={service.isActive}
+                                onToggle={() => shopId && handleToggleStatus(service._id)}
+                              />
                             </div>
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>{formatDurationDisplay(service.durationHour)}</span>
+                            <Badge className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                              {typeof service.serviceTypeId === 'object' && service.serviceTypeId?.name
+                                ? service.serviceTypeId.name
+                                : 'Unknown'}
+                            </Badge>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <p className="text-muted-foreground line-clamp-2">{service.description}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                <DollarSign className="h-4 w-4" />
+                                <span className="font-semibold">₹{service.price.toFixed(2)}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Clock className="h-4 w-4" />
+                                <span>{formatDurationDisplay(service.durationHour)}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="space-y-2">
-                          <p className="text-xs font-medium text-muted-foreground">Pet Types:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {service.petTypeIds.length > 0 ? (
-                              service.petTypeIds.map((petType) => {
-                                const petTypeName = typeof petType === 'object' && petType?.name ? petType.name : 'Unknown';
-                                return (
-                                  <Badge
-                                    key={typeof petType === 'object' ? petType._id : petType}
-                                    variant="secondary"
-                                    className="bg-primary/10 text-primary hover:bg-primary/20"
-                                  >
-                                    {petTypeName}
-                                  </Badge>
-                                );
-                              })
-                            ) : (
-                              <p className="text-sm text-muted-foreground">No pet types assigned</p>
-                            )}
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground">Pet Types:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {service.petTypeIds.length > 0 ? (
+                                service.petTypeIds.map((petType) => {
+                                  const petTypeName = typeof petType === 'object' && petType?.name ? petType.name : 'Unknown';
+                                  return (
+                                    <Badge
+                                      key={typeof petType === 'object' ? petType._id : petType}
+                                      variant="secondary"
+                                      className="bg-primary/10 text-primary hover:bg-primary/20"
+                                    >
+                                      {petTypeName}
+                                    </Badge>
+                                  );
+                                })
+                              ) : (
+                                <p className="text-sm text-muted-foreground">No pet types assigned</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center pt-2 border-t">
+                            <span className="text-xs text-muted-foreground">
+                              Created {new Date(service.createdAt).toLocaleDateString()}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingService(service)}
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                            >
+                              <Edit2 className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center pt-2 border-t">
-                          <span className="text-xs text-muted-foreground">
-                            Created {new Date(service.createdAt).toLocaleDateString()}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingService(service)}
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                          >
-                            <Edit2 className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                <Pagination
+                  current={currentPage}
+                  total={totalItems}
+                  pageSize={pageSize}
+                  onChange={handlePageChange}
+                  showSizeChanger={true}
+                  showQuickJumper={true}
+                  showTotal={(total, range) => (
+                    <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                      Showing {range[0]} to {range[1]} of {total} services
+                    </span>
+                  )}
+                  pageSizeOptions={[6, 12, 24, 48]}
+                />
+              </>
             )}
           </CardContent>
         </Card>
       </div>
+      <Footer />
     </PetCareLayout>
   );
 }

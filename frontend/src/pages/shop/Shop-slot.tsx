@@ -23,6 +23,7 @@ import type { RootState } from "@/redux/store";
 import type { ShopAvailability } from "@/types/shop.type";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@radix-ui/react-tooltip";
+import Footer from "@/components/user/Footer";
 
 interface TimeSlot extends Slot {
     staffName?: string;
@@ -534,6 +535,7 @@ export const SlotCalendar: React.FC = () => {
                     </div>
                 </div>
             </div>
+            <Footer />
         </PetCareLayout>
     );
 };

@@ -184,7 +184,7 @@ export default function ShopWalletPage() {
             balance={wallet?.balance ?? 0}
             currency={wallet?.currency ?? 'INR'}
             transactions={wallet?.transactions ?? []}
-            onAction={() => {}}
+            onAction={() => { }}
             isLoading={isLoading}
           />
         </div>

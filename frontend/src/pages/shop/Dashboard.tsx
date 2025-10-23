@@ -24,6 +24,7 @@ import type { RootState } from "@/redux/store"
 import { walletService } from "@/services/walletService"
 import { shopService } from "@/services/shop/shop.service"
 import type { Shop } from "@/types/shop.type"
+import Footer from "@/components/user/Footer"
 
 interface IWalletTransaction {
   _id?: string;
@@ -771,6 +772,7 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+      <Footer />
     </PetCareLayout>
   )
 }

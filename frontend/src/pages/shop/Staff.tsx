@@ -23,6 +23,7 @@ import { Navbar } from '@/components/shop/Navbar';
 import { Pagination } from '@/components/ui/Pagination';
 import type { RootState } from "@/redux/store";
 import { useSelector } from "react-redux";
+import Footer from "@/components/user/Footer";
 
 export default function StaffManagement() {
     const [staff, setStaff] = useState<Staff[]>([]);
@@ -146,7 +147,7 @@ export default function StaffManagement() {
         const fetchStaff = async () => {
             try {
                 setInitialLoading(true);
-                const response = await StaffService.getStaff(shopId, currentPage, pageSize); 
+                const response = await StaffService.getStaff(shopId, currentPage, pageSize);
                 const validStaff = response.staff.filter((s) => /^[0-9a-fA-F]{24}$/.test(s._id));
                 if (validStaff.length !== response.staff.length) {
                     console.error('Invalid staff IDs detected:', response.staff);
@@ -662,6 +663,7 @@ export default function StaffManagement() {
                     </DialogContent>
                 </Dialog>
             </div>
+            <Footer />
         </PetCareLayout>
     );
 }
