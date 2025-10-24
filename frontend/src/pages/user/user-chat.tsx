@@ -8,7 +8,7 @@ import { useChats } from '@/hooks/chat/useChats';
 import type { Chat } from '@/types/chat.type';
 import Header from '@/components/user/Header';
 import Footer from '@/components/user/Footer';
-import { ModernSidebar } from '@/components/user/App-sidebar';
+import { ModernSidebar } from '@/components/user/AppSidebar';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, MessageCircle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';

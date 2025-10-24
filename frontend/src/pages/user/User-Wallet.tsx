@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/user/Header';
 import Footer from '@/components/user/Footer';
-import { ModernSidebar } from '@/components/user/App-sidebar';
+import { ModernSidebar } from '@/components/user/AppSidebar';
 import io from 'socket.io-client';
 import { useMobile } from '@/hooks/chat/use-mobile';
 
