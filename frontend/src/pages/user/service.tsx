@@ -60,7 +60,7 @@ export const Services = () => {
   const [mapStyle, setMapStyle] = useState<'default' | 'satellite' | 'terrain'>('default');
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [fetchTimeout, setFetchTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [servicesWithRatings, setServicesWithRatings] = useState<ServiceWithRating[]>([]);
+  const [_servicesWithRatings, setServicesWithRatings] = useState<ServiceWithRating[]>([]);
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const [clientFilteredServices, setClientFilteredServices] = useState<ServiceWithRating[]>([]);
 
