@@ -4,7 +4,7 @@ import { CreateSubscriptionDTO, UpdateSubscriptionDTO } from '../../dto/subscrip
 import { HTTP_STATUS } from '../../shared/constant';
 import { Types } from 'mongoose';
 import { ISubscriptionController } from '../../interfaces/controllerInterfaces/ISubscriptionController';
-import { SubscriptionModel } from '@models/subscription.model';
+import { SubscriptionModel } from '../../models/subscription.model';
 
 export class SubscriptionController implements ISubscriptionController {
   private readonly _subscriptionService: ISubscriptionService;
