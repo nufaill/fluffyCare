@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import Header from "@/components/user/Header"
 import Footer from "@/components/user/Footer"
-import { ModernSidebar } from "@/components/user/App-sidebar"
+import { ModernSidebar } from "../../components/user/App-sidebar"
 import { Link, useParams } from "react-router-dom"
 import Useraxios from "@/api/user.axios"
 
