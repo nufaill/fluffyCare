@@ -21,7 +21,7 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 // Initialize Socket.IO
-initializeSocket(server);
+
 
 async function startApp(): Promise<void> {
   await initializeDatabase();
@@ -34,6 +34,8 @@ async function startApp(): Promise<void> {
   // Enable CORS for all routes
   app.use(cors(corsOptions));
 
+  initializeSocket(server);
+  
   app.use(express.json());
   app.use(cookieParser());
   app.use(morganLogger);
