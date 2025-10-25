@@ -1,4 +1,4 @@
-import { FilterQuery, UpdateQuery } from "mongoose";
+import { Document, FilterQuery, UpdateQuery } from "mongoose";
 
 export interface IBaseRepository<T extends Document> {
   find(filter?: FilterQuery<T>): Promise<T[]>;

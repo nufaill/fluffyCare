@@ -4,13 +4,18 @@ import { CreateReviewDTO, UpdateReviewDTO } from "../../dto/review.dto";
 import { CustomError } from '../../util/CustomerError';
 import { Types } from "mongoose";
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    [x: string]: string;
-    id: string;
-    role: string;
-  };
+export interface AuthenticatedUser {
+  id?: string;
+  role?: string;
+  userId?: string;
+  email?: string;
+  [key: string]: any;
 }
+
+
+export type AuthenticatedRequest = Request & {
+  user?: AuthenticatedUser;
+};
 
 export class ReviewController {
   constructor(private _reviewService: IReviewService) { }

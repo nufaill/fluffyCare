@@ -3,12 +3,12 @@ import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '../services/jwt/jwt.service';
 import { HTTP_STATUS } from '../shared/constant';
 
-export interface AuthenticatedShopRequest extends Request {
+export type AuthenticatedShopRequest = Request & {
   shop?: {
     id: string;
     email: string;
   };
-}
+};
 
 export class ShopMiddleware {
   constructor(private readonly jwtService: JwtService) {}
@@ -44,6 +44,7 @@ export class ShopMiddleware {
       req.shop = {
         id: payload.userId,
         email: payload.email,
+        shopId: payload.userId,
       };
 
       next();

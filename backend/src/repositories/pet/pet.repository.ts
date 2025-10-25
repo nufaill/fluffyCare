@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { Pet } from '../../models/pet.model';
 import { Appointment } from '../../models/appointment.model';
 import { CreatePetData, PetDocument } from '../../types/Pet.types';

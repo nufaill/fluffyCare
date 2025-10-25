@@ -1,3 +1,4 @@
+import { Document } from 'mongoose';
 import { AppointmentDocument } from '../../models/appointment.model';
 import { CreatePetData, PetDocument } from '../../types/Pet.types';
 import { PetTypeDocument } from '../../types/PetType.type';

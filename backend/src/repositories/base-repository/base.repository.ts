@@ -1,10 +1,11 @@
+import * as mongoose from 'mongoose';
 import { Model, FilterQuery, UpdateQuery, Types, Query } from 'mongoose';
 import { CustomError } from '../../util/CustomerError';
 import { ERROR_MESSAGES, HTTP_STATUS } from '../../shared/constant';
 import { IBaseRepository } from '../../interfaces/repositoryInterfaces/IBaseRepository';
 
 
-export class BaseRepository<T extends Document> implements IBaseRepository<T> {
+export class BaseRepository<T extends mongoose.Document> implements IBaseRepository<T> {
  protected model: Model<T>;
 
   constructor(model: Model<T>) {
