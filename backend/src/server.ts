@@ -27,15 +27,13 @@ async function startApp(): Promise<void> {
   await initializeDatabase();
 
   const corsOptions: CorsOptions = {
-    origin: ["https://fluffycare.nufail.website", "http://localhost:5173"],
-    credentials: true,
+    origin: "*",
   };
 
-  // Enable CORS for all routes
   app.use(cors(corsOptions));
 
   initializeSocket(server);
-  
+
   app.use(express.json());
   app.use(cookieParser());
   app.use(morganLogger);
