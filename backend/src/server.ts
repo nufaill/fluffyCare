@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import "reflect-metadata";
@@ -9,30 +10,26 @@ import shopRoutes from './routes/shop.route';
 import adminRoutes from './routes/admin.route';
 import walletRoutes from './routes/wallet.route';
 import chatRouter from "./routes/chat.routes";
-import messageRouter from "./routes/message.routes";
+import messageRouter  from "./routes/message.routes";
 import { swaggerUi, swaggerSpec } from './config/swagger';
 import { morganLogger } from "./config/logs";
 import { initializeSocket } from './shared/socket.io-handler';
 import { createServer } from "http";
-import cors, { CorsOptions } from "cors";
 
 dotenv.config();
 
 const app = express();
 const server = createServer(app);
 // Initialize Socket.IO
-
+initializeSocket(server);
 
 async function startApp(): Promise<void> {
   await initializeDatabase();
 
-  const corsOptions: CorsOptions = {
-    origin: "*",
-  };
-
-  app.use(cors(corsOptions));
-
-  initializeSocket(server);
+  app.use(cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+  }));
 
   app.use(express.json());
   app.use(cookieParser());
