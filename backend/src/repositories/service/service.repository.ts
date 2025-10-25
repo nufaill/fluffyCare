@@ -1,4 +1,4 @@
-import { Service } from "../../models/service.model";
+import { Service } from  "../../models/service.model";
 import { CreateServiceData, ServiceDocument } from "../../types/Service.types";
 import { ServiceType } from '../../models/serviceType.model';
 import { PetType } from '../../models/petType.model';
