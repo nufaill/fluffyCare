@@ -4,7 +4,7 @@ import { Message, MessageDocument, Reaction } from '../../types/Message.types';
 import { IMessageRepository } from '../../interfaces/repositoryInterfaces/IMessageRepository';
 
 export class MessageRepository implements IMessageRepository {
-  
+
   async getUnreadCount(chatId: string, receiverRole: string): Promise<number> {
     try {
       const senderRole = receiverRole === 'User' ? 'Shop' : 'User';
@@ -54,7 +54,7 @@ export class MessageRepository implements IMessageRepository {
         return null;
       }
 
-      return message;
+      return message as MessageDocument | null;
     } catch (error) {
       throw new Error(`Error finding message by ID: ${error}`);
     }
@@ -108,7 +108,7 @@ export class MessageRepository implements IMessageRepository {
       });
 
       return {
-        messages: validMessages.reverse(),
+        messages: validMessages.reverse() as unknown as MessageDocument[],
         total,
         hasMore: skip + validMessages.length < total,
       };
@@ -135,7 +135,7 @@ export class MessageRepository implements IMessageRepository {
         return null;
       }
 
-      return message;
+      return message as MessageDocument | null;
     } catch (error) {
       throw new Error(`Error getting latest message: ${error}`);
     }
@@ -146,7 +146,12 @@ export class MessageRepository implements IMessageRepository {
     deliveredAt: Date = new Date(),
   ): Promise<MessageDocument | null> {
     try {
-      return await MessageModel.findByIdAndUpdate(messageId, { deliveredAt }, { new: true });
+      const updatedMessage = await MessageModel.findByIdAndUpdate(
+        messageId,
+        { deliveredAt },
+        { new: true }
+      );
+      return updatedMessage as MessageDocument | null;
     } catch (error) {
       throw new Error(`Error marking message as delivered: ${error}`);
     }
@@ -154,7 +159,12 @@ export class MessageRepository implements IMessageRepository {
 
   async markAsRead(messageId: Types.ObjectId | string, readAt: Date = new Date()): Promise<MessageDocument | null> {
     try {
-      return await MessageModel.findByIdAndUpdate(messageId, { isRead: true, readAt }, { new: true });
+      const updatedMessage = await MessageModel.findByIdAndUpdate(
+        messageId,
+        { isRead: true, readAt },
+        { new: true }
+      );
+      return updatedMessage as MessageDocument | null;
     } catch (error) {
       throw new Error(`Error marking message as read: ${error}`);
     }
@@ -173,7 +183,7 @@ export class MessageRepository implements IMessageRepository {
   }
 
   async markChatMessagesAsRead(
-    dto: { chatId: string; receiverRole: string; messageIds?: string[] }, 
+    dto: { chatId: string; receiverRole: string; messageIds?: string[] },
     readAt: Date = new Date()
   ): Promise<number> {
     try {
@@ -196,7 +206,7 @@ export class MessageRepository implements IMessageRepository {
 
   async addReaction(dto: { messageId: string; userId: string; emoji: string }): Promise<MessageDocument | null> {
     try {
-      return await MessageModel.findByIdAndUpdate(
+      const updatedMessage = await MessageModel.findByIdAndUpdate(
         dto.messageId,
         {
           $push: {
@@ -210,6 +220,7 @@ export class MessageRepository implements IMessageRepository {
         { new: true },
       )
         .populate('reactions.userId', 'fullName profileImage');
+      return updatedMessage as MessageDocument | null;
     } catch (error) {
       throw new Error(`Error adding reaction: ${error}`);
     }
@@ -217,12 +228,13 @@ export class MessageRepository implements IMessageRepository {
 
   async removeReaction(messageId: Types.ObjectId | string, userId: Types.ObjectId | string): Promise<MessageDocument | null> {
     try {
-      return await MessageModel.findByIdAndUpdate(
+      const updatedMessage = await MessageModel.findByIdAndUpdate(
         messageId,
         { $pull: { reactions: { userId: new Types.ObjectId(userId) } } },
         { new: true },
       )
         .populate('reactions.userId', 'fullName profileImage');
+      return updatedMessage as MessageDocument | null; 
     } catch (error) {
       throw new Error(`Error removing reaction: ${error}`);
     }
@@ -268,7 +280,7 @@ export class MessageRepository implements IMessageRepository {
       const validMessages = messages.filter((msg) => msg && msg._id);
 
       return {
-        messages: validMessages,
+        messages: validMessages as unknown as MessageDocument[],
         total,
         hasMore: skip + validMessages.length < total,
       };
@@ -332,7 +344,7 @@ export class MessageRepository implements IMessageRepository {
       const validMessages = messages.filter((msg) => msg && msg._id);
 
       return {
-        messages: validMessages,
+        messages: validMessages as unknown as MessageDocument[],
         total,
         hasMore: skip + validMessages.length < total,
       };

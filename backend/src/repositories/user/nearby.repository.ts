@@ -15,22 +15,19 @@ function timeToMinutes(time: string): number {
 }
 
 function isShopOpen(shop: ShopDocument, now: Date = new Date()): boolean {
-  if (!shop.shopAvailability) return true; // Assume open if no availability data
+  if (!shop.shopAvailability) return true; 
 
-  // Check day
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const currentDay = days[now.getDay()];
   if (!shop.shopAvailability.workingDays.includes(currentDay)) {
     return false;
   }
 
-  // Check custom holidays (assuming format 'YYYY-MM-DD')
   const currentDate = now.toISOString().slice(0, 10);
-  if (shop.shopAvailability.customHolidays?.includes(currentDate)) {
+  if (shop.shopAvailability.customHolidays?.some(holiday => holiday.date === currentDate)) {
     return false;
   }
 
-  // Check time
   const currentTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   const currentMinutes = timeToMinutes(currentTimeStr);
   const openingMinutes = timeToMinutes(shop.shopAvailability.openingTime);
@@ -40,7 +37,6 @@ function isShopOpen(shop: ShopDocument, now: Date = new Date()): boolean {
     return false;
   }
 
-  // Check lunch break
   if (shop.shopAvailability.lunchBreak?.start && shop.shopAvailability.lunchBreak.end) {
     const lunchStart = timeToMinutes(shop.shopAvailability.lunchBreak.start);
     const lunchEnd = timeToMinutes(shop.shopAvailability.lunchBreak.end);
@@ -49,7 +45,6 @@ function isShopOpen(shop: ShopDocument, now: Date = new Date()): boolean {
     }
   }
 
-  // Check tea break
   if (shop.shopAvailability.teaBreak?.start && shop.shopAvailability.teaBreak.end) {
     const teaStart = timeToMinutes(shop.shopAvailability.teaBreak.start);
     const teaEnd = timeToMinutes(shop.shopAvailability.teaBreak.end);
@@ -65,8 +60,7 @@ export class NearbyRepository implements INearbyRepository {
   async getNearbyShops(opts: ShopQueryOptions): Promise<ShopDocument[]> {
     const { limit = 50, sortOrder = 'asc', openNow = false } = opts;
 
-    // To account for potential filtering, fetch more results internally
-    const internalLimit = openNow ? limit * 4 : limit + 50; // Arbitrary buffer
+    const internalLimit = openNow ? limit * 4 : limit + 50; 
 
     const query = {
       isActive: true,
@@ -75,19 +69,16 @@ export class NearbyRepository implements INearbyRepository {
 
     let results = await Shop.find(query).limit(internalLimit).exec() as ShopDocument[];
 
-    // Filter for openNow if requested
     if (openNow) {
       results = results.filter(shop => isShopOpen(shop));
     }
 
-    // Sort by name (or another field) if descending
     if (sortOrder === 'desc') {
       results.sort((a, b) => b.name.localeCompare(a.name));
     } else {
       results.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    // Slice to limit
     results = results.slice(0, limit);
 
     return results;

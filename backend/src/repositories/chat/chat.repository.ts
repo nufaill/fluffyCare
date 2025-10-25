@@ -7,7 +7,7 @@ export class ChatRepository implements IChatRepository {
   async createChat(chatData: Partial<Chat>): Promise<ChatDocument> {
     try {
       const chat = new ChatModel(chatData);
-      return await chat.save();
+      return await chat.save() as unknown as ChatDocument;
     } catch (error) {
       throw new Error(`Error creating chat: ${error}`);
     }
@@ -23,7 +23,7 @@ export class ChatRepository implements IChatRepository {
       })
         .populate("userId", "fullName email profileImage phone")
         .populate("shopId", "name email logo phone city")
-        .lean();
+        .lean() as ChatDocument | null;
     } catch (error) {
       throw new Error(`Error finding chat: ${error}`);
     }
@@ -33,7 +33,7 @@ export class ChatRepository implements IChatRepository {
       return await ChatModel.findById(chatId)
         .populate("userId", "fullName email profileImage phone")
         .populate("shopId", "name email logo phone city")
-        .lean();
+        .lean() as ChatDocument | null;
     } catch (error) {
       throw new Error(`Error finding chat by ID: ${error}`);
     }
@@ -62,7 +62,7 @@ export class ChatRepository implements IChatRepository {
       ]);
 
       return {
-        chats,
+        chats: chats as unknown as ChatDocument[],
         total,
         hasMore: skip + chats.length < total
       };
@@ -94,7 +94,7 @@ export class ChatRepository implements IChatRepository {
       ]);
 
       return {
-        chats,
+        chats: chats as unknown as ChatDocument[],
         total,
         hasMore: skip + chats.length < total
       };
@@ -120,7 +120,7 @@ export class ChatRepository implements IChatRepository {
         { new: true, runValidators: true }
       )
         .populate("userId", "fullName email profileImage phone")
-        .populate("shopId", "name email logo phone city");
+        .populate("shopId", "name email logo phone city") as ChatDocument | null;
     } catch (error) {
       throw new Error(`Error updating last message: ${error}`);
     }
@@ -250,7 +250,7 @@ export class ChatRepository implements IChatRepository {
       const total = result[0]?.totalCount[0]?.total || 0;
 
       return {
-        chats,
+        chats: chats as ChatDocument[],
         total,
         hasMore: skip + chats.length < total
       };

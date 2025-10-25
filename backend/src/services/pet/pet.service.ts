@@ -92,6 +92,6 @@ export class PetService implements IPetService {
     if (!pet) {
       throw new CustomError('Pet not found', 404);
     }
-    return pet;
+    return pet as PetWithBookings;
   }
 }

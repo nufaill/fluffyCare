@@ -256,15 +256,8 @@ export class ShopController implements IShopController {
           referenceId: undefined,
         };
 
-        await this._walletService.walletRepository.updateBalance(
-          new Types.ObjectId(adminWallet._id),
-          adminTransaction.amount,
-          'credit'
-        );
-        await this._walletService.walletRepository.addTransaction(
-          new Types.ObjectId(adminWallet._id),
-          adminTransaction
-        );
+        await this._walletService.updateBalance(new Types.ObjectId(adminWallet._id), adminTransaction.amount, 'credit');
+        await this._walletService.addTransaction(new Types.ObjectId(adminWallet._id), adminTransaction);
       });
 
       session.endSession();

@@ -7,7 +7,7 @@ import { PetType } from '../../models/petType.model';
 import { IPetRepository } from '../../interfaces/repositoryInterfaces/IPetRepository';
 import { AppointmentDocument } from '../../models/appointment.model';
 
-export interface PetWithBookings extends PetDocument {
+export interface PetWithBookings extends Omit<PetDocument, keyof Document> {
   bookings: AppointmentDocument[];
 }
 
@@ -62,21 +62,25 @@ export class PetRepository implements IPetRepository {
   }
 
   async getPetWithBookingsById(petId: string): Promise<PetWithBookings | null> {
-    const pet = await Pet.findById(petId)
-      .populate('petTypeId', 'name')
-      .populate('userId', 'name email');
+  const pet = await Pet.findById(petId)
+    .populate('petTypeId', 'name')
+    .populate('userId', 'name email')
+    .lean(); // 🔥 IMPORTANT
 
-    if (!pet) {
-      return null;
-    }
-    const bookings = await Appointment.find({ petId: new Types.ObjectId(petId) })
-      .populate('shopId', 'name')
-      .populate('serviceId', 'name')
-      .populate('staffId', 'name');
-
-    return {
-      ...pet.toObject(),
-      bookings
-    };
+  if (!pet) {
+    return null;
   }
+
+  const bookings = await Appointment.find({ petId })
+    .populate('shopId', 'name')
+    .populate('serviceId', 'name')
+    .populate('staffId', 'name')
+    .lean(); // 🔥 no Mongoose doc methods
+
+  return {
+    ...pet,
+    bookings
+  };
+}
+
 }

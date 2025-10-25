@@ -12,5 +12,5 @@ export interface Chat {
 }
 
 export interface ChatDocument extends Chat, Document {
-    modelName: string;
+    modelName?: string;
 }

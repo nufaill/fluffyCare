@@ -211,6 +211,14 @@ export class WalletService implements IWalletService {
     }
   }
 
+  async updateBalance(walletId: Types.ObjectId, amount: number, type: 'credit' | 'debit'): Promise<void> {
+    await this.walletRepository.updateBalance(walletId, amount, type);
+  }
+
+  async addTransaction(walletId: Types.ObjectId, transaction: IWalletTransaction): Promise<void> {
+    await this.walletRepository.addTransaction(walletId, transaction);
+  }
+
   async processPayment(dto: ProcessPaymentDto): Promise<void> {
     const session = await mongoose.startSession();
 

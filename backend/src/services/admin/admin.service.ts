@@ -21,6 +21,10 @@ export class AuthService implements IAdminService {
       throw new CustomError(ERROR_MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
     }
 
+    if (!admin.password) {
+      throw new CustomError(ERROR_MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
+    }
+
     const isPasswordValid = await bcrypt.compare(password, admin.password);
     if (!isPasswordValid) {
       throw new CustomError(ERROR_MESSAGES.INVALID_CREDENTIALS, HTTP_STATUS.UNAUTHORIZED);
@@ -30,7 +34,13 @@ export class AuthService implements IAdminService {
       throw new CustomError('Admin document missing ID', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
 
-    const tokens = this.generateTokens(admin._id.toString(), admin.email);
+    if (!admin.email) {
+      throw new CustomError('Admin document missing email', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+
+    const id = admin._id.toString();
+    const userEmail = admin.email;
+    const tokens = this.generateTokens(id, userEmail);
     return this.mapToAuthResponseDto(admin, tokens);
   }
 
@@ -43,9 +53,9 @@ export class AuthService implements IAdminService {
 
   private mapToAdminResponseDto(admin: AdminDocument): AdminResponseDto {
     return {
-      _id: admin._id.toString(),
-      fullName: admin.fullName,
-      email: admin.email,
+      _id: admin._id!.toString(),
+      fullName: admin.fullName ?? '',
+      email: admin.email!,
     };
   }
 

@@ -63,7 +63,7 @@ export function PetCard({ pet }: PetCardProps) {
             className={`font-mono font-semibold ${pet.gender === "Male"
               ? "bg-blue-500 text-white border-blue-600 hover:bg-blue-600"
               : "bg-pink-500 text-white border-pink-600 hover:bg-pink-600"
-            } transition-colors duration-200 text-xs sm:text-sm`}
+              } transition-colors duration-200 text-xs sm:text-sm`}
           >
             {pet.gender}
           </Badge>
@@ -171,7 +171,14 @@ export function PetCard({ pet }: PetCardProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-900 border-2 border-black dark:border-white rounded-lg p-4 sm:p-6">
               <DialogHeader>
-                <DialogTitle className="text-lg sm:text-xl text-black dark:text-white font-mono font-bold">{pet.name}'s Booking History</DialogTitle>
+                <DialogTitle className="text-lg sm:text-xl text-black dark:text-white font-mono font-bold">
+                  {pet.name}'s Booking History
+                </DialogTitle>
+
+                <p className="text-sm text-gray-500">
+                  View history of vet shop bookings for this pet.
+                </p>
+
               </DialogHeader>
               <div className="mt-2 sm:mt-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto space-y-2 sm:space-y-4 pr-1 sm:pr-2">
                 {isLoading ? (
@@ -201,14 +208,13 @@ export function PetCard({ pet }: PetCardProps) {
                           Status:{' '}
                           <span
                             className={`
-                              font-semibold ${
-                                booking.appointmentStatus === 'Confirmed'
-                                  ? 'text-green-500 dark:text-green-400'
-                                  : booking.appointmentStatus === 'Pending'
+                              font-semibold ${booking.appointmentStatus === 'Confirmed'
+                                ? 'text-green-500 dark:text-green-400'
+                                : booking.appointmentStatus === 'Pending'
                                   ? 'text-yellow-500 dark:text-yellow-400'
                                   : booking.appointmentStatus === 'Cancelled'
-                                  ? 'text-red-500 dark:text-red-400'
-                                  : 'text-gray-500 dark:text-gray-400'
+                                    ? 'text-red-500 dark:text-red-400'
+                                    : 'text-gray-500 dark:text-gray-400'
                               }`
                             }
                           >

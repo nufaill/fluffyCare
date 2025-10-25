@@ -2,7 +2,8 @@ import { AppointmentDocument } from '../../models/appointment.model';
 import { CreatePetData, PetDocument } from '../../types/Pet.types';
 import { PetTypeDocument } from '../../types/PetType.type';
 
-export interface PetWithBookings extends PetDocument {
+export interface PetWithBookings
+  extends Omit<PetDocument, keyof Document> {
   bookings: AppointmentDocument[];
 }
 

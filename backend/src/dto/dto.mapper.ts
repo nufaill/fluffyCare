@@ -189,6 +189,7 @@ export class DtoMapper implements IDtoMapper {
   ): MessageListResponseDTO {
     return {
       messages: messages.map(message => this.toMessageResponseDto(message)),
+      totalMessages: total,
       total,
       hasMore,
       page,
