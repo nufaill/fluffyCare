@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import "reflect-metadata";
@@ -10,11 +9,12 @@ import shopRoutes from './routes/shop.route';
 import adminRoutes from './routes/admin.route';
 import walletRoutes from './routes/wallet.route';
 import chatRouter from "./routes/chat.routes";
-import messageRouter  from "./routes/message.routes";
+import messageRouter from "./routes/message.routes";
 import { swaggerUi, swaggerSpec } from './config/swagger';
 import { morganLogger } from "./config/logs";
 import { initializeSocket } from './shared/socket.io-handler';
 import { createServer } from "http";
+import cors, { CorsOptions } from "cors";
 
 dotenv.config();
 
@@ -26,10 +26,13 @@ initializeSocket(server);
 async function startApp(): Promise<void> {
   await initializeDatabase();
 
-  app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+  const corsOptions: CorsOptions = {
+    origin: ["https://fluffycare.nufail.website", "http://localhost:5173"],
     credentials: true,
-  }));
+  };
+
+  // Enable CORS for all routes
+  app.use(cors(corsOptions));
 
   app.use(express.json());
   app.use(cookieParser());
