@@ -364,7 +364,7 @@ const ShopDetails: React.FC = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
         <Navbar
-          userName="NUFAIL"
+          userName="Admin"
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />

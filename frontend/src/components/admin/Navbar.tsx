@@ -17,7 +17,7 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({
-  userName = "NUFAIL",
+  userName = "Admin",
   userAvatar,
   onSearch,
   onToggleSidebar,

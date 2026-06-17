@@ -177,7 +177,7 @@ export default function AdminWalletPage() {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <div className="fixed top-0 left-0 right-0 md:left-64 z-50">
           <Navbar
-            userName="NUFAIL"
+            userName="Admin"
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           />

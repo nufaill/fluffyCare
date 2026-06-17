@@ -218,7 +218,7 @@ export default function ServiceCategoryPage() {
         onClose={() => setIsSidebarOpen(false)}
       />
       <AdminNavbar 
-        userName="NUFAIL" 
+        userName="Admin" 
         onSearch={setSearchTerm} 
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         isSidebarOpen={isSidebarOpen}

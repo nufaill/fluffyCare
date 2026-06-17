@@ -476,7 +476,7 @@ const ShopVerification: React.FC = () => {
 
       {/* Navbar */}
       <Navbar 
-        userName="NUFAIL" 
+        userName="Admin" 
         onSearch={handleSearch} 
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         isSidebarOpen={isSidebarOpen}

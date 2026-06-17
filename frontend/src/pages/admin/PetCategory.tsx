@@ -217,7 +217,7 @@ export default function PetCategoryPage() {
         onClose={() => setIsSidebarOpen(false)}
       />
       <AdminNavbar 
-        userName="NUFAIL" 
+        userName="Admin" 
         onSearch={setSearchTerm} 
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         isSidebarOpen={isSidebarOpen}
