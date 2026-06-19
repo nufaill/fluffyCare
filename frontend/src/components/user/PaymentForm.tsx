@@ -276,36 +276,36 @@ export function PaymentForm({
     }
   };
 
-  // If there's a validation error, show it prominently
-  if (validationError) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-red-50 border-2 border-red-200 p-6 rounded-lg text-center">
-          <User className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-red-800 mb-2">Cannot Process Payment</h3>
-          <p className="text-red-700 mb-4">{validationError}</p>
-          {validationError.includes("log in") && (
-            <Button
-              onClick={() => {
-                // Redirect to login page or trigger login modal
-                window.location.href = "/login";
-              }}
-              className="bg-red-600 text-white hover:bg-red-700 font-semibold mr-4"
-            >
-              Go to Login
-            </Button>
-          )}
-          <Button
-            onClick={onCancel}
-            variant="outline"
-            className="border-red-600 text-red-600 hover:bg-red-50"
-          >
-            Close
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // If there's a validation error
+  // if (validationError) {
+  //   return (
+  //     <div className="space-y-6">
+  //       <div className="bg-red-50 border-2 border-red-200 p-6 rounded-lg text-center">
+  //         <User className="w-12 h-12 text-red-600 mx-auto mb-4" />
+  //         <h3 className="text-lg font-semibold text-red-800 mb-2">Cannot Process Payment</h3>
+  //         <p className="text-red-700 mb-4">{validationError}</p>
+  //         {validationError.includes("log in") && (
+  //           <Button
+  //             onClick={() => {
+  //               // Redirect to login page or trigger login modal
+  //               window.location.href = "/login";
+  //             }}
+  //             className="bg-red-600 text-white hover:bg-red-700 font-semibold mr-4"
+  //           >
+  //             Go to Login
+  //           </Button>
+  //         )}
+  //         <Button
+  //           onClick={onCancel}
+  //           variant="outline"
+  //           className="border-red-600 text-red-600 hover:bg-red-50"
+  //         >
+  //           Close
+  //         </Button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
