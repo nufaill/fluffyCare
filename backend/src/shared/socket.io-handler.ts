@@ -70,7 +70,7 @@ export class SocketHandler {
   constructor(server: HTTPServer) {
     this.io = new SocketIOServer(server, {
       cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
+        origin: process.env.CLIENT_URL || "https://fluffycare.nufail.xyz",
         methods: ["GET", "POST"],
         credentials: true
       }

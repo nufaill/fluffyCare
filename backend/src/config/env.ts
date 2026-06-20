@@ -18,7 +18,7 @@ export const config = {
     REFRESH_EXPIRES: process.env.JWT_REFRESH_EXPIRES || '7d'
   },
   client: {
-    URL: process.env.CLIENT_URL || 'http://localhost:5173'
+    URL: process.env.CLIENT_URL || 'https://fluffycare.nufail.xyz'
   },
   google: {
     CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,

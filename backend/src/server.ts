@@ -27,7 +27,7 @@ async function startApp(): Promise<void> {
   await initializeDatabase();
 
   app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: process.env.CLIENT_URL || "https://fluffycare.nufail.xyz",
     credentials: true,
   }));
 
