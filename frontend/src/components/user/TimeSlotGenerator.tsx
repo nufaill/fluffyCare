@@ -145,11 +145,11 @@ export function EnhancedTimeSlotGenerator({
 
   const markSlotAsBooked = useCallback((slot: TimeSlot) => {
 
-    setTimeSlots(prev => 
+    setTimeSlots(prev =>
       prev.map(existingSlot => {
-        if (existingSlot.staffId === slot.staffId && 
-            existingSlot.slotDate === slot.slotDate && 
-            existingSlot.startTime === slot.startTime) {
+        if (existingSlot.staffId === slot.staffId &&
+          existingSlot.slotDate === slot.slotDate &&
+          existingSlot.startTime === slot.startTime) {
           return {
             ...existingSlot,
             status: "booked" as const,
@@ -212,11 +212,11 @@ export function EnhancedTimeSlotGenerator({
         return prev;
       });
 
-      setTimeSlots(prev => 
+      setTimeSlots(prev =>
         prev.map(slot => {
-          if (slot.staffId === data.staffId && 
-              slot.slotDate === data.date && 
-              slot.startTime === data.startTime) {
+          if (slot.staffId === data.staffId &&
+            slot.slotDate === data.date &&
+            slot.startTime === data.startTime) {
             return {
               ...slot,
               status: "booked" as const,
@@ -241,11 +241,11 @@ export function EnhancedTimeSlotGenerator({
             slot.startTime === data.startTime)
         )
       );
-      setTimeSlots(prev => 
+      setTimeSlots(prev =>
         prev.map(slot => {
-          if (slot.staffId === data.staffId && 
-              slot.slotDate === data.date && 
-              slot.startTime === data.startTime) {
+          if (slot.staffId === data.staffId &&
+            slot.slotDate === data.date &&
+            slot.startTime === data.startTime) {
             return {
               ...slot,
               status: "available" as const,
@@ -268,7 +268,7 @@ export function EnhancedTimeSlotGenerator({
   useEffect(() => {
     // Store the function reference so parent component can access it
     (window as any).markSlotAsBooked = markSlotAsBooked;
-    
+
     return () => {
       if ((window as any).markSlotAsBooked) {
         delete (window as any).markSlotAsBooked;
@@ -412,10 +412,10 @@ export function EnhancedTimeSlotGenerator({
       }
 
       slots.push({
-        _id: `${staffMember.id}-${dateStr}-${minutesToTime(current)}`, 
+        _id: `${staffMember.id}-${dateStr}-${minutesToTime(current)}`,
         shopId,
         staffId: staffMember.id,
-        slotDate: dateStr, 
+        slotDate: dateStr,
         startTime: minutesToTime(current),
         endTime: minutesToTime(end),
         durationInMinutes: duration,
@@ -587,25 +587,30 @@ export function EnhancedTimeSlotGenerator({
             className={`border-2 ${category.borderColor} shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-2xl overflow-hidden`}
           >
             <CardHeader className={`${category.bgColor} border-b ${category.borderColor}`}>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-12 h-12 ${category.iconColor} bg-white rounded-full flex items-center justify-center shadow-md`}
-                  >
-                    <IconComponent className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900">{category.label}</h3>
-                    <p className="text-sm text-gray-600">
-                      {category.startHour}:00 - {category.endHour}:00
-                    </p>
-                  </div>
-                </div>
-                <Badge className="bg-white border-green-200 text-green-700 font-semibold px-4 py-2 text-sm">
-                  {availableCount} slots available
-                </Badge>
-              </CardTitle>
-            </CardHeader>
+  <CardTitle className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex items-center gap-3 sm:gap-4">
+      <div
+        className={`w-10 h-10 sm:w-12 sm:h-12 ${category.iconColor} bg-white rounded-full flex items-center justify-center shadow-md shrink-0`}
+      >
+        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" />
+      </div>
+
+      <div>
+        <h3 className="text-lg sm:text-2xl font-bold text-gray-900">
+          {category.label}
+        </h3>
+
+        <p className="text-xs sm:text-sm text-gray-600">
+          {category.startHour}:00 - {category.endHour}:00
+        </p>
+      </div>
+    </div>
+
+    <Badge className="w-full sm:w-auto justify-center bg-white border-green-200 text-green-700 font-semibold px-4 py-2 text-sm">
+      {availableCount} slots available
+    </Badge>
+  </CardTitle>
+</CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {categorySlots.map(renderSlotButton)}
@@ -626,31 +631,51 @@ export function EnhancedTimeSlotGenerator({
     <div className="space-y-6">
       <Card className="border-2 border-black shadow-xl rounded-2xl overflow-hidden">
         <CardHeader className="bg-black text-white">
-          <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center">
-                <Calendar className="w-6 h-6" />
+          <CardTitle className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              {/* Left Section */}
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shrink-0">
+                  <Calendar className="w-6 h-6" />
+                </div>
+
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold">
+                    Available Time Slots
+                  </h2>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-sm text-gray-300">
+                    <p>
+                      Choose your preferred appointment time ({serviceDuration} min
+                      sessions) for {formatDateToString(selectedDate)}
+                    </p>
+
+                    {isConnected && (
+                      <span className="inline-flex items-center mt-1 sm:mt-0">
+                        <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                        Live updates
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold">Available Time Slots</h2>
-                <p className="text-gray-300 text-sm">
-                  Choose your preferred appointment time ({serviceDuration} min sessions) for {formatDateToString(selectedDate)}
-                  {isConnected && (
-                    <span className="ml-2 inline-flex items-center">
-                      <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
-                      Live updates
-                    </span>
-                  )}
-                </p>
+
+              {/* Right Section */}
+              <div className="flex flex-col w-full sm:w-auto sm:flex-row gap-2 sm:gap-3">
+                <Badge
+                  variant="secondary"
+                  className="bg-green-500 text-white font-semibold px-4 py-2 justify-center"
+                >
+                  {availableSlotsCount} of {totalSlots} available
+                </Badge>
+
+                <Badge
+                  variant="secondary"
+                  className="bg-green-500 text-white font-semibold px-4 py-2 justify-center"
+                >
+                  {selectedSlots.length} selected
+                </Badge>
               </div>
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <Badge variant="secondary" className="bg-green-500 text-white font-semibold px-4 py-2">
-                {availableSlotsCount} of {totalSlots} available
-              </Badge>
-              <Badge variant="secondary" className="bg-green-500 text-white font-semibold px-4 py-2">
-                {selectedSlots.length} selected
-              </Badge>
             </div>
           </CardTitle>
         </CardHeader>
