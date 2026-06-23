@@ -200,10 +200,10 @@ export const ServiceDetails = () => {
             _id: review._id || review.id,
             userId: typeof review.userId === 'object' && review.userId !== null
               ? {
-                  _id: review.userId.id || review.userId._id,
-                  fullName: review.userId.fullName || 'Anonymous User',
-                  profileImage: review.userId.profileImage || null,
-                }
+                _id: review.userId.id || review.userId._id,
+                fullName: review.userId.fullName || 'Anonymous User',
+                profileImage: review.userId.profileImage || null,
+              }
               : { _id: '', fullName: 'Anonymous User', profileImage: null },
           }))
           setReviews(reviewsWithUserDetails)
@@ -351,7 +351,7 @@ export const ServiceDetails = () => {
       >
         <div className="flex items-start justify-between">
           {/* Left: user info */}
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-3 sm:gap-4">
             <img
               src={
                 userProfileImage
@@ -359,24 +359,30 @@ export const ServiceDetails = () => {
                   : "/api/placeholder/48/48"
               }
               alt={`${userFullName}'s profile`}
-              className="w-12 h-12 rounded-full object-cover border-2 border-black dark:border-white"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-black dark:border-white flex-shrink-0"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 target.src = "/api/placeholder/48/48"
               }}
             />
-            <div>
-              <p className="text-lg font-bold text-black dark:text-white font-mono">
+
+            <div className="min-w-0 flex-1">
+              <p className="text-base sm:text-lg font-bold text-black dark:text-white font-mono truncate">
                 {userFullName}
               </p>
-              <div className="flex items-center gap-2 mb-2">
-                {renderStars(review.rating)}
-                <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
+                <div className="flex items-center">
+                  {renderStars(review.rating)}
+                </div>
+
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-mono">
                   {new Date(review.createdAt).toLocaleDateString()}
                 </span>
               </div>
+
               {review.comment && (
-                <p className="text-gray-700 dark:text-gray-300 font-mono">
+                <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 font-mono break-words">
                   {review.comment}
                 </p>
               )}
@@ -478,7 +484,7 @@ export const ServiceDetails = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               <div className="absolute top-6 right-6">
-                <Badge className="bg-black dark:bg-white text-white dark:text-black font-mono font-bold text-xl px-4 py-2 shadow-lg">
+                <Badge className="!bg-black dark:!bg-white !text-white dark:!text-black font-mono font-bold text-lg sm:text-xl px-3 sm:px-4 py-1.5 sm:py-2 shadow-lg">
                   ₹{service.price}
                 </Badge>
               </div>
@@ -491,34 +497,42 @@ export const ServiceDetails = () => {
             {/* Service Info */}
             <Card className="border-2 border-black dark:border-white bg-white dark:bg-black shadow-xl">
               <CardContent className="p-8">
-                <div className="flex items-start gap-6 mb-8">
-                  <div className="relative">
+                <div className="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-6">
+                  <div className="relative shrink-0">
                     <img
                       src={cloudinaryUtils.getFullUrl(service.shopId.logo ?? "") || "/placeholder.svg"}
                       alt={`${service.shopId?.name || "Shop"} logo`}
-                      className="w-20 h-20 rounded-full object-cover border-2 border-black dark:border-white shadow-lg"
+                      className="h-16 w-16 rounded-full border-2 border-black object-cover shadow-lg sm:h-20 sm:w-20 dark:border-white"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement
                         target.src = "/api/placeholder/64/64"
                       }}
                     />
-                    <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-black" />
+                    <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-white bg-green-500 sm:-bottom-2 sm:-right-2 sm:h-6 sm:w-6 dark:border-black" />
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="flex items-center gap-2">
-                        {summaryLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin text-black dark:text-white" />
-                        ) : summaryError ? (
-                          <AlertCircle className="h-5 w-5 text-red-600" />
-                        ) : (
-                          renderStars(ratingSummary?.averageRating || 0)
-                        )}
-                        <span className="text-lg font-mono font-bold text-black dark:text-white">
-                          {summaryLoading ? "..." : summaryError ? "N/A" : (ratingSummary?.averageRating || 0).toFixed(1)}
-                        </span>
-                        <span className="text-gray-600 dark:text-gray-400 font-mono">
+                  <div className="w-full flex-1 text-center sm:text-left">
+                    <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-4">
+                      <div className="flex flex-col items-center sm:flex-row sm:items-center sm:gap-2">
+                        {/* Stars + Rating */}
+                        <div className="flex items-center gap-2">
+                          {summaryLoading ? (
+                            <Loader2 className="h-5 w-5 animate-spin text-black dark:text-white" />
+                          ) : summaryError ? (
+                            <AlertCircle className="h-5 w-5 text-red-600" />
+                          ) : (
+                            <>
+                              {renderStars(ratingSummary?.averageRating || 0)}
+
+                              <span className="text-base font-mono font-bold text-black sm:text-lg dark:text-white">
+                                {(ratingSummary?.averageRating || 0).toFixed(1)}
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Reviews count */}
+                        <span className="text-sm font-mono text-gray-600 sm:text-base dark:text-gray-400">
                           ({reviews.length || 0} reviews)
                         </span>
                       </div>
